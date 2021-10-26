@@ -99,26 +99,76 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>部署blog</p>
-<p>Hexo搭建步骤<br><a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/">https://hexo.io/zh-cn/docs/</a><br>安装Git<br><a target="_blank" rel="noopener" href="https://gitforwindows.org/">https://gitforwindows.org/</a> 下载安装<br><img src="en-resource://database/1604:1" alt="dcf50ee8d3aebbe829ea8f0739ca8825.png"><br>安装完查看git版本：$git –version<br><img src="en-resource://database/1610:1" alt="a277b78ce347a3f1057c5fd56a7dfbc1.png"></p>
-<p>安装Node.js<br><a target="_blank" rel="noopener" href="https://nodejs.org/en/download/">https://nodejs.org/en/download/</a> 选择LTS的window版本，下载安装<br>安装完查看node.js版本<br>$node -v<br>$npm -v<br><img src="en-resource://database/1606:1" alt="4fd926d6f16323e315540166b4848868.png"></p>
-<p>更改npm镜像源：npm config set registry <a target="_blank" rel="noopener" href="https://registry.npm.taobao.org/">https://registry.npm.taobao.org/</a><br>查看npm镜像源：npm get registry <a target="_blank" rel="noopener" href="https://registry.npm.taobao.org/">https://registry.npm.taobao.org/</a><br><img src="en-resource://database/1608:1" alt="6d550ebe1585a7f329dbbc284bd433ed.png"></p>
-<p>安装Hexo<br>$npm install -g hexo-cli</p>
-<p>建站</p>
-<p>初始化博客目录<br>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。<br>$ hexo init <folder><br>$ cd <folder><br>$ npm install</p>
-<p>命令：<br>清理缓存： hexo clean<br>生成静态文件： hexo g/generate<br>生成静态文件： hexo s/server<br>发布到github：hexo d<br>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s<br>本地访问地址：<a target="_blank" rel="noopener" href="http://localhost:4000/">http://localhost:4000</a></p>
-<p>配置<br>_config.yml 网站的 配置 信息，可以在此配置大部分的参数。<br><a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/configuration">https://hexo.io/zh-cn/docs/configuration</a></p>
-<p>生成SSH添加到GitHub<br>生成key，可以git部署网站<br>ssh-keygen -t rsa -b 4096 -C “<a href="mailto:&#x79;&#111;&#117;&#x72;&#x5f;&#x65;&#x6d;&#x61;&#105;&#108;&#x40;&#x65;&#x78;&#x61;&#x6d;&#112;&#x6c;&#101;&#46;&#x63;&#x6f;&#109;">&#x79;&#111;&#117;&#x72;&#x5f;&#x65;&#x6d;&#x61;&#105;&#108;&#x40;&#x65;&#x78;&#x61;&#x6d;&#112;&#x6c;&#101;&#46;&#x63;&#x6f;&#109;</a>“<br>然后需要配置<br>git config –global user.email “<a href="mailto:&#x79;&#x6f;&#117;&#64;&#x65;&#x78;&#97;&#x6d;&#x70;&#108;&#101;&#x2e;&#x63;&#x6f;&#109;">&#x79;&#x6f;&#117;&#64;&#x65;&#x78;&#97;&#x6d;&#x70;&#108;&#101;&#x2e;&#x63;&#x6f;&#109;</a>”<br>git config –global user.name “Your Name”<br>将这个文件拷贝到git的<a target="_blank" rel="noopener" href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>ssh -T <a href="mailto:&#x67;&#x69;&#x74;&#64;&#x67;&#x69;&#116;&#x68;&#117;&#x62;&#x2e;&#x63;&#x6f;&#109;">&#x67;&#x69;&#x74;&#64;&#x67;&#x69;&#116;&#x68;&#117;&#x62;&#x2e;&#x63;&#x6f;&#109;</a>查看是否配置成功</p>
-<p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 &lt;你的 GitHub 用户名&gt;.github.io 访问，你的 repository 应该直接命名为 &lt;你的 GitHub 用户名&gt;.github.io。</p>
-<p>将hexo部署到GitHub</p>
-<p>私有 Repository<br>安装 hexo-deployer-git.：<br>$ npm install hexo-deployer-git –save</p>
-<p>在 _config.yml（如果有已存在的请删除）添加如下配置：<br>deploy:<br>    type: git<br>    repo: <a target="_blank" rel="noopener" href="https://github.com/">https://github.com/</a><username>/<project><br>运行 hexo<br>clean &amp;&amp; hexo deploy 。<br>查看 username.github.io 上的网页是否部署成功。</p>
-<p>发布文章<br>hexo new post “title”<br>然后用编辑器修改好文本，发布<br>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s<br>hexo clean &amp;&amp; hexo deploy</p>
+        <h1 id="部署blog"><a href="#部署blog" class="headerlink" title="部署blog"></a>部署blog</h1><p>参考<a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/do">Hexo文档</a> </p>
+<h2 id="一、安装Git"><a href="#一、安装Git" class="headerlink" title="一、安装Git"></a>一、安装Git</h2><ol>
+<li><p><a target="_blank" rel="noopener" href="https://gitforwindows.org/">gitforwindows</a> 下载安装</p>
+</li>
+<li><p>安装完查看git版本：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git --version</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装Node-js"><a href="#二、安装Node-js" class="headerlink" title="二、安装Node.js"></a>二、安装Node.js</h2><ol>
+<li><p><a target="_blank" rel="noopener" href="https://nodejs.org/en/download/">node.js</a> 选择LTS的window版本，下载安装</p>
+</li>
+<li><p>安装完查看node.js版本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li>
+<li><p>更改npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+<li><p>查看npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm get registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="三、安装Hexo"><a href="#三、安装Hexo" class="headerlink" title="三、安装Hexo"></a>三、安装Hexo</h2><ol>
+<li><p>安装Hexo</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="四、建站"><a href="#四、建站" class="headerlink" title="四、建站"></a>四、建站</h2><ol>
+<li><p>初始化博客目录</p>
+<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure></li>
+<li><p>常用命令：</p>
+<ul>
+<li>清理缓存： <code>hexo clean</code></li>
+<li>生成静态文件： <code>hexo g/generate</code></li>
+<li>生成静态文件： <code>hexo s/server</code></li>
+<li>组合版：<code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</code></li>
+<li>发布到github：<code>hexo d</code></li>
+</ul>
+<p>本地访问地址：<a target="_blank" rel="noopener" href="http://localhost:4000/">http://localhost:4000</a></p>
+</li>
+<li><p>修改网站基本配置信息参考<a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/configuration">配置</a></p>
+</li>
+</ol>
+<h2 id="五、将hexo部署到GitHub"><a href="#五、将hexo部署到GitHub" class="headerlink" title="五、将hexo部署到GitHub"></a>五、将hexo部署到GitHub</h2><ol>
+<li><p>生成SSH添加到GitHub</p>
+<p>生成key，可以git部署网站</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</span><br></pre></td></tr></table></figure>
+
+<p>然后需要配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global user.email “you@example.com”</span><br><span class="line">git config --global user.name “Your Name”</span><br></pre></td></tr></table></figure>
+
+<p>将这个文件拷贝到git的<a target="_blank" rel="noopener" href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>查看是否配置成功</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure></li>
+<li><p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 <code>&lt;你的 GitHub 用户名&gt;.github.io</code> 访问，你的 repository 应该直接命名为 <code>&lt;你的 GitHub 用户名&gt;.github.io</code>。</p>
+</li>
+<li><p>安装 hexo-deployer-git.：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure></li>
+<li><p>在 _config.yml（如果有已存在的请删除）添加如下配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">    type: git  </span><br><span class="line">    repo: https://github.com/&lt;username&gt;/&lt;project&gt; </span><br></pre></td></tr></table></figure></li>
+<li><p>运行 hexo </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clean &amp;&amp; hexo deploy 。</span><br></pre></td></tr></table></figure></li>
+<li><p>查看 <code>username.github.io</code> 上的网页是否部署成功。</p>
+</li>
+</ol>
+<h2 id="六、发布文章"><a href="#六、发布文章" class="headerlink" title="六、发布文章"></a>六、发布文章</h2><ol>
+<li><p>创建文章</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new post &quot;title&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>然后用编辑器修改好文本，发布</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
+</ol>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2021/10/24/build-hexo/" data-id="ckv50io1u00005cuddp1ydrt4" data-title="build hexo" class="article-share-link">分享</a>
+      <a data-url="http://example.com/2021/10/24/build-hexo/" data-id="ckv7vmsc200000wud5dap8rfj" data-title="build hexo" class="article-share-link">分享</a>
       
       
       
@@ -174,7 +224,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2021/09/19/first-article/" data-id="ckv50io1z00015cud61mj26qe" data-title="first article" class="article-share-link">分享</a>
+      <a data-url="http://example.com/2021/09/19/first-article/" data-id="ckv7vmsce00020wuddanabdky" data-title="first article" class="article-share-link">分享</a>
       
       
       
@@ -225,7 +275,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2021/09/18/hello-world/" data-id="ckv50io2600025cudb4wxerw8" data-title="Hello World" class="article-share-link">分享</a>
+      <a data-url="http://example.com/2021/09/18/hello-world/" data-id="ckv7vmsc700010wud3ug8gul1" data-title="Hello World" class="article-share-link">分享</a>
       
       
       
