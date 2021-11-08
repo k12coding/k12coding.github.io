@@ -77,6 +77,162 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-环境搭建" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/11/08/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/" class="article-date">
+  <time class="dt-published" datetime="2021-11-08T09:32:13.380Z" itemprop="datePublished">2021-11-08</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>环境搭建:</p>
+<p>vmware虚拟机+XShell登录虚拟机</p>
+<p>linux学习：</p>
+<ol>
+<li><p> <code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
+</li>
+<li><p><code>pwd</code>查看当前所在目录路径地址</p>
+</li>
+<li><p>切换目录 <code>cd</code></p>
+<p>root用户的家目录：/root</p>
+<p>xxx用户的家目录：/home/xxx 默认</p>
+<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
+<p><code>cd -</code>回到上一次访问的目录</p>
+<p><code>cd ../</code> 回退上一层目录</p>
+<p><code>cd ../../</code> 回退上两层目录</p>
+</li>
+<li><p>目录 文件夹</p>
+<p>绝对路径：“/”代表根目录，以根目录开始表示</p>
+<p>相对路径：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
+<p>查看当前文件夹下的内容 <code>ls</code></p>
+</li>
+<li><p>清空屏幕 <code>clear</code></p>
+</li>
+<li><p>ls查看当前光标所在的目录 文件有哪些</p>
+<p><code>ls -l</code>  等价于`ll``</p>
+<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
+<p><code>ll -h</code> 显示文件的大小</p>
+<p><code>ll -rt</code> 按时间排序</p>
+</li>
+<li><p>查询命令帮助 <code>help</code></p>
+</li>
+<li><p>创建文件夹 <code>mkdir</code> </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
+
+<p>选项与参数：</p>
+<ul>
+<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
+<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
+</ul>
+<p>例如 </p>
+<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
+<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
+<p>删除空的目录：<code>rmdir</code></p>
+<p>选项与参数：</p>
+<ul>
+<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
+</ul>
+</li>
+<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
+<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
+<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
+<p>思考：mv和cp哪个执行快？</p>
+<p>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目的目录条目之外，没有必要更改任何数据。</p>
+<p>当<em>复制</em>目录，被复制的每个数据，每个文件的需求。这涉及读取所有源数据并将其写入目标位置。</p>
+<p><em>在</em>文件系统<em>之间</em>移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</p>
+<p>都可修改名称。</p>
+</li>
+<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
+<ul>
+<li><p>touch rz.log 如何创建一个空文件</p>
+<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
+</li>
+<li><p>echo “” &gt; rz.log1 慎用</p>
+</li>
+<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
+</li>
+</ul>
+</li>
+<li><p>查看文件内容</p>
+<ul>
+<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
+<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
+</li>
+<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
+<p>空白键（space）- 往下一页显示</p>
+<p>b  - 往回（back）一页显示</p>
+<p>q  - 退出more</p>
+</li>
+<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
+<p>/字符串：向下搜索”字符串”的功能</p>
+<p>?字符串：向上搜索”字符串”的功能</p>
+<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
+<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
+<p>G ：移动到最后一行</p>
+<p>g：移动到第一行</p>
+<p>q / ZZ ：-退出 less 命令</p>
+</li>
+<li><p><em>配置文件，内容较少，可用以上上个命令</em>*</p>
+</li>
+<li><p><em>log日志，内容较多，用tail命令</em>*</p>
+</li>
+<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
+<p>实时查看</p>
+<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
+<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
+<p>补充：flume exec source 切记使用 -F</p>
+<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
+<p>-c&lt;数目&gt; 显示的字节数</p>
+<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
+<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写<br>tail: option used in invalid context – 3</p>
+</li>
+</ul>
+</li>
+<li><p>文件上传下载工具</p>
+<p> 安装： <code>yum install -y lrzsz</code></p>
+<p> 文件下载到windows：<code>sz</code></p>
+<p> windows上传到linux: <code>rz</code></p>
+</li>
+<li><p>如何定位ERROR</p>
+<ul>
+<li><p>文件内容很小，几十兆</p>
+<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
+</li>
+<li><p>文件内容很大，几百兆 2G</p>
+<p>cat xxx.log | grep ERROR</p>
+<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
+</li>
+</ul>
+</li>
+<li><p>grep命令</p>
+<p> <code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
+<p> -A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
+<p> -B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
+<p> -C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
+<p> cat xxx.log | grep -A 10 ERROR 后10行<br> cat xxx.log | grep -B 10 ERROR 前10行<br> cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
+<p> cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br> cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://k12coding.github.io/2021/11/08/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/" data-id="ckvqguyww0002fwud1jh44vup" data-title="" class="article-share-link">分享</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-build-hexo" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2021/10/24/build-hexo/" class="article-date">
@@ -169,7 +325,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://k12coding.github.io/2021/10/24/build-hexo/" data-id="ckvmknnw600006oud02fb3rt5" data-title="build hexo" class="article-share-link">分享</a>
+      <a data-url="https://k12coding.github.io/2021/10/24/build-hexo/" data-id="ckvqguywn0000fwudez36hcy9" data-title="build hexo" class="article-share-link">分享</a>
       
       
       
@@ -225,7 +381,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://k12coding.github.io/2021/09/19/first-article/" data-id="ckvmknnwa00016oudaqqhaytq" data-title="first article" class="article-share-link">分享</a>
+      <a data-url="https://k12coding.github.io/2021/09/19/first-article/" data-id="ckvqguyws0001fwudgj8ca0sr" data-title="first article" class="article-share-link">分享</a>
       
       
       
@@ -276,7 +432,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://k12coding.github.io/2021/09/18/hello-world/" data-id="ckvmknnwh00026oud0yug0im9" data-title="Hello World" class="article-share-link">分享</a>
+      <a data-url="https://k12coding.github.io/2021/09/18/hello-world/" data-id="ckvqguywx0003fwudeqd153if" data-title="Hello World" class="article-share-link">分享</a>
       
       
       
@@ -306,7 +462,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">归档</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">十月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">十月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a></li></ul>
     </div>
   </div>
 
@@ -317,6 +473,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2021/11/08/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">(no title)</a>
+          </li>
         
           <li>
             <a href="/2021/10/24/build-hexo/">build hexo</a>
