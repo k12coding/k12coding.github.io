@@ -14,7 +14,7 @@
 <meta property="og:description" content="环境搭建: vmware虚拟机+XShell登录虚拟机 linux学习：   [root@hadoop001 ~]表示[登录的用户@机器名称 ]，“”表示家目录  pwd查看当前所在目录路径地址  切换目录 cd root用户的家目录：&#x2F;root xxx用户的家目录：&#x2F;home&#x2F;xxx 默认 cd 回车  &#x2F;  cd ~   &#x2F; cd &#x2F;root 回到家目录 cd -回到上一次访问的目录 cd .">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-11-08T09:35:55.000Z">
-<meta property="article:modified_time" content="2021-11-08T09:36:09.508Z">
+<meta property="article:modified_time" content="2021-11-09T21:44:03.805Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
   
@@ -226,12 +226,93 @@
 <p> cat xxx.log | grep -A 10 ERROR 后10行<br> cat xxx.log | grep -B 10 ERROR 前10行<br> cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
 <p> cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br> cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
 </li>
+<li><p>环境变量$PATH</p>
+<p> 打印环境变量：<code>echo $PATH</code></p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
+
+<p> <code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
+
+<p> 全局环境变量: /etc/profile    所有人都使用<br> 个人环境变量: ~/.bash_profile  </p>
+<pre><code>   ~/.bashrc       个人 不给其他人
+</code></pre>
+<p> 生效文件: <code>source xxxx</code></p>
+<pre><code>               `. ~/.bashrc`
+</code></pre>
+<p> （补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
+<p> 配置环境变量:</p>
+<p> vi /etc/profile</p>
+<p> 环境变量是指的什么<br> K=V  等号前后不能有空格<br> 使用环境变量K时用$符号，如： $K</p>
+<p> export JAVA_HOME=usr/java/jdk1.8.0_121</p>
+<p> export PATH=$JAVA_HOME/bin:$PATH</p>
+<p> 新配置的变量在前面追加</p>
+<p> a. 上下键 移动光标<br> b. 按 i键insert 进入 <strong>编辑模式</strong><br> c. 开始编辑<br> d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br> e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br> f. 输入 wq 保存退出</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
+
+<p> 小结:<br> 1.command not found<br> 没有部署安装包，部署了没有配置环境变量<br> 2.习惯<br> 当我们以后部署一个软件，bin目录的可执行文件 比如java<br> 习惯 当生效环境变量文件，习惯做 which java</p>
+</li>
+<li><p>别名alias</p>
+<p> <code>alias</code> 命令用于设置指令的别名。</p>
+<p> 用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
+
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
+
+<p> 配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+</li>
+<li><p>查看历史命令history</p>
+<p>当前命令输入状态下：</p>
+<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
+
+*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
+</code></pre>
+<ul>
+<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
+<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
+</li>
+</ul>
+<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
+<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
+<p>使用! 执行历史命令。</p>
+<pre><code>* `!  [n]`  n为数字 执行第n条命令
+</code></pre>
+<ul>
+<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
+<li><code>!!</code> 执行上一条</li>
+</ul>
+<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
+<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
+</li>
+<li><p>删除<br> 生成新文件:</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
+
+<p> 创建文件夹: <code>mkdir</code> </p>
+<p>  <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
+<ul>
+<li><p>-i 删除前逐一询问确认。</p>
+</li>
+<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
+</li>
+<li><p>-r 将目录及以下之档案亦逐一删除。</p>
+<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
+</ul>
+<p> 文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
+<p> <strong>风险:</strong><br> rm -rf /  高危命令<br> 什么场景会发生？ shell脚本:</p>
+<p> K=’/home/jepson’</p>
+<p> K=’’<br> shell脚本中必须判断 $K命令是否存在<br> rm -rf $K/*</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
+<li></li>
 </ol>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://k12coding.github.io/2021/11/08/linux/" data-id="ckvqgzr140003mcud6qope2ma" data-title="linux" class="article-share-link">分享</a>
+      <a data-url="https://k12coding.github.io/2021/11/08/linux/" data-id="ckvsmfx9700036wud4zf96xo9" data-title="linux" class="article-share-link">分享</a>
       
       
       
