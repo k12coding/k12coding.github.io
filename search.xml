@@ -9,6 +9,11 @@
 <p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
 <p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
 <p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
+<h3 id="hdfs支持的三种模式"><a href="#hdfs支持的三种模式" class="headerlink" title="hdfs支持的三种模式"></a>hdfs支持的三种模式</h3><ul>
+<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
+<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
+<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
+</ul>
 ]]></content>
   </entry>
   <entry>
@@ -39,12 +44,7 @@
 
 <h3 id="5-执行bin-hadoop查看hdfs使用说明"><a href="#5-执行bin-hadoop查看hdfs使用说明" class="headerlink" title="5.执行bin/hadoop查看hdfs使用说明"></a>5.执行bin/hadoop查看hdfs使用说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop]$ bin/hadoop</span><br><span class="line">Usage: hadoop [OPTIONS] SUBCOMMAND [SUBCOMMAND OPTIONS]</span><br><span class="line"> or    hadoop [OPTIONS] CLASSNAME [CLASSNAME OPTIONS]</span><br><span class="line">  where CLASSNAME is a user-provided Java class</span><br><span class="line"></span><br><span class="line">  OPTIONS is none or any of:</span><br><span class="line"></span><br><span class="line">buildpaths                       attempt to add class files from build tree</span><br><span class="line">--config dir                     Hadoop config directory</span><br><span class="line">--debug                          turn on shell script debug mode</span><br><span class="line">--help                           usage information</span><br><span class="line">hostnames list[,of,host,names]   hosts to use in slave mode</span><br><span class="line">hosts filename                   list of hosts to use in slave mode</span><br><span class="line">loglevel level                   set the log4j level for this command</span><br><span class="line">workers                          turn on worker mode</span><br><span class="line"></span><br><span class="line">  SUBCOMMAND is one of:</span><br><span class="line">  </span><br><span class="line">    Admin Commands:</span><br><span class="line"></span><br><span class="line">daemonlog     get/set the log level for each daemon</span><br><span class="line"></span><br><span class="line">    Client Commands:</span><br><span class="line"></span><br><span class="line">archive       create a Hadoop archive</span><br><span class="line">checknative   check native Hadoop and compression libraries availability</span><br><span class="line">classpath     prints the class path needed to get the Hadoop jar and the required libraries</span><br><span class="line">conftest      validate configuration XML files</span><br><span class="line">credential    interact with credential providers</span><br><span class="line">distch        distributed metadata changer</span><br><span class="line">distcp        copy file or directories recursively</span><br><span class="line">dtutil        operations related to delegation tokens</span><br><span class="line">envvars       display computed Hadoop environment variables</span><br><span class="line">fs            run a generic filesystem user client</span><br><span class="line">gridmix       submit a mix of synthetic job, modeling a profiled from production load</span><br><span class="line">jar &lt;jar&gt;     run a jar file. NOTE: please use &quot;yarn jar&quot; to launch YARN applications, not</span><br><span class="line">              this command.</span><br><span class="line">jnipath       prints the java.library.path</span><br><span class="line">kdiag         Diagnose Kerberos Problems</span><br><span class="line">kerbname      show auth_to_local principal conversion</span><br><span class="line">key           manage keys via the KeyProvider</span><br><span class="line">rumenfolder   scale a rumen input trace</span><br><span class="line">rumentrace    convert logs into a rumen trace</span><br><span class="line">s3guard       manage metadata on S3</span><br><span class="line">trace         view and modify Hadoop tracing settings</span><br><span class="line">version       print the version</span><br><span class="line"></span><br><span class="line">    Daemon Commands:</span><br><span class="line"></span><br><span class="line">kms           run KMS, the Key Management Server</span><br><span class="line"></span><br><span class="line">SUBCOMMAND may print help when invoked w/o parameters or with -h.</span><br></pre></td></tr></table></figure>
 
-<h3 id="6-hdfs支持的三种模式"><a href="#6-hdfs支持的三种模式" class="headerlink" title="6.hdfs支持的三种模式"></a>6.hdfs支持的三种模式</h3><ul>
-<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
-<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
-<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
-</ul>
-<h3 id="7-HDFS伪分布式部署：配置文件"><a href="#7-HDFS伪分布式部署：配置文件" class="headerlink" title="7.HDFS伪分布式部署：配置文件"></a>7.HDFS伪分布式部署：配置文件</h3><p><strong>etc/hadoop/core-site.xml</strong></p>
+<h3 id="6-HDFS伪分布式部署：配置文件"><a href="#6-HDFS伪分布式部署：配置文件" class="headerlink" title="6.HDFS伪分布式部署：配置文件"></a>6.HDFS伪分布式部署：配置文件</h3><p><strong>etc/hadoop/core-site.xml</strong></p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop]$ vi etc/hadoop/core-site.xml </span><br></pre></td></tr></table></figure>
 
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;fs.defaultFS&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;hdfs://localhost:9000&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
@@ -57,7 +57,7 @@
 
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;property&gt;</span><br><span class="line">        &lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">        &lt;value&gt;1&lt;/value&gt;</span><br><span class="line">    &lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
 
-<h3 id="8-设置SSH私钥取消密码"><a href="#8-设置SSH私钥取消密码" class="headerlink" title="8.设置SSH私钥取消密码"></a>8.设置<em>SSH</em>私钥取消密码</h3><p>通过命令<code>ssh localhost</code>检查是否可以用ssh免密连接到localhost</p>
+<h3 id="7-设置SSH私钥取消密码"><a href="#7-设置SSH私钥取消密码" class="headerlink" title="7.设置SSH私钥取消密码"></a>7.设置<em>SSH</em>私钥取消密码</h3><p>通过命令<code>ssh localhost</code>检查是否可以用ssh免密连接到localhost</p>
 <ul>
 <li>成功：</li>
 </ul>
@@ -77,7 +77,7 @@
 <p>测试：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop]$ ssh localhost</span><br><span class="line">Last login: Thu Nov 25 16:57:28 2021 from localhost</span><br></pre></td></tr></table></figure>
 
-<h3 id="9-执行"><a href="#9-执行" class="headerlink" title="9.执行"></a>9.执行</h3><p>以下介绍为在本地执行一个MapReduce任务，我的系统中环境变量配置了HADOOP_HOME：</p>
+<h3 id="8-执行"><a href="#8-执行" class="headerlink" title="8.执行"></a>8.执行</h3><p>以下介绍为在本地执行一个MapReduce任务，我的系统中环境变量配置了HADOOP_HOME：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_HOME=/home/hadoop/app/hadoop</span><br><span class="line">export PATH=$&#123;HADOOP_HOME&#125;/bin:$&#123;HADOOP_HOME&#125;/sbin:$PATH</span><br></pre></td></tr></table></figure>
 
 <ol>
@@ -119,24 +119,6 @@
 </li>
 <li><h4 id="停止服务"><a href="#停止服务" class="headerlink" title="停止服务"></a>停止服务</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop]$ stop-dfs.sh </span><br><span class="line">Stopping namenodes on [hadoop001]</span><br><span class="line">Stopping datanodes</span><br><span class="line">Stopping secondary namenodes [hadoop001]</span><br><span class="line">[hadoop@hadoop001 hadoop]$ </span><br></pre></td></tr></table></figure></li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -195,33 +177,21 @@
 ]]></content>
   </entry>
   <entry>
-    <title>什么是尾递归</title>
-    <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
-    <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
-<span id="more"></span>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
 
-<h4 id="二、实例"><a href="#二、实例" class="headerlink" title="二、实例"></a>二、实例</h4><p>以递归的形式计算阶乘：</p>
-<p>线性递归:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">Rescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? <span class="number">1</span> : n * Rescuvie(n - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
 
-<p>尾递归:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n, <span class="keyword">long</span> a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? a : TailRescuvie(n - <span class="number">1</span>, a * n); </span><br><span class="line">&#125; </span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;<span class="comment">//封装用的</span></span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">0</span>) ? <span class="number">1</span> : TailRescuvie(n, <span class="number">1</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
 
-<p>当n = 5时<br>对于传统线性递归, 他的递归过程如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rescuvie(5)</span><br><span class="line"></span><br><span class="line">&#123;5 * Rescuvie(4)&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * Rescuvie(3)&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * Rescuvie(2)&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * Rescuvie(1)&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * 1&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * 2&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * 6&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * 24&#125;</span><br><span class="line"></span><br><span class="line">120</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
-<p>对于尾递归, 他的递归过程如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TailRescuvie(5)                  // 所以在运算上和内存占用上节省了很多,直接传回结果</span><br><span class="line"></span><br><span class="line">TailRescuvie(5, 1)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(4, 5)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(3, 20)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(2, 60)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(1, 120)                       return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">120                                //当运行到最后时,return a =&gt; return 120 ,将120返回上一级</span><br></pre></td></tr></table></figure>
-
-<p>说明：其实尾递归也需要下层往上层返回结果，但在返回的过程中不用再做计算，依次返回结果即可。从上可以看到尾递归把返回结果放到了调用的参数里。这个细小的变化导致，TailRescuvie(n)不必像以前一样，非要等到拿到了TailRescuvie(n-1)的返回值，才能计算它自己的返回结果,它完全就等于TailRescuvie(n-1)的返回值。因此理论上：TailRescuvie(n)在调用tailTailRescuvie(n-1)前，完全就可以先销毁自己放在栈上的东西。</p>
-<h4 id="三、优势"><a href="#三、优势" class="headerlink" title="三、优势"></a>三、优势</h4><p>​    与普通递归相比，由于尾递归的调用处于方法的最后，因此方法之前所积累下的各种状态对于递归调用结果已经没有任何意义，因此每一个函数在调用下一个函数之前，都能做到先把当前自己占用的栈给先释放了，尾递归的调用链上可以做到只有一个函数在使用栈，因此可以无限地调用！</p>
-<p>​    但是，上述的优化是在<strong>某些语言</strong>编译器的优化支持上实现的，尾递归本身并不能消除函数调用栈过长的问题。在一般递归函数func()中，func(n)是依赖于 func(n-1) 的，func(n) 只有在得到 func(n-1) 的结果之后，才能计算它自己的返回值，因此理论上，在 func(n-1) 返回之前，func(n)，不能结束返回。因此func(n)就必须保留它在栈上的数据，直到func(n-1)先返回，而尾递归的实现则可以在编译器的帮助下，消除这个限制。</p>
-<h4 id="四、尾递归的调用栈优化特性"><a href="#四、尾递归的调用栈优化特性" class="headerlink" title="四、尾递归的调用栈优化特性"></a>四、尾递归的调用栈优化特性</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">int tail_func(int n, int res)&#123;</span><br><span class="line">     if (n &lt;= 1) return res;</span><br><span class="line">     return tail_func(n - 1, n * res);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main()&#123;</span><br><span class="line">    int dummy[1024*1024]; // 尽可能占用栈。</span><br><span class="line">    tail_func(2048*2048, 1);</span><br><span class="line">    return 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>​    上面这个程序在开了编译优化和没开编译优化的情况下编出来的结果是<strong>不一样</strong>的，如果不开启优化，直接 <code>gcc -o tr func_tail.c</code> 编译然后运行的话，程序会爆栈崩溃，但如果开优化的话：<code>gcc -o tr -O2 func_tail.c</code>，上面的程序最后就能正常运行。 这里面的原因就在于，尾递归的写法只是具备了使当前函数在调用下一个函数前把当前占有的栈销毁，但是会不会真的这样做，是要具体看编译器是否最终这样做，如果在语言层面上，没有规定要优化这种尾调用，那编译器就可以有自己的选择来做不同的实现，在这种情况下，尾递归就不一定能解决一般递归的问题。</p>
-<p>参考链接:</p>
-<p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
-<p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -294,6 +264,36 @@
 <li><p>然后用编辑器修改好文本，发布</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>什么是尾递归</title>
+    <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
+    <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
+<span id="more"></span>
+
+<h4 id="二、实例"><a href="#二、实例" class="headerlink" title="二、实例"></a>二、实例</h4><p>以递归的形式计算阶乘：</p>
+<p>线性递归:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">Rescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? <span class="number">1</span> : n * Rescuvie(n - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>尾递归:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n, <span class="keyword">long</span> a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? a : TailRescuvie(n - <span class="number">1</span>, a * n); </span><br><span class="line">&#125; </span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;<span class="comment">//封装用的</span></span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">0</span>) ? <span class="number">1</span> : TailRescuvie(n, <span class="number">1</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当n = 5时<br>对于传统线性递归, 他的递归过程如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rescuvie(5)</span><br><span class="line"></span><br><span class="line">&#123;5 * Rescuvie(4)&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * Rescuvie(3)&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * Rescuvie(2)&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * Rescuvie(1)&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * 1&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * 2&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * 6&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * 24&#125;</span><br><span class="line"></span><br><span class="line">120</span><br></pre></td></tr></table></figure>
+
+<p>对于尾递归, 他的递归过程如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TailRescuvie(5)                  // 所以在运算上和内存占用上节省了很多,直接传回结果</span><br><span class="line"></span><br><span class="line">TailRescuvie(5, 1)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(4, 5)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(3, 20)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(2, 60)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(1, 120)                       return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">120                                //当运行到最后时,return a =&gt; return 120 ,将120返回上一级</span><br></pre></td></tr></table></figure>
+
+<p>说明：其实尾递归也需要下层往上层返回结果，但在返回的过程中不用再做计算，依次返回结果即可。从上可以看到尾递归把返回结果放到了调用的参数里。这个细小的变化导致，TailRescuvie(n)不必像以前一样，非要等到拿到了TailRescuvie(n-1)的返回值，才能计算它自己的返回结果,它完全就等于TailRescuvie(n-1)的返回值。因此理论上：TailRescuvie(n)在调用tailTailRescuvie(n-1)前，完全就可以先销毁自己放在栈上的东西。</p>
+<h4 id="三、优势"><a href="#三、优势" class="headerlink" title="三、优势"></a>三、优势</h4><p>​    与普通递归相比，由于尾递归的调用处于方法的最后，因此方法之前所积累下的各种状态对于递归调用结果已经没有任何意义，因此每一个函数在调用下一个函数之前，都能做到先把当前自己占用的栈给先释放了，尾递归的调用链上可以做到只有一个函数在使用栈，因此可以无限地调用！</p>
+<p>​    但是，上述的优化是在<strong>某些语言</strong>编译器的优化支持上实现的，尾递归本身并不能消除函数调用栈过长的问题。在一般递归函数func()中，func(n)是依赖于 func(n-1) 的，func(n) 只有在得到 func(n-1) 的结果之后，才能计算它自己的返回值，因此理论上，在 func(n-1) 返回之前，func(n)，不能结束返回。因此func(n)就必须保留它在栈上的数据，直到func(n-1)先返回，而尾递归的实现则可以在编译器的帮助下，消除这个限制。</p>
+<h4 id="四、尾递归的调用栈优化特性"><a href="#四、尾递归的调用栈优化特性" class="headerlink" title="四、尾递归的调用栈优化特性"></a>四、尾递归的调用栈优化特性</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">int tail_func(int n, int res)&#123;</span><br><span class="line">     if (n &lt;= 1) return res;</span><br><span class="line">     return tail_func(n - 1, n * res);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main()&#123;</span><br><span class="line">    int dummy[1024*1024]; // 尽可能占用栈。</span><br><span class="line">    tail_func(2048*2048, 1);</span><br><span class="line">    return 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>​    上面这个程序在开了编译优化和没开编译优化的情况下编出来的结果是<strong>不一样</strong>的，如果不开启优化，直接 <code>gcc -o tr func_tail.c</code> 编译然后运行的话，程序会爆栈崩溃，但如果开优化的话：<code>gcc -o tr -O2 func_tail.c</code>，上面的程序最后就能正常运行。 这里面的原因就在于，尾递归的写法只是具备了使当前函数在调用下一个函数前把当前占有的栈销毁，但是会不会真的这样做，是要具体看编译器是否最终这样做，如果在语言层面上，没有规定要优化这种尾调用，那编译器就可以有自己的选择来做不同的实现，在这种情况下，尾递归就不一定能解决一般递归的问题。</p>
+<p>参考链接:</p>
+<p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
+<p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
 ]]></content>
   </entry>
   <entry>
