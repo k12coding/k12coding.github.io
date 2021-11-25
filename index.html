@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-count">8</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -188,7 +188,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/11/25/Hadoop%E9%83%A8%E7%BD%B2/">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -201,7 +201,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/11/25/Hadoop%E9%83%A8%E7%BD%B2/" class="post-title-link" itemprop="url">hdfs伪分布式部署</a>
+          <a href="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="post-title-link" itemprop="url">Hadoop基础知识</a>
         </h2>
 
         <div class="post-meta-container">
@@ -213,7 +213,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2021-11-25 13:09:16 / 修改时间：20:33:46" itemprop="dateCreated datePublished" datetime="2021-11-25T13:09:16+08:00">2021-11-25</time>
+      <time title="创建时间：2021-11-25 20:44:11 / 修改时间：20:44:36" itemprop="dateCreated datePublished" datetime="2021-11-25T20:44:11+08:00">2021-11-25</time>
     </span>
 
   
@@ -226,15 +226,86 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h1 id="hdfs伪分布式部署"><a href="#hdfs伪分布式部署" class="headerlink" title="hdfs伪分布式部署"></a>hdfs伪分布式部署</h1><h2 id="一-Hadoop定义"><a href="#一-Hadoop定义" class="headerlink" title="一.Hadoop定义"></a>一.Hadoop定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
+          <h1 id="一-Hadoop"><a href="#一-Hadoop" class="headerlink" title="一.Hadoop"></a>一.Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
 <p>广义上：指的是hadoop的生态系统，即其他各种组件在内的一整套软件（sqoop，flume，spark，flink，hbase，kafka，cdh环境等）。hadoop生态系统是一个很庞大的概念，hadoop只是其中最重要最基础的部分，生态系统的每一个子系统只结局的某一个特定的问题域。不是一个全能系统，而是多个小而精的系统。</p>
-<h2 id="二-Hadoop包含的模块"><a href="#二-Hadoop包含的模块" class="headerlink" title="二.Hadoop包含的模块"></a>二.Hadoop包含的模块</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
+<h2 id="组成"><a href="#组成" class="headerlink" title="组成"></a>组成</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
 <p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
 <p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
 <p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/11/25/hdfs%E4%BC%AA%E5%88%86%E5%B8%83%E5%BC%8F%E9%83%A8%E7%BD%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/11/25/hdfs%E4%BC%AA%E5%88%86%E5%B8%83%E5%BC%8F%E9%83%A8%E7%BD%B2/" class="post-title-link" itemprop="url">hdfs伪分布式部署</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2021-11-25 13:09:16 / 修改时间：20:59:40" itemprop="dateCreated datePublished" datetime="2021-11-25T13:09:16+08:00">2021-11-25</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="hdfs伪分布式部署"><a href="#hdfs伪分布式部署" class="headerlink" title="hdfs伪分布式部署"></a>hdfs伪分布式部署</h1><p><a target="_blank" rel="noopener" href="https://hadoop.apache.org/release.html">Releases Archive</a>中选择要部署的版本，我们以<a target="_blank" rel="noopener" href="https://hadoop.apache.org/release/3.2.2.html">Release 3.2.2 available</a>版本为例</p>
+<p>参考文档：<a target="_blank" rel="noopener" href="https://hadoop.apache.org/docs/r3.2.2/hadoop-project-dist/hadoop-common/SingleCluster.html">Hadoop: Setting up a Single Node Cluster.</a></p>
+<h3 id="1-软件要求"><a href="#1-软件要求" class="headerlink" title="1.软件要求"></a>1.软件要求</h3><ul>
+<li>Java：Hadoop对Java版本有要求，具体参考<a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/HADOOP/Hadoop+Java+Versions">Hadoop Java Versions</a>，基本上Java8通用</li>
+<li>ssh</li>
+</ul>
+<p>补充：组件名称<code>大写-数字</code>，如：SPARK-2908，表明该组件是有问题的</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/11/25/Hadoop%E9%83%A8%E7%BD%B2/#more" rel="contents">
+              <a class="btn" href="/2021/11/25/hdfs%E4%BC%AA%E5%88%86%E5%B8%83%E5%BC%8F%E9%83%A8%E7%BD%B2/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
