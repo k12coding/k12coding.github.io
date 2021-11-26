@@ -3,7 +3,7 @@
   <entry>
     <title>Hadoop Shell命令</title>
     <url>/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/</url>
-    <content><![CDATA[<h1 id="Hadoop-Shell命令"><a href="#Hadoop-Shell命令" class="headerlink" title="Hadoop Shell命令"></a>Hadoop Shell命令</h1><h2 id="FS-Shell"><a href="#FS-Shell" class="headerlink" title="FS Shell"></a>FS Shell</h2><p>调用文件系统(FS)Shell命令应使用 bin/hadoop fs <args>的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是<em>scheme://authority/path</em>。对HDFS文件系统，scheme是<em>hdfs</em>，对本地文件系统，scheme是<em>file</em>。其中scheme和authority参数都是可选的，如果未加指定，就会使用配置中指定的默认scheme。一个HDFS文件或目录比如*/parent/child<em>可以表示成</em>hdfs://namenode:namenodeport/parent/child<em>，或者更简单的</em>/parent/child<em>（假设你配置文件中的默认值是</em>namenode:namenodeport<em>）。大多数FS Shell命令的行为和对应的Unix Shell命令类似，不同之处会在下面介绍各命令使用详情时指出。出错信息会输出到</em>stderr<em>，其他信息输出到</em>stdout*。</args></p>
+    <content><![CDATA[<h1 id="Hadoop-Shell命令"><a href="#Hadoop-Shell命令" class="headerlink" title="Hadoop Shell命令"></a>Hadoop Shell命令</h1><h2 id="FS-Shell"><a href="#FS-Shell" class="headerlink" title="FS Shell"></a>FS Shell</h2><p>调用文件系统(FS)Shell命令应使用 bin/hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是<em>scheme://authority/path</em>。对HDFS文件系统，scheme是<em>hdfs</em>，对本地文件系统，scheme是<em>file</em>。其中scheme和authority参数都是可选的，如果未加指定，就会使用配置中指定的默认scheme。一个HDFS文件或目录比如*/parent/child<em>可以表示成</em>hdfs://namenode:namenodeport/parent/child<em>，或者更简单的</em>/parent/child<em>（假设你配置文件中的默认值是</em>namenode:namenodeport<em>）。大多数FS Shell命令的行为和对应的Unix Shell命令类似，不同之处会在下面介绍各命令使用详情时指出。出错信息会输出到</em>stderr<em>，其他信息输出到</em>stdout*。</p>
 <span id="more"></span>
 
 <h3 id="cat"><a href="#cat" class="headerlink" title="cat"></a>cat</h3><p>使用方法：hadoop fs -cat URI [URI …]</p>
@@ -20,11 +20,11 @@
 <p>改变文件的权限。使用-R将使改变在目录结构下递归进行。命令的使用者必须是文件的所有者或者超级用户。更多的信息请参见<a href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_permissions_guide.html">HDFS权限用户指南</a>。</p>
 <h3 id="chown"><a href="#chown" class="headerlink" title="chown"></a>chown</h3><p>使用方法：hadoop fs -chown [-R] [OWNER][:[GROUP]] URI [URI ]</p>
 <p>改变文件的拥有者。使用-R将使改变在目录结构下递归进行。命令的使用者必须是超级用户。更多的信息请参见<a href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_permissions_guide.html">HDFS权限用户指南</a>。</p>
-<h3 id="copyFromLocal"><a href="#copyFromLocal" class="headerlink" title="copyFromLocal"></a>copyFromLocal</h3><p>使用方法：hadoop fs -copyFromLocal <localsrc> URI</localsrc></p>
+<h3 id="copyFromLocal"><a href="#copyFromLocal" class="headerlink" title="copyFromLocal"></a>copyFromLocal</h3><p>使用方法：hadoop fs -copyFromLocal &lt;localsrc&gt; URI</p>
 <p>除了限定源路径是一个本地文件外，和<a href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_shell.html#putlink"><strong>put</strong></a>命令相似。</p>
-<h3 id="copyToLocal"><a href="#copyToLocal" class="headerlink" title="copyToLocal"></a>copyToLocal</h3><p>使用方法：hadoop fs -copyToLocal [-ignorecrc] [-crc] URI <localdst></localdst></p>
+<h3 id="copyToLocal"><a href="#copyToLocal" class="headerlink" title="copyToLocal"></a>copyToLocal</h3><p>使用方法：hadoop fs -copyToLocal [-ignorecrc] [-crc] URI &lt;localdst&gt;</p>
 <p>除了限定目标路径是一个本地文件外，和<a href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_shell.html#getlink"><strong>get</strong></a>命令类似。</p>
-<h3 id="cp"><a href="#cp" class="headerlink" title="cp"></a>cp</h3><p>使用方法：hadoop fs -cp URI [URI …] <dest></dest></p>
+<h3 id="cp"><a href="#cp" class="headerlink" title="cp"></a>cp</h3><p>使用方法：hadoop fs -cp URI [URI …] &lt;dest&gt;</p>
 <p>将文件从源路径复制到目标路径。这个命令允许有多个源路径，此时目标路径必须是一个目录。<br>示例：</p>
 <ul>
 <li>hadoop fs -cp /user/hadoop/file1 /user/hadoop/file2</li>
@@ -34,11 +34,11 @@
 <p>成功返回0，失败返回-1。</p>
 <h3 id="du"><a href="#du" class="headerlink" title="du"></a>du</h3><p>使用方法：hadoop fs -du URI [URI …]</p>
 <p>显示目录中所有文件的大小，或者当只指定一个文件时，显示此文件的大小。<br>示例：<br>hadoop fs -du /user/hadoop/dir1 /user/hadoop/file1 hdfs://host:port/user/hadoop/dir1<br>返回值：<br>成功返回0，失败返回-1。</p>
-<h3 id="dus"><a href="#dus" class="headerlink" title="dus"></a>dus</h3><p>使用方法：hadoop fs -dus <args></args></p>
+<h3 id="dus"><a href="#dus" class="headerlink" title="dus"></a>dus</h3><p>使用方法：hadoop fs -dus &lt;args&gt;</p>
 <p>显示文件的大小。</p>
 <h3 id="expunge"><a href="#expunge" class="headerlink" title="expunge"></a>expunge</h3><p>使用方法：hadoop fs -expunge</p>
 <p>清空回收站。请参考<a href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_design.html">HDFS设计</a>文档以获取更多关于回收站特性的信息。</p>
-<h3 id="get"><a href="#get" class="headerlink" title="get"></a>get</h3><p>使用方法：hadoop fs -get [-ignorecrc] [-crc] <src> <localdst></localdst></src></p>
+<h3 id="get"><a href="#get" class="headerlink" title="get"></a>get</h3><p>使用方法：hadoop fs -get [-ignorecrc] [-crc] &lt;src&gt; &lt;localdst&gt;</p>
 <p>复制文件到本地文件系统。可用-ignorecrc选项复制CRC校验失败的文件。使用-crc选项复制文件以及CRC信息。</p>
 <p>示例：</p>
 <ul>
@@ -47,12 +47,12 @@
 </ul>
 <p>返回值：</p>
 <p>成功返回0，失败返回-1。</p>
-<h3 id="getmerge"><a href="#getmerge" class="headerlink" title="getmerge"></a>getmerge</h3><p>使用方法：hadoop fs -getmerge <src> <localdst> [addnl]</localdst></src></p>
+<h3 id="getmerge"><a href="#getmerge" class="headerlink" title="getmerge"></a>getmerge</h3><p>使用方法：hadoop fs -getmerge &lt;src&gt; &lt;localdst&gt; [addnl]</p>
 <p>接受一个源目录和一个目标文件作为输入，并且将源目录中所有的文件连接成本地目标文件。addnl是可选的，用于指定在每个文件结尾添加一个换行符。</p>
-<h3 id="ls"><a href="#ls" class="headerlink" title="ls"></a>ls</h3><p>使用方法：hadoop fs -ls <args></args></p>
-<p>如果是文件，则按照如下格式返回文件信息：<br>文件名 &lt;副本数&gt; 文件大小 修改日期 修改时间 权限 用户ID 组ID<br>如果是目录，则返回它直接子文件的一个列表，就像在Unix中一样。目录返回列表的信息如下：<br>目录名 <dir> 修改日期 修改时间 权限 用户ID 组ID<br>示例：<br>hadoop fs -ls /user/hadoop/file1 /user/hadoop/file2 hdfs://host:port/user/hadoop/dir1 /nonexistentfile<br>返回值：<br>成功返回0，失败返回-1。</dir></p>
-<h3 id="lsr"><a href="#lsr" class="headerlink" title="lsr"></a>lsr</h3><p>使用方法：hadoop fs -lsr <args><br>ls命令的递归版本。类似于Unix中的ls -R。</args></p>
-<h3 id="mkdir"><a href="#mkdir" class="headerlink" title="mkdir"></a>mkdir</h3><p>使用方法：hadoop fs -mkdir <paths></paths></p>
+<h3 id="ls"><a href="#ls" class="headerlink" title="ls"></a>ls</h3><p>使用方法：hadoop fs -ls &lt;args&gt;</p>
+<p>如果是文件，则按照如下格式返回文件信息：<br>文件名 &lt;副本数&gt; 文件大小 修改日期 修改时间 权限 用户ID 组ID<br>如果是目录，则返回它直接子文件的一个列表，就像在Unix中一样。目录返回列表的信息如下：<br>目录名 &lt;dir&gt; 修改日期 修改时间 权限 用户ID 组ID<br>示例：<br>hadoop fs -ls /user/hadoop/file1 /user/hadoop/file2 hdfs://host:port/user/hadoop/dir1 /nonexistentfile<br>返回值：<br>成功返回0，失败返回-1。</p>
+<h3 id="lsr"><a href="#lsr" class="headerlink" title="lsr"></a>lsr</h3><p>使用方法：hadoop fs -lsr &lt;args&gt;<br>ls命令的递归版本。类似于Unix中的ls -R。</p>
+<h3 id="mkdir"><a href="#mkdir" class="headerlink" title="mkdir"></a>mkdir</h3><p>使用方法：hadoop fs -mkdir &lt;paths&gt;</p>
 <p>接受路径指定的uri作为参数，创建这些目录。其行为类似于Unix的mkdir -p，它会创建路径中的各级父目录。</p>
 <p>示例：</p>
 <ul>
@@ -61,9 +61,9 @@
 </ul>
 <p>返回值：</p>
 <p>成功返回0，失败返回-1。</p>
-<h3 id="movefromLocal"><a href="#movefromLocal" class="headerlink" title="movefromLocal"></a>movefromLocal</h3><p>使用方法：dfs -moveFromLocal <src> <dst></dst></src></p>
+<h3 id="movefromLocal"><a href="#movefromLocal" class="headerlink" title="movefromLocal"></a>movefromLocal</h3><p>使用方法：dfs -moveFromLocal &lt;src&gt; &lt;dst&gt;</p>
 <p>输出一个”not implemented“信息。</p>
-<h3 id="mv"><a href="#mv" class="headerlink" title="mv"></a>mv</h3><p>使用方法：hadoop fs -mv URI [URI …] <dest></dest></p>
+<h3 id="mv"><a href="#mv" class="headerlink" title="mv"></a>mv</h3><p>使用方法：hadoop fs -mv URI [URI …] &lt;dest&gt;</p>
 <p>将文件从源路径移动到目标路径。这个命令允许有多个源路径，此时目标路径必须是一个目录。不允许在不同的文件系统间移动文件。<br>示例：</p>
 <ul>
 <li>hadoop fs -mv /user/hadoop/file1 /user/hadoop/file2</li>
@@ -71,7 +71,7 @@
 </ul>
 <p>返回值：</p>
 <p>成功返回0，失败返回-1。</p>
-<h3 id="put"><a href="#put" class="headerlink" title="put"></a>put</h3><p>使用方法：hadoop fs -put <localsrc> … <dst></dst></localsrc></p>
+<h3 id="put"><a href="#put" class="headerlink" title="put"></a>put</h3><p>使用方法：hadoop fs -put &lt;localsrc&gt; … &lt;dst&gt;</p>
 <p>从本地文件系统中复制单个或多个源路径到目标文件系统。也支持从标准输入中读取输入写入目标文件系统。</p>
 <ul>
 <li>hadoop fs -put localfile /user/hadoop/hadoopfile</li>
@@ -96,7 +96,7 @@
 </ul>
 <p>返回值：</p>
 <p>成功返回0，失败返回-1。</p>
-<h3 id="setrep"><a href="#setrep" class="headerlink" title="setrep"></a>setrep</h3><p>使用方法：hadoop fs -setrep [-R] <path></path></p>
+<h3 id="setrep"><a href="#setrep" class="headerlink" title="setrep"></a>setrep</h3><p>使用方法：hadoop fs -setrep [-R] &lt;path&gt;</p>
 <p>改变一个文件的副本系数。-R选项用于递归改变目录下所有文件的副本系数。</p>
 <p>示例：</p>
 <ul>
@@ -124,7 +124,7 @@
 <ul>
 <li>hadoop fs -test -e filename</li>
 </ul>
-<h3 id="text"><a href="#text" class="headerlink" title="text"></a>text</h3><p>使用方法：hadoop fs -text <src></src></p>
+<h3 id="text"><a href="#text" class="headerlink" title="text"></a>text</h3><p>使用方法：hadoop fs -text &lt;src&gt;</p>
 <p>将源文件输出为文本格式。允许的格式是zip和TextRecordInputStream。</p>
 <h3 id="touchz"><a href="#touchz" class="headerlink" title="touchz"></a>touchz</h3><p>使用方法：hadoop fs -touchz URI [URI …]</p>
 <p>创建一个0字节的空文件。</p>
@@ -222,6 +222,108 @@
 <h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>什么是尾递归</title>
+    <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
+    <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
+<span id="more"></span>
+
+<h4 id="二、实例"><a href="#二、实例" class="headerlink" title="二、实例"></a>二、实例</h4><p>以递归的形式计算阶乘：</p>
+<p>线性递归:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">Rescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? <span class="number">1</span> : n * Rescuvie(n - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>尾递归:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n, <span class="keyword">long</span> a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? a : TailRescuvie(n - <span class="number">1</span>, a * n); </span><br><span class="line">&#125; </span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;<span class="comment">//封装用的</span></span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">0</span>) ? <span class="number">1</span> : TailRescuvie(n, <span class="number">1</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当n = 5时<br>对于传统线性递归, 他的递归过程如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rescuvie(5)</span><br><span class="line"></span><br><span class="line">&#123;5 * Rescuvie(4)&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * Rescuvie(3)&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * Rescuvie(2)&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * Rescuvie(1)&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * 1&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * 2&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * 6&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * 24&#125;</span><br><span class="line"></span><br><span class="line">120</span><br></pre></td></tr></table></figure>
+
+<p>对于尾递归, 他的递归过程如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TailRescuvie(5)                  // 所以在运算上和内存占用上节省了很多,直接传回结果</span><br><span class="line"></span><br><span class="line">TailRescuvie(5, 1)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(4, 5)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(3, 20)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(2, 60)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(1, 120)                       return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">120                                //当运行到最后时,return a =&gt; return 120 ,将120返回上一级</span><br></pre></td></tr></table></figure>
+
+<p>说明：其实尾递归也需要下层往上层返回结果，但在返回的过程中不用再做计算，依次返回结果即可。从上可以看到尾递归把返回结果放到了调用的参数里。这个细小的变化导致，TailRescuvie(n)不必像以前一样，非要等到拿到了TailRescuvie(n-1)的返回值，才能计算它自己的返回结果,它完全就等于TailRescuvie(n-1)的返回值。因此理论上：TailRescuvie(n)在调用tailTailRescuvie(n-1)前，完全就可以先销毁自己放在栈上的东西。</p>
+<h4 id="三、优势"><a href="#三、优势" class="headerlink" title="三、优势"></a>三、优势</h4><p>​    与普通递归相比，由于尾递归的调用处于方法的最后，因此方法之前所积累下的各种状态对于递归调用结果已经没有任何意义，因此每一个函数在调用下一个函数之前，都能做到先把当前自己占用的栈给先释放了，尾递归的调用链上可以做到只有一个函数在使用栈，因此可以无限地调用！</p>
+<p>​    但是，上述的优化是在<strong>某些语言</strong>编译器的优化支持上实现的，尾递归本身并不能消除函数调用栈过长的问题。在一般递归函数func()中，func(n)是依赖于 func(n-1) 的，func(n) 只有在得到 func(n-1) 的结果之后，才能计算它自己的返回值，因此理论上，在 func(n-1) 返回之前，func(n)，不能结束返回。因此func(n)就必须保留它在栈上的数据，直到func(n-1)先返回，而尾递归的实现则可以在编译器的帮助下，消除这个限制。</p>
+<h4 id="四、尾递归的调用栈优化特性"><a href="#四、尾递归的调用栈优化特性" class="headerlink" title="四、尾递归的调用栈优化特性"></a>四、尾递归的调用栈优化特性</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">int tail_func(int n, int res)&#123;</span><br><span class="line">     if (n &lt;= 1) return res;</span><br><span class="line">     return tail_func(n - 1, n * res);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main()&#123;</span><br><span class="line">    int dummy[1024*1024]; // 尽可能占用栈。</span><br><span class="line">    tail_func(2048*2048, 1);</span><br><span class="line">    return 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>​    上面这个程序在开了编译优化和没开编译优化的情况下编出来的结果是<strong>不一样</strong>的，如果不开启优化，直接 <code>gcc -o tr func_tail.c</code> 编译然后运行的话，程序会爆栈崩溃，但如果开优化的话：<code>gcc -o tr -O2 func_tail.c</code>，上面的程序最后就能正常运行。 这里面的原因就在于，尾递归的写法只是具备了使当前函数在调用下一个函数前把当前占有的栈销毁，但是会不会真的这样做，是要具体看编译器是否最终这样做，如果在语言层面上，没有规定要优化这种尾调用，那编译器就可以有自己的选择来做不同的实现，在这种情况下，尾递归就不一定能解决一般递归的问题。</p>
+<p>参考链接:</p>
+<p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
+<p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>将Hexo部署到GitHub</title>
+    <url>/2021/10/24/%E5%B0%86Hexo%E9%83%A8%E7%BD%B2%E5%88%B0GitHub/</url>
+    <content><![CDATA[<p>参考<a href="https://hexo.io/zh-cn/docs">Hexo文档</a> </p>
+<span id="more"></span>
+
+<h2 id="一、安装Git"><a href="#一、安装Git" class="headerlink" title="一、安装Git"></a>一、安装Git</h2><ol>
+<li><p><a href="https://gitforwindows.org/">gitforwindows</a> 下载安装</p>
+</li>
+<li><p>安装完查看git版本：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git --version</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装Node-js"><a href="#二、安装Node-js" class="headerlink" title="二、安装Node.js"></a>二、安装Node.js</h2><ol>
+<li><p><a href="https://nodejs.org/en/download/">node.js</a> 选择LTS的window版本，下载安装</p>
+</li>
+<li><p>安装完查看node.js版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li>
+<li><p>更改npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+<li><p>查看npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm get registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="三、安装Hexo"><a href="#三、安装Hexo" class="headerlink" title="三、安装Hexo"></a>三、安装Hexo</h2><ol>
+<li><p>安装Hexo</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="四、建站"><a href="#四、建站" class="headerlink" title="四、建站"></a>四、建站</h2><ol>
+<li><p>初始化博客目录</p>
+<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure></li>
+<li><p>常用命令：</p>
+<ul>
+<li>清理缓存： <code>hexo clean</code></li>
+<li>生成静态文件： <code>hexo g/generate</code></li>
+<li>生成静态文件： <code>hexo s/server</code></li>
+<li>组合版：<code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</code></li>
+<li>发布到github：<code>hexo d</code></li>
+</ul>
+<p>本地访问地址：<a href="http://localhost:4000/">http://localhost:4000</a></p>
+</li>
+<li><p>修改网站基本配置信息参考<a href="https://hexo.io/zh-cn/docs/configuration">配置</a></p>
+</li>
+</ol>
+<h2 id="五、将hexo部署到GitHub"><a href="#五、将hexo部署到GitHub" class="headerlink" title="五、将hexo部署到GitHub"></a>五、将hexo部署到GitHub</h2><ol>
+<li><p>生成SSH添加到GitHub</p>
+<p>生成key，可以git部署网站</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</span><br></pre></td></tr></table></figure>
+
+<p>然后需要配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global user.email “you@example.com”</span><br><span class="line">git config --global user.name “Your Name”</span><br></pre></td></tr></table></figure>
+
+<p>将这个文件拷贝到git的<a href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>查看是否配置成功</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure></li>
+<li><p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 <code>&lt;你的 GitHub 用户名&gt;.github.io</code> 访问，你的 repository 应该直接命名为 <code>&lt;你的 GitHub 用户名&gt;.github.io</code>。</p>
+</li>
+<li><p>安装 hexo-deployer-git.：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure></li>
+<li><p>在 _config.yml（如果有已存在的请删除）添加如下配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">    type: git  </span><br><span class="line">    repo: https://github.com/&lt;username&gt;/&lt;project&gt; </span><br></pre></td></tr></table></figure></li>
+<li><p>运行 hexo </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
+<li><p>查看 <code>username.github.io</code> 上的网页是否部署成功。</p>
+</li>
+</ol>
+<h2 id="六、发布文章"><a href="#六、发布文章" class="headerlink" title="六、发布文章"></a>六、发布文章</h2><ol>
+<li><p>创建文章</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new post &quot;title&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>然后用编辑器修改好文本，发布</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -655,78 +757,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>将Hexo部署到GitHub</title>
-    <url>/2021/10/24/%E5%B0%86Hexo%E9%83%A8%E7%BD%B2%E5%88%B0GitHub/</url>
-    <content><![CDATA[<p>参考<a href="https://hexo.io/zh-cn/docs">Hexo文档</a> </p>
-<span id="more"></span>
-
-<h2 id="一、安装Git"><a href="#一、安装Git" class="headerlink" title="一、安装Git"></a>一、安装Git</h2><ol>
-<li><p><a href="https://gitforwindows.org/">gitforwindows</a> 下载安装</p>
-</li>
-<li><p>安装完查看git版本：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git --version</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装Node-js"><a href="#二、安装Node-js" class="headerlink" title="二、安装Node.js"></a>二、安装Node.js</h2><ol>
-<li><p><a href="https://nodejs.org/en/download/">node.js</a> 选择LTS的window版本，下载安装</p>
-</li>
-<li><p>安装完查看node.js版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li>
-<li><p>更改npm镜像源：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
-<li><p>查看npm镜像源：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm get registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="三、安装Hexo"><a href="#三、安装Hexo" class="headerlink" title="三、安装Hexo"></a>三、安装Hexo</h2><ol>
-<li><p>安装Hexo</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="四、建站"><a href="#四、建站" class="headerlink" title="四、建站"></a>四、建站</h2><ol>
-<li><p>初始化博客目录</p>
-<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure></li>
-<li><p>常用命令：</p>
-<ul>
-<li>清理缓存： <code>hexo clean</code></li>
-<li>生成静态文件： <code>hexo g/generate</code></li>
-<li>生成静态文件： <code>hexo s/server</code></li>
-<li>组合版：<code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</code></li>
-<li>发布到github：<code>hexo d</code></li>
-</ul>
-<p>本地访问地址：<a href="http://localhost:4000/">http://localhost:4000</a></p>
-</li>
-<li><p>修改网站基本配置信息参考<a href="https://hexo.io/zh-cn/docs/configuration">配置</a></p>
-</li>
-</ol>
-<h2 id="五、将hexo部署到GitHub"><a href="#五、将hexo部署到GitHub" class="headerlink" title="五、将hexo部署到GitHub"></a>五、将hexo部署到GitHub</h2><ol>
-<li><p>生成SSH添加到GitHub</p>
-<p>生成key，可以git部署网站</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</span><br></pre></td></tr></table></figure>
-
-<p>然后需要配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global user.email “you@example.com”</span><br><span class="line">git config --global user.name “Your Name”</span><br></pre></td></tr></table></figure>
-
-<p>将这个文件拷贝到git的<a href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>查看是否配置成功</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure></li>
-<li><p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 <code>&lt;你的 GitHub 用户名&gt;.github.io</code> 访问，你的 repository 应该直接命名为 <code>&lt;你的 GitHub 用户名&gt;.github.io</code>。</p>
-</li>
-<li><p>安装 hexo-deployer-git.：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure></li>
-<li><p>在 _config.yml（如果有已存在的请删除）添加如下配置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">    type: git  </span><br><span class="line">    repo: https://github.com/&lt;username&gt;/&lt;project&gt; </span><br></pre></td></tr></table></figure></li>
-<li><p>运行 hexo </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
-<li><p>查看 <code>username.github.io</code> 上的网页是否部署成功。</p>
-</li>
-</ol>
-<h2 id="六、发布文章"><a href="#六、发布文章" class="headerlink" title="六、发布文章"></a>六、发布文章</h2><ol>
-<li><p>创建文章</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new post &quot;title&quot;</span><br></pre></td></tr></table></figure></li>
-<li><p>然后用编辑器修改好文本，发布</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>hdfs伪分布式部署</title>
     <url>/2021/11/25/hdfs%E4%BC%AA%E5%88%86%E5%B8%83%E5%BC%8F%E9%83%A8%E7%BD%B2/</url>
     <content><![CDATA[<h1 id="hdfs伪分布式部署"><a href="#hdfs伪分布式部署" class="headerlink" title="hdfs伪分布式部署"></a>hdfs伪分布式部署</h1><p><a href="https://hadoop.apache.org/release.html">Releases Archive</a>中选择要部署的版本，我们以<a href="https://hadoop.apache.org/release/3.2.2.html">Release 3.2.2 available</a>版本为例</p>
@@ -854,36 +884,6 @@
 </li>
 <li><h4 id="停止服务-1"><a href="#停止服务-1" class="headerlink" title="停止服务"></a>停止服务</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop]$ stop-yarn.sh </span><br><span class="line">Stopping nodemanagers</span><br><span class="line">localhost: WARNING: nodemanager did not stop gracefully after 5 seconds: Trying to kill with kill -9</span><br><span class="line">Stopping resourcemanager</span><br><span class="line">[hadoop@hadoop001 hadoop]$ jps</span><br></pre></td></tr></table></figure></li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>什么是尾递归</title>
-    <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
-    <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
-<span id="more"></span>
-
-<h4 id="二、实例"><a href="#二、实例" class="headerlink" title="二、实例"></a>二、实例</h4><p>以递归的形式计算阶乘：</p>
-<p>线性递归:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">Rescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? <span class="number">1</span> : n * Rescuvie(n - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>尾递归:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n, <span class="keyword">long</span> a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? a : TailRescuvie(n - <span class="number">1</span>, a * n); </span><br><span class="line">&#125; </span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;<span class="comment">//封装用的</span></span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">0</span>) ? <span class="number">1</span> : TailRescuvie(n, <span class="number">1</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>当n = 5时<br>对于传统线性递归, 他的递归过程如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rescuvie(5)</span><br><span class="line"></span><br><span class="line">&#123;5 * Rescuvie(4)&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * Rescuvie(3)&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * Rescuvie(2)&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * Rescuvie(1)&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * 1&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * 2&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * 6&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * 24&#125;</span><br><span class="line"></span><br><span class="line">120</span><br></pre></td></tr></table></figure>
-
-<p>对于尾递归, 他的递归过程如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TailRescuvie(5)                  // 所以在运算上和内存占用上节省了很多,直接传回结果</span><br><span class="line"></span><br><span class="line">TailRescuvie(5, 1)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(4, 5)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(3, 20)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(2, 60)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(1, 120)                       return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">120                                //当运行到最后时,return a =&gt; return 120 ,将120返回上一级</span><br></pre></td></tr></table></figure>
-
-<p>说明：其实尾递归也需要下层往上层返回结果，但在返回的过程中不用再做计算，依次返回结果即可。从上可以看到尾递归把返回结果放到了调用的参数里。这个细小的变化导致，TailRescuvie(n)不必像以前一样，非要等到拿到了TailRescuvie(n-1)的返回值，才能计算它自己的返回结果,它完全就等于TailRescuvie(n-1)的返回值。因此理论上：TailRescuvie(n)在调用tailTailRescuvie(n-1)前，完全就可以先销毁自己放在栈上的东西。</p>
-<h4 id="三、优势"><a href="#三、优势" class="headerlink" title="三、优势"></a>三、优势</h4><p>​    与普通递归相比，由于尾递归的调用处于方法的最后，因此方法之前所积累下的各种状态对于递归调用结果已经没有任何意义，因此每一个函数在调用下一个函数之前，都能做到先把当前自己占用的栈给先释放了，尾递归的调用链上可以做到只有一个函数在使用栈，因此可以无限地调用！</p>
-<p>​    但是，上述的优化是在<strong>某些语言</strong>编译器的优化支持上实现的，尾递归本身并不能消除函数调用栈过长的问题。在一般递归函数func()中，func(n)是依赖于 func(n-1) 的，func(n) 只有在得到 func(n-1) 的结果之后，才能计算它自己的返回值，因此理论上，在 func(n-1) 返回之前，func(n)，不能结束返回。因此func(n)就必须保留它在栈上的数据，直到func(n-1)先返回，而尾递归的实现则可以在编译器的帮助下，消除这个限制。</p>
-<h4 id="四、尾递归的调用栈优化特性"><a href="#四、尾递归的调用栈优化特性" class="headerlink" title="四、尾递归的调用栈优化特性"></a>四、尾递归的调用栈优化特性</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">int tail_func(int n, int res)&#123;</span><br><span class="line">     if (n &lt;= 1) return res;</span><br><span class="line">     return tail_func(n - 1, n * res);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main()&#123;</span><br><span class="line">    int dummy[1024*1024]; // 尽可能占用栈。</span><br><span class="line">    tail_func(2048*2048, 1);</span><br><span class="line">    return 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>​    上面这个程序在开了编译优化和没开编译优化的情况下编出来的结果是<strong>不一样</strong>的，如果不开启优化，直接 <code>gcc -o tr func_tail.c</code> 编译然后运行的话，程序会爆栈崩溃，但如果开优化的话：<code>gcc -o tr -O2 func_tail.c</code>，上面的程序最后就能正常运行。 这里面的原因就在于，尾递归的写法只是具备了使当前函数在调用下一个函数前把当前占有的栈销毁，但是会不会真的这样做，是要具体看编译器是否最终这样做，如果在语言层面上，没有规定要优化这种尾调用，那编译器就可以有自己的选择来做不同的实现，在这种情况下，尾递归就不一定能解决一般递归的问题。</p>
-<p>参考链接:</p>
-<p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
-<p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
 ]]></content>
   </entry>
 </search>
