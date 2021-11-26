@@ -28,7 +28,7 @@
 <meta property="og:description" content="Hadoop Shell命令FS Shell调用文件系统(FS)Shell命令应使用 bin&#x2F;hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是scheme:&#x2F;&#x2F;authority&#x2F;path。对HDFS文件系统，scheme是hdfs，对本地文件系统，scheme是file。其中scheme和authority参数都是可选的，如果">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-11-26T05:24:25.000Z">
-<meta property="article:modified_time" content="2021-11-26T06:09:17.682Z">
+<meta property="article:modified_time" content="2021-11-26T09:33:44.875Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 
@@ -217,7 +217,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2021-11-26 13:24:25 / 修改时间：14:09:17" itemprop="dateCreated datePublished" datetime="2021-11-26T13:24:25+08:00">2021-11-26</time>
+      <time title="创建时间：2021-11-26 13:24:25 / 修改时间：17:33:44" itemprop="dateCreated datePublished" datetime="2021-11-26T13:24:25+08:00">2021-11-26</time>
     </span>
 
   
@@ -241,12 +241,12 @@
 <li><code>hadoop fs -cat file:///file3 /user/hadoop/file4</code></li>
 </ul>
 <p>返回值：成功返回0，失败返回-1。</p>
-<h3 id="chgrp"><a href="#chgrp" class="headerlink" title="chgrp"></a>chgrp</h3><p>使用方法：hadoop fs -chgrp [-R] GROUP URI [URI …] Change group association of files. With -R, make the change recursively through the directory structure. The user must be the owner of files, or else a super-user. Additional information is in the <a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_permissions_guide.html">Permissions User Guide</a>. –&gt;</p>
-<p>改变文件所属的组。使用-R将使改变在目录结构下递归进行。命令的使用者必须是文件的所有者或者超级用户。更多的信息请参见<a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_permissions_guide.html">HDFS权限用户指南</a>。</p>
+<h3 id="chgrp"><a href="#chgrp" class="headerlink" title="chgrp"></a>chgrp</h3><p>使用方法：hadoop fs -chgrp [-R] GROUP URI [URI …] </p>
+<p>改变文件所属的组。使用-R将使改变在目录结构下递归进行。命令的使用者必须是文件的所有者或者超级用户。更多的信息请参见<a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r3.2.2/hadoop-project-dist/hadoop-hdfs/HdfsPermissionsGuide.html">HDFS Permissions Guide</a>。</p>
 <h3 id="chmod"><a href="#chmod" class="headerlink" title="chmod"></a>chmod</h3><p>使用方法：<code>hadoop fs -chmod [-R] &lt;MODE[,MODE]... | OCTALMODE&gt; URI [URI …]</code></p>
-<p>改变文件的权限。使用-R将使改变在目录结构下递归进行。命令的使用者必须是文件的所有者或者超级用户。更多的信息请参见<a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_permissions_guide.html">HDFS权限用户指南</a>。</p>
+<p>改变文件的权限。使用-R将使改变在目录结构下递归进行。命令的使用者必须是文件的所有者或者超级用户。更多的信息请参见<a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r3.2.2/hadoop-project-dist/hadoop-hdfs/HdfsPermissionsGuide.html">HDFS Permissions Guide</a>。</p>
 <h3 id="chown"><a href="#chown" class="headerlink" title="chown"></a>chown</h3><p>使用方法：<code>hadoop fs -chown [-R] [OWNER][:[GROUP]] URI [URI ]</code></p>
-<p>改变文件的拥有者。使用-R将使改变在目录结构下递归进行。命令的使用者必须是超级用户。更多的信息请参见<a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_permissions_guide.html">HDFS权限用户指南</a>。</p>
+<p>改变文件的拥有者。使用-R将使改变在目录结构下递归进行。命令的使用者必须是超级用户。更多的信息请参见<a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r3.2.2/hadoop-project-dist/hadoop-hdfs/HdfsPermissionsGuide.html">HDFS Permissions Guide</a>。</p>
 <h3 id="copyFromLocal"><a href="#copyFromLocal" class="headerlink" title="copyFromLocal"></a>copyFromLocal</h3><p>使用方法：<code>hadoop fs -copyFromLocal &lt;localsrc&gt; URI</code></p>
 <p>除了限定源路径是一个本地文件外，和<a href="#put"><strong>put</strong></a>命令相似。</p>
 <h3 id="copyToLocal"><a href="#copyToLocal" class="headerlink" title="copyToLocal"></a>copyToLocal</h3><p>使用方法：<code>hadoop fs -copyToLocal [-ignorecrc] [-crc] URI &lt;localdst&gt;</code></p>
@@ -263,7 +263,7 @@
 <h3 id="dus"><a href="#dus" class="headerlink" title="dus"></a>dus</h3><p>使用方法：<code>hadoop fs -dus &lt;args&gt;</code></p>
 <p>显示文件的大小。</p>
 <h3 id="expunge"><a href="#expunge" class="headerlink" title="expunge"></a>expunge</h3><p>使用方法：<code>hadoop fs -expunge</code></p>
-<p>清空回收站。请参考<a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r1.0.4/cn/hdfs_design.html">HDFS设计</a>文档以获取更多关于回收站特性的信息。</p>
+<p>清空回收站。请参考 <a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/r3.2.2/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html#File_Deletes_and_Undeletes">HDFS Architecture guide</a> 文档以获取更多关于回收站特性的信息。</p>
 <h3 id="get"><a href="#get" class="headerlink" title="get"></a>get</h3><p>使用方法：<code>hadoop fs -get [-ignorecrc] [-crc] &lt;src&gt; &lt;localdst&gt;</code></p>
 <p>复制文件到本地文件系统。可用-ignorecrc选项复制CRC校验失败的文件。使用-crc选项复制文件以及CRC信息。</p>
 <p>示例：</p>
