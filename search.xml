@@ -96,14 +96,14 @@
   <entry>
     <title>HDFS的读写流程</title>
     <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134829972-1309163093.png" alt="img"></p>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134829972-1309163093.png" alt="img"></p>
 <p>1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流</p>
 <p>3、客户端向输出流发起写入数据的请求</p>
 <p>4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode</p>
 <p>5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNode中，并且完成数据块的备份</p>
 <p>7、如果每一个接收到了数据块的DataNode上的数据块写完或者备份完后，则向NameNode报告说数据块写完了，使得NameNode最终确定哪些数据块写在哪些DataNode上</p>
 <p>8、 9、 客户端关闭输出流，并且告诉NameNode写数据结束</p>
-<p><img src="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134847561-828921547.png" alt="img"></p>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134847561-828921547.png" alt="img"></p>
 <p>1、客户端构建一个DistributedFileSystem，然后打开HDFS文件的输入流</p>
 <p>2、从NameNode中找到需要读取文件对应的数据块在哪些机器上</p>
 <p>3、4、5、 从数据块所在的机器上读取相对应的数据块</p>
@@ -354,24 +354,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>什么是尾递归</title>
     <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
     <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
@@ -399,6 +381,24 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>

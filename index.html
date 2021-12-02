@@ -213,7 +213,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2021-12-03 03:23:58 / 修改时间：03:24:28" itemprop="dateCreated datePublished" datetime="2021-12-03T03:23:58+08:00">2021-12-03</time>
+      <time title="创建时间：2021-12-03 03:23:58 / 修改时间：04:37:02" itemprop="dateCreated datePublished" datetime="2021-12-03T03:23:58+08:00">2021-12-03</time>
     </span>
 
   
@@ -226,14 +226,14 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <p><img src="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134829972-1309163093.png" alt="img"></p>
+          <h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134829972-1309163093.png" alt="img"></p>
 <p>1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流</p>
 <p>3、客户端向输出流发起写入数据的请求</p>
 <p>4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode</p>
 <p>5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNode中，并且完成数据块的备份</p>
 <p>7、如果每一个接收到了数据块的DataNode上的数据块写完或者备份完后，则向NameNode报告说数据块写完了，使得NameNode最终确定哪些数据块写在哪些DataNode上</p>
 <p>8、 9、 客户端关闭输出流，并且告诉NameNode写数据结束</p>
-<p><img src="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134847561-828921547.png" alt="img"></p>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134847561-828921547.png" alt="img"></p>
 <p>1、客户端构建一个DistributedFileSystem，然后打开HDFS文件的输入流</p>
 <p>2、从NameNode中找到需要读取文件对应的数据块在哪些机器上</p>
 <p>3、4、5、 从数据块所在的机器上读取相对应的数据块</p>
