@@ -94,23 +94,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS的读写流程</title>
-    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134829972-1309163093.png" alt="img"></p>
-<p>1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流</p>
-<p>3、客户端向输出流发起写入数据的请求</p>
-<p>4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode</p>
-<p>5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNode中，并且完成数据块的备份</p>
-<p>7、如果每一个接收到了数据块的DataNode上的数据块写完或者备份完后，则向NameNode报告说数据块写完了，使得NameNode最终确定哪些数据块写在哪些DataNode上</p>
-<p>8、 9、 客户端关闭输出流，并且告诉NameNode写数据结束</p>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134847561-828921547.png" alt="img"></p>
-<p>1、客户端构建一个DistributedFileSystem，然后打开HDFS文件的输入流</p>
-<p>2、从NameNode中找到需要读取文件对应的数据块在哪些机器上</p>
-<p>3、4、5、 从数据块所在的机器上读取相对应的数据块</p>
-<p>6、读完数据后，关闭输入流</p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop Shell命令</title>
     <url>/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<h1 id="Hadoop-Shell命令"><a href="#Hadoop-Shell命令" class="headerlink" title="Hadoop Shell命令"></a>Hadoop Shell命令</h1><h2 id="FS-Shell"><a href="#FS-Shell" class="headerlink" title="FS Shell"></a>FS Shell</h2><p>调用文件系统(FS)Shell命令应使用 bin/hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是<em>scheme://authority/path</em>。对HDFS文件系统，scheme是<em>hdfs</em>，对本地文件系统，scheme是<em>file</em>。其中scheme和authority参数都是可选的，如果未加指定，就会使用配置中指定的默认scheme。一个HDFS文件或目录比如*/parent/child<em>可以表示成</em>hdfs://namenode:namenodeport/parent/child<em>，或者更简单的</em>/parent/child<em>（假设你配置文件中的默认值是</em>namenode:namenodeport<em>）。大多数FS Shell命令的行为和对应的Unix Shell命令类似，不同之处会在下面介绍各命令使用详情时指出。出错信息会输出到</em>stderr<em>，其他信息输出到</em>stdout*。</p>
@@ -242,6 +225,23 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HDFS的读写流程</title>
+    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134829972-1309163093.png" alt="img"></p>
+<p>1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流</p>
+<p>3、客户端向输出流发起写入数据的请求</p>
+<p>4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode</p>
+<p>5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNode中，并且完成数据块的备份</p>
+<p>7、如果每一个接收到了数据块的DataNode上的数据块写完或者备份完后，则向NameNode报告说数据块写完了，使得NameNode最终确定哪些数据块写在哪些DataNode上</p>
+<p>8、 9、 客户端关闭输出流，并且告诉NameNode写数据结束</p>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134847561-828921547.png" alt="img"></p>
+<p>1、客户端构建一个DistributedFileSystem，然后打开HDFS文件的输入流</p>
+<p>2、从NameNode中找到需要读取文件对应的数据块在哪些机器上</p>
+<p>3、4、5、 从数据块所在的机器上读取相对应的数据块</p>
+<p>6、读完数据后，关闭输入流</p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hadoop基础知识</title>
     <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
     <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
@@ -273,24 +273,61 @@
 </ul>
 <h2 id="HDFS的架构"><a href="#HDFS的架构" class="headerlink" title="HDFS的架构"></a>HDFS的架构</h2><p> <img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/1598893-20191129134655673-2083411338.png" alt="img"></p>
 <ol>
-<li>NameNode（nn）：就是Master，它是一个主管、管理者。</li>
+<li><strong>NameNode（nn）</strong>：Master，它是一个主管、管理者。</li>
 </ol>
-<p>（1）管理HDFS的名称空间；</p>
-<p>（2）处理客户端读写请求。</p>
-<p>（3）配置副本策略；</p>
-<p>（4）管理数据块（Block）映射信息；</p>
-<p>2）DataNode：就是Slave。NameNode下达命令，DataNode执行实际的操作。</p>
-<p>（1）存储实际的数据块；</p>
-<p>（2）执行数据块的读/写操作。</p>
-<p>3）Client：就是客户端。</p>
-<p>（1）文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传；</p>
-<p>（2）与NameNode交互，获取文件的位置信息；</p>
-<p>（3）与DataNode交互，读取或者写入数据；</p>
-<p>（4）Client提供一些命令来管理HDFS，比如NameNode格式化；</p>
-<p>（5）Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作；</p>
-<p>4）Secondary NameNode：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
-<p>（1）辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
-<p>（2）在紧急情况下，可辅助恢复NameNode。</p>
+<ul>
+<li><p>管理HDFS的名称空间</p>
+<ul>
+<li>文件的名称、目录结构、权限、大小、所属用户用户组  时间</li>
+</ul>
+</li>
+<li><p>处理客户端读写请求</p>
+</li>
+<li><p>配置副本策略</p>
+</li>
+<li><p>管理数据块（Block）映射信息</p>
+<ul>
+<li><p>文件被切割哪些块、块(块本身+2副本=3个块)分布在哪些DN节点上，blockmap 块映射。</p>
+</li>
+<li><p>不会持久化存储这种映射关系，是通过集群<strong>启动</strong>和<strong>运行</strong>时候，DN定期给NN汇报blockreport（BR），然后NN在内存中动态维护这种映射关系；</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>2）<strong>DataNode</strong>：Slave。NameNode下达命令，DataNode执行实际的操作</p>
+<ul>
+<li><p>存储实际的数据块和块的校验和</p>
+</li>
+<li><p>执行数据块的读/写操作</p>
+</li>
+<li><p>定期给NN发送块报告</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec  21600000=6h</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6h</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>3）<strong>Client</strong>：客户端</p>
+<ul>
+<li>文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传</li>
+<li>与NameNode交互，获取文件的位置信息</li>
+<li>与DataNode交互，读取或者写入数据</li>
+<li>Client提供一些命令来管理HDFS，比如NameNode格式化</li>
+<li>Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作</li>
+</ul>
+<p>4）<strong>Secondary NameNode</strong>：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
+<ul>
+<li><p>辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
+<ul>
+<li><p>edits 编辑日志文件</p>
+</li>
+<li><p>fsimage 镜像文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze     219 Nov 26 22:01 VERSION</span><br><span class="line">[ruoze@ruozedata001 current]$ pwd</span><br><span class="line">/home/ruoze/tmp/hadoop-ruoze/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>在紧急情况下，可辅助恢复NameNode</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关于NN的补充：在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</span><br><span class="line">中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</span><br><span class="line"></span><br><span class="line">后期就取消SNN，新建一个实时NN，作为高可靠 HA。</span><br><span class="line">NN Active</span><br><span class="line">NN Standby 实时的等待active NN挂了，瞬间启动Standby--&gt;Active，对外提供读写服务。</span><br></pre></td></tr></table></figure>
+
+
+
 <p>HDFS中的文件在物理上是分块存储，块的大小可以通过配置参数（dfs.Blocksize）来规定，默认大小在hadoop2.x版本中是128M,老版本是64M</p>
 <p><strong>思考：为什么块的大小不能设置太小，也不能设置太大？</strong></p>
 <p>（1）HDFS的块设置太小，会增加寻址时间，程序一直在找块的开始位置</p>
@@ -354,6 +391,24 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>什么是尾递归</title>
     <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
     <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
@@ -381,24 +436,6 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
