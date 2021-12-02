@@ -20,25 +20,30 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="2">
-<meta property="og:type" content="website">
-<meta property="og:title" content="k12的博客">
-<meta property="og:url" content="https://k12coding.github.io/archives/2021/09/index.html">
+<meta name="description" content="1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流 3、客户端向输出流发起写入数据的请求 4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode 5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HDFS的读写流程">
+<meta property="og:url" content="https://k12coding.github.io/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="k12的博客">
-<meta property="og:description" content="2">
+<meta property="og:description" content="1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流 3、客户端向输出流发起写入数据的请求 4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode 5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNo">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134829972-1309163093.png">
+<meta property="og:image" content="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134847561-828921547.png">
+<meta property="article:published_time" content="2021-12-02T19:23:58.000Z">
+<meta property="article:modified_time" content="2021-12-02T19:24:28.469Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134829972-1309163093.png">
 
 
-<link rel="canonical" href="https://k12coding.github.io/archives/2021/09/">
+<link rel="canonical" href="https://k12coding.github.io/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"archives/2021/09/index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://k12coding.github.io/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/","path":"2021/12/03/HDFS的读写流程/","title":"HDFS的读写流程"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>归档 | k12的博客</title>
+<title>HDFS的读写流程 | k12的博客</title>
   
 
 
@@ -178,49 +183,95 @@
 </noscript>
 
 
-    <div class="main-inner archive posts-collapse">
+    <div class="main-inner post posts-expand">
 
 
   
-  
-  
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        <span class="collection-header">嗯..! 目前共计 13 篇日志。 继续努力。</span>
-      </div>
 
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HDFS的读写流程
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
       
-    <div class="collection-year">
-      <span class="collection-header">2021</span>
+
+      <time title="创建时间：2021-12-03 03:23:58 / 修改时间：03:24:28" itemprop="dateCreated datePublished" datetime="2021-12-03T03:23:58+08:00">2021-12-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><img src="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134829972-1309163093.png" alt="img"></p>
+<p>1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流</p>
+<p>3、客户端向输出流发起写入数据的请求</p>
+<p>4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode</p>
+<p>5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNode中，并且完成数据块的备份</p>
+<p>7、如果每一个接收到了数据块的DataNode上的数据块写完或者备份完后，则向NameNode报告说数据块写完了，使得NameNode最终确定哪些数据块写在哪些DataNode上</p>
+<p>8、 9、 客户端关闭输出流，并且告诉NameNode写数据结束</p>
+<p><img src="https://img2018.cnblogs.com/i-beta/1598893/201911/1598893-20191129134847561-828921547.png" alt="img"></p>
+<p>1、客户端构建一个DistributedFileSystem，然后打开HDFS文件的输入流</p>
+<p>2、从NameNode中找到需要读取文件对应的数据块在哪些机器上</p>
+<p>3、4、5、 从数据块所在的机器上读取相对应的数据块</p>
+<p>6、读完数据后，关闭输入流</p>
+
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2021-09-18T21:07:23+08:00"
-              content="2021-09-18">
-          09-18
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2021/09/18/hello-world/" itemprop="url">
-            <span itemprop="name">Hello World</span>
-          </a>
-      </div>
+    <footer class="post-footer">
 
-      
-    </header>
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/" rel="prev" title="HDFS中的数据块(Block)">
+                  <i class="fa fa-chevron-left"></i> HDFS中的数据块(Block)
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
   </article>
+</div>
 
 
-    </div>
-  </div>
-  
-  
-  
+
+
+
 
 </div>
   </main>
