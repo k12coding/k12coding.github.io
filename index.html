@@ -213,7 +213,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2021-12-03 03:23:58 / 修改时间：04:37:02" itemprop="dateCreated datePublished" datetime="2021-12-03T03:23:58+08:00">2021-12-03</time>
+      <time title="创建时间：2021-12-03 03:23:58 / 修改时间：07:04:48" itemprop="dateCreated datePublished" datetime="2021-12-03T03:23:58+08:00">2021-12-03</time>
     </span>
 
   
@@ -226,18 +226,47 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134829972-1309163093.png" alt="img"></p>
-<p>1、2、 客户端向NameNode发起创建文件的请求，在NameNode上创建一个文件名，并且返回一个输出流</p>
-<p>3、客户端向输出流发起写入数据的请求</p>
-<p>4、输出流向NameNode请求写数据，NameNode根据请求的数据的大小，给数据分块，并且返回指定数据块对应的DataNode</p>
-<p>5、 6、客户端拿到了NameNode分配的数据块需要写到的DataNode信息后，客户端将数据写到对应的DataNode中，并且完成数据块的备份</p>
-<p>7、如果每一个接收到了数据块的DataNode上的数据块写完或者备份完后，则向NameNode报告说数据块写完了，使得NameNode最终确定哪些数据块写在哪些DataNode上</p>
-<p>8、 9、 客户端关闭输出流，并且告诉NameNode写数据结束</p>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/1598893-20191129134847561-828921547.png" alt="img"></p>
-<p>1、客户端构建一个DistributedFileSystem，然后打开HDFS文件的输入流</p>
-<p>2、从NameNode中找到需要读取文件对应的数据块在哪些机器上</p>
-<p>3、4、5、 从数据块所在的机器上读取相对应的数据块</p>
-<p>6、读完数据后，关闭输入流</p>
+          <h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="img"></p>
+<ol>
+<li><p>客户端调用DistributedFileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
+</li>
+<li><p>DistributedFileSystem和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
+<p>如果校验通过，就会为创建新文件记录一条记录，告知DistributedFileSystem向客户端返回一个【FsDataOutputStream】对象</p>
+<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
+</li>
+<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分块，并写入【数据队列】。</p>
+<p>【DataStreamer】处理数据队列,根据文件的大小，当前集群的块大小128、副本数3，和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块Block。这一组选定的DN构成管线。</p>
+</li>
+<li><p>根据【副本放置策略】，【DataStreamer】将第一个块的本身写到DN1，写完复制到DN2，再写完复制到DN3.</p>
+</li>
+<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到确认包加上自己的给DN1发送ack package确认包加上DN1自己写完了，就给【FsDataOutputStream】，告诉它第一个块的三个副本都写完了，块才会从【确认队列】删除。</p>
+</li>
+<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
+</li>
+<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
+</li>
+</ol>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="image-20211203064345933"></p>
+<ol>
+<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
+</li>
+<li><p>与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
+</li>
+<li><p>FileSystem给客户端返回一个【FSDataInputStram】对象。</p>
+</li>
+<li><p>Client调用【FSDataInputStram】对象的read方法，</p>
+</li>
+<li><p>连接最近的文件中第一个块的DN进行读取，读取完成后会校验，</p>
+<ul>
+<li>假如ok就关闭与DN通信。</li>
+<li>假如不ok，就记录块和DN的信息，保证以后不会反复读取该节点后续的块，会尝试这个块的另一个邻近节点读取。</li>
+</ul>
+<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
+<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
+</li>
+<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
+</li>
+</ol>
 
       
     </div>
