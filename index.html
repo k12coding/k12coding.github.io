@@ -213,7 +213,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2021-12-03 03:23:58 / 修改时间：07:04:48" itemprop="dateCreated datePublished" datetime="2021-12-03T03:23:58+08:00">2021-12-03</time>
+      <time title="创建时间：2021-12-03 03:23:58 / 修改时间：07:06:24" itemprop="dateCreated datePublished" datetime="2021-12-03T03:23:58+08:00">2021-12-03</time>
     </span>
 
   
@@ -259,7 +259,7 @@
 <li><p>连接最近的文件中第一个块的DN进行读取，读取完成后会校验，</p>
 <ul>
 <li>假如ok就关闭与DN通信。</li>
-<li>假如不ok，就记录块和DN的信息，保证以后不会反复读取该节点后续的块，会尝试这个块的另一个邻近节点读取。</li>
+<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试这个块的另一个邻近节点读取。</li>
 </ul>
 <p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
 <p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
