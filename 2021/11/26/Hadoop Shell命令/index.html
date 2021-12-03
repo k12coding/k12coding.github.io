@@ -28,7 +28,7 @@
 <meta property="og:description" content="Hadoop Shell命令FS Shell调用文件系统(FS)Shell命令应使用 bin&#x2F;hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是scheme:&#x2F;&#x2F;authority&#x2F;path。对HDFS文件系统，scheme是hdfs，对本地文件系统，scheme是file。其中scheme和authority参数都是可选的，如果">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-11-26T05:24:25.000Z">
-<meta property="article:modified_time" content="2021-11-26T09:33:44.875Z">
+<meta property="article:modified_time" content="2021-12-03T00:15:28.613Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 
@@ -139,7 +139,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Hadoop-Shell%E5%91%BD%E4%BB%A4"><span class="nav-text">Hadoop Shell命令</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#FS-Shell"><span class="nav-text">FS Shell</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#cat"><span class="nav-text">cat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chgrp"><span class="nav-text">chgrp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chmod"><span class="nav-text">chmod</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chown"><span class="nav-text">chown</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#copyFromLocal"><span class="nav-text">copyFromLocal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#copyToLocal"><span class="nav-text">copyToLocal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cp"><span class="nav-text">cp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#du"><span class="nav-text">du</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dus"><span class="nav-text">dus</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#expunge"><span class="nav-text">expunge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#get"><span class="nav-text">get</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#getmerge"><span class="nav-text">getmerge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ls"><span class="nav-text">ls</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lsr"><span class="nav-text">lsr</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mkdir"><span class="nav-text">mkdir</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#movefromLocal"><span class="nav-text">movefromLocal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mv"><span class="nav-text">mv</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#put"><span class="nav-text">put</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rm"><span class="nav-text">rm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rmr"><span class="nav-text">rmr</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#setrep"><span class="nav-text">setrep</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stat"><span class="nav-text">stat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tail"><span class="nav-text">tail</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#test"><span class="nav-text">test</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#text"><span class="nav-text">text</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#touchz"><span class="nav-text">touchz</span></a></li></ol></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Hadoop-Shell%E5%91%BD%E4%BB%A4"><span class="nav-text">Hadoop Shell命令</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#FS-Shell"><span class="nav-text">FS Shell</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#cat"><span class="nav-text">cat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chgrp"><span class="nav-text">chgrp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chmod"><span class="nav-text">chmod</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chown"><span class="nav-text">chown</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#copyFromLocal"><span class="nav-text">copyFromLocal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#copyToLocal"><span class="nav-text">copyToLocal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cp"><span class="nav-text">cp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#du"><span class="nav-text">du</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dus"><span class="nav-text">dus</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#expunge"><span class="nav-text">expunge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#get"><span class="nav-text">get</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#getmerge"><span class="nav-text">getmerge</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ls"><span class="nav-text">ls</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lsr"><span class="nav-text">lsr</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mkdir"><span class="nav-text">mkdir</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#movefromLocal"><span class="nav-text">movefromLocal</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mv"><span class="nav-text">mv</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#put"><span class="nav-text">put</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rm"><span class="nav-text">rm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rmr"><span class="nav-text">rmr</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#setrep"><span class="nav-text">setrep</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stat"><span class="nav-text">stat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tail"><span class="nav-text">tail</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#test"><span class="nav-text">test</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#text"><span class="nav-text">text</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#touchz"><span class="nav-text">touchz</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hdfs-%E5%85%B6%E4%BB%96%E5%91%BD%E4%BB%A4"><span class="nav-text">hdfs 其他命令</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -215,10 +215,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2021-11-26 13:24:25 / 修改时间：17:33:44" itemprop="dateCreated datePublished" datetime="2021-11-26T13:24:25+08:00">2021-11-26</time>
+      <time title="创建时间：2021-11-26 13:24:25" itemprop="dateCreated datePublished" datetime="2021-11-26T13:24:25+08:00">2021-11-26</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-12-03 08:15:28" itemprop="dateModified" datetime="2021-12-03T08:15:28+08:00">2021-12-03</time>
+      </span>
 
   
 </div>
@@ -356,6 +362,58 @@
 <li><code>hadoop -touchz pathname</code></li>
 </ul>
 <p>返回值：成功返回0，失败返回-1。</p>
+<h2 id="hdfs-其他命令"><a href="#hdfs-其他命令" class="headerlink" title="hdfs 其他命令"></a>hdfs 其他命令</h2><ul>
+<li><p>安全模式</p>
+<p>hdfs dfsadmin     [-safemode &lt;enter | leave | get | wait&gt;]</p>
+<p>安全模式关闭：读写正常</p>
+<p>log看到safemode:on，必然是集群有问题的，可以手动退出，就能正常对外提供服务</p>
+<p>启动安全模式：<code>hdfs dfsadmin -safemode enter</code></p>
+<p>启动后可读不可写</p>
+</li>
+<li><p>hdfs fsck /</p>
+<p>检查系统问题</p>
+</li>
+<li><p>集群平衡</p>
+<p>dfs.disk.balancer.enabled:  true</p>
+<p>执行命令：先生成计划再执行</p>
+<p><code>hdfs balancer</code> </p>
+<p>DN1 DN2节点和节点之前的平衡 2.X</p>
+<p><code>hdfs diskbalancer</code></p>
+<p>单个节点多盘的平衡 3.X</p>
+</li>
+<li><p>回收站</p>
+<p>linux有回收站吗？没有。要做，怎么办？：</p>
+<ul>
+<li><p>狸猫换太子</p>
+<p>写脚本封装</p>
+</li>
+</ul>
+<p><code>etc/hadoop/core-default.xml</code></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>fs.trash.interval</td>
+<td>0</td>
+<td>Number of minutes after which the checkpoint gets deleted. If zero, the trash feature is disabled. This option may be configured both on the server and the client. If trash is disabled server side then the client side configuration is checked. If trash is enabled on the server side then the value configured on the server is used and the client configuration value is ignored.</td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+<p>hadoop命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">Client Commands:</span><br><span class="line"></span><br><span class="line">archive       create a Hadoop archive</span><br><span class="line">checknative   check native Hadoop and compression libraries availability</span><br><span class="line">classpath     prints the class path needed to get the Hadoop jar and the required libraries</span><br><span class="line">conftest      validate configuration XML files</span><br><span class="line">credential    interact with credential providers</span><br><span class="line">distch        distributed metadata changer</span><br><span class="line">distcp        copy file or directories recursively</span><br><span class="line">dtutil        operations related to delegation tokens</span><br><span class="line">envvars       display computed Hadoop environment variables</span><br><span class="line">fs            run a generic filesystem user client</span><br><span class="line">gridmix       submit a mix of synthetic job, modeling a profiled from production load</span><br><span class="line">jar &lt;jar&gt;     run a jar file. NOTE: please use &quot;yarn jar&quot; to launch YARN applications, not</span><br><span class="line">              this command.</span><br><span class="line">jnipath       prints the java.library.path</span><br><span class="line">kdiag         Diagnose Kerberos Problems</span><br><span class="line">kerbname      show auth_to_local principal conversion</span><br><span class="line">key           manage keys via the KeyProvider</span><br><span class="line">rumenfolder   scale a rumen input trace</span><br><span class="line">rumentrace    convert logs into a rumen trace</span><br><span class="line">s3guard       manage metadata on S3</span><br><span class="line">trace         view and modify Hadoop tracing settings</span><br><span class="line">version       print the version</span><br></pre></td></tr></table></figure>
+
+<p>查看当前版本压缩情况</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop checknative</span><br><span class="line">2021-11-28 14:06:21,011 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Native library checking:</span><br><span class="line">hadoop:  false </span><br><span class="line">zlib:    false </span><br><span class="line">zstd  :  false </span><br><span class="line">snappy:  false </span><br><span class="line">lz4:     false </span><br><span class="line">bzip2:   false </span><br><span class="line">openssl: false </span><br><span class="line">ISA-L:   false </span><br><span class="line">PMDK:    false </span><br><span class="line">2021-11-28 14:06:21,370 INFO util.ExitUtil: Exiting with status 1: ExitException</span><br><span class="line">[hadoop@hadoop001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>打印类的路径</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
+
 
     </div>
 
