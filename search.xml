@@ -154,116 +154,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hadoop基础知识</title>
-    <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
-    <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
-<p>广义上：指的是hadoop的生态系统，即其他各种组件在内的一整套软件（sqoop，flume，spark，flink，hbase，kafka，cdh环境等）。hadoop生态系统是一个很庞大的概念，hadoop只是其中最重要最基础的部分，生态系统的每一个子系统只结局的某一个特定的问题域。不是一个全能系统，而是多个小而精的系统。</p>
-<h2 id="组成"><a href="#组成" class="headerlink" title="组成"></a>组成</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
-<p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
-<p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
-<p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
-<h1 id="二、HDFS概述"><a href="#二、HDFS概述" class="headerlink" title="二、HDFS概述"></a>二、HDFS概述</h1><h2 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h2><p>Hdfs（hadoop distribute file system），他是一个文件系统，用于存储文件，通过目录树来定位文件：其次，他是分布式的，有很多服务器联合起来实现其功能，集群中的服务器有各自的角色。</p>
-<p>Hdfs的使用场景，适合一次写入，多次读出的场景，且不支持文件的修改。适合用来做数据存放。</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
-<li><p>高容错性</p>
-<p>数据自动保存多个副本。 （默认是三分）通过增加副本的形式，提高容错性</p>
-<p>某一个副本丢失以后，它可以自动恢复</p>
-</li>
-<li><p>适合大数据处理</p>
-<p>数据规模：能够处理数据规模达到GB、TB、甚至PB级别的数据</p>
-<p>文件规模：能够处理百万规模以上的文件数量，</p>
-</li>
-<li><p>可构建在廉价机器上，通过多副本机制，提高可靠性</p>
-</li>
-</ul>
-<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ul>
-<li>不适合低延时数据访问，比如毫秒级的存储数据，是做不到的</li>
-<li>无法高效的对大量小文件进行存储<ul>
-<li>存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标</li>
-</ul>
-</li>
-<li>不支持并发写入、文件随机修改<ul>
-<li>一个文件只能有一个写，不允许多个线程同时写（重点）</li>
-<li>仅支持数据append（追加），不支持文件的随机修改</li>
-</ul>
-</li>
-</ul>
-<h2 id="hdfs支持的三种模式"><a href="#hdfs支持的三种模式" class="headerlink" title="hdfs支持的三种模式"></a>hdfs支持的三种模式</h2><ul>
-<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
-<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
-<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
-</ul>
-<h1 id="三、HDFS架构"><a href="#三、HDFS架构" class="headerlink" title="三、HDFS架构"></a>三、HDFS架构</h1><p> <img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/1598893-20191129134655673-2083411338.png" alt="img"></p>
-<ol>
-<li><strong>NameNode（nn）</strong>：Master，它是一个主管、管理者。</li>
-</ol>
-<ul>
-<li><p>管理HDFS的名称空间</p>
-<ul>
-<li>文件的名称、目录结构、权限、大小、所属用户用户组  时间</li>
-</ul>
-</li>
-<li><p>处理客户端读写请求</p>
-</li>
-<li><p>配置副本策略</p>
-</li>
-<li><p>管理数据块（Block）映射信息</p>
-<ul>
-<li><p>文件被切割哪些块、块(块本身+2副本=3个块)分布在哪些DN节点上，blockmap 块映射。</p>
-</li>
-<li><p>不会持久化存储这种映射关系，是通过集群<strong>启动</strong>和<strong>运行</strong>时候，DN定期给NN汇报blockreport（BR），然后NN在内存中动态维护这种映射关系；</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>2）<strong>DataNode</strong>：Slave。NameNode下达命令，DataNode执行实际的操作</p>
-<ul>
-<li><p>存储实际的数据块和块的校验和</p>
-</li>
-<li><p>执行数据块的读/写操作</p>
-</li>
-<li><p>定期给NN发送块报告</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec  21600000=6h</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6h</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>3）<strong>Client</strong>：客户端</p>
-<ul>
-<li>文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传</li>
-<li>与NameNode交互，获取文件的位置信息</li>
-<li>与DataNode交互，读取或者写入数据</li>
-<li>Client提供一些命令来管理HDFS，比如NameNode格式化</li>
-<li>Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作</li>
-</ul>
-<p>4）<strong>Secondary NameNode</strong>：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
-<ul>
-<li><p>辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
-<ul>
-<li><p>edits 编辑日志文件</p>
-</li>
-<li><p>fsimage 镜像文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze     219 Nov 26 22:01 VERSION</span><br><span class="line">[ruoze@ruozedata001 current]$ pwd</span><br><span class="line">/home/ruoze/tmp/hadoop-ruoze/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><p>在紧急情况下，可辅助恢复NameNode</p>
-</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关于NN的补充：在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</span><br><span class="line">中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</span><br><span class="line"></span><br><span class="line">后期就取消SNN，新建一个实时NN，作为高可靠 HA。</span><br><span class="line">NN Active</span><br><span class="line">NN Standby 实时的等待active NN挂了，瞬间启动Standby--&gt;Active，对外提供读写服务。</span><br></pre></td></tr></table></figure>
-
-
-
-<p>HDFS中的文件在物理上是分块存储，块的大小可以通过配置参数（dfs.Blocksize）来规定，默认大小在hadoop2.x版本中是128M,老版本是64M</p>
-<p><strong>思考：为什么块的大小不能设置太小，也不能设置太大？</strong></p>
-<p>（1）HDFS的块设置太小，会增加寻址时间，程序一直在找块的开始位置</p>
-<p>（2）如果块设置的太大，从磁盘传输数据的时间会明显大于定位这个块开始位置所需的时间。导致程序在处理这块数据时，会非常慢。</p>
-<p><strong>总结：HDFS块的大小设置主要取决于磁盘传输速率</strong></p>
-<h1 id="四、MapReduce-on-Yarn-Yarn的工作流程"><a href="#四、MapReduce-on-Yarn-Yarn的工作流程" class="headerlink" title="四、MapReduce on Yarn/Yarn的工作流程"></a>四、MapReduce on Yarn/Yarn的工作流程</h1><p><img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/mronyarn.jpg" alt="MapReduce on Yarn"></p>
-<p>1.客户端client向ResourceManager提交应用程序/Application/作业JOB，包含application master程序，启动application master的命令等，并请求一个ApplicationMaster实例<br>2.RM为该job分配第一个container,与对应的NM通信，要求它在这个container启动作业的application master<br>3.application master向applications manager注册，这样用户就可以通过RM Web查看job的状态,一直到最后<br>4.application master采用轮询的方式通过【RPC】协议向resource scheduler申请和领取资源（哪台DN机器，领取多少内存 CPU）<br>5.一旦application master申请到资源后，与对应的NM通信，要求启动task<br>6.NM为任务设置好运行环境后，将任务的启动命令写到一个脚本中，并通过该脚本启动任务，运行任务<br>7.各个任务 task 通过【RPC】协议汇报自己的状态和进度，以让application master随时掌握各个任务的运行状态，从而在任务失败时，重启启动任务。<br>8.job运行完成后，application master向applications manager注销并关闭自己。</p>
-<p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
-<p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
-<p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop Shell命令</title>
     <url>/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<h1 id="Hadoop-Shell命令"><a href="#Hadoop-Shell命令" class="headerlink" title="Hadoop Shell命令"></a>Hadoop Shell命令</h1><h2 id="FS-Shell"><a href="#FS-Shell" class="headerlink" title="FS Shell"></a>FS Shell</h2><p>调用文件系统(FS)Shell命令应使用 bin/hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是<em>scheme://authority/path</em>。对HDFS文件系统，scheme是<em>hdfs</em>，对本地文件系统，scheme是<em>file</em>。其中scheme和authority参数都是可选的，如果未加指定，就会使用配置中指定的默认scheme。一个HDFS文件或目录比如*/parent/child<em>可以表示成</em>hdfs://namenode:namenodeport/parent/child<em>，或者更简单的</em>/parent/child<em>（假设你配置文件中的默认值是</em>namenode:namenodeport<em>）。大多数FS Shell命令的行为和对应的Unix Shell命令类似，不同之处会在下面介绍各命令使用详情时指出。出错信息会输出到</em>stderr<em>，其他信息输出到</em>stdout*。</p>
@@ -444,6 +334,116 @@
 <p>打印类的路径</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
 
+]]></content>
+  </entry>
+  <entry>
+    <title>Hadoop基础知识</title>
+    <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
+    <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
+<p>广义上：指的是hadoop的生态系统，即其他各种组件在内的一整套软件（sqoop，flume，spark，flink，hbase，kafka，cdh环境等）。hadoop生态系统是一个很庞大的概念，hadoop只是其中最重要最基础的部分，生态系统的每一个子系统只结局的某一个特定的问题域。不是一个全能系统，而是多个小而精的系统。</p>
+<h2 id="组成"><a href="#组成" class="headerlink" title="组成"></a>组成</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
+<p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
+<p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
+<p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
+<h1 id="二、HDFS概述"><a href="#二、HDFS概述" class="headerlink" title="二、HDFS概述"></a>二、HDFS概述</h1><h2 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h2><p>Hdfs（hadoop distribute file system），他是一个文件系统，用于存储文件，通过目录树来定位文件：其次，他是分布式的，有很多服务器联合起来实现其功能，集群中的服务器有各自的角色。</p>
+<p>Hdfs的使用场景，适合一次写入，多次读出的场景，且不支持文件的修改。适合用来做数据存放。</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
+<li><p>高容错性</p>
+<p>数据自动保存多个副本。 （默认是三分）通过增加副本的形式，提高容错性</p>
+<p>某一个副本丢失以后，它可以自动恢复</p>
+</li>
+<li><p>适合大数据处理</p>
+<p>数据规模：能够处理数据规模达到GB、TB、甚至PB级别的数据</p>
+<p>文件规模：能够处理百万规模以上的文件数量，</p>
+</li>
+<li><p>可构建在廉价机器上，通过多副本机制，提高可靠性</p>
+</li>
+</ul>
+<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ul>
+<li>不适合低延时数据访问，比如毫秒级的存储数据，是做不到的</li>
+<li>无法高效的对大量小文件进行存储<ul>
+<li>存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标</li>
+</ul>
+</li>
+<li>不支持并发写入、文件随机修改<ul>
+<li>一个文件只能有一个写，不允许多个线程同时写（重点）</li>
+<li>仅支持数据append（追加），不支持文件的随机修改</li>
+</ul>
+</li>
+</ul>
+<h2 id="hdfs支持的三种模式"><a href="#hdfs支持的三种模式" class="headerlink" title="hdfs支持的三种模式"></a>hdfs支持的三种模式</h2><ul>
+<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
+<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
+<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
+</ul>
+<h1 id="三、HDFS架构"><a href="#三、HDFS架构" class="headerlink" title="三、HDFS架构"></a>三、HDFS架构</h1><p> <img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/1598893-20191129134655673-2083411338.png" alt="img"></p>
+<ol>
+<li><strong>NameNode（nn）</strong>：Master，它是一个主管、管理者。</li>
+</ol>
+<ul>
+<li><p>管理HDFS的名称空间</p>
+<ul>
+<li>文件的名称、目录结构、权限、大小、所属用户用户组  时间</li>
+</ul>
+</li>
+<li><p>处理客户端读写请求</p>
+</li>
+<li><p>配置副本策略</p>
+</li>
+<li><p>管理数据块（Block）映射信息</p>
+<ul>
+<li><p>文件被切割哪些块、块(块本身+2副本=3个块)分布在哪些DN节点上，blockmap 块映射。</p>
+</li>
+<li><p>不会持久化存储这种映射关系，是通过集群<strong>启动</strong>和<strong>运行</strong>时候，DN定期给NN汇报blockreport（BR），然后NN在内存中动态维护这种映射关系；</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>2）<strong>DataNode</strong>：Slave。NameNode下达命令，DataNode执行实际的操作</p>
+<ul>
+<li><p>存储实际的数据块和块的校验和</p>
+</li>
+<li><p>执行数据块的读/写操作</p>
+</li>
+<li><p>定期给NN发送块报告</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec  21600000=6h</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6h</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>3）<strong>Client</strong>：客户端</p>
+<ul>
+<li>文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传</li>
+<li>与NameNode交互，获取文件的位置信息</li>
+<li>与DataNode交互，读取或者写入数据</li>
+<li>Client提供一些命令来管理HDFS，比如NameNode格式化</li>
+<li>Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作</li>
+</ul>
+<p>4）<strong>Secondary NameNode</strong>：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
+<ul>
+<li><p>辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
+<ul>
+<li><p>edits 编辑日志文件</p>
+</li>
+<li><p>fsimage 镜像文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze     219 Nov 26 22:01 VERSION</span><br><span class="line">[ruoze@ruozedata001 current]$ pwd</span><br><span class="line">/home/ruoze/tmp/hadoop-ruoze/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 ruoze ruoze      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>在紧急情况下，可辅助恢复NameNode</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关于NN的补充：在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</span><br><span class="line">中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</span><br><span class="line"></span><br><span class="line">后期就取消SNN，新建一个实时NN，作为高可靠 HA。</span><br><span class="line">NN Active</span><br><span class="line">NN Standby 实时的等待active NN挂了，瞬间启动Standby--&gt;Active，对外提供读写服务。</span><br></pre></td></tr></table></figure>
+
+
+
+<p>HDFS中的文件在物理上是分块存储，块的大小可以通过配置参数（dfs.Blocksize）来规定，默认大小在hadoop2.x版本中是128M,老版本是64M</p>
+<p><strong>思考：为什么块的大小不能设置太小，也不能设置太大？</strong></p>
+<p>（1）HDFS的块设置太小，会增加寻址时间，程序一直在找块的开始位置</p>
+<p>（2）如果块设置的太大，从磁盘传输数据的时间会明显大于定位这个块开始位置所需的时间。导致程序在处理这块数据时，会非常慢。</p>
+<p><strong>总结：HDFS块的大小设置主要取决于磁盘传输速率</strong></p>
+<h1 id="四、MapReduce-on-Yarn-Yarn的工作流程"><a href="#四、MapReduce-on-Yarn-Yarn的工作流程" class="headerlink" title="四、MapReduce on Yarn/Yarn的工作流程"></a>四、MapReduce on Yarn/Yarn的工作流程</h1><p><img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/mronyarn.jpg" alt="MapReduce on Yarn"></p>
+<p>1.客户端client向ResourceManager提交应用程序/Application/作业JOB，包含application master程序，启动application master的命令等，并请求一个ApplicationMaster实例<br>2.RM为该job分配第一个container,与对应的NM通信，要求它在这个container启动作业的application master<br>3.application master向applications manager注册，这样用户就可以通过RM Web查看job的状态,一直到最后<br>4.application master采用轮询的方式通过【RPC】协议向resource scheduler申请和领取资源（哪台DN机器，领取多少内存 CPU）<br>5.一旦application master申请到资源后，与对应的NM通信，要求启动task<br>6.NM为任务设置好运行环境后，将任务的启动命令写到一个脚本中，并通过该脚本启动任务，运行任务<br>7.各个任务 task 通过【RPC】协议汇报自己的状态和进度，以让application master随时掌握各个任务的运行状态，从而在任务失败时，重启启动任务。<br>8.job运行完成后，application master向applications manager注销并关闭自己。</p>
+<p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
+<p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
+<p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
 ]]></content>
   </entry>
   <entry>
@@ -1281,104 +1281,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>在Linux系统上部署Mysql</title>
-    <url>/2021/11/24/Mysql%E9%83%A8%E7%BD%B2/</url>
-    <content><![CDATA[<h1 id="在Linux系统上部署Mysql"><a href="#在Linux系统上部署Mysql" class="headerlink" title="在Linux系统上部署Mysql"></a>在Linux系统上部署Mysql</h1><p>在Linux上部署Mysql的两种方式：</p>
-<ul>
-<li>rpm包部署：操作简单，适合学习的场景</li>
-<li>tar包部署：定制化配置，生产上一般用tar包部署</li>
-</ul>
-<span id="more"></span>
-
-<h2 id="一、rpm包部署"><a href="#一、rpm包部署" class="headerlink" title="一、rpm包部署"></a>一、rpm包部署</h2><h3 id="0-查看机器上是否已经部署"><a href="#0-查看机器上是否已经部署" class="headerlink" title="0.查看机器上是否已经部署"></a>0.查看机器上是否已经部署</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# rpm -qa|grep mysql</span><br><span class="line">mysql-5.1.73-3.el6_5.x86_64</span><br><span class="line">mysql-libs-5.1.73-3.el6_5.x86_64</span><br><span class="line">mysql-server-5.1.73-3.el6_5.x86_64</span><br></pre></td></tr></table></figure>
-
-<p>此处已经部署，先卸载</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# rpm -e --nodeps mysql*</span><br></pre></td></tr></table></figure>
-
-<h3 id="1-用yum安装"><a href="#1-用yum安装" class="headerlink" title="1.用yum安装"></a>1.用yum安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# yum search mysql</span><br><span class="line">[root@hadoop001 mysql]# yum install -y mysql-server.x86_64 mysql.x86_64</span><br></pre></td></tr></table></figure>
-
-<p>安装完毕根据需要修改配置文件:<code>/etc/my.cnf</code></p>
-<p>#不用yum安装的话，可到官网下载rpm包，然后通过命令<code>rpm -ivh rpm包</code>进行安装，大同小异</p>
-<h3 id="2-启动与停止"><a href="#2-启动与停止" class="headerlink" title="2.启动与停止"></a>2.启动与停止</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# service mysqld start</span><br><span class="line">[root@hadoop001 mysql]# service mysqld stop  </span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="二、tar包部署"><a href="#二、tar包部署" class="headerlink" title="二、tar包部署"></a>二、tar包部署</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# mysql --version</span><br><span class="line">mysql  Ver 14.14 Distrib 5.6.23, for linux-glibc2.5 (x86_64) using  EditLine wrapper</span><br></pre></td></tr></table></figure>
-
-<p>我的linux系统上已经部署mysql 5.6.23版本，现在以部署mysql 5.7.11为例再部署一次。</p>
-<h3 id="0-前期准备：tar包"><a href="#0-前期准备：tar包" class="headerlink" title="0.前期准备：tar包"></a>0.前期准备：tar包</h3><p>官方网站选择需要的版本下载：<a href="https://downloads.mysql.com/archives/community/">https://downloads.mysql.com/archives/community/</a></p>
-<p>我们这里用到的是mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz，点击下载：<a href="https://cdn.mysql.com/archives/mysql-5.7/mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz">mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz</a></p>
-<p>然后通过rz命令上传至linux系统</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# rz</span><br><span class="line">[root@hadoop001 local]# ll|grep mysql</span><br><span class="line">-rw-r--r--.  1 root       root 548193637 Nov 21 03:58 mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz</span><br></pre></td></tr></table></figure>
-
-<h3 id="1-解压及创建目录"><a href="#1-解压及创建目录" class="headerlink" title="1.解压及创建目录"></a>1.解压及创建目录</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# tar -xzvf mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz </span><br><span class="line">[root@hadoop001 local]# ln -s mysql-5.7.11-linux-glibc2.5-x86_64 mysql</span><br><span class="line">[root@hadoop001 local]# cd mysql</span><br><span class="line">[root@hadoop001 mysql]# ll</span><br><span class="line">total 52</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 bin</span><br><span class="line">-rw-r--r--.  1 7161 wheel 17987 Feb  2  2016 COPYING</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 docs</span><br><span class="line">drwxr-xr-x.  3 7161 wheel  4096 Feb  2  2016 include</span><br><span class="line">drwxr-xr-x.  5 7161 wheel  4096 Feb  2  2016 lib</span><br><span class="line">drwxr-xr-x.  4 7161 wheel  4096 Feb  2  2016 man</span><br><span class="line">-rw-r--r--.  1 7161 wheel  2478 Feb  2  2016 README</span><br><span class="line">drwxr-xr-x. 28 7161 wheel  4096 Feb  2  2016 share</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 support-files</span><br><span class="line">[root@hadoop001 mysql]# mkdir arch data tmp</span><br><span class="line">[root@hadoop001 mysql]# ll</span><br><span class="line">total 64</span><br><span class="line">drwxr-xr-x.  2 root root   4096 Nov 24 09:38 arch</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 bin</span><br><span class="line">-rw-r--r--.  1 7161 wheel 17987 Feb  2  2016 COPYING</span><br><span class="line">drwxr-xr-x.  2 root root   4096 Nov 24 09:38 data</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 docs</span><br><span class="line">drwxr-xr-x.  3 7161 wheel  4096 Feb  2  2016 include</span><br><span class="line">drwxr-xr-x.  5 7161 wheel  4096 Feb  2  2016 lib</span><br><span class="line">drwxr-xr-x.  4 7161 wheel  4096 Feb  2  2016 man</span><br><span class="line">-rw-r--r--.  1 7161 wheel  2478 Feb  2  2016 README</span><br><span class="line">drwxr-xr-x. 28 7161 wheel  4096 Feb  2  2016 share</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 support-files</span><br><span class="line">drwxr-xr-x.  2 root root   4096 Nov 24 09:38 tmp</span><br></pre></td></tr></table></figure>
-
-<p>arch:binlog日志存储的文件夹</p>
-<h3 id="2-创建配置文件-etc-my-cnf"><a href="#2-创建配置文件-etc-my-cnf" class="headerlink" title="2.创建配置文件/etc/my.cnf"></a>2.创建配置文件/etc/my.cnf</h3><p>#defualt start: /etc/my.cnf-&gt;/etc/mysql/my.cnf-&gt;SYSCONFDIR/my.cnf-&gt;$MYSQL_HOME/my.cnf-&gt; –defaults-extra-file-&gt;~/my.cnf </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]#vi /etc/my.cnf</span><br><span class="line"></span><br><span class="line">[client]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">default-character-set=utf8mb4</span><br><span class="line"></span><br><span class="line">[mysqld]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">#user 			= mysqladmin</span><br><span class="line"></span><br><span class="line">skip-slave-start</span><br><span class="line"></span><br><span class="line">skip-external-locking</span><br><span class="line">key_buffer_size = 256M</span><br><span class="line">sort_buffer_size = 2M</span><br><span class="line">read_buffer_size = 2M</span><br><span class="line">read_rnd_buffer_size = 4M</span><br><span class="line">query_cache_size= 32M</span><br><span class="line">max_allowed_packet = 16M</span><br><span class="line">myisam_sort_buffer_size=128M</span><br><span class="line">tmp_table_size=32M</span><br><span class="line"></span><br><span class="line">table_open_cache = 512</span><br><span class="line">thread_cache_size = 8</span><br><span class="line">wait_timeout = 86400</span><br><span class="line">interactive_timeout = 86400</span><br><span class="line">max_connections = 600</span><br><span class="line"></span><br><span class="line"># Try number of CPU&#x27;s*2 for thread_concurrency</span><br><span class="line">#thread_concurrency = 32 </span><br><span class="line"></span><br><span class="line">#isolation level and default engine </span><br><span class="line">default-storage-engine = INNODB</span><br><span class="line">transaction-isolation = READ-COMMITTED</span><br><span class="line"></span><br><span class="line">server-id  = 1739</span><br><span class="line">basedir     = /usr/local/mysql</span><br><span class="line">datadir     = /usr/local/mysql/data</span><br><span class="line">pid-file     = /usr/local/mysql/data/hostname.pid</span><br><span class="line"></span><br><span class="line">#open performance schema</span><br><span class="line">log-warnings</span><br><span class="line">sysdate-is-now</span><br><span class="line"></span><br><span class="line">binlog_format = ROW</span><br><span class="line">log_bin_trust_function_creators=1</span><br><span class="line">log-error  = /usr/local/mysql/data/hostname.err</span><br><span class="line">log-bin = /usr/local/mysql/arch/mysql-bin</span><br><span class="line">expire_logs_days = 7</span><br><span class="line"></span><br><span class="line">innodb_write_io_threads=16</span><br><span class="line"></span><br><span class="line">relay-log  = /usr/local/mysql/relay_log/relay-log</span><br><span class="line">relay-log-index = /usr/local/mysql/relay_log/relay-log.index</span><br><span class="line">relay_log_info_file= /usr/local/mysql/relay_log/relay-log.info</span><br><span class="line"></span><br><span class="line">log_slave_updates=1</span><br><span class="line">gtid_mode=OFF</span><br><span class="line">enforce_gtid_consistency=OFF</span><br><span class="line"></span><br><span class="line"># slave</span><br><span class="line">slave-parallel-type=LOGICAL_CLOCK</span><br><span class="line">slave-parallel-workers=4</span><br><span class="line">master_info_repository=TABLE</span><br><span class="line">relay_log_info_repository=TABLE</span><br><span class="line">relay_log_recovery=ON</span><br><span class="line"></span><br><span class="line">#other logs</span><br><span class="line">#general_log =1</span><br><span class="line">#general_log_file  = /usr/local/mysql/data/general_log.err</span><br><span class="line">#slow_query_log=1</span><br><span class="line">#slow_query_log_file=/usr/local/mysql/data/slow_log.err</span><br><span class="line"></span><br><span class="line">#for replication slave</span><br><span class="line">sync_binlog = 500</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#for innodb options </span><br><span class="line">innodb_data_home_dir = /usr/local/mysql/data/</span><br><span class="line">innodb_data_file_path = ibdata1:1G;ibdata2:1G:autoextend</span><br><span class="line"></span><br><span class="line">innodb_log_group_home_dir = /usr/local/mysql/arch</span><br><span class="line">innodb_log_files_in_group = 4</span><br><span class="line">innodb_log_file_size = 1G</span><br><span class="line">innodb_log_buffer_size = 200M</span><br><span class="line"></span><br><span class="line">#根据生产需要，调整pool size </span><br><span class="line">innodb_buffer_pool_size = 2G</span><br><span class="line">#innodb_additional_mem_pool_size = 50M #deprecated in 5.6</span><br><span class="line">tmpdir = /usr/local/mysql/tmp</span><br><span class="line"></span><br><span class="line">innodb_lock_wait_timeout = 1000</span><br><span class="line">#innodb_thread_concurrency = 0</span><br><span class="line">innodb_flush_log_at_trx_commit = 2</span><br><span class="line"></span><br><span class="line">innodb_locks_unsafe_for_binlog=1</span><br><span class="line"></span><br><span class="line">#innodb io features: add for mysql5.5.8</span><br><span class="line">performance_schema</span><br><span class="line">innodb_read_io_threads=4</span><br><span class="line">innodb-write-io-threads=4</span><br><span class="line">innodb-io-capacity=200</span><br><span class="line">#purge threads change default(0) to 1 for purge</span><br><span class="line">innodb_purge_threads=1</span><br><span class="line">innodb_use_native_aio=on</span><br><span class="line"></span><br><span class="line">#case-sensitive file names and separate tablespace</span><br><span class="line">innodb_file_per_table = 1</span><br><span class="line">lower_case_table_names=1</span><br><span class="line"></span><br><span class="line">[mysqldump]</span><br><span class="line">quick</span><br><span class="line">max_allowed_packet = 128M</span><br><span class="line"></span><br><span class="line">[mysql]</span><br><span class="line">no-auto-rehash</span><br><span class="line">default-character-set=utf8mb4</span><br><span class="line"></span><br><span class="line">[mysqlhotcopy]</span><br><span class="line">interactive-timeout</span><br><span class="line"></span><br><span class="line">[myisamchk]</span><br><span class="line">key_buffer_size = 256M</span><br><span class="line">sort_buffer_size = 256M</span><br><span class="line">read_buffer = 2M</span><br><span class="line">write_buffer = 2M</span><br></pre></td></tr></table></figure>
-
-<p>根据生产需要，调整pool size，生产上：innodb_buffer_pool_size = 2G</p>
-<p>补充：</p>
-<p>配置MySQL的环境变量：/etc/profile:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export MYSQL_HOME=/usr/local/mysql</span><br><span class="line">export PATH=$&#123;MYSQL_HOME&#125;/bin:$PATH</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-创建用户组及用户"><a href="#3-创建用户组及用户" class="headerlink" title="3.创建用户组及用户"></a>3.创建用户组及用户</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# groupadd -g 101 dba</span><br><span class="line">[root@hadoop001 mysql]# useradd -u 514 -g dba -G root -d /usr/local/mysql mysqladmin</span><br><span class="line">[root@hadoop001 mysql]# id mysqladmin</span><br><span class="line">uid=514(mysqladmin) gid=101(dba) groups=101(dba),0(root)</span><br></pre></td></tr></table></figure>
-
-<p>一般不需要设置mysqladmin的密码，直接从root或者LDAP用户sudo切换</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# passwd mysqladmin</span><br><span class="line">Changing password for user mysqladmin.</span><br><span class="line">New password: </span><br><span class="line">BAD PASSWORD: it is too simplistic/systematic</span><br><span class="line">BAD PASSWORD: is too simple</span><br><span class="line">Retype new password: </span><br><span class="line">passwd: all authentication tokens updated successfully.</span><br></pre></td></tr></table></figure>
-
-<p>如果mysqladmin用户已经存在，更改用户组及home目录地址：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# usermod -u 514 -g dba -G root -d /usr/local/mysql mysqladmin</span><br></pre></td></tr></table></figure>
-
-<p>copy 环境变量配置文件至mysqladmin用户的home目录中,为了以下步骤配置个人环境变量</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# cp /etc/skel/.* /usr/local/mysql</span><br><span class="line">cp: omitting directory `/etc/skel/.&#x27;</span><br><span class="line">cp: omitting directory `/etc/skel/..&#x27;</span><br><span class="line">cp: omitting directory `/etc/skel/.gnome2&#x27;</span><br><span class="line">cp: omitting directory `/etc/skel/.mozilla&#x27;</span><br><span class="line">[root@hadoop001 mysql]# su - mysqladmin</span><br><span class="line">[mysqladmin@hadoop001 ~]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 mysql]# </span><br></pre></td></tr></table></figure>
-
-<h3 id="4-配置环境变量"><a href="#4-配置环境变量" class="headerlink" title="4.配置环境变量"></a>4.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# vi .bash_profile</span><br><span class="line"># .bash_profile</span><br><span class="line"># Get the aliases and functions</span><br><span class="line"></span><br><span class="line">if [ -f ~/.bashrc ]; then</span><br><span class="line">        . ~/.bashrc</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line"># User specific environment and startup programs</span><br><span class="line">export MYSQL_BASE=/usr/local/mysql</span><br><span class="line">export PATH=$&#123;MYSQL_BASE&#125;/bin:$PATH</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">unset USERNAME</span><br><span class="line"></span><br><span class="line">#stty erase ^H</span><br><span class="line">set umask to 022</span><br><span class="line">umask 022</span><br><span class="line">PS1=`uname -n`&quot;:&quot;&#x27;$USER&#x27;&quot;:&quot;&#x27;$PWD&#x27;&quot;:&gt;&quot;; export PS1</span><br></pre></td></tr></table></figure>
-
-<h3 id="5-赋权限和用户组"><a href="#5-赋权限和用户组" class="headerlink" title="5.赋权限和用户组"></a>5.赋权限和用户组</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# chown mysqladmin:dba /etc/my.cnf</span><br><span class="line">[root@hadoop001 mysql]# chmod  640 /etc/my.cnf  </span><br><span class="line">[root@hadoop001 mysql]# ll /etc/my.cnf</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 2218 Nov 15 01:07 /etc/my.cnf</span><br><span class="line"></span><br><span class="line">[root@hadoop001 mysql]# chown -R mysqladmin:dba /usr/local/mysql</span><br><span class="line">[root@hadoop001 mysql]# chown -R mysqladmin:dba /usr/local/mysql/*</span><br><span class="line">[root@hadoop001 mysql]# chown -R mysqladmin:dba /usr/local/mysql-5.7.11-linux-glibc2.5-x86_64</span><br><span class="line"></span><br><span class="line">[root@hadoop001 mysql]# chmod -R 755 /usr/local/mysql </span><br><span class="line">[root@hadoop001 mysql]# chmod -R 755 /usr/local/mysql/*</span><br><span class="line">[root@hadoop001 mysql]# chmod -R 755 /usr/local/mysql-5.7.11-linux-glibc2.5-x86_64 </span><br></pre></td></tr></table></figure>
-
-<h3 id="6-配置服务及开机自启动"><a href="#6-配置服务及开机自启动" class="headerlink" title="6.配置服务及开机自启动"></a>6.配置服务及开机自启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#将服务文件拷贝到init.d下，并重命名为mysql</span><br><span class="line">[root@hadoop001 mysql]# cp support-files/mysql.server /etc/rc.d/init.d/mysql </span><br><span class="line">#赋予可执行权限</span><br><span class="line">[root@hadoop001 mysql]# chmod +x /etc/rc.d/init.d/mysql</span><br><span class="line">#删除服务</span><br><span class="line">[root@hadoop001 mysql]# chkconfig --del mysql</span><br><span class="line">#添加服务</span><br><span class="line">[root@hadoop001 mysql]# chkconfig --add mysql</span><br><span class="line">[root@hadoop001 mysql]# chkconfig --level 345 mysql on</span><br><span class="line">#开机自启动</span><br><span class="line">[root@hadoop001 mysql]# vi /etc/rc.local </span><br><span class="line"></span><br><span class="line">#!/bin/bash</span><br><span class="line"># THIS FILE IS ADDED FOR COMPATIBILITY PURPOSES</span><br><span class="line">#</span><br><span class="line"># It is highly advisable to create own systemd services or udev rules</span><br><span class="line"># to run scripts during boot instead of using this file.</span><br><span class="line">#</span><br><span class="line"># In contrast to previous versions due to parallel execution during boot</span><br><span class="line"># this script will NOT be run after all other services.</span><br><span class="line">#</span><br><span class="line"># Please note that you must run &#x27;chmod +x /etc/rc.d/rc.local&#x27; to ensure</span><br><span class="line"># that this script will be executed during boot.</span><br><span class="line"></span><br><span class="line">touch /var/lock/subsys/local</span><br><span class="line">su - mysqladmin -c &quot;/etc/init.d/mysql start --federated&quot;</span><br></pre></td></tr></table></figure>
-
-<h3 id="7-安装"><a href="#7-安装" class="headerlink" title="7.安装"></a>7.安装</h3><p>安装libaio及安装mysql的初始db</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# yum -y install libaio</span><br><span class="line">[root@hadoop001 mysql]# su - mysqladmin</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;bin/mysqld \</span><br><span class="line">&gt; --defaults-file=/etc/my.cnf \</span><br><span class="line">&gt; --user=mysqladmin \</span><br><span class="line">&gt; --basedir=/usr/local/mysql/ \</span><br><span class="line">&gt; --datadir=/usr/local/mysql/data/ \</span><br><span class="line">&gt; --initialize</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;</span><br></pre></td></tr></table></figure>
-
-<p>在初始化时如果加上 –initial-insecure，则会创建空密码的 root@localhost 账号，否则会创建带密码的 root@localhost 账号，密码直接写在 log-error 日志文件中（在5.6版本中是放在 ~/.mysql_secret 文件里，更加隐蔽，不熟悉的话可能会无所适从）</p>
-<p>bin/mysqld –defaults-file=/etc/my.cnf –user=mysqladmin –basedir=/usr/local/mysql/ –datadir=/usr/local/mysql/data/ –initialize</p>
-<p>查看临时密码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop001:mysqladmin:/usr/local/mysql/data:&gt;cat hostname.err | grep pass</span><br><span class="line">2021-11-24T06:05:28.300539Z 1 [Note] A temporary password is generated for root@localhost: uhsa*57&gt;hacF</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>启动Mysql时报错：mysqld_safe mysqld from pid file /usr/local/mysql/data/Linux.pid ended。参考文章<a href="https://blog.csdn.net/alwaysbefine/article/details/107216380">Linux The server quit without updating PID file的几种解决方法</a>发现，是之前在运行5.6版本的Mysql仍在后台运行，占用pid文件，解决方法：ps -ef|grep mysql找出进程，然后kill掉进程后再重新安装。</p>
-</li>
-<li><p>若遇到报错，需要重新安装</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rm -rf /usr/local/mysql/arch/*</span><br><span class="line">rm -rf /usr/local/mysql/data/*</span><br></pre></td></tr></table></figure>
-
-<p>然后跳到第7步</p>
-</li>
-</ul>
-<h3 id="8-启动"><a href="#8-启动" class="headerlink" title="8.启动"></a>8.启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# mysql --version</span><br><span class="line">mysql  Ver 14.14 Distrib 5.7.11, for linux-glibc2.5 (x86_64) using  EditLine wrapper</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql start</span><br><span class="line">Starting MySQL..                                           [  OK  ]</span><br></pre></td></tr></table></figure>
-
-<h3 id="9-登录及修改用户密码"><a href="#9-登录及修改用户密码" class="headerlink" title="9.登录及修改用户密码"></a>9.登录及修改用户密码</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;mysql -uroot -p&#x27;&gt;Wo&gt;kh(GL7;D&#x27;</span><br><span class="line">mysql: [Warning] Using a password on the command line interface can be insecure.</span><br><span class="line">Welcome to the MySQL monitor.  Commands end with ; or \g.</span><br><span class="line">Your MySQL connection id is 2</span><br><span class="line">Server version: 5.7.11-log</span><br><span class="line"></span><br><span class="line">Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.</span><br><span class="line"></span><br><span class="line">Oracle is a registered trademark of Oracle Corporation and/or its</span><br><span class="line">affiliates. Other names may be trademarks of their respective</span><br><span class="line">owners.</span><br><span class="line"></span><br><span class="line">Type &#x27;help;&#x27; or &#x27;\h&#x27; for help. Type &#x27;\c&#x27; to clear the current input statement.</span><br><span class="line"></span><br><span class="line">mysql&gt; alter user root@localhost identified by &#x27;syncdb123!&#x27;;//rd1</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; GRANT ALL PRIVILEGES ON *.* TO &#x27;root&#x27;@&#x27;%&#x27; IDENTIFIED BY &#x27;syncdb123!&#x27;;</span><br><span class="line">Query OK, 0 rows affected, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; flush privileges;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; exit;</span><br><span class="line">Bye</span><br></pre></td></tr></table></figure>
-
-<p>重要的三句话：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt;create database ruozedata;</span><br><span class="line">mysql&gt;grant all privileges on ruozedata.* to ruoze@&#x27;localhost&#x27; identified by &#x27;123456&#x27;;</span><br><span class="line">mysql&gt;flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h3 id="10-重启"><a href="#10-重启" class="headerlink" title="10.重启"></a>10.重启</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql restart</span><br><span class="line">Shutting down MySQL..                                      [  OK  ]</span><br><span class="line">rm: cannot remove `/var/lock/subsys/mysql&#x27;: Permission denied</span><br><span class="line">Starting MySQL.                                            [  OK  ]</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;mysql -uroot -p</span><br><span class="line">Enter password: </span><br><span class="line">Welcome to the MySQL monitor.  Commands end with ; or \g.</span><br><span class="line">Your MySQL connection id is 2</span><br><span class="line">Server version: 5.7.11-log MySQL Community Server (GPL)</span><br><span class="line"></span><br><span class="line">Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.</span><br><span class="line"></span><br><span class="line">Oracle is a registered trademark of Oracle Corporation and/or its</span><br><span class="line">affiliates. Other names may be trademarks of their respective</span><br><span class="line">owners.</span><br><span class="line"></span><br><span class="line">Type &#x27;help;&#x27; or &#x27;\h&#x27; for help. Type &#x27;\c&#x27; to clear the current input statement.</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="三-（个人）重启机器后遇到问题"><a href="#三-（个人）重启机器后遇到问题" class="headerlink" title="三.（个人）重启机器后遇到问题"></a>三.（个人）重启机器后遇到问题</h2><p>当我重启机器后，mysqladmin并不能直接service mysql start启动Mysql服务，查看data文件夹内发现有 </p>
-<p><code>-rw-r-----. 1 mysql dba  53440 Nov 25 00:40 hostname.err</code></p>
-<p>即用户权限出现问题。然后切回root用户修改data/*的用户：用户组为mysqladmin:dba再启动，问题解决，过程如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# service mysql status</span><br><span class="line">MySQL is not running, but lock file (/var/lock/subsys/mysql[FAILED]</span><br><span class="line">[root@hadoop001 ~]# service mysql start</span><br><span class="line">Starting MySQL.The server quit without updating PID file (/usr/local/mysql/data/hadoop001.pid).                                                          [FAILED]</span><br><span class="line">[root@hadoop001 ~]# su - mysqladmin</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql start</span><br><span class="line">Starting MySQL.The server quit without updating PID file (/usr/local/mysql/data/hadoop001.pid).                                                          [FAILED]</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll</span><br><span class="line">total 68</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Nov 25 00:35 arch</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Feb  2  2016 bin</span><br><span class="line">-rwxr-xr-x.  1 mysqladmin dba 17987 Feb  2  2016 COPYING</span><br><span class="line">drwxr-xr-x.  5 mysqladmin dba  4096 Nov 25 00:40 data</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Feb  2  2016 docs</span><br><span class="line">drwxr-xr-x.  3 mysqladmin dba  4096 Feb  2  2016 include</span><br><span class="line">drwxr-x---.  2 mysqladmin dba  4096 Nov 24 13:15 keyring</span><br><span class="line">drwxr-xr-x.  5 mysqladmin dba  4096 Feb  2  2016 lib</span><br><span class="line">drwxr-xr-x.  4 mysqladmin dba  4096 Feb  2  2016 man</span><br><span class="line">-rwxr-xr-x.  1 mysqladmin dba  2478 Feb  2  2016 README</span><br><span class="line">drwxr-xr-x. 28 mysqladmin dba  4096 Feb  2  2016 share</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Feb  2  2016 support-files</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Nov 25 00:35 tmp</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll data/</span><br><span class="line">total 2097248</span><br><span class="line">-rw-r-----. 1 mysqladmin dba         56 Nov 24 14:55 auto.cnf</span><br><span class="line">-rw-r-----. 1 mysql      dba      53440 Nov 25 00:40 hostname.err</span><br><span class="line">-rw-r-----. 1 mysqladmin dba        294 Nov 25 00:35 ib_buffer_pool</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 25 00:35 ibdata1</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 24 14:55 ibdata2</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 mysql</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 performance_schema</span><br><span class="line">drwxr-x---. 2 mysqladmin dba      12288 Nov 24 14:55 sys</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# chown mysqladmin:dba /usr/local/mysql/*</span><br><span class="line">[root@hadoop001 ~]# chown mysqladmin:dba /usr/local/mysql/data/*</span><br><span class="line">[root@hadoop001 ~]# su - mysqladmin</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll data/</span><br><span class="line">total 2097248</span><br><span class="line">-rw-r-----. 1 mysqladmin dba         56 Nov 24 14:55 auto.cnf</span><br><span class="line">-rw-r-----. 1 mysqladmin dba      53440 Nov 25 00:40 hostname.err</span><br><span class="line">-rw-r-----. 1 mysqladmin dba        294 Nov 25 00:35 ib_buffer_pool</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 25 00:35 ibdata1</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 24 14:55 ibdata2</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 mysql</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 performance_schema</span><br><span class="line">drwxr-x---. 2 mysqladmin dba      12288 Nov 24 14:55 sys</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql start</span><br><span class="line">Starting MySQL.                                            [  OK  ]</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll data/</span><br><span class="line">total 2109552</span><br><span class="line">-rw-r-----. 1 mysqladmin dba         56 Nov 24 14:55 auto.cnf</span><br><span class="line">-rw-r-----. 1 mysqladmin dba          5 Nov 25 00:41 hadoop001.pid</span><br><span class="line">-rw-r-----. 1 mysqladmin dba      57597 Nov 25 00:41 hostname.err</span><br><span class="line">-rw-r-----. 1 mysqladmin dba        294 Nov 25 00:35 ib_buffer_pool</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 25 00:41 ibdata1</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 24 14:55 ibdata2</span><br><span class="line">-rw-r-----. 1 mysqladmin dba   12582912 Nov 25 00:41 ibtmp1</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 mysql</span><br><span class="line">-rw-rw----. 1 mysqladmin dba          5 Nov 25 00:41 mysqld_safe.pid</span><br><span class="line">srwxrwxrwx. 1 mysqladmin dba          0 Nov 25 00:41 mysql.sock</span><br><span class="line">-rw-------. 1 mysqladmin dba          5 Nov 25 00:41 mysql.sock.lock</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 performance_schema</span><br><span class="line">drwxr-x---. 2 mysqladmin dba      12288 Nov 24 14:55 sys</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>再次重启，问题再次出现，hostname.err的用户用户组为：mysql:mysqladmin</p>
-<p>经查阅，发现my.cnf中[mysqld]下有默认启动用户<code>user = mysql</code>，指定为<code>user = mysqladmin</code>后重启，问题不再出现，且mysql服务开机自启动</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">#以下注释为默认参数，不指定的话，user=mysql</span><br><span class="line">#user 			= mysql</span><br><span class="line">user 			= mysqladmin</span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
     <title>SQL练习题</title>
     <url>/2021/11/29/SQL%E7%BB%83%E4%B9%A0%E9%A2%98/</url>
     <content><![CDATA[<h1 id="SQL练习题"><a href="#SQL练习题" class="headerlink" title="SQL练习题"></a>SQL练习题</h1><p>–部门表<br>dept部门表(deptno部门编号/dname部门名称/loc地点)</p>
@@ -1589,15 +1491,12 @@
     <title>关于YARN</title>
     <url>/2021/12/07/%E5%85%B3%E4%BA%8EYARN/</url>
     <content><![CDATA[<h2 id="一、YARN应用运行机制"><a href="#一、YARN应用运行机制" class="headerlink" title="一、YARN应用运行机制"></a>一、YARN应用运行机制</h2><ul>
-<li><p>ResourceManager(rm)：处理客户端请求、启动/监控ApplicationMaster、监控NodeManager、资源分配与调度。</p>
-<p>其中包含2个重要组件：Scheduler 和 Applications Manager。</p>
-</li>
-<li><p>NodeManager(nm)：单个节点上的资源管理、处理来⾃ResourceManager的命令、处理来⾃ApplicationMaster的命令。</p>
-</li>
-<li><p>ApplicationMaster(am)：数据切分、为应⽤程序申请资源，并分配给内部任务、任务监控与容错。</p>
-</li>
-<li><p>Container：对任务运⾏环境的抽象，封装了CPU、内存等多维资源以及环境变量、启动命令等任务运⾏相关的信息。</p>
-</li>
+<li>ResourceManager（RM）：负责对各NM上的资源进行统一管理和调度，将AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。</li>
+<li>调度器（Scheduler）：调度器根据容量、队列等限制条件（如每个队列分配一定的资源，最多执行一定数量的作业等），将系统中的资源分配给各个正在运行的应用程序。调度器仅根据各个应用程序的资源需求进行资源分配，而资源分配单位是Container，从而限定每个任务使用的资源量。Scheduler不负责监控或者跟踪应用程序的状态，也不负责任务因为各种原因而需要的重启（由ApplicationMaster负责）。总之，调度器根据应用程序的资源要求，以及集群机器的资源情况，为用程序分配封装在Container中的资源。调度器是可插拔的，例如CapacityScheduler、FairScheduler。（PS：在实际应用中，只需要简单配置即可）</li>
+<li>应用程序管理器（Application Manager）：应用程序管理器负责管理整个系统中所有应用程序，包括应用程序提交、与调度器协商资源以启动AM、监控AM运行状态并在失败时重新启动等，跟踪分给的Container的进度、状态也是其职责。ApplicationMaster是应用框架，它负责向ResourceManager协调资源，并且与NodeManager协同工作完成Task的执行和监控。MapReduce就是原生支持的一种框架，可以在YARN上运行Mapreduce作业。有很多分布式应用都开发了对应的应用程序框架，用于在YARN上运行任务，例如Spark，Storm等。如果需要，我们也可以自己写一个符合规范的YARN application。</li>
+<li>NodeManager（NM）：NM是每个节点上的资源和任务管理器。它会定时地向RM汇报本节点上的资源使用情况和各个Container的运行状态；同时会接收并处理来自AM的Container 启动/停止等请求。</li>
+<li>ApplicationMaster（AM）：用户提交的应用程序均包含一个AM，负责应用的监控，跟踪应用执行状态，重启失败任务等。</li>
+<li>Container：是YARN中的资源抽象，它封装了某个节点上的多维度资源，如内存、CPU、磁盘、网络等，当AM向RM申请资源时，RM为AM返回的资源便是用Container 表示的。YARN会为每个任务分配一个Container且该任务只能使用该Container中描述的资源。</li>
 </ul>
 <span id="more"></span>
 
@@ -1818,6 +1717,104 @@
 <p>由于B申请的资源是A的两倍（6% vs 3%），所以在公平调度下，B只分到A一般的容器数。</p>
 <p>​    默认情况下不用DRF，因此在资源计算期间，只需考虑内存，不必考虑CPU。对容量调度器进行配置后，可以使用DRF，将<code>capacity-scheduler.xml</code>中文件中的<code>org.apache.hadoop.yarn.util.resource.DominantResourceCalculator</code>设为<code>yarn.scheduler.capacity.resource-calculator</code>即可。</p>
 <p>​    公平调度器若要使用DRF，通过将分配文件中的顶层元素<code>defaultQueueSchedulingPolicy</code>设为<code>drf</code>即可。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>在Linux系统上部署Mysql</title>
+    <url>/2021/11/24/Mysql%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h1 id="在Linux系统上部署Mysql"><a href="#在Linux系统上部署Mysql" class="headerlink" title="在Linux系统上部署Mysql"></a>在Linux系统上部署Mysql</h1><p>在Linux上部署Mysql的两种方式：</p>
+<ul>
+<li>rpm包部署：操作简单，适合学习的场景</li>
+<li>tar包部署：定制化配置，生产上一般用tar包部署</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="一、rpm包部署"><a href="#一、rpm包部署" class="headerlink" title="一、rpm包部署"></a>一、rpm包部署</h2><h3 id="0-查看机器上是否已经部署"><a href="#0-查看机器上是否已经部署" class="headerlink" title="0.查看机器上是否已经部署"></a>0.查看机器上是否已经部署</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# rpm -qa|grep mysql</span><br><span class="line">mysql-5.1.73-3.el6_5.x86_64</span><br><span class="line">mysql-libs-5.1.73-3.el6_5.x86_64</span><br><span class="line">mysql-server-5.1.73-3.el6_5.x86_64</span><br></pre></td></tr></table></figure>
+
+<p>此处已经部署，先卸载</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# rpm -e --nodeps mysql*</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-用yum安装"><a href="#1-用yum安装" class="headerlink" title="1.用yum安装"></a>1.用yum安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# yum search mysql</span><br><span class="line">[root@hadoop001 mysql]# yum install -y mysql-server.x86_64 mysql.x86_64</span><br></pre></td></tr></table></figure>
+
+<p>安装完毕根据需要修改配置文件:<code>/etc/my.cnf</code></p>
+<p>#不用yum安装的话，可到官网下载rpm包，然后通过命令<code>rpm -ivh rpm包</code>进行安装，大同小异</p>
+<h3 id="2-启动与停止"><a href="#2-启动与停止" class="headerlink" title="2.启动与停止"></a>2.启动与停止</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# service mysqld start</span><br><span class="line">[root@hadoop001 mysql]# service mysqld stop  </span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="二、tar包部署"><a href="#二、tar包部署" class="headerlink" title="二、tar包部署"></a>二、tar包部署</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# mysql --version</span><br><span class="line">mysql  Ver 14.14 Distrib 5.6.23, for linux-glibc2.5 (x86_64) using  EditLine wrapper</span><br></pre></td></tr></table></figure>
+
+<p>我的linux系统上已经部署mysql 5.6.23版本，现在以部署mysql 5.7.11为例再部署一次。</p>
+<h3 id="0-前期准备：tar包"><a href="#0-前期准备：tar包" class="headerlink" title="0.前期准备：tar包"></a>0.前期准备：tar包</h3><p>官方网站选择需要的版本下载：<a href="https://downloads.mysql.com/archives/community/">https://downloads.mysql.com/archives/community/</a></p>
+<p>我们这里用到的是mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz，点击下载：<a href="https://cdn.mysql.com/archives/mysql-5.7/mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz">mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz</a></p>
+<p>然后通过rz命令上传至linux系统</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# rz</span><br><span class="line">[root@hadoop001 local]# ll|grep mysql</span><br><span class="line">-rw-r--r--.  1 root       root 548193637 Nov 21 03:58 mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-解压及创建目录"><a href="#1-解压及创建目录" class="headerlink" title="1.解压及创建目录"></a>1.解压及创建目录</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# tar -xzvf mysql-5.7.11-linux-glibc2.5-x86_64.tar.gz </span><br><span class="line">[root@hadoop001 local]# ln -s mysql-5.7.11-linux-glibc2.5-x86_64 mysql</span><br><span class="line">[root@hadoop001 local]# cd mysql</span><br><span class="line">[root@hadoop001 mysql]# ll</span><br><span class="line">total 52</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 bin</span><br><span class="line">-rw-r--r--.  1 7161 wheel 17987 Feb  2  2016 COPYING</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 docs</span><br><span class="line">drwxr-xr-x.  3 7161 wheel  4096 Feb  2  2016 include</span><br><span class="line">drwxr-xr-x.  5 7161 wheel  4096 Feb  2  2016 lib</span><br><span class="line">drwxr-xr-x.  4 7161 wheel  4096 Feb  2  2016 man</span><br><span class="line">-rw-r--r--.  1 7161 wheel  2478 Feb  2  2016 README</span><br><span class="line">drwxr-xr-x. 28 7161 wheel  4096 Feb  2  2016 share</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 support-files</span><br><span class="line">[root@hadoop001 mysql]# mkdir arch data tmp</span><br><span class="line">[root@hadoop001 mysql]# ll</span><br><span class="line">total 64</span><br><span class="line">drwxr-xr-x.  2 root root   4096 Nov 24 09:38 arch</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 bin</span><br><span class="line">-rw-r--r--.  1 7161 wheel 17987 Feb  2  2016 COPYING</span><br><span class="line">drwxr-xr-x.  2 root root   4096 Nov 24 09:38 data</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 docs</span><br><span class="line">drwxr-xr-x.  3 7161 wheel  4096 Feb  2  2016 include</span><br><span class="line">drwxr-xr-x.  5 7161 wheel  4096 Feb  2  2016 lib</span><br><span class="line">drwxr-xr-x.  4 7161 wheel  4096 Feb  2  2016 man</span><br><span class="line">-rw-r--r--.  1 7161 wheel  2478 Feb  2  2016 README</span><br><span class="line">drwxr-xr-x. 28 7161 wheel  4096 Feb  2  2016 share</span><br><span class="line">drwxr-xr-x.  2 7161 wheel  4096 Feb  2  2016 support-files</span><br><span class="line">drwxr-xr-x.  2 root root   4096 Nov 24 09:38 tmp</span><br></pre></td></tr></table></figure>
+
+<p>arch:binlog日志存储的文件夹</p>
+<h3 id="2-创建配置文件-etc-my-cnf"><a href="#2-创建配置文件-etc-my-cnf" class="headerlink" title="2.创建配置文件/etc/my.cnf"></a>2.创建配置文件/etc/my.cnf</h3><p>#defualt start: /etc/my.cnf-&gt;/etc/mysql/my.cnf-&gt;SYSCONFDIR/my.cnf-&gt;$MYSQL_HOME/my.cnf-&gt; –defaults-extra-file-&gt;~/my.cnf </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]#vi /etc/my.cnf</span><br><span class="line"></span><br><span class="line">[client]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">default-character-set=utf8mb4</span><br><span class="line"></span><br><span class="line">[mysqld]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">#user 			= mysqladmin</span><br><span class="line"></span><br><span class="line">skip-slave-start</span><br><span class="line"></span><br><span class="line">skip-external-locking</span><br><span class="line">key_buffer_size = 256M</span><br><span class="line">sort_buffer_size = 2M</span><br><span class="line">read_buffer_size = 2M</span><br><span class="line">read_rnd_buffer_size = 4M</span><br><span class="line">query_cache_size= 32M</span><br><span class="line">max_allowed_packet = 16M</span><br><span class="line">myisam_sort_buffer_size=128M</span><br><span class="line">tmp_table_size=32M</span><br><span class="line"></span><br><span class="line">table_open_cache = 512</span><br><span class="line">thread_cache_size = 8</span><br><span class="line">wait_timeout = 86400</span><br><span class="line">interactive_timeout = 86400</span><br><span class="line">max_connections = 600</span><br><span class="line"></span><br><span class="line"># Try number of CPU&#x27;s*2 for thread_concurrency</span><br><span class="line">#thread_concurrency = 32 </span><br><span class="line"></span><br><span class="line">#isolation level and default engine </span><br><span class="line">default-storage-engine = INNODB</span><br><span class="line">transaction-isolation = READ-COMMITTED</span><br><span class="line"></span><br><span class="line">server-id  = 1739</span><br><span class="line">basedir     = /usr/local/mysql</span><br><span class="line">datadir     = /usr/local/mysql/data</span><br><span class="line">pid-file     = /usr/local/mysql/data/hostname.pid</span><br><span class="line"></span><br><span class="line">#open performance schema</span><br><span class="line">log-warnings</span><br><span class="line">sysdate-is-now</span><br><span class="line"></span><br><span class="line">binlog_format = ROW</span><br><span class="line">log_bin_trust_function_creators=1</span><br><span class="line">log-error  = /usr/local/mysql/data/hostname.err</span><br><span class="line">log-bin = /usr/local/mysql/arch/mysql-bin</span><br><span class="line">expire_logs_days = 7</span><br><span class="line"></span><br><span class="line">innodb_write_io_threads=16</span><br><span class="line"></span><br><span class="line">relay-log  = /usr/local/mysql/relay_log/relay-log</span><br><span class="line">relay-log-index = /usr/local/mysql/relay_log/relay-log.index</span><br><span class="line">relay_log_info_file= /usr/local/mysql/relay_log/relay-log.info</span><br><span class="line"></span><br><span class="line">log_slave_updates=1</span><br><span class="line">gtid_mode=OFF</span><br><span class="line">enforce_gtid_consistency=OFF</span><br><span class="line"></span><br><span class="line"># slave</span><br><span class="line">slave-parallel-type=LOGICAL_CLOCK</span><br><span class="line">slave-parallel-workers=4</span><br><span class="line">master_info_repository=TABLE</span><br><span class="line">relay_log_info_repository=TABLE</span><br><span class="line">relay_log_recovery=ON</span><br><span class="line"></span><br><span class="line">#other logs</span><br><span class="line">#general_log =1</span><br><span class="line">#general_log_file  = /usr/local/mysql/data/general_log.err</span><br><span class="line">#slow_query_log=1</span><br><span class="line">#slow_query_log_file=/usr/local/mysql/data/slow_log.err</span><br><span class="line"></span><br><span class="line">#for replication slave</span><br><span class="line">sync_binlog = 500</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#for innodb options </span><br><span class="line">innodb_data_home_dir = /usr/local/mysql/data/</span><br><span class="line">innodb_data_file_path = ibdata1:1G;ibdata2:1G:autoextend</span><br><span class="line"></span><br><span class="line">innodb_log_group_home_dir = /usr/local/mysql/arch</span><br><span class="line">innodb_log_files_in_group = 4</span><br><span class="line">innodb_log_file_size = 1G</span><br><span class="line">innodb_log_buffer_size = 200M</span><br><span class="line"></span><br><span class="line">#根据生产需要，调整pool size </span><br><span class="line">innodb_buffer_pool_size = 2G</span><br><span class="line">#innodb_additional_mem_pool_size = 50M #deprecated in 5.6</span><br><span class="line">tmpdir = /usr/local/mysql/tmp</span><br><span class="line"></span><br><span class="line">innodb_lock_wait_timeout = 1000</span><br><span class="line">#innodb_thread_concurrency = 0</span><br><span class="line">innodb_flush_log_at_trx_commit = 2</span><br><span class="line"></span><br><span class="line">innodb_locks_unsafe_for_binlog=1</span><br><span class="line"></span><br><span class="line">#innodb io features: add for mysql5.5.8</span><br><span class="line">performance_schema</span><br><span class="line">innodb_read_io_threads=4</span><br><span class="line">innodb-write-io-threads=4</span><br><span class="line">innodb-io-capacity=200</span><br><span class="line">#purge threads change default(0) to 1 for purge</span><br><span class="line">innodb_purge_threads=1</span><br><span class="line">innodb_use_native_aio=on</span><br><span class="line"></span><br><span class="line">#case-sensitive file names and separate tablespace</span><br><span class="line">innodb_file_per_table = 1</span><br><span class="line">lower_case_table_names=1</span><br><span class="line"></span><br><span class="line">[mysqldump]</span><br><span class="line">quick</span><br><span class="line">max_allowed_packet = 128M</span><br><span class="line"></span><br><span class="line">[mysql]</span><br><span class="line">no-auto-rehash</span><br><span class="line">default-character-set=utf8mb4</span><br><span class="line"></span><br><span class="line">[mysqlhotcopy]</span><br><span class="line">interactive-timeout</span><br><span class="line"></span><br><span class="line">[myisamchk]</span><br><span class="line">key_buffer_size = 256M</span><br><span class="line">sort_buffer_size = 256M</span><br><span class="line">read_buffer = 2M</span><br><span class="line">write_buffer = 2M</span><br></pre></td></tr></table></figure>
+
+<p>根据生产需要，调整pool size，生产上：innodb_buffer_pool_size = 2G</p>
+<p>补充：</p>
+<p>配置MySQL的环境变量：/etc/profile:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export MYSQL_HOME=/usr/local/mysql</span><br><span class="line">export PATH=$&#123;MYSQL_HOME&#125;/bin:$PATH</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-创建用户组及用户"><a href="#3-创建用户组及用户" class="headerlink" title="3.创建用户组及用户"></a>3.创建用户组及用户</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# groupadd -g 101 dba</span><br><span class="line">[root@hadoop001 mysql]# useradd -u 514 -g dba -G root -d /usr/local/mysql mysqladmin</span><br><span class="line">[root@hadoop001 mysql]# id mysqladmin</span><br><span class="line">uid=514(mysqladmin) gid=101(dba) groups=101(dba),0(root)</span><br></pre></td></tr></table></figure>
+
+<p>一般不需要设置mysqladmin的密码，直接从root或者LDAP用户sudo切换</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# passwd mysqladmin</span><br><span class="line">Changing password for user mysqladmin.</span><br><span class="line">New password: </span><br><span class="line">BAD PASSWORD: it is too simplistic/systematic</span><br><span class="line">BAD PASSWORD: is too simple</span><br><span class="line">Retype new password: </span><br><span class="line">passwd: all authentication tokens updated successfully.</span><br></pre></td></tr></table></figure>
+
+<p>如果mysqladmin用户已经存在，更改用户组及home目录地址：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# usermod -u 514 -g dba -G root -d /usr/local/mysql mysqladmin</span><br></pre></td></tr></table></figure>
+
+<p>copy 环境变量配置文件至mysqladmin用户的home目录中,为了以下步骤配置个人环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# cp /etc/skel/.* /usr/local/mysql</span><br><span class="line">cp: omitting directory `/etc/skel/.&#x27;</span><br><span class="line">cp: omitting directory `/etc/skel/..&#x27;</span><br><span class="line">cp: omitting directory `/etc/skel/.gnome2&#x27;</span><br><span class="line">cp: omitting directory `/etc/skel/.mozilla&#x27;</span><br><span class="line">[root@hadoop001 mysql]# su - mysqladmin</span><br><span class="line">[mysqladmin@hadoop001 ~]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 mysql]# </span><br></pre></td></tr></table></figure>
+
+<h3 id="4-配置环境变量"><a href="#4-配置环境变量" class="headerlink" title="4.配置环境变量"></a>4.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# vi .bash_profile</span><br><span class="line"># .bash_profile</span><br><span class="line"># Get the aliases and functions</span><br><span class="line"></span><br><span class="line">if [ -f ~/.bashrc ]; then</span><br><span class="line">        . ~/.bashrc</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line"># User specific environment and startup programs</span><br><span class="line">export MYSQL_BASE=/usr/local/mysql</span><br><span class="line">export PATH=$&#123;MYSQL_BASE&#125;/bin:$PATH</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">unset USERNAME</span><br><span class="line"></span><br><span class="line">#stty erase ^H</span><br><span class="line">set umask to 022</span><br><span class="line">umask 022</span><br><span class="line">PS1=`uname -n`&quot;:&quot;&#x27;$USER&#x27;&quot;:&quot;&#x27;$PWD&#x27;&quot;:&gt;&quot;; export PS1</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-赋权限和用户组"><a href="#5-赋权限和用户组" class="headerlink" title="5.赋权限和用户组"></a>5.赋权限和用户组</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# chown mysqladmin:dba /etc/my.cnf</span><br><span class="line">[root@hadoop001 mysql]# chmod  640 /etc/my.cnf  </span><br><span class="line">[root@hadoop001 mysql]# ll /etc/my.cnf</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 2218 Nov 15 01:07 /etc/my.cnf</span><br><span class="line"></span><br><span class="line">[root@hadoop001 mysql]# chown -R mysqladmin:dba /usr/local/mysql</span><br><span class="line">[root@hadoop001 mysql]# chown -R mysqladmin:dba /usr/local/mysql/*</span><br><span class="line">[root@hadoop001 mysql]# chown -R mysqladmin:dba /usr/local/mysql-5.7.11-linux-glibc2.5-x86_64</span><br><span class="line"></span><br><span class="line">[root@hadoop001 mysql]# chmod -R 755 /usr/local/mysql </span><br><span class="line">[root@hadoop001 mysql]# chmod -R 755 /usr/local/mysql/*</span><br><span class="line">[root@hadoop001 mysql]# chmod -R 755 /usr/local/mysql-5.7.11-linux-glibc2.5-x86_64 </span><br></pre></td></tr></table></figure>
+
+<h3 id="6-配置服务及开机自启动"><a href="#6-配置服务及开机自启动" class="headerlink" title="6.配置服务及开机自启动"></a>6.配置服务及开机自启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#将服务文件拷贝到init.d下，并重命名为mysql</span><br><span class="line">[root@hadoop001 mysql]# cp support-files/mysql.server /etc/rc.d/init.d/mysql </span><br><span class="line">#赋予可执行权限</span><br><span class="line">[root@hadoop001 mysql]# chmod +x /etc/rc.d/init.d/mysql</span><br><span class="line">#删除服务</span><br><span class="line">[root@hadoop001 mysql]# chkconfig --del mysql</span><br><span class="line">#添加服务</span><br><span class="line">[root@hadoop001 mysql]# chkconfig --add mysql</span><br><span class="line">[root@hadoop001 mysql]# chkconfig --level 345 mysql on</span><br><span class="line">#开机自启动</span><br><span class="line">[root@hadoop001 mysql]# vi /etc/rc.local </span><br><span class="line"></span><br><span class="line">#!/bin/bash</span><br><span class="line"># THIS FILE IS ADDED FOR COMPATIBILITY PURPOSES</span><br><span class="line">#</span><br><span class="line"># It is highly advisable to create own systemd services or udev rules</span><br><span class="line"># to run scripts during boot instead of using this file.</span><br><span class="line">#</span><br><span class="line"># In contrast to previous versions due to parallel execution during boot</span><br><span class="line"># this script will NOT be run after all other services.</span><br><span class="line">#</span><br><span class="line"># Please note that you must run &#x27;chmod +x /etc/rc.d/rc.local&#x27; to ensure</span><br><span class="line"># that this script will be executed during boot.</span><br><span class="line"></span><br><span class="line">touch /var/lock/subsys/local</span><br><span class="line">su - mysqladmin -c &quot;/etc/init.d/mysql start --federated&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-安装"><a href="#7-安装" class="headerlink" title="7.安装"></a>7.安装</h3><p>安装libaio及安装mysql的初始db</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# yum -y install libaio</span><br><span class="line">[root@hadoop001 mysql]# su - mysqladmin</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;bin/mysqld \</span><br><span class="line">&gt; --defaults-file=/etc/my.cnf \</span><br><span class="line">&gt; --user=mysqladmin \</span><br><span class="line">&gt; --basedir=/usr/local/mysql/ \</span><br><span class="line">&gt; --datadir=/usr/local/mysql/data/ \</span><br><span class="line">&gt; --initialize</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;</span><br></pre></td></tr></table></figure>
+
+<p>在初始化时如果加上 –initial-insecure，则会创建空密码的 root@localhost 账号，否则会创建带密码的 root@localhost 账号，密码直接写在 log-error 日志文件中（在5.6版本中是放在 ~/.mysql_secret 文件里，更加隐蔽，不熟悉的话可能会无所适从）</p>
+<p>bin/mysqld –defaults-file=/etc/my.cnf –user=mysqladmin –basedir=/usr/local/mysql/ –datadir=/usr/local/mysql/data/ –initialize</p>
+<p>查看临时密码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop001:mysqladmin:/usr/local/mysql/data:&gt;cat hostname.err | grep pass</span><br><span class="line">2021-11-24T06:05:28.300539Z 1 [Note] A temporary password is generated for root@localhost: uhsa*57&gt;hacF</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>启动Mysql时报错：mysqld_safe mysqld from pid file /usr/local/mysql/data/Linux.pid ended。参考文章<a href="https://blog.csdn.net/alwaysbefine/article/details/107216380">Linux The server quit without updating PID file的几种解决方法</a>发现，是之前在运行5.6版本的Mysql仍在后台运行，占用pid文件，解决方法：ps -ef|grep mysql找出进程，然后kill掉进程后再重新安装。</p>
+</li>
+<li><p>若遇到报错，需要重新安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rm -rf /usr/local/mysql/arch/*</span><br><span class="line">rm -rf /usr/local/mysql/data/*</span><br></pre></td></tr></table></figure>
+
+<p>然后跳到第7步</p>
+</li>
+</ul>
+<h3 id="8-启动"><a href="#8-启动" class="headerlink" title="8.启动"></a>8.启动</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 mysql]# mysql --version</span><br><span class="line">mysql  Ver 14.14 Distrib 5.7.11, for linux-glibc2.5 (x86_64) using  EditLine wrapper</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql start</span><br><span class="line">Starting MySQL..                                           [  OK  ]</span><br></pre></td></tr></table></figure>
+
+<h3 id="9-登录及修改用户密码"><a href="#9-登录及修改用户密码" class="headerlink" title="9.登录及修改用户密码"></a>9.登录及修改用户密码</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;mysql -uroot -p&#x27;&gt;Wo&gt;kh(GL7;D&#x27;</span><br><span class="line">mysql: [Warning] Using a password on the command line interface can be insecure.</span><br><span class="line">Welcome to the MySQL monitor.  Commands end with ; or \g.</span><br><span class="line">Your MySQL connection id is 2</span><br><span class="line">Server version: 5.7.11-log</span><br><span class="line"></span><br><span class="line">Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.</span><br><span class="line"></span><br><span class="line">Oracle is a registered trademark of Oracle Corporation and/or its</span><br><span class="line">affiliates. Other names may be trademarks of their respective</span><br><span class="line">owners.</span><br><span class="line"></span><br><span class="line">Type &#x27;help;&#x27; or &#x27;\h&#x27; for help. Type &#x27;\c&#x27; to clear the current input statement.</span><br><span class="line"></span><br><span class="line">mysql&gt; alter user root@localhost identified by &#x27;syncdb123!&#x27;;//rd1</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; GRANT ALL PRIVILEGES ON *.* TO &#x27;root&#x27;@&#x27;%&#x27; IDENTIFIED BY &#x27;syncdb123!&#x27;;</span><br><span class="line">Query OK, 0 rows affected, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; flush privileges;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; exit;</span><br><span class="line">Bye</span><br></pre></td></tr></table></figure>
+
+<p>重要的三句话：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt;create database ruozedata;</span><br><span class="line">mysql&gt;grant all privileges on ruozedata.* to ruoze@&#x27;localhost&#x27; identified by &#x27;123456&#x27;;</span><br><span class="line">mysql&gt;flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h3 id="10-重启"><a href="#10-重启" class="headerlink" title="10.重启"></a>10.重启</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql restart</span><br><span class="line">Shutting down MySQL..                                      [  OK  ]</span><br><span class="line">rm: cannot remove `/var/lock/subsys/mysql&#x27;: Permission denied</span><br><span class="line">Starting MySQL.                                            [  OK  ]</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;mysql -uroot -p</span><br><span class="line">Enter password: </span><br><span class="line">Welcome to the MySQL monitor.  Commands end with ; or \g.</span><br><span class="line">Your MySQL connection id is 2</span><br><span class="line">Server version: 5.7.11-log MySQL Community Server (GPL)</span><br><span class="line"></span><br><span class="line">Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.</span><br><span class="line"></span><br><span class="line">Oracle is a registered trademark of Oracle Corporation and/or its</span><br><span class="line">affiliates. Other names may be trademarks of their respective</span><br><span class="line">owners.</span><br><span class="line"></span><br><span class="line">Type &#x27;help;&#x27; or &#x27;\h&#x27; for help. Type &#x27;\c&#x27; to clear the current input statement.</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="三-（个人）重启机器后遇到问题"><a href="#三-（个人）重启机器后遇到问题" class="headerlink" title="三.（个人）重启机器后遇到问题"></a>三.（个人）重启机器后遇到问题</h2><p>当我重启机器后，mysqladmin并不能直接service mysql start启动Mysql服务，查看data文件夹内发现有 </p>
+<p><code>-rw-r-----. 1 mysql dba  53440 Nov 25 00:40 hostname.err</code></p>
+<p>即用户权限出现问题。然后切回root用户修改data/*的用户：用户组为mysqladmin:dba再启动，问题解决，过程如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# service mysql status</span><br><span class="line">MySQL is not running, but lock file (/var/lock/subsys/mysql[FAILED]</span><br><span class="line">[root@hadoop001 ~]# service mysql start</span><br><span class="line">Starting MySQL.The server quit without updating PID file (/usr/local/mysql/data/hadoop001.pid).                                                          [FAILED]</span><br><span class="line">[root@hadoop001 ~]# su - mysqladmin</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql start</span><br><span class="line">Starting MySQL.The server quit without updating PID file (/usr/local/mysql/data/hadoop001.pid).                                                          [FAILED]</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll</span><br><span class="line">total 68</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Nov 25 00:35 arch</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Feb  2  2016 bin</span><br><span class="line">-rwxr-xr-x.  1 mysqladmin dba 17987 Feb  2  2016 COPYING</span><br><span class="line">drwxr-xr-x.  5 mysqladmin dba  4096 Nov 25 00:40 data</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Feb  2  2016 docs</span><br><span class="line">drwxr-xr-x.  3 mysqladmin dba  4096 Feb  2  2016 include</span><br><span class="line">drwxr-x---.  2 mysqladmin dba  4096 Nov 24 13:15 keyring</span><br><span class="line">drwxr-xr-x.  5 mysqladmin dba  4096 Feb  2  2016 lib</span><br><span class="line">drwxr-xr-x.  4 mysqladmin dba  4096 Feb  2  2016 man</span><br><span class="line">-rwxr-xr-x.  1 mysqladmin dba  2478 Feb  2  2016 README</span><br><span class="line">drwxr-xr-x. 28 mysqladmin dba  4096 Feb  2  2016 share</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Feb  2  2016 support-files</span><br><span class="line">drwxr-xr-x.  2 mysqladmin dba  4096 Nov 25 00:35 tmp</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll data/</span><br><span class="line">total 2097248</span><br><span class="line">-rw-r-----. 1 mysqladmin dba         56 Nov 24 14:55 auto.cnf</span><br><span class="line">-rw-r-----. 1 mysql      dba      53440 Nov 25 00:40 hostname.err</span><br><span class="line">-rw-r-----. 1 mysqladmin dba        294 Nov 25 00:35 ib_buffer_pool</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 25 00:35 ibdata1</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 24 14:55 ibdata2</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 mysql</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 performance_schema</span><br><span class="line">drwxr-x---. 2 mysqladmin dba      12288 Nov 24 14:55 sys</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# chown mysqladmin:dba /usr/local/mysql/*</span><br><span class="line">[root@hadoop001 ~]# chown mysqladmin:dba /usr/local/mysql/data/*</span><br><span class="line">[root@hadoop001 ~]# su - mysqladmin</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll data/</span><br><span class="line">total 2097248</span><br><span class="line">-rw-r-----. 1 mysqladmin dba         56 Nov 24 14:55 auto.cnf</span><br><span class="line">-rw-r-----. 1 mysqladmin dba      53440 Nov 25 00:40 hostname.err</span><br><span class="line">-rw-r-----. 1 mysqladmin dba        294 Nov 25 00:35 ib_buffer_pool</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 25 00:35 ibdata1</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 24 14:55 ibdata2</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 mysql</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 performance_schema</span><br><span class="line">drwxr-x---. 2 mysqladmin dba      12288 Nov 24 14:55 sys</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;service mysql start</span><br><span class="line">Starting MySQL.                                            [  OK  ]</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;ll data/</span><br><span class="line">total 2109552</span><br><span class="line">-rw-r-----. 1 mysqladmin dba         56 Nov 24 14:55 auto.cnf</span><br><span class="line">-rw-r-----. 1 mysqladmin dba          5 Nov 25 00:41 hadoop001.pid</span><br><span class="line">-rw-r-----. 1 mysqladmin dba      57597 Nov 25 00:41 hostname.err</span><br><span class="line">-rw-r-----. 1 mysqladmin dba        294 Nov 25 00:35 ib_buffer_pool</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 25 00:41 ibdata1</span><br><span class="line">-rw-r-----. 1 mysqladmin dba 1073741824 Nov 24 14:55 ibdata2</span><br><span class="line">-rw-r-----. 1 mysqladmin dba   12582912 Nov 25 00:41 ibtmp1</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 mysql</span><br><span class="line">-rw-rw----. 1 mysqladmin dba          5 Nov 25 00:41 mysqld_safe.pid</span><br><span class="line">srwxrwxrwx. 1 mysqladmin dba          0 Nov 25 00:41 mysql.sock</span><br><span class="line">-rw-------. 1 mysqladmin dba          5 Nov 25 00:41 mysql.sock.lock</span><br><span class="line">drwxr-x---. 2 mysqladmin dba       4096 Nov 24 14:55 performance_schema</span><br><span class="line">drwxr-x---. 2 mysqladmin dba      12288 Nov 24 14:55 sys</span><br><span class="line">hadoop001:mysqladmin:/usr/local/mysql:&gt;exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>再次重启，问题再次出现，hostname.err的用户用户组为：mysql:mysqladmin</p>
+<p>经查阅，发现my.cnf中[mysqld]下有默认启动用户<code>user = mysql</code>，指定为<code>user = mysqladmin</code>后重启，问题不再出现，且mysql服务开机自启动</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">#以下注释为默认参数，不指定的话，user=mysql</span><br><span class="line">#user 			= mysql</span><br><span class="line">user 			= mysqladmin</span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
 </search>

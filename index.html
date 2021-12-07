@@ -310,7 +310,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-08 07:08:33" itemprop="dateModified" datetime="2021-12-08T07:08:33+08:00">2021-12-08</time>
+        <time title="修改时间：2021-12-08 07:18:01" itemprop="dateModified" datetime="2021-12-08T07:18:01+08:00">2021-12-08</time>
       </span>
 
   
@@ -324,15 +324,12 @@
     
     <div class="post-body" itemprop="articleBody">
           <h2 id="一、YARN应用运行机制"><a href="#一、YARN应用运行机制" class="headerlink" title="一、YARN应用运行机制"></a>一、YARN应用运行机制</h2><ul>
-<li><p>ResourceManager(rm)：处理客户端请求、启动/监控ApplicationMaster、监控NodeManager、资源分配与调度。</p>
-<p>其中包含2个重要组件：Scheduler 和 Applications Manager。</p>
-</li>
-<li><p>NodeManager(nm)：单个节点上的资源管理、处理来⾃ResourceManager的命令、处理来⾃ApplicationMaster的命令。</p>
-</li>
-<li><p>ApplicationMaster(am)：数据切分、为应⽤程序申请资源，并分配给内部任务、任务监控与容错。</p>
-</li>
-<li><p>Container：对任务运⾏环境的抽象，封装了CPU、内存等多维资源以及环境变量、启动命令等任务运⾏相关的信息。</p>
-</li>
+<li>ResourceManager（RM）：负责对各NM上的资源进行统一管理和调度，将AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。</li>
+<li>调度器（Scheduler）：调度器根据容量、队列等限制条件（如每个队列分配一定的资源，最多执行一定数量的作业等），将系统中的资源分配给各个正在运行的应用程序。调度器仅根据各个应用程序的资源需求进行资源分配，而资源分配单位是Container，从而限定每个任务使用的资源量。Scheduler不负责监控或者跟踪应用程序的状态，也不负责任务因为各种原因而需要的重启（由ApplicationMaster负责）。总之，调度器根据应用程序的资源要求，以及集群机器的资源情况，为用程序分配封装在Container中的资源。调度器是可插拔的，例如CapacityScheduler、FairScheduler。（PS：在实际应用中，只需要简单配置即可）</li>
+<li>应用程序管理器（Application Manager）：应用程序管理器负责管理整个系统中所有应用程序，包括应用程序提交、与调度器协商资源以启动AM、监控AM运行状态并在失败时重新启动等，跟踪分给的Container的进度、状态也是其职责。ApplicationMaster是应用框架，它负责向ResourceManager协调资源，并且与NodeManager协同工作完成Task的执行和监控。MapReduce就是原生支持的一种框架，可以在YARN上运行Mapreduce作业。有很多分布式应用都开发了对应的应用程序框架，用于在YARN上运行任务，例如Spark，Storm等。如果需要，我们也可以自己写一个符合规范的YARN application。</li>
+<li>NodeManager（NM）：NM是每个节点上的资源和任务管理器。它会定时地向RM汇报本节点上的资源使用情况和各个Container的运行状态；同时会接收并处理来自AM的Container 启动/停止等请求。</li>
+<li>ApplicationMaster（AM）：用户提交的应用程序均包含一个AM，负责应用的监控，跟踪应用执行状态，重启失败任务等。</li>
+<li>Container：是YARN中的资源抽象，它封装了某个节点上的多维度资源，如内存、CPU、磁盘、网络等，当AM向RM申请资源时，RM为AM返回的资源便是用Container 表示的。YARN会为每个任务分配一个Container且该任务只能使用该Container中描述的资源。</li>
 </ul>
           <!--noindex-->
             <div class="post-button">
