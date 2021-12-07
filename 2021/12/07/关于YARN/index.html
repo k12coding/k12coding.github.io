@@ -20,21 +20,22 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="YARN中的调度理想情况下，YARN应用发出的资源请求应该立刻给予满足。但现实中资源是有限的，在一个繁忙的集群中，一个应用经常需要等待才能得到所需的资源。YARN调度器的工作就是根据既定策略分配资源。YARN中提供了多种调度器和可配置策略供我们选择。hadoop3.2.2默认：    yarn.resourcemanager.scheduler.class org.apache.hadoop.ya">
+<meta name="description" content="YARN资源调度流程  client客户端向yarn集群(resourcemanager)提交任务 resourcemanager选择一个node创建appmaster appmaster根据任务向rm申请资源 rm返回资源申请的结果 appmaster去对应的node上创建任务需要的资源（container形式，包括内存和CPU） appmaster负责与nodemanager进行沟通，监控任务">
 <meta property="og:type" content="article">
 <meta property="og:title" content="关于YARN">
 <meta property="og:url" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/index.html">
 <meta property="og:site_name" content="k12的博客">
-<meta property="og:description" content="YARN中的调度理想情况下，YARN应用发出的资源请求应该立刻给予满足。但现实中资源是有限的，在一个繁忙的集群中，一个应用经常需要等待才能得到所需的资源。YARN调度器的工作就是根据既定策略分配资源。YARN中提供了多种调度器和可配置策略供我们选择。hadoop3.2.2默认：    yarn.resourcemanager.scheduler.class org.apache.hadoop.ya">
+<meta property="og:description" content="YARN资源调度流程  client客户端向yarn集群(resourcemanager)提交任务 resourcemanager选择一个node创建appmaster appmaster根据任务向rm申请资源 rm返回资源申请的结果 appmaster去对应的node上创建任务需要的资源（container形式，包括内存和CPU） appmaster负责与nodemanager进行沟通，监控任务">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/yarn_architecture.gif">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FIFO.jpg">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/Capacity.jpg">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg">
 <meta property="article:published_time" content="2021-12-07T01:41:15.000Z">
-<meta property="article:modified_time" content="2021-12-07T19:46:29.579Z">
+<meta property="article:modified_time" content="2021-12-07T19:51:34.338Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FIFO.jpg">
+<meta name="twitter:image" content="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/yarn_architecture.gif">
 
 
 <link rel="canonical" href="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/">
@@ -143,7 +144,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">容量调度器配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E6%80%A7"><span class="nav-text">特性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%9E%E6%80%A7"><span class="nav-text">属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%98%9F%E5%88%97%E9%85%8D%E7%BD%AE"><span class="nav-text">修改队列配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">公平调度器配置</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#YARN%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B"><span class="nav-text">YARN资源调度流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">容量调度器配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E6%80%A7"><span class="nav-text">特性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%9E%E6%80%A7"><span class="nav-text">属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%98%9F%E5%88%97%E9%85%8D%E7%BD%AE"><span class="nav-text">修改队列配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">公平调度器配置</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -227,7 +228,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-08 03:46:29" itemprop="dateModified" datetime="2021-12-08T03:46:29+08:00">2021-12-08</time>
+        <time title="修改时间：2021-12-08 03:51:34" itemprop="dateModified" datetime="2021-12-08T03:51:34+08:00">2021-12-08</time>
       </span>
 
   
@@ -240,7 +241,17 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h2 id="YARN中的调度"><a href="#YARN中的调度" class="headerlink" title="YARN中的调度"></a>YARN中的调度</h2><p>理想情况下，YARN应用发出的资源请求应该立刻给予满足。但现实中资源是有限的，在一个繁忙的集群中，一个应用经常需要等待才能得到所需的资源。YARN调度器的工作就是根据既定策略分配资源。YARN中提供了多种调度器和可配置策略供我们选择。hadoop3.2.2默认：</p>
+        <h2 id="YARN资源调度流程"><a href="#YARN资源调度流程" class="headerlink" title="YARN资源调度流程"></a>YARN资源调度流程</h2><p><img src="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/yarn_architecture.gif" alt="img"></p>
+<ol>
+<li>client客户端向yarn集群(resourcemanager)提交任务</li>
+<li>resourcemanager选择一个node创建appmaster</li>
+<li>appmaster根据任务向rm申请资源</li>
+<li>rm返回资源申请的结果</li>
+<li>appmaster去对应的node上创建任务需要的资源（container形式，包括内存和CPU）</li>
+<li>appmaster负责与nodemanager进行沟通，监控任务运行</li>
+<li>最后任务运行成功，汇总结果。</li>
+</ol>
+<h2 id="YARN中的调度"><a href="#YARN中的调度" class="headerlink" title="YARN中的调度"></a>YARN中的调度</h2><p>理想情况下，YARN应用发出的资源请求应该立刻给予满足。但现实中资源是有限的，在一个繁忙的集群中，一个应用经常需要等待才能得到所需的资源。YARN调度器的工作就是根据既定策略分配资源。YARN中提供了多种调度器和可配置策略供我们选择。hadoop3.2.2默认：</p>
 <table>
 <thead>
 <tr>
