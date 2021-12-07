@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/Capacity.jpg">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg">
 <meta property="article:published_time" content="2021-12-07T01:41:15.000Z">
-<meta property="article:modified_time" content="2021-12-07T18:28:06.332Z">
+<meta property="article:modified_time" content="2021-12-07T19:19:05.949Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FIFO.jpg">
@@ -143,7 +143,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">容量调度器配置</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">容量调度器配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">公平调度器配置</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -227,7 +227,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-08 02:28:06" itemprop="dateModified" datetime="2021-12-08T02:28:06+08:00">2021-12-08</time>
+        <time title="修改时间：2021-12-08 03:19:05" itemprop="dateModified" datetime="2021-12-08T03:19:05+08:00">2021-12-08</time>
       </span>
 
   
@@ -273,8 +273,67 @@
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=&quot;1.0&quot;?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.queues<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>prod,dev<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.queues<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>eng,science<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.prod.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>40<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>60<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.maximum-capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>75<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.eng.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>50<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span> </span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.science.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>50<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
 <p>​    可以看到，dev队列进一步被划分成eng和science两个容量相等的队列。由于dev队列的最大容量被设置为75%，因此即使prod队列空闲，dev队列也不会占用全部集群资源。换而言之，prod队列能即刻使用的可用资源比例总是能达到25%。由于其他队列没有设置最大容量限制，eng或science中的作业可能会占用dev队列的所有容量（将近75%的集群资源），而prod队列实际则可能会占用全部集群资源。</p>
-<p>​    除了可以配置队列层次和容量，还有些设置是用来控制单个用户或应用能被分配到的最大资源数量、同时运行的应用数量及队列的ACL认证等。更多的配置内容可参考<a target="_blank" rel="noopener" href="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html%E3%80%82">https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html。</a></p>
-
+<p>​    除了可以配置队列层次和容量，还有些设置是用来控制单个用户或应用能被分配到的最大资源数量、同时运行的应用数量及队列的ACL认证等属性。更多的配置内容可参考<a target="_blank" rel="noopener" href="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html%E3%80%82">https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html。</a></p>
+<p>​    补充：关于应用放置在哪个队列，取决于应用本身。例如，在MapReduce中，可以通过设置属性<code>mapreduce.job.queuename</code>来指定要用的队列。如果队列不存在，则在提交时会发送错误。如果不指定队列，那么应用将被放在一个名为<code>default</code>的默认队列中。（队列名应该是队列层次名的最后一部分，如prod和eng是合法的队列名，root.dev.eng和dev.eng作为队列名是无效的。）</p>
+<blockquote>
+<ul>
+<li><p>队列属性</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.capacity</code></p>
+<p>它是队列的资源容量占比(百分比)。系统繁忙时，每个队列都应该得到设置的量的资源；当系统空闲时，该队列的资源则可以被其他的队列使用。同一层的所有队列加起来必须是100%。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-capacity</code></p>
+<p>队列资源的使用上限。由于系统空闲时，队列可以使用其他的空闲资源，因此最多使用的资源量则是该参数控制。默认是-1，即禁用。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.minimum-user-limit-percent</code></p>
+<p>每个任务占用的最少资源。比如，你设置成了25%。那么如果有两个用户提交任务，那么每个任务资源不超过50%。如果3个用户提交任务，那么每个任务资源不超过33%。如果4个用户提交任务，那么每个任务资源不超过25%。如果5个用户提交任务，那么第五个用户需要等待才能提交。默认是100，即不去做限制。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.user-limit-factor</code></p>
+<p>每个用户最多使用的队列资源占比，如果设置为50.那么每个用户使用的资源最多就是50%。</p>
+</li>
+<li><p>运行和提交应用限制</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.maximum-applications</code></p>
+<p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-applications</code></p>
+<p>设置系统中可以同时运行和等待的应用数量。默认是10000。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.maximum-am-resource-percent</code><br><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-am-resource-percent</code></p>
+<p>设置有多少资源可以用来运行app master，即控制当前激活状态的应用。默认是10%。</p>
+</li>
+<li><p>队列管理</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.state</code></p>
+<p>队列的状态，可以使RUNNING或者STOPPED.如果队列是STOPPED状态，那么新应用不会提交到该队列或者子队列。同样，如果root被设置成STOPPED，那么整个集群都不能提交任务了。现有的应用可以等待完成，因此队列可以优雅的退出关闭。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.root.&lt;queue-path&gt;.acl_submit_applications</code></p>
+<p>访问控制列表ACL控制谁可以向该队列提交任务。如果一个用户可以向该队列提交，那么也可以提交任务到它的子队列。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.root.&lt;queue-path&gt;.acl_administer_queue</code></p>
+<p>设置队列的管理员的ACL控制，管理员可以控制队列的所有应用程序。同样，它也具有继承性。</p>
+<p><strong>注意：</strong> ACL的设置是user1,user2 group1,group2这种格式。如果是则代表任何人。空格表示任何人都不允许。默认是。</p>
+</li>
+<li><p>其他属性</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.resource-calculator</code></p>
+<p>资源计算方法，默认是<code>org.apache.hadoop.yarn.util.resource.DefaultResourseCalculator</code>,它只会计算内存。<code>DominantResourceCalculator</code>则会计算内存和CPU。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.node-locality-delay</code></p>
+<p>调度器尝试进行调度的次数。一般都是跟集群的节点数量有关。默认40（一个机架上的节点数）<br>一旦设置完这些队列属性，就可以在web ui上看到了。可以访问下面的连接：<br>hostname:8088/scheduler</p>
+</li>
+</ul>
+</blockquote>
+<hr>
+<p>小结：Capacity调度器具有以下的几个特性：</p>
+<ul>
+<li>层次化的队列设计，这种层次化的队列设计保证了子队列可以使用父队列设置的全部资源。这样通过层次化的管理，更容易合理分配和限制资源的使用。</li>
+<li>容量保证，队列上都会设置一个资源的占比，这样可以保证每个队列都不会占用整个集群的资源。</li>
+<li>安全，每个队列有严格的访问控制。用户只能向自己的队列里面提交任务，而且不能修改或者访问其他队列的任务。</li>
+<li>弹性分配，空闲的资源可以被分配给任何队列。当多个队列出现争用的时候，则会按照比例进行平衡。</li>
+<li>多租户租用，通过队列的容量限制，多个用户就可以共享同一个集群，同时保证每个队列分配到自己的容量，提高利用率。</li>
+<li>操作性，yarn支持动态修改调整容量、权限等的分配，可以在运行时直接修改。还提供给管理员界面，来显示当前的队列状况。管理员可以在运行时，添加一个队列；但是不能删除一个队列。管理员还可以在运行时暂停某个队列，这样可以保证当前的队列在执行过程中，集群不会接收其他的任务。如果一个队列被设置成了stopped，那么就不能向他或者子队列上提交任务了。</li>
+<li>基于资源的调度，协调不同资源需求的应用程序，比如内存、CPU、磁盘等等。</li>
+</ul>
+<h2 id="公平调度器配置"><a href="#公平调度器配置" class="headerlink" title="公平调度器配置"></a>公平调度器配置</h2>
     </div>
 
     
