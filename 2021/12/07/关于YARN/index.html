@@ -20,12 +20,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="YARN应用的运行YARN的核心服务包括两类长期运行的守护进程：  资源管理器(Resource Manager)：管理集群上的资源。 其中包含2个重要组件：Scheduler 和 Applications Manager。  节点管理器(Node Manager)：启动和监控容器(container)。容器是执行应用程序的进程。   YARN应用的运行：    客户端联系资源管理器，提交YARN">
+<meta name="description" content="YARN应用的运行 ResourceManager(rm)：处理客户端请求、启动&#x2F;监控ApplicationMaster、监控NodeManager、资源分配与调度。 其中包含2个重要组件：Scheduler 和 Applications Manager。  NodeManager(nm)：单个节点上的资源管理、处理来⾃ResourceManager的命令、处理来⾃ApplicationMaste">
 <meta property="og:type" content="article">
 <meta property="og:title" content="关于YARN">
 <meta property="og:url" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/index.html">
 <meta property="og:site_name" content="k12的博客">
-<meta property="og:description" content="YARN应用的运行YARN的核心服务包括两类长期运行的守护进程：  资源管理器(Resource Manager)：管理集群上的资源。 其中包含2个重要组件：Scheduler 和 Applications Manager。  节点管理器(Node Manager)：启动和监控容器(container)。容器是执行应用程序的进程。   YARN应用的运行：    客户端联系资源管理器，提交YARN">
+<meta property="og:description" content="YARN应用的运行 ResourceManager(rm)：处理客户端请求、启动&#x2F;监控ApplicationMaster、监控NodeManager、资源分配与调度。 其中包含2个重要组件：Scheduler 和 Applications Manager。  NodeManager(nm)：单个节点上的资源管理、处理来⾃ResourceManager的命令、处理来⾃ApplicationMaste">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/work.png">
 <meta property="og:image" content="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/yarn_architecture.gif">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/Capacity.jpg">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg">
 <meta property="article:published_time" content="2021-12-07T01:41:15.000Z">
-<meta property="article:modified_time" content="2021-12-07T20:32:08.606Z">
+<meta property="article:modified_time" content="2021-12-07T20:37:30.157Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/work.png">
@@ -229,7 +229,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-08 04:32:08" itemprop="dateModified" datetime="2021-12-08T04:32:08+08:00">2021-12-08</time>
+        <time title="修改时间：2021-12-08 04:37:30" itemprop="dateModified" datetime="2021-12-08T04:37:30+08:00">2021-12-08</time>
       </span>
 
   
@@ -242,28 +242,33 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h2 id="YARN应用的运行"><a href="#YARN应用的运行" class="headerlink" title="YARN应用的运行"></a>YARN应用的运行</h2><p>YARN的核心服务包括两类长期运行的守护进程：</p>
-<ol>
-<li><p>资源管理器(Resource Manager)：管理集群上的资源。</p>
+        <h2 id="YARN应用的运行"><a href="#YARN应用的运行" class="headerlink" title="YARN应用的运行"></a>YARN应用的运行</h2><ol>
+<li><p>ResourceManager(rm)：处理客户端请求、启动/监控ApplicationMaster、监控NodeManager、资源分配与调度。</p>
 <p>其中包含2个重要组件：Scheduler 和 Applications Manager。</p>
 </li>
-<li><p>节点管理器(Node Manager)：启动和监控容器(container)。容器是执行应用程序的进程。</p>
+<li><p>NodeManager(nm)：单个节点上的资源管理、处理来⾃ResourceManager的命令、处理来⾃ApplicationMaster的命令。</p>
+</li>
+<li><p>ApplicationMaster(am)：数据切分、为应⽤程序申请资源，并分配给内部任务、任务监控与容错。</p>
+</li>
+<li><p>Container：对任务运⾏环境的抽象，封装了CPU、内存等多维资源以及环境变量、启动命令等任务运⾏相关的信息。</p>
 </li>
 </ol>
 <p>YARN应用的运行：</p>
 <img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/work.png" alt="work" style="zoom: 33%;">
 
 <ol>
-<li><p>客户端联系资源管理器，提交YARN程序；（步骤1）</p>
+<li>首先客户端请求RM，运行一个application master</li>
+</ol>
+<ol start="2">
+<li><p>RM找到可以在容器中启动application master的NM，在NM启动容器，运行application master</p>
 </li>
-<li><p>资源管理器找到一个节点管理器，启动容器运行application master进程（步骤2a和2b）</p>
+<li><p>容器通过心跳机制向RM请求运行资源(内存和CPU)</p>
 </li>
-<li><p>两种情况：</p>
-<ul>
-<li>在application master本地的JVM运行完成小任务，将结果返回给客户端；</li>
-<li>向资源管理器请求更多的容器（步骤3），以用于运行一个分布式计算，申请到新的节点管理器，启动容器运行应用程序。（步骤4a和4b）；</li>
-</ul>
-<p>后者就是MapReduce on YARN的架构</p>
+</ol>
+<ol start="4">
+<li><p>application master运行起来之后需要做什么依赖于客户端传递的应用</p>
+<p> a. 简单地运算后直接返回结果给客户端</p>
+<p> b. 请求更多容器进行分布式计算（MapReduce on YARN）</p>
 </li>
 </ol>
 <h2 id="YARN资源调度流程"><a href="#YARN资源调度流程" class="headerlink" title="YARN资源调度流程"></a>YARN资源调度流程</h2><p><img src="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/yarn_architecture.gif" alt="img"></p>
