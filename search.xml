@@ -1,6 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>HDFS中的数据块(Block)</title>
+    <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
+    <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
+<ol>
+<li>数据分块，分布式的存储在多台机器上</li>
+<li>数据块冗余存储在多台机器以提高数据块的高可用性</li>
+<li>遵从主/从(master/slave)结构的分布式存储集群</li>
+</ol>
+<p>HDFS作为分布式存储的实现，肯定也具有上面3个特点。</p>
+<span id="more"></span>
+
+<h2 id="HDFS分布式存储"><a href="#HDFS分布式存储" class="headerlink" title="HDFS分布式存储"></a>HDFS分布式存储</h2><p>在HDFS中，数据块默认的大小是128M，当我们往HDFS上上传一个300多M的文件的时候，那么这个文件会被分成3个数据块： </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193738768-2015006415.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193745301-961787885.png" alt="img"></p>
+<p> 所有的数据块是分布式的存储在所有的DataNode上：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193756443-722084406.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193801770-1600366947.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193806888-1561633390.png" alt="img"></p>
+<p>为了提高每一个数据块的高可用性，在HDFS中每一个数据块默认备份存储3份，在这里我们看到的只有1份，是因为我们在<code>hdfs-site.xml</code>中配置了如下的配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;1&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;表示数据块的备份数量，不能大于DataNode的数量，默认值是3&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>我们也可以通过如下的命令，将文件<code>/user/hadoop-twq/cmd/big_file.txt</code>的所有的数据块都备份存储3份：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop fs -setrep 3 /user/hadoop-twq/cmd/big_file.txt</span><br></pre></td></tr></table></figure>
+
+<p>我们可以从如下可以看出：每一个数据块都冗余存储了3个备份</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193841533-1801289433.png" alt="img"> </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193847536-1876269159.png" alt="img"></p>
+<p> <img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193851762-2045344208.png" alt="img"></p>
+<p><strong>在这里，可能会问这里为什么看到的是2个备份呢？这个是因为我们的集群只有2个DataNode，所以最多只有2个备份，即使你设置成3个备份也没用，所以我们设置的备份数一般都是比集群的DataNode的个数相等或者要少</strong></p>
+<blockquote>
+<p>一定要注意：当我们上传362.4MB的数据到HDFS上后，如果数据块的备份数是3个话，那么在HDFS上真正存储的数据量大小是：362.4MB * 3 = 1087.2MB</p>
+</blockquote>
+<blockquote>
+<p>注意：我们上面是通过HDFS的WEB UI来查看HDFS文件的数据块的信息，除了这种方式查看数据块的信息，我们还可以通过命令fsck来查看</p>
+</blockquote>
+<h2 id="数据块的实现"><a href="#数据块的实现" class="headerlink" title="数据块的实现"></a>数据块的实现</h2><p>在HDFS的实现中，数据块被抽象成类<code>org.apache.hadoop.hdfs.protocol.Block(我们以下简称Block)</code>。在Block类中有如下几个属性字段：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Block</span> <span class="keyword">implements</span> <span class="title">Writable</span>, <span class="title">Comparable</span>&lt;<span class="title">Block</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> blockId; <span class="comment">// 标识一个Block的唯一Id</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> numBytes; <span class="comment">// Block的大小(单位是字节)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> generationStamp; <span class="comment">// Block的生成时间戳</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们从WEB UI上的数据块信息也可以看到：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193921505-989550889.png" alt="img"></p>
+<p> 一个Block除了存储上面的3个字段信息，还需要知道这个Block含有多少个备份，每一个备份分别存储在哪一个DataNode上，为了存储这些信息，HDFS中有一个名为</p>
+<p><code>org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoContiguous</code>(下面我们简称为BlockInfo)</p>
+<p>的类来存储这些信息，这个BlockInfo类继承Block类，如下：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193930783-1441983482.png" alt="img"></p>
+<p>BlockInfo类中只有一个非常核心的属性，就是名为triplets的数组，这个数组的长度是<code>3*replication</code>，<code>replication</code>表示数据块的备份数。这个数组中存储了该数据块所有的备份数据块对应的DataNode信息，我们现在假设备份数是<code>3</code>，那么这个数组的长度是<code>3*3=9</code>，这个数组存储的数据如下： </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193941684-2013773685.png" alt="img"></p>
+<p>也就是说，triplets包含的信息：</p>
+<ul>
+<li>triplets[i]：Block所在的DataNode；</li>
+<li>triplets[i+1]：该DataNode上前一个Block；</li>
+<li>triplets[i+2]：该DataNode上后一个Block；</li>
+</ul>
+<p>其中i表示的是Block的第i个副本，i取值[0,replication)。</p>
+<p>我们在HDFS的NameNode中的Namespace管理中讲到了，一个HDFS文件包含一个BlockInfo数组，表示这个文件分成的若干个数据块，这个BlockInfo数组实际上就是我们这里说的<code>BlockInfoContiguous</code>数组。以下是INodeFile的属性：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">INodeFile</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> header = <span class="number">0L</span>; <span class="comment">// 用于标识存储策略ID、副本数和数据块大小的信息</span></span><br><span class="line">    <span class="keyword">private</span> BlockInfoContiguous[] blocks; <span class="comment">// 该文件包含的数据块数组</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那么，到现在为止，我们了解到了这些信息：文件包含了哪些Block，这些Block分别被实际存储在哪些DataNode上，DataNode上所有Block前后链表关系。</p>
+<p>如果从信息完整度来看，以上信息数据足够支持所有关于HDFS文件系统的正常操作，但还存在一个使用场景较多的问题：怎样通过blockId快速定位BlockInfo？</p>
+<p>我们其实可以在NameNode上用一个HashMap来维护blockId到Block的映射，也就是说我们可以使用<code>HashMap&lt;Block, BlockInfo&gt;</code>来维护，这样的话我们就可以快速的根据blockId定位BlockInfo，但是由于在内存使用、碰撞冲突解决和性能等方面存在问题，Hadoop团队之后使用重新实现的LightWeightGSet代替HashMap，该数据结构本质上也是利用链表解决碰撞冲突的<a href="https://issues.apache.org/jira/browse/HDFS-1114">HashTable</a>，但是在易用性、内存占用和性能等方面表现更好。</p>
+<p>HDFS为了解决通过blockId快速定位BlockInfo的问题，所以引入了BlocksMap，BlocksMap底层通过LightWeightGSet实现。</p>
+<p>在HDFS集群启动过程，DataNode会进行BR（BlockReport，其实就是将DataNode自身存储的数据块上报给NameNode），根据BR的每一个Block计算其HashCode，之后将对应的BlockInfo插入到相应位置逐渐构建起来巨大的BlocksMap。前面在INodeFile里也提到的BlockInfo集合，如果我们将BlocksMap里的BlockInfo与所有INodeFile里的BlockInfo分别收集起来，可以发现两个集合完全相同，事实上BlocksMap里所有的BlockInfo就是INodeFile中对应BlockInfo的引用；通过Block查找对应BlockInfo时，也是先对Block计算HashCode，根据结果快速定位到对应的BlockInfo信息。至此涉及到HDFS文件系统本身元数据的问题基本上已经解决了。</p>
+<h2 id="BlocksMap内存估算"><a href="#BlocksMap内存估算" class="headerlink" title="BlocksMap内存估算"></a>BlocksMap内存估算</h2><p>HDFS将文件按照一定的大小切成多个Block，为了保证数据可靠性，每个Block对应多个副本，存储在不同DataNode上。NameNode除需要维护Block本身的信息外，还需要维护从Block到DataNode列表的对应关系，用于描述每一个Block副本实际存储的物理位置，BlocksMap结构即用于Block到DataNode列表的映射关系，BlocksMap是常驻在内存中，而且占用内存非常大，所以对BlocksMap进行内存的估算是非常有必要的。</p>
+<p><strong>BlocksMap</strong>的内部结构：</p>
+<blockquote>
+<p>以下的内存估算是在64位操作系统上且没有开启指针压缩功能场景下</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class BlocksMap &#123;</span><br><span class="line">    private final int capacity; // 占 4 字节</span><br><span class="line">    // 我们使用GSet的实现者：LightWeightGSet</span><br><span class="line">    private GSet&lt;Block, BlockInfoContiguous&gt; blocks;  // 引用类型占8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以得出BlocksMap的直接内存大小是：<strong>对象头16字节 + 4字节 + 8字节 = 28字节</strong></p>
+<p><strong>Block</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Block implements Writable, Comparable&lt;Block&gt; &#123;</span><br><span class="line">    private long blockId; // 标识一个Block的唯一Id     占 8字节</span><br><span class="line">    private long numBytes; // Block的大小(单位是字节)   占 8字节</span><br><span class="line">    private long generationStamp; // Block的生成时间戳   占 8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以得出Block的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 8字节 = 40字节</strong></p>
+<p><strong>BlockInfoContiguous</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class BlockInfoContiguous extends Block &#123;</span><br><span class="line">    private BlockCollection bc;   // 引用类型占8字节</span><br><span class="line">    private LightWeightGSet.LinkedElement nextLinkedElement;  // 引用类型占8字节</span><br><span class="line">    private Object[] triplets;  // 引用类型 8字节 + 数组对象头24字节 + 3*3(备份数假设为3)*8 = 104字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以得出BlockInfoContiguous的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 104字节 = 136字节</strong></p>
+<p><strong>LightWeightGSet</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class LightWeightGSet&lt;K, E extends K&gt; implements GSet&lt;K, E&gt; &#123;</span><br><span class="line">    private final LinkedElement[] entries; // 引用类型 8字节 + 数组对象头24字节 = 32字节</span><br><span class="line">    private final int hash_mask; // 4字节</span><br><span class="line">    private int size = 0; // 4字节</span><br><span class="line">    private int modification = 0; // 4字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>　　LightWeightGSet本质是一个链式解决冲突的哈希表，为了避免rehash过程带来的性能开销，初始化时，LightWeightGSet的索引空间直接给到了整个JVM可用内存的2%，并且不再变化。 所以LightWeightGSet的直接内存大小为：**对象头16字节 + 32字节 + 4字节 + 4字节 + 4字节 + (2%<em>JVM可用内存) = 60字节 + (2%<em>JVM可用内存)</em></em></p>
+<p>假设集群中共1亿Block，NameNode可用内存空间固定大小128GB，则BlocksMap占用内存情况：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BlocksMap直接内存大小 + (Block直接内存大小 + BlockInfoContiguous直接内存大小) * 100M + LightWeightGSet直接内存大小</span><br><span class="line">即：</span><br><span class="line">28字节 + (40字节 + 136字节) * 100M + 60字节 + (2%*128G) = 19.7475GB</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面为什么是乘以100M呢？ 因为100M = 100 * 1024 * 1024 bytes = 104857600 bytes，约等于1亿字节，而上面的内存的单位都是字节的，我们乘以100M，就相当于1亿Block</p>
+</blockquote>
+<p>BlocksMap数据在NameNode整个生命周期内常驻内存，随着数据规模的增加，对应Block数会随之增多，BlocksMap所占用的JVM堆内存空间也会基本保持线性同步增加。</p>
+<hr>
+<p>转载于:<a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>HDFS文件读写流程与副本放置策略</title>
     <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
@@ -244,99 +337,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS中的数据块(Block)</title>
-    <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
-    <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
-<ol>
-<li>数据分块，分布式的存储在多台机器上</li>
-<li>数据块冗余存储在多台机器以提高数据块的高可用性</li>
-<li>遵从主/从(master/slave)结构的分布式存储集群</li>
-</ol>
-<p>HDFS作为分布式存储的实现，肯定也具有上面3个特点。</p>
-<span id="more"></span>
-
-<h2 id="HDFS分布式存储"><a href="#HDFS分布式存储" class="headerlink" title="HDFS分布式存储"></a>HDFS分布式存储</h2><p>在HDFS中，数据块默认的大小是128M，当我们往HDFS上上传一个300多M的文件的时候，那么这个文件会被分成3个数据块： </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193738768-2015006415.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193745301-961787885.png" alt="img"></p>
-<p> 所有的数据块是分布式的存储在所有的DataNode上：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193756443-722084406.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193801770-1600366947.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193806888-1561633390.png" alt="img"></p>
-<p>为了提高每一个数据块的高可用性，在HDFS中每一个数据块默认备份存储3份，在这里我们看到的只有1份，是因为我们在<code>hdfs-site.xml</code>中配置了如下的配置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;1&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;表示数据块的备份数量，不能大于DataNode的数量，默认值是3&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>我们也可以通过如下的命令，将文件<code>/user/hadoop-twq/cmd/big_file.txt</code>的所有的数据块都备份存储3份：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop fs -setrep 3 /user/hadoop-twq/cmd/big_file.txt</span><br></pre></td></tr></table></figure>
-
-<p>我们可以从如下可以看出：每一个数据块都冗余存储了3个备份</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193841533-1801289433.png" alt="img"> </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193847536-1876269159.png" alt="img"></p>
-<p> <img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193851762-2045344208.png" alt="img"></p>
-<p><strong>在这里，可能会问这里为什么看到的是2个备份呢？这个是因为我们的集群只有2个DataNode，所以最多只有2个备份，即使你设置成3个备份也没用，所以我们设置的备份数一般都是比集群的DataNode的个数相等或者要少</strong></p>
-<blockquote>
-<p>一定要注意：当我们上传362.4MB的数据到HDFS上后，如果数据块的备份数是3个话，那么在HDFS上真正存储的数据量大小是：362.4MB * 3 = 1087.2MB</p>
-</blockquote>
-<blockquote>
-<p>注意：我们上面是通过HDFS的WEB UI来查看HDFS文件的数据块的信息，除了这种方式查看数据块的信息，我们还可以通过命令fsck来查看</p>
-</blockquote>
-<h2 id="数据块的实现"><a href="#数据块的实现" class="headerlink" title="数据块的实现"></a>数据块的实现</h2><p>在HDFS的实现中，数据块被抽象成类<code>org.apache.hadoop.hdfs.protocol.Block(我们以下简称Block)</code>。在Block类中有如下几个属性字段：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Block</span> <span class="keyword">implements</span> <span class="title">Writable</span>, <span class="title">Comparable</span>&lt;<span class="title">Block</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> blockId; <span class="comment">// 标识一个Block的唯一Id</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> numBytes; <span class="comment">// Block的大小(单位是字节)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> generationStamp; <span class="comment">// Block的生成时间戳</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们从WEB UI上的数据块信息也可以看到：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193921505-989550889.png" alt="img"></p>
-<p> 一个Block除了存储上面的3个字段信息，还需要知道这个Block含有多少个备份，每一个备份分别存储在哪一个DataNode上，为了存储这些信息，HDFS中有一个名为</p>
-<p><code>org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoContiguous</code>(下面我们简称为BlockInfo)</p>
-<p>的类来存储这些信息，这个BlockInfo类继承Block类，如下：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193930783-1441983482.png" alt="img"></p>
-<p>BlockInfo类中只有一个非常核心的属性，就是名为triplets的数组，这个数组的长度是<code>3*replication</code>，<code>replication</code>表示数据块的备份数。这个数组中存储了该数据块所有的备份数据块对应的DataNode信息，我们现在假设备份数是<code>3</code>，那么这个数组的长度是<code>3*3=9</code>，这个数组存储的数据如下： </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193941684-2013773685.png" alt="img"></p>
-<p>也就是说，triplets包含的信息：</p>
-<ul>
-<li>triplets[i]：Block所在的DataNode；</li>
-<li>triplets[i+1]：该DataNode上前一个Block；</li>
-<li>triplets[i+2]：该DataNode上后一个Block；</li>
-</ul>
-<p>其中i表示的是Block的第i个副本，i取值[0,replication)。</p>
-<p>我们在HDFS的NameNode中的Namespace管理中讲到了，一个HDFS文件包含一个BlockInfo数组，表示这个文件分成的若干个数据块，这个BlockInfo数组实际上就是我们这里说的<code>BlockInfoContiguous</code>数组。以下是INodeFile的属性：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">INodeFile</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> header = <span class="number">0L</span>; <span class="comment">// 用于标识存储策略ID、副本数和数据块大小的信息</span></span><br><span class="line">    <span class="keyword">private</span> BlockInfoContiguous[] blocks; <span class="comment">// 该文件包含的数据块数组</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>那么，到现在为止，我们了解到了这些信息：文件包含了哪些Block，这些Block分别被实际存储在哪些DataNode上，DataNode上所有Block前后链表关系。</p>
-<p>如果从信息完整度来看，以上信息数据足够支持所有关于HDFS文件系统的正常操作，但还存在一个使用场景较多的问题：怎样通过blockId快速定位BlockInfo？</p>
-<p>我们其实可以在NameNode上用一个HashMap来维护blockId到Block的映射，也就是说我们可以使用<code>HashMap&lt;Block, BlockInfo&gt;</code>来维护，这样的话我们就可以快速的根据blockId定位BlockInfo，但是由于在内存使用、碰撞冲突解决和性能等方面存在问题，Hadoop团队之后使用重新实现的LightWeightGSet代替HashMap，该数据结构本质上也是利用链表解决碰撞冲突的<a href="https://issues.apache.org/jira/browse/HDFS-1114">HashTable</a>，但是在易用性、内存占用和性能等方面表现更好。</p>
-<p>HDFS为了解决通过blockId快速定位BlockInfo的问题，所以引入了BlocksMap，BlocksMap底层通过LightWeightGSet实现。</p>
-<p>在HDFS集群启动过程，DataNode会进行BR（BlockReport，其实就是将DataNode自身存储的数据块上报给NameNode），根据BR的每一个Block计算其HashCode，之后将对应的BlockInfo插入到相应位置逐渐构建起来巨大的BlocksMap。前面在INodeFile里也提到的BlockInfo集合，如果我们将BlocksMap里的BlockInfo与所有INodeFile里的BlockInfo分别收集起来，可以发现两个集合完全相同，事实上BlocksMap里所有的BlockInfo就是INodeFile中对应BlockInfo的引用；通过Block查找对应BlockInfo时，也是先对Block计算HashCode，根据结果快速定位到对应的BlockInfo信息。至此涉及到HDFS文件系统本身元数据的问题基本上已经解决了。</p>
-<h2 id="BlocksMap内存估算"><a href="#BlocksMap内存估算" class="headerlink" title="BlocksMap内存估算"></a>BlocksMap内存估算</h2><p>HDFS将文件按照一定的大小切成多个Block，为了保证数据可靠性，每个Block对应多个副本，存储在不同DataNode上。NameNode除需要维护Block本身的信息外，还需要维护从Block到DataNode列表的对应关系，用于描述每一个Block副本实际存储的物理位置，BlocksMap结构即用于Block到DataNode列表的映射关系，BlocksMap是常驻在内存中，而且占用内存非常大，所以对BlocksMap进行内存的估算是非常有必要的。</p>
-<p><strong>BlocksMap</strong>的内部结构：</p>
-<blockquote>
-<p>以下的内存估算是在64位操作系统上且没有开启指针压缩功能场景下</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class BlocksMap &#123;</span><br><span class="line">    private final int capacity; // 占 4 字节</span><br><span class="line">    // 我们使用GSet的实现者：LightWeightGSet</span><br><span class="line">    private GSet&lt;Block, BlockInfoContiguous&gt; blocks;  // 引用类型占8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出BlocksMap的直接内存大小是：<strong>对象头16字节 + 4字节 + 8字节 = 28字节</strong></p>
-<p><strong>Block</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Block implements Writable, Comparable&lt;Block&gt; &#123;</span><br><span class="line">    private long blockId; // 标识一个Block的唯一Id     占 8字节</span><br><span class="line">    private long numBytes; // Block的大小(单位是字节)   占 8字节</span><br><span class="line">    private long generationStamp; // Block的生成时间戳   占 8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出Block的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 8字节 = 40字节</strong></p>
-<p><strong>BlockInfoContiguous</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class BlockInfoContiguous extends Block &#123;</span><br><span class="line">    private BlockCollection bc;   // 引用类型占8字节</span><br><span class="line">    private LightWeightGSet.LinkedElement nextLinkedElement;  // 引用类型占8字节</span><br><span class="line">    private Object[] triplets;  // 引用类型 8字节 + 数组对象头24字节 + 3*3(备份数假设为3)*8 = 104字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出BlockInfoContiguous的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 104字节 = 136字节</strong></p>
-<p><strong>LightWeightGSet</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class LightWeightGSet&lt;K, E extends K&gt; implements GSet&lt;K, E&gt; &#123;</span><br><span class="line">    private final LinkedElement[] entries; // 引用类型 8字节 + 数组对象头24字节 = 32字节</span><br><span class="line">    private final int hash_mask; // 4字节</span><br><span class="line">    private int size = 0; // 4字节</span><br><span class="line">    private int modification = 0; // 4字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>　　LightWeightGSet本质是一个链式解决冲突的哈希表，为了避免rehash过程带来的性能开销，初始化时，LightWeightGSet的索引空间直接给到了整个JVM可用内存的2%，并且不再变化。 所以LightWeightGSet的直接内存大小为：**对象头16字节 + 32字节 + 4字节 + 4字节 + 4字节 + (2%<em>JVM可用内存) = 60字节 + (2%<em>JVM可用内存)</em></em></p>
-<p>假设集群中共1亿Block，NameNode可用内存空间固定大小128GB，则BlocksMap占用内存情况：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BlocksMap直接内存大小 + (Block直接内存大小 + BlockInfoContiguous直接内存大小) * 100M + LightWeightGSet直接内存大小</span><br><span class="line">即：</span><br><span class="line">28字节 + (40字节 + 136字节) * 100M + 60字节 + (2%*128G) = 19.7475GB</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>上面为什么是乘以100M呢？ 因为100M = 100 * 1024 * 1024 bytes = 104857600 bytes，约等于1亿字节，而上面的内存的单位都是字节的，我们乘以100M，就相当于1亿Block</p>
-</blockquote>
-<p>BlocksMap数据在NameNode整个生命周期内常驻内存，随着数据规模的增加，对应Block数会随之增多，BlocksMap所占用的JVM堆内存空间也会基本保持线性同步增加。</p>
-<hr>
-<p>转载于:<a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop基础知识</title>
     <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
     <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
@@ -447,24 +447,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
     <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
@@ -520,6 +502,24 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>什么是尾递归</title>
     <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
     <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
@@ -548,104 +548,6 @@
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
 ]]></content>
-  </entry>
-  <entry>
-    <title>关于YARN</title>
-    <url>/2021/12/07/%E5%85%B3%E4%BA%8EYARN/</url>
-    <content><![CDATA[<h2 id="YARN中的调度"><a href="#YARN中的调度" class="headerlink" title="YARN中的调度"></a>YARN中的调度</h2><p>理想情况下，YARN应用发出的资源请求应该立刻给予满足。但现实中资源是有限的，在一个繁忙的集群中，一个应用经常需要等待才能得到所需的资源。YARN调度器的工作就是根据既定策略分配资源。YARN中提供了多种调度器和可配置策略供我们选择。hadoop3.2.2默认：</p>
-<table>
-<thead>
-<tr>
-<th>yarn.resourcemanager.scheduler.class</th>
-<th>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</th>
-</tr>
-</thead>
-</table>
-<span id="more"></span>
-
-<h3 id="FIFO-Scheduler（先入先出调度器）"><a href="#FIFO-Scheduler（先入先出调度器）" class="headerlink" title="FIFO Scheduler（先入先出调度器）"></a>FIFO Scheduler（先入先出调度器）</h3><p>​    FIFO调度器将应用放置在一个队列中，按照提交的顺序（先进先出）运行应用。首先为队列中第一个应用的请求分配资源，第一个应用的请求被满足后再依次处理队列中的下一个应用服务。FIFO调度器不需要任何配置，但不适合共享集群。因为大的应用会占据集群中的所有资源，每个应用都必须等待直到轮到自己运行。hadoop1.x使用的默认调度器就是FIFO。</p>
-<p><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FIFO.jpg" alt="FIFO"></p>
-<p>​    在集群中，更适合使用Capacity Scheduler（容量调度器）或Fair Scheduler（公平调度器），这样允许长时间运行的作业能及时完成，同时也允许正在进行较小临时查询的用户能够在合理时间内得到返回结果。</p>
-<h3 id="Capacity-Scheduler（容量调度器）"><a href="#Capacity-Scheduler（容量调度器）" class="headerlink" title="Capacity Scheduler（容量调度器）"></a>Capacity Scheduler（容量调度器）</h3><p>在使用容量调度器时，一个独立的专门队列保证小作业一提交就可以启动，由于队列容量是为那个队列中的作业所保留的，因此这种策略是以整个集群的利用率为代价的。这意味着与使用FIFO调度器相比，大作业执行的时间要长。</p>
-<p><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/Capacity.jpg" alt="Capacity"></p>
-<h3 id="Fair-Scheduler（公平调度器）"><a href="#Fair-Scheduler（公平调度器）" class="headerlink" title="Fair Scheduler（公平调度器）"></a>Fair Scheduler（公平调度器）</h3><p>在Fair调度器中，我们不需要预先占用一定的系统资源，Fair调度器会为所有运行的作业之间动态平衡资源。第一个（大）作业启动时，它也是唯一运行的作业，因而获得集群中所有的资源。当第二个（小）作业启动时，它被分配到集群的一半资源，这样每个作业都能公平共享资源。</p>
-<p><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg" alt="FAIR"></p>
-<p>注意，从第二个作业的启动到获得共享资源之间会有时间滞后，因为它必须等待第一个作业使用的容器用完并释放出资源。当小作业结束且不再申请资源后，大作业将回去再次使用全部的集群资源。最终的效果是：既得到了较高的集群利用率，又能保证小作业能及时完成。</p>
-<h2 id="容量调度器配置"><a href="#容量调度器配置" class="headerlink" title="容量调度器配置"></a>容量调度器配置</h2><p>​    容量调度器允许多个组织共享一个Hadoop集群，每个组织可以分配到全部集群资源的一部分。每个组织被配置一个专门的队列，每个队列被配置为可以使用一定的集群资源。队列可以进一步按层次划分，这样每个组织内的不同用户能够共该组织队列所分配的资源。在一个队列内，使用FIFO调度策略对应用进行调度。</p>
-<p>​    如上面那幅图所示，单个作业使用的资源不会超过其队列容量。然而，如果队列中运行多个作业，这个队列的资源不够用且仍有可用的空闲资源，那么容量调度器可能会将空闲的资源分配给这个队列中的作业，尽管会超出队列容量。这就是**“弹性队列”(queue elasticity)**的概念。</p>
-<p>​    正常的操作时，容量调度器不会通过强行中止来抢占容器强（container）。所以，如果一个队列一开始资源够用，然后随着需求增长，资源才开始不够用时，那么这个队列也就只能等其他队列释放容器资源。缓解这种情况的方法是，为队列设置一个最大容量限制，这样这个队列就不会过多侵占其他队列的容量了。这样做是牺牲队列弹性为代价，需要找到一个合理的折中值。</p>
-<p>​    假设一个队列的层次结构如下：</p>
-<pre><code>root 
-├── prod 
-└── dev    
-    ├── eng    
-    └── science
-</code></pre>
-<p>​    下面是一个基于上述队列层次的容量调度器配置文件，文件名为<code>capacity-scheduler.xml</code>。在root队列下面定义了两个子队列：<code>prod</code>和<code>dev</code>，分别占40%和60%的容量。需要注意的是，对特定队列进行配置时，是通过以下形式<code>yarn.sheduler.capacity.&lt;queue-path&gt;.&lt;sub-property&gt;</code>的配置属性进行设置的，其中<code>&lt;queue-path&gt;</code> 表示队列的层次路径（用“.”隔开），例如<code>root.prod</code>。</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=&quot;1.0&quot;?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.queues<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>prod,dev<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.queues<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>eng,science<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.prod.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>40<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>60<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.maximum-capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>75<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.eng.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>50<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span> </span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.science.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>50<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>​    可以看到，dev队列进一步被划分成eng和science两个容量相等的队列。由于dev队列的最大容量被设置为75%，因此即使prod队列空闲，dev队列也不会占用全部集群资源。换而言之，prod队列能即刻使用的可用资源比例总是能达到25%。由于其他队列没有设置最大容量限制，eng或science中的作业可能会占用dev队列的所有容量（将近75%的集群资源），而prod队列实际则可能会占用全部集群资源。</p>
-<p>​    除了可以配置队列层次和容量，还有些设置是用来控制单个用户或应用能被分配到的最大资源数量、同时运行的应用数量及队列的ACL认证等属性。更多的配置内容可参考<a href="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html%E3%80%82">https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html。</a></p>
-<p>​    补充：关于应用放置在哪个队列，取决于应用本身。例如，在MapReduce中，可以通过设置属性<code>mapreduce.job.queuename</code>来指定要用的队列。如果队列不存在，则在提交时会发送错误。如果不指定队列，那么应用将被放在一个名为<code>default</code>的默认队列中。（队列名应该是队列层次名的最后一部分，如prod和eng是合法的队列名，root.dev.eng和dev.eng作为队列名是无效的。）</p>
-<blockquote>
-<ul>
-<li><p>队列属性</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.capacity</code></p>
-<p>它是队列的资源容量占比(百分比)。系统繁忙时，每个队列都应该得到设置的量的资源；当系统空闲时，该队列的资源则可以被其他的队列使用。同一层的所有队列加起来必须是100%。</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-capacity</code></p>
-<p>队列资源的使用上限。由于系统空闲时，队列可以使用其他的空闲资源，因此最多使用的资源量则是该参数控制。默认是-1，即禁用。</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.minimum-user-limit-percent</code></p>
-<p>每个任务占用的最少资源。比如，你设置成了25%。那么如果有两个用户提交任务，那么每个任务资源不超过50%。如果3个用户提交任务，那么每个任务资源不超过33%。如果4个用户提交任务，那么每个任务资源不超过25%。如果5个用户提交任务，那么第五个用户需要等待才能提交。默认是100，即不去做限制。</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.user-limit-factor</code></p>
-<p>每个用户最多使用的队列资源占比，如果设置为50.那么每个用户使用的资源最多就是50%。</p>
-</li>
-<li><p>运行和提交应用限制</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.maximum-applications</code></p>
-<p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-applications</code></p>
-<p>设置系统中可以同时运行和等待的应用数量。默认是10000。</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.maximum-am-resource-percent</code><br><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-am-resource-percent</code></p>
-<p>设置有多少资源可以用来运行app master，即控制当前激活状态的应用。默认是10%。</p>
-</li>
-<li><p>队列管理</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.state</code></p>
-<p>队列的状态，可以使RUNNING或者STOPPED.如果队列是STOPPED状态，那么新应用不会提交到该队列或者子队列。同样，如果root被设置成STOPPED，那么整个集群都不能提交任务了。现有的应用可以等待完成，因此队列可以优雅的退出关闭。</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.root.&lt;queue-path&gt;.acl_submit_applications</code></p>
-<p>访问控制列表ACL控制谁可以向该队列提交任务。如果一个用户可以向该队列提交，那么也可以提交任务到它的子队列。</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.root.&lt;queue-path&gt;.acl_administer_queue</code></p>
-<p>设置队列的管理员的ACL控制，管理员可以控制队列的所有应用程序。同样，它也具有继承性。</p>
-<p><strong>注意：</strong> ACL的设置是user1,user2 group1,group2这种格式。如果是则代表任何人。空格表示任何人都不允许。默认是。</p>
-</li>
-<li><p>其他属性</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.resource-calculator</code></p>
-<p>资源计算方法，默认是<code>org.apache.hadoop.yarn.util.resource.DefaultResourseCalculator</code>,它只会计算内存。<code>DominantResourceCalculator</code>则会计算内存和CPU。</p>
-</li>
-<li><p><code>yarn.scheduler.capacity.node-locality-delay</code></p>
-<p>调度器尝试进行调度的次数。一般都是跟集群的节点数量有关。默认40（一个机架上的节点数）<br>一旦设置完这些队列属性，就可以在web ui上看到了。可以访问下面的连接：<br>hostname:8088/scheduler</p>
-</li>
-</ul>
-</blockquote>
-<hr>
-<p>小结：Capacity调度器具有以下的几个特性：</p>
-<ul>
-<li>层次化的队列设计，这种层次化的队列设计保证了子队列可以使用父队列设置的全部资源。这样通过层次化的管理，更容易合理分配和限制资源的使用。</li>
-<li>容量保证，队列上都会设置一个资源的占比，这样可以保证每个队列都不会占用整个集群的资源。</li>
-<li>安全，每个队列有严格的访问控制。用户只能向自己的队列里面提交任务，而且不能修改或者访问其他队列的任务。</li>
-<li>弹性分配，空闲的资源可以被分配给任何队列。当多个队列出现争用的时候，则会按照比例进行平衡。</li>
-<li>多租户租用，通过队列的容量限制，多个用户就可以共享同一个集群，同时保证每个队列分配到自己的容量，提高利用率。</li>
-<li>操作性，yarn支持动态修改调整容量、权限等的分配，可以在运行时直接修改。还提供给管理员界面，来显示当前的队列状况。管理员可以在运行时，添加一个队列；但是不能删除一个队列。管理员还可以在运行时暂停某个队列，这样可以保证当前的队列在执行过程中，集群不会接收其他的任务。如果一个队列被设置成了stopped，那么就不能向他或者子队列上提交任务了。</li>
-<li>基于资源的调度，协调不同资源需求的应用程序，比如内存、CPU、磁盘等等。</li>
-</ul>
-<h2 id="公平调度器配置"><a href="#公平调度器配置" class="headerlink" title="公平调度器配置"></a>公平调度器配置</h2>]]></content>
   </entry>
   <entry>
     <title>将Hexo部署到GitHub</title>
@@ -718,6 +620,120 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
 ]]></content>
+  </entry>
+  <entry>
+    <title>关于YARN</title>
+    <url>/2021/12/07/%E5%85%B3%E4%BA%8EYARN/</url>
+    <content><![CDATA[<h2 id="YARN中的调度"><a href="#YARN中的调度" class="headerlink" title="YARN中的调度"></a>YARN中的调度</h2><p>理想情况下，YARN应用发出的资源请求应该立刻给予满足。但现实中资源是有限的，在一个繁忙的集群中，一个应用经常需要等待才能得到所需的资源。YARN调度器的工作就是根据既定策略分配资源。YARN中提供了多种调度器和可配置策略供我们选择。hadoop3.2.2默认：</p>
+<table>
+<thead>
+<tr>
+<th>yarn.resourcemanager.scheduler.class</th>
+<th>org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler</th>
+</tr>
+</thead>
+</table>
+<span id="more"></span>
+
+<h3 id="FIFO-Scheduler（先入先出调度器）"><a href="#FIFO-Scheduler（先入先出调度器）" class="headerlink" title="FIFO Scheduler（先入先出调度器）"></a>FIFO Scheduler（先入先出调度器）</h3><p>​    FIFO调度器将应用放置在一个队列中，按照提交的顺序（先进先出）运行应用。首先为队列中第一个应用的请求分配资源，第一个应用的请求被满足后再依次处理队列中的下一个应用服务。FIFO调度器不需要任何配置，但不适合共享集群。因为大的应用会占据集群中的所有资源，每个应用都必须等待直到轮到自己运行。hadoop1.x使用的默认调度器就是FIFO。</p>
+<p><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FIFO.jpg" alt="FIFO"></p>
+<p>​    在集群中，更适合使用Capacity Scheduler（容量调度器）或Fair Scheduler（公平调度器），这样允许长时间运行的作业能及时完成，同时也允许正在进行较小临时查询的用户能够在合理时间内得到返回结果。</p>
+<h3 id="Capacity-Scheduler（容量调度器）"><a href="#Capacity-Scheduler（容量调度器）" class="headerlink" title="Capacity Scheduler（容量调度器）"></a>Capacity Scheduler（容量调度器）</h3><p>在使用容量调度器时，一个独立的专门队列保证小作业一提交就可以启动，由于队列容量是为那个队列中的作业所保留的，因此这种策略是以整个集群的利用率为代价的。这意味着与使用FIFO调度器相比，大作业执行的时间要长。</p>
+<p><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/Capacity.jpg" alt="Capacity"></p>
+<h3 id="Fair-Scheduler（公平调度器）"><a href="#Fair-Scheduler（公平调度器）" class="headerlink" title="Fair Scheduler（公平调度器）"></a>Fair Scheduler（公平调度器）</h3><p>在Fair调度器中，我们不需要预先占用一定的系统资源，Fair调度器会为所有运行的作业之间动态平衡资源。第一个（大）作业启动时，它也是唯一运行的作业，因而获得集群中所有的资源。当第二个（小）作业启动时，它被分配到集群的一半资源，这样每个作业都能公平共享资源。</p>
+<p><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg" alt="FAIR"></p>
+<p>注意，从第二个作业的启动到获得共享资源之间会有时间滞后，因为它必须等待第一个作业使用的容器用完并释放出资源。当小作业结束且不再申请资源后，大作业将回去再次使用全部的集群资源。最终的效果是：既得到了较高的集群利用率，又能保证小作业能及时完成。</p>
+<h2 id="容量调度器配置"><a href="#容量调度器配置" class="headerlink" title="容量调度器配置"></a>容量调度器配置</h2><h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>​    容量调度器允许多个组织共享一个Hadoop集群，每个组织可以分配到全部集群资源的一部分。每个组织被配置一个专门的队列，每个队列被配置为可以使用一定的集群资源。队列可以进一步按层次划分，这样每个组织内的不同用户能够共该组织队列所分配的资源。在一个队列内，使用FIFO调度策略对应用进行调度。</p>
+<p>​    如上面那幅图所示，单个作业使用的资源不会超过其队列容量。然而，如果队列中运行多个作业，这个队列的资源不够用且仍有可用的空闲资源，那么容量调度器可能会将空闲的资源分配给这个队列中的作业，尽管会超出队列容量。这就是**“弹性队列”(queue elasticity)**的概念。</p>
+<p>​    正常的操作时，容量调度器不会通过强行中止来抢占容器强（container）。所以，如果一个队列一开始资源够用，然后随着需求增长，资源才开始不够用时，那么这个队列也就只能等其他队列释放容器资源。缓解这种情况的方法是，为队列设置一个最大容量限制，这样这个队列就不会过多侵占其他队列的容量了。这样做是牺牲队列弹性为代价，需要找到一个合理的折中值。</p>
+<p>​    假设一个队列的层次结构如下：</p>
+<pre><code>root 
+├── prod 
+└── dev    
+    ├── eng    
+    └── science
+</code></pre>
+<p>​    下面是一个基于上述队列层次的容量调度器配置文件，文件名为<code>capacity-scheduler.xml</code>。在root队列下面定义了两个子队列：<code>prod</code>和<code>dev</code>，分别占40%和60%的容量。需要注意的是，对特定队列进行配置时，是通过以下形式<code>yarn.sheduler.capacity.&lt;queue-path&gt;.&lt;sub-property&gt;</code>的配置属性进行设置的，其中<code>&lt;queue-path&gt;</code> 表示队列的层次路径（用“.”隔开），例如<code>root.prod</code>。</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=&quot;1.0&quot;?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.queues<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>prod,dev<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.queues<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>eng,science<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.prod.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>40<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>60<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.maximum-capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>75<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.eng.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>50<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span> </span><br><span class="line">	<span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.scheduler.capacity.root.dev.science.capacity<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">value</span>&gt;</span>50<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>​    可以看到，dev队列进一步被划分成eng和science两个容量相等的队列。由于dev队列的最大容量被设置为75%，因此即使prod队列空闲，dev队列也不会占用全部集群资源。换而言之，prod队列能即刻使用的可用资源比例总是能达到25%。由于其他队列没有设置最大容量限制，eng或science中的作业可能会占用dev队列的所有容量（将近75%的集群资源），而prod队列实际则可能会占用全部集群资源。</p>
+<p>​    除了可以配置队列层次和容量，还有些设置是用来控制单个用户或应用能被分配到的最大资源数量、同时运行的应用数量及队列的ACL认证等属性。更多的配置内容可参考<a href="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html%E3%80%82">https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html。</a></p>
+<p>​    补充：关于应用放置在哪个队列，取决于应用本身。例如，在MapReduce中，可以通过设置属性<code>mapreduce.job.queuename</code>来指定要用的队列。如果队列不存在，则在提交时会发送错误。如果不指定队列，那么应用将被放在一个名为<code>default</code>的默认队列中。（队列名应该是队列层次名的最后一部分，如prod和eng是合法的队列名，root.dev.eng和dev.eng作为队列名是无效的。）</p>
+<h3 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h3><ul>
+<li>层次化的队列设计，这种层次化的队列设计保证了子队列可以使用父队列设置的全部资源。这样通过层次化的管理，更容易合理分配和限制资源的使用。</li>
+<li>容量保证，队列上都会设置一个资源的占比，这样可以保证每个队列都不会占用整个集群的资源。</li>
+<li>安全，每个队列有严格的访问控制。用户只能向自己的队列里面提交任务，而且不能修改或者访问其他队列的任务。</li>
+<li>弹性分配，空闲的资源可以被分配给任何队列。当多个队列出现争用的时候，则会按照比例进行平衡。</li>
+<li>多租户租用，通过队列的容量限制，多个用户就可以共享同一个集群，同时保证每个队列分配到自己的容量，提高利用率。</li>
+<li>操作性，yarn支持动态修改调整容量、权限等的分配，可以在运行时直接修改。还提供给管理员界面，来显示当前的队列状况。管理员可以在运行时，添加一个队列；但是不能删除一个队列。管理员还可以在运行时暂停某个队列，这样可以保证当前的队列在执行过程中，集群不会接收其他的任务。如果一个队列被设置成了stopped，那么就不能向他或者子队列上提交任务了。</li>
+<li>基于资源的调度，协调不同资源需求的应用程序，比如内存、CPU、磁盘等等。</li>
+</ul>
+<h3 id="属性"><a href="#属性" class="headerlink" title="属性"></a>属性</h3><ul>
+<li><p>队列属性</p>
+<ul>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.capacity</code></p>
+<p>它是队列的资源容量占比(百分比)。系统繁忙时，每个队列都应该得到设置的量的资源；当系统空闲时，该队列的资源则可以被其他的队列使用。同一层的所有队列加起来必须是100%。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-capacity</code></p>
+<p>队列资源的使用上限。由于系统空闲时，队列可以使用其他的空闲资源，因此最多使用的资源量则是该参数控制。默认是-1，即禁用。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.minimum-user-limit-percent</code></p>
+<p>每个用户最低资源保障（百分比）。任何时刻，一个队列中每个用户可使用的资源量均有一定的限制。当一个队列中同时运行多个用户的应用程序时中，每个用户的使用资源量在一个最小值和最大值之间浮动，其中，最小值取决于正在运行的应用程序数目，而最大值则由minimum-user-limit-percent决定。比如，假设minimum-user-limit-percent为25。当两个用户向该队列提交应用程序时，每个用户可使用资源量不能超过50%，如果三个用户提交应用程序，则每个用户可使用资源量不能超多33%，如果四个或者更多用户提交应用程序，则每个用户可用资源量不能超过25%。默认是100，即不去做限制。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.user-limit-factor</code></p>
+<p>每个用户最多使用的队列资源占比，如果设置为50.那么每个用户使用的资源最多就是50%。</p>
+</li>
+</ul>
+</li>
+<li><p>运行和提交应用限制</p>
+<ul>
+<li><p><code>yarn.scheduler.capacity.maximum-applications</code></p>
+<p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-applications</code></p>
+<p>设置系统中可以同时运行和等待的应用数量。默认是10000。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.maximum-am-resource-percent</code><br><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-am-resource-percent</code></p>
+<p>设置有多少资源可以用来运行app master，即控制当前激活状态的应用。默认是10%。</p>
+</li>
+</ul>
+</li>
+<li><p>队列管理</p>
+<ul>
+<li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.state</code></p>
+<p>队列的状态，可以使RUNNING或者STOPPED.如果队列是STOPPED状态，那么新应用不会提交到该队列或者子队列。同样，如果root被设置成STOPPED，那么整个集群都不能提交任务了。现有的应用可以等待完成，因此队列可以优雅的退出关闭。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.root.&lt;queue-path&gt;.acl_submit_applications</code></p>
+<p>访问控制列表ACL控制谁可以向该队列提交任务。如果一个用户可以向该队列提交，那么也可以提交任务到它的子队列。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.root.&lt;queue-path&gt;.acl_administer_queue</code></p>
+<p>设置队列的管理员的ACL控制，管理员可以控制队列的所有应用程序。同样，它也具有继承性。</p>
+<p>注意：ACL的设置是<code>user1,user2 group1,group2</code>这种格式。如果是<code>*</code>则代表任何人。<code>空格</code>表示任何人都不允许。默认是<code>*</code>.</p>
+</li>
+</ul>
+</li>
+<li><p>其他属性</p>
+<ul>
+<li><p><code>yarn.scheduler.capacity.resource-calculator</code></p>
+<p>资源计算方法，默认是<code>org.apache.hadoop.yarn.util.resource.DefaultResourseCalculator</code>,它只会计算内存。<code>DominantResourceCalculator</code>则会计算内存和CPU。</p>
+</li>
+<li><p><code>yarn.scheduler.capacity.node-locality-delay</code></p>
+<p>调度器尝试进行调度的次数。一般都是跟集群的节点数量有关。默认40（一个机架上的节点数）<br>一旦设置完这些队列属性，就可以在web ui上看到了。可以访问下面的连接：<br>hostname:8088/scheduler</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="修改队列配置"><a href="#修改队列配置" class="headerlink" title="修改队列配置"></a>修改队列配置</h3><p>如果想要修改队列或者调度器的配置，可以修改</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">vi $HADOOP_CONF_DIR/capacity-scheduler.xml</span><br></pre></td></tr></table></figure>
+
+<p>修改完成后，需要执行下面的命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$HADOOP_YARN_HOME/bin/yarn rmadmin -refreshQueues</span><br></pre></td></tr></table></figure>
+
+<p>注意：</p>
+<ul>
+<li>队列不能被删除，只能新增。</li>
+<li>更新队列的配置需要是有效的值</li>
+<li>同层级的队列容量限制想加需要等于100%。</li>
+</ul>
+<h2 id="公平调度器配置"><a href="#公平调度器配置" class="headerlink" title="公平调度器配置"></a>公平调度器配置</h2>]]></content>
   </entry>
   <entry>
     <title>简明 VIM 练级攻略（转载）</title>

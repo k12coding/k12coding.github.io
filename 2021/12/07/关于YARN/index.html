@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/Capacity.jpg">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg">
 <meta property="article:published_time" content="2021-12-07T01:41:15.000Z">
-<meta property="article:modified_time" content="2021-12-07T19:19:05.949Z">
+<meta property="article:modified_time" content="2021-12-07T19:46:29.579Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FIFO.jpg">
@@ -143,7 +143,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">容量调度器配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">公平调度器配置</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">容量调度器配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E6%80%A7"><span class="nav-text">特性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%9E%E6%80%A7"><span class="nav-text">属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%98%9F%E5%88%97%E9%85%8D%E7%BD%AE"><span class="nav-text">修改队列配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">公平调度器配置</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -227,7 +227,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-08 03:19:05" itemprop="dateModified" datetime="2021-12-08T03:19:05+08:00">2021-12-08</time>
+        <time title="修改时间：2021-12-08 03:46:29" itemprop="dateModified" datetime="2021-12-08T03:46:29+08:00">2021-12-08</time>
       </span>
 
   
@@ -259,7 +259,7 @@
 <h3 id="Fair-Scheduler（公平调度器）"><a href="#Fair-Scheduler（公平调度器）" class="headerlink" title="Fair Scheduler（公平调度器）"></a>Fair Scheduler（公平调度器）</h3><p>在Fair调度器中，我们不需要预先占用一定的系统资源，Fair调度器会为所有运行的作业之间动态平衡资源。第一个（大）作业启动时，它也是唯一运行的作业，因而获得集群中所有的资源。当第二个（小）作业启动时，它被分配到集群的一半资源，这样每个作业都能公平共享资源。</p>
 <p><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg" alt="FAIR"></p>
 <p>注意，从第二个作业的启动到获得共享资源之间会有时间滞后，因为它必须等待第一个作业使用的容器用完并释放出资源。当小作业结束且不再申请资源后，大作业将回去再次使用全部的集群资源。最终的效果是：既得到了较高的集群利用率，又能保证小作业能及时完成。</p>
-<h2 id="容量调度器配置"><a href="#容量调度器配置" class="headerlink" title="容量调度器配置"></a>容量调度器配置</h2><p>​    容量调度器允许多个组织共享一个Hadoop集群，每个组织可以分配到全部集群资源的一部分。每个组织被配置一个专门的队列，每个队列被配置为可以使用一定的集群资源。队列可以进一步按层次划分，这样每个组织内的不同用户能够共该组织队列所分配的资源。在一个队列内，使用FIFO调度策略对应用进行调度。</p>
+<h2 id="容量调度器配置"><a href="#容量调度器配置" class="headerlink" title="容量调度器配置"></a>容量调度器配置</h2><h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>​    容量调度器允许多个组织共享一个Hadoop集群，每个组织可以分配到全部集群资源的一部分。每个组织被配置一个专门的队列，每个队列被配置为可以使用一定的集群资源。队列可以进一步按层次划分，这样每个组织内的不同用户能够共该组织队列所分配的资源。在一个队列内，使用FIFO调度策略对应用进行调度。</p>
 <p>​    如上面那幅图所示，单个作业使用的资源不会超过其队列容量。然而，如果队列中运行多个作业，这个队列的资源不够用且仍有可用的空闲资源，那么容量调度器可能会将空闲的资源分配给这个队列中的作业，尽管会超出队列容量。这就是**“弹性队列”(queue elasticity)**的概念。</p>
 <p>​    正常的操作时，容量调度器不会通过强行中止来抢占容器强（container）。所以，如果一个队列一开始资源够用，然后随着需求增长，资源才开始不够用时，那么这个队列也就只能等其他队列释放容器资源。缓解这种情况的方法是，为队列设置一个最大容量限制，这样这个队列就不会过多侵占其他队列的容量了。这样做是牺牲队列弹性为代价，需要找到一个合理的折中值。</p>
 <p>​    假设一个队列的层次结构如下：</p>
@@ -275,10 +275,18 @@
 <p>​    可以看到，dev队列进一步被划分成eng和science两个容量相等的队列。由于dev队列的最大容量被设置为75%，因此即使prod队列空闲，dev队列也不会占用全部集群资源。换而言之，prod队列能即刻使用的可用资源比例总是能达到25%。由于其他队列没有设置最大容量限制，eng或science中的作业可能会占用dev队列的所有容量（将近75%的集群资源），而prod队列实际则可能会占用全部集群资源。</p>
 <p>​    除了可以配置队列层次和容量，还有些设置是用来控制单个用户或应用能被分配到的最大资源数量、同时运行的应用数量及队列的ACL认证等属性。更多的配置内容可参考<a target="_blank" rel="noopener" href="https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html%E3%80%82">https://hadoop.apache.org/docs/r3.2.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html。</a></p>
 <p>​    补充：关于应用放置在哪个队列，取决于应用本身。例如，在MapReduce中，可以通过设置属性<code>mapreduce.job.queuename</code>来指定要用的队列。如果队列不存在，则在提交时会发送错误。如果不指定队列，那么应用将被放在一个名为<code>default</code>的默认队列中。（队列名应该是队列层次名的最后一部分，如prod和eng是合法的队列名，root.dev.eng和dev.eng作为队列名是无效的。）</p>
-<blockquote>
-<ul>
+<h3 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h3><ul>
+<li>层次化的队列设计，这种层次化的队列设计保证了子队列可以使用父队列设置的全部资源。这样通过层次化的管理，更容易合理分配和限制资源的使用。</li>
+<li>容量保证，队列上都会设置一个资源的占比，这样可以保证每个队列都不会占用整个集群的资源。</li>
+<li>安全，每个队列有严格的访问控制。用户只能向自己的队列里面提交任务，而且不能修改或者访问其他队列的任务。</li>
+<li>弹性分配，空闲的资源可以被分配给任何队列。当多个队列出现争用的时候，则会按照比例进行平衡。</li>
+<li>多租户租用，通过队列的容量限制，多个用户就可以共享同一个集群，同时保证每个队列分配到自己的容量，提高利用率。</li>
+<li>操作性，yarn支持动态修改调整容量、权限等的分配，可以在运行时直接修改。还提供给管理员界面，来显示当前的队列状况。管理员可以在运行时，添加一个队列；但是不能删除一个队列。管理员还可以在运行时暂停某个队列，这样可以保证当前的队列在执行过程中，集群不会接收其他的任务。如果一个队列被设置成了stopped，那么就不能向他或者子队列上提交任务了。</li>
+<li>基于资源的调度，协调不同资源需求的应用程序，比如内存、CPU、磁盘等等。</li>
+</ul>
+<h3 id="属性"><a href="#属性" class="headerlink" title="属性"></a>属性</h3><ul>
 <li><p>队列属性</p>
-</li>
+<ul>
 <li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.capacity</code></p>
 <p>它是队列的资源容量占比(百分比)。系统繁忙时，每个队列都应该得到设置的量的资源；当系统空闲时，该队列的资源则可以被其他的队列使用。同一层的所有队列加起来必须是100%。</p>
 </li>
@@ -286,13 +294,15 @@
 <p>队列资源的使用上限。由于系统空闲时，队列可以使用其他的空闲资源，因此最多使用的资源量则是该参数控制。默认是-1，即禁用。</p>
 </li>
 <li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.minimum-user-limit-percent</code></p>
-<p>每个任务占用的最少资源。比如，你设置成了25%。那么如果有两个用户提交任务，那么每个任务资源不超过50%。如果3个用户提交任务，那么每个任务资源不超过33%。如果4个用户提交任务，那么每个任务资源不超过25%。如果5个用户提交任务，那么第五个用户需要等待才能提交。默认是100，即不去做限制。</p>
+<p>每个用户最低资源保障（百分比）。任何时刻，一个队列中每个用户可使用的资源量均有一定的限制。当一个队列中同时运行多个用户的应用程序时中，每个用户的使用资源量在一个最小值和最大值之间浮动，其中，最小值取决于正在运行的应用程序数目，而最大值则由minimum-user-limit-percent决定。比如，假设minimum-user-limit-percent为25。当两个用户向该队列提交应用程序时，每个用户可使用资源量不能超过50%，如果三个用户提交应用程序，则每个用户可使用资源量不能超多33%，如果四个或者更多用户提交应用程序，则每个用户可用资源量不能超过25%。默认是100，即不去做限制。</p>
 </li>
 <li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.user-limit-factor</code></p>
 <p>每个用户最多使用的队列资源占比，如果设置为50.那么每个用户使用的资源最多就是50%。</p>
 </li>
-<li><p>运行和提交应用限制</p>
+</ul>
 </li>
+<li><p>运行和提交应用限制</p>
+<ul>
 <li><p><code>yarn.scheduler.capacity.maximum-applications</code></p>
 <p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-applications</code></p>
 <p>设置系统中可以同时运行和等待的应用数量。默认是10000。</p>
@@ -300,8 +310,10 @@
 <li><p><code>yarn.scheduler.capacity.maximum-am-resource-percent</code><br><code>yarn.scheduler.capacity.&lt;queue-path&gt;.maximum-am-resource-percent</code></p>
 <p>设置有多少资源可以用来运行app master，即控制当前激活状态的应用。默认是10%。</p>
 </li>
-<li><p>队列管理</p>
+</ul>
 </li>
+<li><p>队列管理</p>
+<ul>
 <li><p><code>yarn.scheduler.capacity.&lt;queue-path&gt;.state</code></p>
 <p>队列的状态，可以使RUNNING或者STOPPED.如果队列是STOPPED状态，那么新应用不会提交到该队列或者子队列。同样，如果root被设置成STOPPED，那么整个集群都不能提交任务了。现有的应用可以等待完成，因此队列可以优雅的退出关闭。</p>
 </li>
@@ -310,10 +322,12 @@
 </li>
 <li><p><code>yarn.scheduler.capacity.root.&lt;queue-path&gt;.acl_administer_queue</code></p>
 <p>设置队列的管理员的ACL控制，管理员可以控制队列的所有应用程序。同样，它也具有继承性。</p>
-<p><strong>注意：</strong> ACL的设置是user1,user2 group1,group2这种格式。如果是则代表任何人。空格表示任何人都不允许。默认是。</p>
+<p>注意：ACL的设置是<code>user1,user2 group1,group2</code>这种格式。如果是<code>*</code>则代表任何人。<code>空格</code>表示任何人都不允许。默认是<code>*</code>.</p>
+</li>
+</ul>
 </li>
 <li><p>其他属性</p>
-</li>
+<ul>
 <li><p><code>yarn.scheduler.capacity.resource-calculator</code></p>
 <p>资源计算方法，默认是<code>org.apache.hadoop.yarn.util.resource.DefaultResourseCalculator</code>,它只会计算内存。<code>DominantResourceCalculator</code>则会计算内存和CPU。</p>
 </li>
@@ -321,17 +335,19 @@
 <p>调度器尝试进行调度的次数。一般都是跟集群的节点数量有关。默认40（一个机架上的节点数）<br>一旦设置完这些队列属性，就可以在web ui上看到了。可以访问下面的连接：<br>hostname:8088/scheduler</p>
 </li>
 </ul>
-</blockquote>
-<hr>
-<p>小结：Capacity调度器具有以下的几个特性：</p>
+</li>
+</ul>
+<h3 id="修改队列配置"><a href="#修改队列配置" class="headerlink" title="修改队列配置"></a>修改队列配置</h3><p>如果想要修改队列或者调度器的配置，可以修改</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi $HADOOP_CONF_DIR/capacity-scheduler.xml</span><br></pre></td></tr></table></figure>
+
+<p>修改完成后，需要执行下面的命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$HADOOP_YARN_HOME/bin/yarn rmadmin -refreshQueues</span><br></pre></td></tr></table></figure>
+
+<p>注意：</p>
 <ul>
-<li>层次化的队列设计，这种层次化的队列设计保证了子队列可以使用父队列设置的全部资源。这样通过层次化的管理，更容易合理分配和限制资源的使用。</li>
-<li>容量保证，队列上都会设置一个资源的占比，这样可以保证每个队列都不会占用整个集群的资源。</li>
-<li>安全，每个队列有严格的访问控制。用户只能向自己的队列里面提交任务，而且不能修改或者访问其他队列的任务。</li>
-<li>弹性分配，空闲的资源可以被分配给任何队列。当多个队列出现争用的时候，则会按照比例进行平衡。</li>
-<li>多租户租用，通过队列的容量限制，多个用户就可以共享同一个集群，同时保证每个队列分配到自己的容量，提高利用率。</li>
-<li>操作性，yarn支持动态修改调整容量、权限等的分配，可以在运行时直接修改。还提供给管理员界面，来显示当前的队列状况。管理员可以在运行时，添加一个队列；但是不能删除一个队列。管理员还可以在运行时暂停某个队列，这样可以保证当前的队列在执行过程中，集群不会接收其他的任务。如果一个队列被设置成了stopped，那么就不能向他或者子队列上提交任务了。</li>
-<li>基于资源的调度，协调不同资源需求的应用程序，比如内存、CPU、磁盘等等。</li>
+<li>队列不能被删除，只能新增。</li>
+<li>更新队列的配置需要是有效的值</li>
+<li>同层级的队列容量限制想加需要等于100%。</li>
 </ul>
 <h2 id="公平调度器配置"><a href="#公平调度器配置" class="headerlink" title="公平调度器配置"></a>公平调度器配置</h2>
     </div>
