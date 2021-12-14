@@ -20,12 +20,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="一、YARN应用运行机制 ResourceManager（RM）：负责对各NM上的资源进行统一管理和调度，将AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。 调度器（Scheduler）：调度器根据容量、队列等限制条件（如每个队列">
+<meta name="description" content="一、YARN应用运行机制模块工作职能（主要架构） ResourceManager（RM）RM是一个全局的资源管理器，负责对各NM上的资源进行统一管理和调度，为AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。  调度器（Schedu">
 <meta property="og:type" content="article">
 <meta property="og:title" content="关于YARN">
 <meta property="og:url" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/index.html">
 <meta property="og:site_name" content="k12的博客">
-<meta property="og:description" content="一、YARN应用运行机制 ResourceManager（RM）：负责对各NM上的资源进行统一管理和调度，将AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。 调度器（Scheduler）：调度器根据容量、队列等限制条件（如每个队列">
+<meta property="og:description" content="一、YARN应用运行机制模块工作职能（主要架构） ResourceManager（RM）RM是一个全局的资源管理器，负责对各NM上的资源进行统一管理和调度，为AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。  调度器（Schedu">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/work.png">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FIFO.jpg">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/FAIR.jpg">
 <meta property="og:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/fair3app.png">
 <meta property="article:published_time" content="2021-12-07T01:41:15.000Z">
-<meta property="article:modified_time" content="2021-12-07T23:18:01.259Z">
+<meta property="article:modified_time" content="2021-12-14T07:40:38.417Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://k12coding.github.io/2021/12/07/%E5%85%B3%E4%BA%8EYARN/work.png">
@@ -145,7 +145,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81YARN%E5%BA%94%E7%94%A8%E8%BF%90%E8%A1%8C%E6%9C%BA%E5%88%B6"><span class="nav-text">一、YARN应用运行机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Yarn%E4%B8%8EMapReduce-1%E7%9B%B8%E6%AF%94"><span class="nav-text">二、Yarn与MapReduce 1相比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">三、YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">四、容量调度器配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E6%80%A7"><span class="nav-text">特性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%9E%E6%80%A7"><span class="nav-text">属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%98%9F%E5%88%97%E9%85%8D%E7%BD%AE"><span class="nav-text">修改队列配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">五、公平调度器配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D-1"><span class="nav-text">介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%98%9F%E5%88%97%E9%85%8D%E7%BD%AE"><span class="nav-text">队列配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%98%9F%E5%88%97%E6%94%BE%E7%BD%AE"><span class="nav-text">队列放置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8A%A2%E5%8D%A0"><span class="nav-text">抢占</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%E4%B8%8ECapacity-Scheduler%E5%8C%BA%E5%88%AB"><span class="nav-text">Fair Scheduler与Capacity Scheduler区别</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%BB%B6%E8%BF%9F%E8%B0%83%E5%BA%A6delay-scheduling"><span class="nav-text">六、延迟调度delay scheduling</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E4%B8%BB%E5%AF%BC%E8%B5%84%E6%BA%90%E5%85%AC%E5%B9%B3%E6%80%A7%EF%BC%88Dominant-Resource-Fairness-DRF%EF%BC%89"><span class="nav-text">七、主导资源公平性（Dominant Resource Fairness,DRF）</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81YARN%E5%BA%94%E7%94%A8%E8%BF%90%E8%A1%8C%E6%9C%BA%E5%88%B6"><span class="nav-text">一、YARN应用运行机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E5%B7%A5%E4%BD%9C%E8%81%8C%E8%83%BD%EF%BC%88%E4%B8%BB%E8%A6%81%E6%9E%B6%E6%9E%84%EF%BC%89"><span class="nav-text">模块工作职能（主要架构）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ResourceManager%EF%BC%88RM%EF%BC%89"><span class="nav-text">ResourceManager（RM）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%88Scheduler%EF%BC%89"><span class="nav-text">调度器（Scheduler）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%AE%A1%E7%90%86%E5%99%A8%EF%BC%88Applications-Manager%EF%BC%89"><span class="nav-text">应用程序管理器（Applications Manager）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NodeManager%EF%BC%88NM%EF%BC%89"><span class="nav-text">NodeManager（NM）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ApplicationMaster%EF%BC%88AM%EF%BC%89"><span class="nav-text">ApplicationMaster（AM）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Container"><span class="nav-text">Container</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#YARN%E5%BA%94%E7%94%A8%E7%9A%84%E8%BF%90%E8%A1%8C"><span class="nav-text">YARN应用的运行</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Yarn%E4%B8%8EMapReduce-1%E7%9B%B8%E6%AF%94"><span class="nav-text">二、Yarn与MapReduce 1相比</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81YARN%E4%B8%AD%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="nav-text">三、YARN中的调度</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FIFO-Scheduler%EF%BC%88%E5%85%88%E5%85%A5%E5%85%88%E5%87%BA%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">FIFO Scheduler（先入先出调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Capacity-Scheduler%EF%BC%88%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Capacity Scheduler（容量调度器）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%EF%BC%88%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%EF%BC%89"><span class="nav-text">Fair Scheduler（公平调度器）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%AE%B9%E9%87%8F%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">四、容量调度器配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E6%80%A7"><span class="nav-text">特性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B1%9E%E6%80%A7"><span class="nav-text">属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%98%9F%E5%88%97%E9%85%8D%E7%BD%AE"><span class="nav-text">修改队列配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%85%AC%E5%B9%B3%E8%B0%83%E5%BA%A6%E5%99%A8%E9%85%8D%E7%BD%AE"><span class="nav-text">五、公平调度器配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D-1"><span class="nav-text">介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%98%9F%E5%88%97%E9%85%8D%E7%BD%AE"><span class="nav-text">队列配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%98%9F%E5%88%97%E6%94%BE%E7%BD%AE"><span class="nav-text">队列放置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8A%A2%E5%8D%A0"><span class="nav-text">抢占</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Fair-Scheduler%E4%B8%8ECapacity-Scheduler%E5%8C%BA%E5%88%AB"><span class="nav-text">Fair Scheduler与Capacity Scheduler区别</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%BB%B6%E8%BF%9F%E8%B0%83%E5%BA%A6delay-scheduling"><span class="nav-text">六、延迟调度delay scheduling</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E4%B8%BB%E5%AF%BC%E8%B5%84%E6%BA%90%E5%85%AC%E5%B9%B3%E6%80%A7%EF%BC%88Dominant-Resource-Fairness-DRF%EF%BC%89"><span class="nav-text">七、主导资源公平性（Dominant Resource Fairness,DRF）</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -229,7 +229,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-08 07:18:01" itemprop="dateModified" datetime="2021-12-08T07:18:01+08:00">2021-12-08</time>
+        <time title="修改时间：2021-12-14 15:40:38" itemprop="dateModified" datetime="2021-12-14T15:40:38+08:00">2021-12-14</time>
       </span>
 
   
@@ -242,18 +242,29 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h2 id="一、YARN应用运行机制"><a href="#一、YARN应用运行机制" class="headerlink" title="一、YARN应用运行机制"></a>一、YARN应用运行机制</h2><ul>
-<li>ResourceManager（RM）：负责对各NM上的资源进行统一管理和调度，将AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。</li>
-<li>调度器（Scheduler）：调度器根据容量、队列等限制条件（如每个队列分配一定的资源，最多执行一定数量的作业等），将系统中的资源分配给各个正在运行的应用程序。调度器仅根据各个应用程序的资源需求进行资源分配，而资源分配单位是Container，从而限定每个任务使用的资源量。Scheduler不负责监控或者跟踪应用程序的状态，也不负责任务因为各种原因而需要的重启（由ApplicationMaster负责）。总之，调度器根据应用程序的资源要求，以及集群机器的资源情况，为用程序分配封装在Container中的资源。调度器是可插拔的，例如CapacityScheduler、FairScheduler。（PS：在实际应用中，只需要简单配置即可）</li>
-<li>应用程序管理器（Application Manager）：应用程序管理器负责管理整个系统中所有应用程序，包括应用程序提交、与调度器协商资源以启动AM、监控AM运行状态并在失败时重新启动等，跟踪分给的Container的进度、状态也是其职责。ApplicationMaster是应用框架，它负责向ResourceManager协调资源，并且与NodeManager协同工作完成Task的执行和监控。MapReduce就是原生支持的一种框架，可以在YARN上运行Mapreduce作业。有很多分布式应用都开发了对应的应用程序框架，用于在YARN上运行任务，例如Spark，Storm等。如果需要，我们也可以自己写一个符合规范的YARN application。</li>
-<li>NodeManager（NM）：NM是每个节点上的资源和任务管理器。它会定时地向RM汇报本节点上的资源使用情况和各个Container的运行状态；同时会接收并处理来自AM的Container 启动/停止等请求。</li>
-<li>ApplicationMaster（AM）：用户提交的应用程序均包含一个AM，负责应用的监控，跟踪应用执行状态，重启失败任务等。</li>
-<li>Container：是YARN中的资源抽象，它封装了某个节点上的多维度资源，如内存、CPU、磁盘、网络等，当AM向RM申请资源时，RM为AM返回的资源便是用Container 表示的。YARN会为每个任务分配一个Container且该任务只能使用该Container中描述的资源。</li>
+        <h2 id="一、YARN应用运行机制"><a href="#一、YARN应用运行机制" class="headerlink" title="一、YARN应用运行机制"></a>一、YARN应用运行机制</h2><h3 id="模块工作职能（主要架构）"><a href="#模块工作职能（主要架构）" class="headerlink" title="模块工作职能（主要架构）"></a>模块工作职能（主要架构）</h3><ul>
+<li><h4 id="ResourceManager（RM）"><a href="#ResourceManager（RM）" class="headerlink" title="ResourceManager（RM）"></a>ResourceManager（RM）</h4><p>RM是一个全局的资源管理器，负责对各NM上的资源进行统一管理和调度，为AM分配空闲的Container运行并监控其运行状态。对AM申请的资源请求分配相应的空闲Container。主要由两个组件构成：调度器（Scheduler）和应用程序管理器（Applications Manager）。</p>
+</li>
+<li><h4 id="调度器（Scheduler）"><a href="#调度器（Scheduler）" class="headerlink" title="调度器（Scheduler）"></a>调度器（Scheduler）</h4><p>调度器根据容量、队列等限制条件（如每个队列分配一定的资源，最多执行一定数量的作业等），将系统中的资源分配给各个正在运行的应用程序。调度器仅根据各个应用程序的资源需求进行资源分配，而资源分配单位是Container，从而限定每个任务使用的资源量。Scheduler不负责监控或者跟踪应用程序的状态，也不负责任务因为各种原因而需要的重启（由ApplicationMaster负责）。总之，调度器根据应用程序的资源要求，以及集群机器的资源情况，为用程序分配封装在Container中的资源。调度器是可插拔的，例如CapacityScheduler、FairScheduler。（PS：在实际应用中，只需要简单配置即可）</p>
+</li>
+<li><h4 id="应用程序管理器（Applications-Manager）"><a href="#应用程序管理器（Applications-Manager）" class="headerlink" title="应用程序管理器（Applications Manager）"></a>应用程序管理器（Applications Manager）</h4><p>应用程序管理器负责管理整个系统中所有应用程序，包括应用程序提交、与调度器协商资源以启动AM、监控AM运行状态并在失败时重新启动等，跟踪分给的Container的进度、状态也是其职责。</p>
+</li>
+<li><h4 id="NodeManager（NM）"><a href="#NodeManager（NM）" class="headerlink" title="NodeManager（NM）"></a>NodeManager（NM）</h4><p>NM是每个节点上的资源和任务管理器。它会定时地向RM汇报本节点上的资源使用情况和各个Container的运行状态；同时会接收并处理来自AM的Container 启动/停止等请求。</p>
+</li>
+<li><h4 id="ApplicationMaster（AM）"><a href="#ApplicationMaster（AM）" class="headerlink" title="ApplicationMaster（AM）"></a>ApplicationMaster（AM）</h4><p>用户提交的应用程序均包含一个AM，负责应用的监控，跟踪应用执行状态，重启失败任务等。ApplicationMaster是应用框架，它负责向ResourceManager协调资源，并且与NodeManager协同工作完成Task的执行和监控。MapReduce就是原生支持的一种框架，可以在YARN上运行Mapreduce作业。有很多分布式应用都开发了对应的应用程序框架，用于在YARN上运行任务，例如Spark，Storm等。如果需要，我们也可以自己写一个符合规范的YARN application。</p>
+<blockquote>
+<p><strong>RM只负责监控AM，在AM运行失败时候启动它，RM并不负责AM内部任务的容错，这由AM自己来完成。</strong></p>
+</blockquote>
+</li>
+<li><h4 id="Container"><a href="#Container" class="headerlink" title="Container"></a>Container</h4><p>是YARN中的资源抽象，它封装了某个节点上的多维度资源，如内存、CPU、磁盘、网络等，当AM向RM申请资源时，RM为AM返回的资源便是用Container 表示的。YARN会为每个任务分配一个Container且该任务只能使用该Container中描述的资源。</p>
+<blockquote>
+<p><strong>Container不同于MRv1中的slot，它是一个动态资源划分单位，是根据应用程序的需求动态生成的。不会出现集群资源闲置的尴尬情况.</strong></p>
+</blockquote>
+</li>
 </ul>
 <span id="more"></span>
 
-<p>YARN应用的运行：</p>
-<img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/work.png" alt="work" style="zoom: 33%;">
+<h3 id="YARN应用的运行"><a href="#YARN应用的运行" class="headerlink" title="YARN应用的运行"></a>YARN应用的运行</h3><img src="/2021/12/07/%E5%85%B3%E4%BA%8EYARN/work.png" alt="work" style="zoom: 33%;">
 
 <ol>
 <li>首先客户端请求RM，运行一个application master</li>
@@ -267,7 +278,7 @@
 <ol start="4">
 <li><p>application master运行起来之后需要做什么依赖于客户端传递的应用</p>
 <p> a. 简单地运算后直接返回结果给客户端</p>
-<p> b. 请求更多容器进行分布式计算（MapReduce on YARN）</p>
+<p> b. 请求更多容器进行分布式计算（<a href="https://k12coding.github.io/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/#%E5%9B%9B%E3%80%81MapReduce-on-Yarn-Yarn%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B">MapReduce on YARN</a>)</p>
 </li>
 </ol>
 <h2 id="二、Yarn与MapReduce-1相比"><a href="#二、Yarn与MapReduce-1相比" class="headerlink" title="二、Yarn与MapReduce 1相比"></a>二、Yarn与MapReduce 1相比</h2><p>MapReduce1</p>
