@@ -569,73 +569,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MapReduce Input Split（输入分/切片）详解</title>
-    <url>/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/</url>
-    <content><![CDATA[<p>看了很多博客，感觉没有一个说的很清楚，所以我来整理一下。</p>
-<p>先看一下这个图</p>
-<p><strong><img src="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png" alt="img"></strong></p>
-<p>**<br>**</p>
-<p><strong>输入分片（Input Split）</strong>：在进行map计算之前，mapreduce会根据输入文件计算输入分片（input split），每个输入分片（input split）针对一个map任务，输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。</p>
-<p><strong>Hadoop 2.x默认的block大小是128MB，Hadoop 1.x默认的block大小是64MB，可以在hdfs-site.xml中设置dfs.block.size，注意单位是byte。</strong></p>
-<p><strong>分片大小范围可以在mapred-site.xml中设置，mapred.min.split.size mapred.max.split.size，<strong><strong>minSplitSize大小默认为1B，</strong></strong>maxSplitSize大小默认为Long.MAX_VALUE = 9223372036854775807</strong></p>
-<p><strong>那么分片到底是多大呢？</strong></p>
-<p>minSize=max{minSplitSize,mapred.min.split.size} </p>
-<p>maxSize=mapred.max.split.size</p>
-<p>splitSize=max{minSize,min{maxSize,blockSize}}</p>
-<p>我们再来看一下源码</p>
-<p><img src="https://img-blog.csdn.net/20160414132403422?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="img"></p>
-<p><strong>所以在我们没有设置分片的范围的时候，分片大小是由block块大小决定的，和它的大小一样。比如把一个258MB的文件上传到HDFS上，假设block块大小是128MB，那么它就会被分成三个block块，与之对应产生三个split****，所以最终会产生三个map task。我又发现了另一个问题，第三个block块里存的文件大小只有2MB，而它的block块大小是128MB，那它实际占用Linux file system的多大空间？</strong></p>
-<p><em><strong>*答案是实际的文件大小，而非一个块的大小。<br>*</strong></em></p>
-<p><strong>有大神已经验证这个答案了：<a href="http://blog.csdn.net/samhacker/article/details/23089157">http://blog.csdn.net/samhacker/article/details/23089157</a></strong></p>
-<p>1、往hdfs里面添加新文件前，hadoop在linux上面所占的空间为 464 MB：</p>
-<p><img src="https://img-blog.csdn.net/20140407103622015?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>2、往hdfs里面添加大小为2673375 byte(大概2.5 MB)的文件：</p>
-<p><em>2673375 derby.jar</em></p>
-<p>3、此时，hadoop在linux上面所占的空间为 467 MB——**增加了一个实际文件大小(2.5 MB)的空间，而非一个block size(128 MB)**：</p>
-<p><img src="https://img-blog.csdn.net/20140407103853218?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>4、使用hadoop dfs -stat查看文件信息： </p>
-<p><img src="https://img-blog.csdn.net/20140407104727562?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>这里就很清楚地反映出： 文件的实际大小(file size)是2673375 byte， 但它的block size是128 MB。</p>
-<p>5、通过NameNode的web console来查看文件信息: </p>
-<p><img src="https://img-blog.csdn.net/20140407105057203?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>结果是一样的： 文件的实际大小(file size)是2673375 byte， 但它的block size是128 MB。</p>
-<p>6、不过使用‘hadoop fsck’查看文件信息，看出了一些不一样的内容—— ‘1（avg.block size 2673375 B）’: </p>
-<p><img src="https://img-blog.csdn.net/20140407104039078?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>值得注意的是，结果中有一个 ‘1（avg.block size 2673375 B）’的字样。这里的 ‘block size’ 并不是指平常说的文件块大小(Block Size)—— 后者是一个元数据的概念，相反它反映的是文件的实际大小(file size)。以下是Hadoop Community的专家给我的回复： </p>
-<p><em>“The fsck is showing you an “average blocksize”, not the block size metadata attribute of the file like stat shows. In this specific case, the average is just the length of your file, which is lesser than one whole block.”</em></p>
-<p>最后一个问题是： 如果hdfs占用Linux file system的磁盘空间按实际文件大小算，那么这个”块大小“有必要存在吗？</p>
-<p>其实块大小还是必要的，一个显而易见的作用就是当文件通过append操作不断增长的过程中，可以通过来block size决定何时split文件。以下是Hadoop Community的专家给我的回复： </p>
-<p><em>“The block size is a meta attribute. If you append tothe file later, it still needs to know when to split further - so it keeps that value as a mere metadata it can use to advise itself on write boundaries.”</em> </p>
-<p><strong>补充：我还查到这样一段话</strong></p>
-<p>原文地址：<a href="http://blog.csdn.net/lylcore/article/details/9136555">http://blog.csdn.net/lylcore/article/details/9136555</a></p>
-<p>一个split的大小是由goalSize, minSize, blockSize这三个值决定的。computeSplitSize的逻辑是，先从goalSize和blockSize两个值中选出最小的那个（比如一般不设置map数，这时blockSize为当前文件的块size，而goalSize是文件大小除以用户设置的map数得到的，如果没设置的话，默认是1）。</p>
-<p>hadooop提供了一个设置map个数的参数mapred.map.tasks，我们可以通过这个参数来控制map的个数。但是通过这种方式设置map的个数，并不是每次都有效的。原因是mapred.map.tasks只是一个hadoop的参考数值，最终map的个数，还取决于其他的因素。</p>
-<p>   为了方便介绍，先来看几个名词：</p>
-<p>block_size : hdfs的文件块大小，默认为64M，可以通过参数dfs.block.size设置</p>
-<p>total_size : 输入文件整体的大小</p>
-<p>input_file_num : 输入文件的个数</p>
-<p><strong>（1）默认map个数</strong></p>
-<p>   如果不进行任何设置，默认的map个数是和blcok_size相关的。</p>
-<p>   default_num = total_size / block_size;</p>
-<p><strong>（2）期望大小</strong></p>
-<p>   可以通过参数 mapred.map.tasks来设置程序员期望的map个数，但是这个个数只有在大于default_num的时候，才会生效。</p>
-<p>   goal_num = mapred.map.tasks;</p>
-<p><strong>（3）设置处理的文件大小</strong></p>
-<p>   可以通过mapred.min.split.size 设置每个task处理的文件大小，但是这个大小只有在大于 block_size的时候才会生效。</p>
-<p>   split_size = max( mapred.min.split.size, block_size );</p>
-<p>   split_num = total_size / split_size;</p>
-<p><strong>（4）计算的map个数</strong></p>
-<p>compute_map_num = min(split_num,  max(default_num, goal_num))</p>
-<p>   除了这些配置以外，mapreduce还要遵循一些原则。 mapreduce的每一个map处理的数据是不能跨越文件的，也就是说min_map_num &gt;= input_file_num。 所以，最终的map个数应该为：</p>
-<p>   final_map_num = max(compute_map_num, input_file_num)</p>
-<p>   经过以上的分析，在设置map个数的时候，可以简单的总结为以下几点：</p>
-<p>（1）如果想增加map个数，则设置mapred.map.tasks 为一个较大的值。</p>
-<p>（2）如果想减小map个数，则设置mapred.min.split.size 为一个较大的值。</p>
-<p>（3）如果输入中有很多小文件，依然想减少map个数，则需要将小文件merger为大文件，然后使用准则2。</p>
-<p>版权声明：本文为博主原创文章，转载请加上原文地址，谢谢！ <a href="https://blog.csdn.net/Dr_Guo/article/details/51150278">https://blog.csdn.net/Dr_Guo/article/details/51150278</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
     <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
@@ -1470,6 +1403,591 @@
 ]]></content>
   </entry>
   <entry>
+    <title>MapReduce Input Split（输入分/切片）详解</title>
+    <url>/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/</url>
+    <content><![CDATA[<h2 id="MapReduce-Input-Split（输入分-切片）详解"><a href="#MapReduce-Input-Split（输入分-切片）详解" class="headerlink" title="MapReduce Input Split（输入分/切片）详解"></a>MapReduce Input Split（输入分/切片）详解</h2><p><strong><img src="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png" alt="img"></strong></p>
+<p><strong>输入分片（Input Split）</strong>：在进行map计算之前，mapreduce会根据输入文件计算输入分片（input split），每个输入分片（input split）针对一个map任务，输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。</p>
+<p>分片大小范围可以在mapred-site.xml中设置，mapred.min.split.size mapred.max.split.size，</p>
+<p>minSplitSize大小默认为1B，maxSplitSize大小默认为Long.MAX_VALUE = 9223372036854775807</p>
+<p><strong>那么分片到底是多大呢？</strong></p>
+<p>minSize=max{minSplitSize,mapred.min.split.size} </p>
+<p>maxSize=mapred.max.split.size</p>
+<p>splitSize=max{minSize,min{maxSize,blockSize}}</p>
+<p>我们再来看一下源码</p>
+<p><img src="https://img-blog.csdn.net/20160414132403422?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="img"></p>
+<p><strong>所以在我们没有设置分片的范围的时候，分片大小是由block块大小决定的，和它的大小一样。比如把一个258MB的文件上传到HDFS上，假设block块大小是128MB，那么它就会被分成三个block块，与之对应产生三个split****，所以最终会产生三个map task。我又发现了另一个问题，第三个block块里存的文件大小只有2MB，而它的block块大小是128MB，那它实际占用Linux file system的多大空间？</strong></p>
+<p><em><strong>*答案是实际的文件大小，而非一个块的大小。<br>*</strong></em></p>
+<p><strong>有大神已经验证这个答案了：<a href="http://blog.csdn.net/samhacker/article/details/23089157">http://blog.csdn.net/samhacker/article/details/23089157</a></strong></p>
+<p>1、往hdfs里面添加新文件前，hadoop在linux上面所占的空间为 464 MB：</p>
+<p><img src="https://img-blog.csdn.net/20140407103622015?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p>2、往hdfs里面添加大小为2673375 byte(大概2.5 MB)的文件：</p>
+<p><em>2673375 derby.jar</em></p>
+<p>3、此时，hadoop在linux上面所占的空间为 467 MB——**增加了一个实际文件大小(2.5 MB)的空间，而非一个block size(128 MB)**：</p>
+<p><img src="https://img-blog.csdn.net/20140407103853218?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p>4、使用hadoop dfs -stat查看文件信息： </p>
+<p><img src="https://img-blog.csdn.net/20140407104727562?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p>这里就很清楚地反映出： 文件的实际大小(file size)是2673375 byte， 但它的block size是128 MB。</p>
+<p>5、通过NameNode的web console来查看文件信息: </p>
+<p><img src="https://img-blog.csdn.net/20140407105057203?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p>结果是一样的： 文件的实际大小(file size)是2673375 byte， 但它的block size是128 MB。</p>
+<p>6、不过使用‘hadoop fsck’查看文件信息，看出了一些不一样的内容—— ‘1（avg.block size 2673375 B）’: </p>
+<p><img src="https://img-blog.csdn.net/20140407104039078?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p>值得注意的是，结果中有一个 ‘1（avg.block size 2673375 B）’的字样。这里的 ‘block size’ 并不是指平常说的文件块大小(Block Size)—— 后者是一个元数据的概念，相反它反映的是文件的实际大小(file size)。以下是Hadoop Community的专家给我的回复： </p>
+<p><em>“The fsck is showing you an “average blocksize”, not the block size metadata attribute of the file like stat shows. In this specific case, the average is just the length of your file, which is lesser than one whole block.”</em></p>
+<p>最后一个问题是： 如果hdfs占用Linux file system的磁盘空间按实际文件大小算，那么这个”块大小“有必要存在吗？</p>
+<p>其实块大小还是必要的，一个显而易见的作用就是当文件通过append操作不断增长的过程中，可以通过来block size决定何时split文件。以下是Hadoop Community的专家给我的回复： </p>
+<p><em>“The block size is a meta attribute. If you append tothe file later, it still needs to know when to split further - so it keeps that value as a mere metadata it can use to advise itself on write boundaries.”</em> </p>
+<p><strong>补充：我还查到这样一段话</strong></p>
+<p>原文地址：<a href="http://blog.csdn.net/lylcore/article/details/9136555">http://blog.csdn.net/lylcore/article/details/9136555</a></p>
+<p>一个split的大小是由goalSize, minSize, blockSize这三个值决定的。computeSplitSize的逻辑是，先从goalSize和blockSize两个值中选出最小的那个（比如一般不设置map数，这时blockSize为当前文件的块size，而goalSize是文件大小除以用户设置的map数得到的，如果没设置的话，默认是1）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(maxSize, blockSize));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>hadooop提供了一个设置map个数的参数mapred.map.tasks，我们可以通过这个参数来控制map的个数。但是通过这种方式设置map的个数，并不是每次都有效的。原因是mapred.map.tasks只是一个hadoop的参考数值，最终map的个数，还取决于其他的因素。</p>
+<p>为了方便介绍，先来看几个名词：</p>
+<p><strong>block_size</strong> : hdfs的文件块大小，默认为64M，可以通过参数dfs.block.size设置</p>
+<p><strong>total_size</strong> : 输入文件整体的大小</p>
+<p><strong>input_file_num</strong> : 输入文件的个数</p>
+<ol>
+<li><p><strong>默认map个数</strong></p>
+<p>如果不进行任何设置，默认的map个数是和blcok_size相关的。</p>
+<p>default_num = total_size / block_size;</p>
+</li>
+<li><p><strong>期望大小</strong></p>
+<p>可以通过参数 mapred.map.tasks来设置程序员期望的map个数，但是这个个数只有在大于default_num的时候，才会生效。</p>
+<p>goal_num = mapred.map.tasks;</p>
+</li>
+<li><p><strong>设置处理的文件大小</strong></p>
+<p>可以通过mapred.min.split.size 设置每个task处理的文件大小，但是这个大小只有在大于 block_size的时候才会生效。</p>
+<p>split_size = max( mapred.min.split.size, block_size );</p>
+<p>split_num = total_size / split_size;</p>
+</li>
+<li><p><strong>计算的map个数</strong></p>
+<p>compute_map_num = min(split_num,  max(default_num, goal_num))</p>
+</li>
+</ol>
+<p>除了这些配置以外，mapreduce还要遵循一些原则。 mapreduce的每一个map处理的数据是不能跨越文件的，也就是说min_map_num &gt;= input_file_num。 所以，最终的map个数应该为：</p>
+<p>   final_map_num = max(compute_map_num, input_file_num)</p>
+<p>   经过以上的分析，在设置map个数的时候，可以简单的总结为以下几点：</p>
+<p>（1）如果想增加map个数，则设置mapred.map.tasks 为一个较大的值。</p>
+<p>（2）如果想减小map个数，则设置mapred.min.split.size 为一个较大的值。</p>
+<p>（3）如果输入中有很多小文件，依然想减少map个数，则需要将小文件merger为大文件，然后使用准则2。</p>
+<p>参考：</p>
+<p><a href="https://blog.csdn.net/Dr_Guo/article/details/51150278">https://blog.csdn.net/Dr_Guo/article/details/51150278</a></p>
+<p><a href="https://blog.csdn.net/lylcore/article/details/9136555">https://blog.csdn.net/lylcore/article/details/9136555</a></p>
+<h2 id="getSplits-方法在-FileInputFormat-addInputPath-job-path-中"><a href="#getSplits-方法在-FileInputFormat-addInputPath-job-path-中" class="headerlink" title="getSplits()方法在 FileInputFormat.addInputPath(job, path)中"></a>getSplits()方法在 FileInputFormat.addInputPath(job, path)中</h2><pre><code>    /** 
+     * Generate the list of files and make them into FileSplits.
+     * @param job the job context
+     * @throws IOException
+     */
+    public List&lt;InputSplit&gt; getSplits(JobContext job) throws IOException &#123;
+        //用于记录分片开始的时间，最后会得到一个分片总用时，时间单位是纳秒
+      StopWatch sw = new StopWatch().start();
+      //用来计算分片大小
+      //minSize 就是 1
+      //maxSize 追到最下面可以发现其实就是long的最大值
+      long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
+      long maxSize = getMaxSplitSize(job);
+  
+      //存放切片对象
+      List&lt;InputSplit&gt; splits = new ArrayList&lt;InputSplit&gt;();
+      //得到路径下的所有文件
+      List&lt;FileStatus&gt; files = listStatus(job);
+      //遍历得到的文件
+      for (FileStatus file: files) &#123;
+        //得到文件路径
+        Path path = file.getPath();
+        //获取文件大小
+        long length = file.getLen();
+        //如果文件大小不为0的话
+        if (length != 0) &#123;
+            //定义块数组，存放块在datanode上的位置
+          BlockLocation[] blkLocations;
+          if (file instanceof LocatedFileStatus) &#123;
+            blkLocations = ((LocatedFileStatus) file).getBlockLocations();
+          &#125; else &#123;
+            FileSystem fs = path.getFileSystem(job.getConfiguration());
+            blkLocations = fs.getFileBlockLocations(file, 0, length);
+          //如果这个文件可以分片的话进行分片，zip、视频等不能进行分片
+          if (isSplitable(job, path)) &#123;
+            //获取块大小，hadoop1默认是64M  hadoop2默认是128M  hadoop3默认是256M
+            long blockSize = file.getBlockSize();
+            //得到片大小
+            //--&gt; 最终决定出切片的大小(128M) --&gt; blockSize值
+              //Math.max(minSize, Math.min(maxSize, blockSize));这是实现
+            long splitSize = computeSplitSize(blockSize, minSize, maxSize);
+            //获取文件大小
+            long bytesRemaining = length;
+            //文件大小/片大小&gt;1.1 开始分片
+            //例如  文件大小为260M  260/128=2.03&gt;1.1 进入循环开始分片
+            //132/128 &lt;1.1  不再进行分片，循环结束
+            while (((double) bytesRemaining)/splitSize &gt; SPLIT_SLOP) &#123;
+              int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+              splits.add(makeSplit(path, length-bytesRemaining, splitSize,
+                          blkLocations[blkIndex].getHosts(),
+                           blkLocations[blkIndex].getCachedHosts()));
+              //文件大小 = 原文件大小 - 当前分片大小
+              //260 -128 = 132 现在文件大小是132 MB
+              bytesRemaining -= splitSize;
+            &#125;
+             //循环结束之后,只要文件大小不等于0 此时也会在切一个片
+            if (bytesRemaining != 0) &#123;
+              int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+              splits.add(makeSplit(path, length-bytesRemaining, bytesRemaining,
+                         blkLocations[blkIndex].getHosts(),
+                         blkLocations[blkIndex].getCachedHosts()));
+            &#125;
+          &#125; else &#123; // not splitable
+            splits.add(makeSplit(path, 0, length, blkLocations[0].getHosts(),
+                        blkLocations[0].getCachedHosts()));
+          &#125;
+        &#125; else &#123; 
+          //为零长度文件创建空主机数组
+          splits.add(makeSplit(path, 0, length, new String[0]));
+        &#125;
+      &#125;
+      // 保存文件数
+      job.getConfiguration().setLong(NUM_INPUT_FILES, files.size());
+      sw.stop();
+      //返回携带着切片文件的集合
+      return splits;
+    &#125;
+</code></pre>
+<h2 id="Hadoop-map和reduce数量估算"><a href="#Hadoop-map和reduce数量估算" class="headerlink" title="Hadoop map和reduce数量估算"></a>Hadoop map和reduce数量估算</h2><p>Hadoop在运行一个mapreduce job之前，需要估算这个job的maptask数和reducetask数。</p>
+<h3 id="map-task数量"><a href="#map-task数量" class="headerlink" title="map task数量"></a>map task数量</h3><p>首先分析一下job的maptask数，当一个job提交时，jobclient首先分析job被拆分的split数量，然后吧job.split文件放置在HDFS中，一个job的MapTask数量就等于split的个数。</p>
+<p>job.split中包含split的个数由FileInputFormat.getSplits计算出，方法的逻辑如下：</p>
+<ol>
+<li><p>读取参数mapred.map.tasks，这个参数默认设置为0，生产系统中很少修改。</p>
+</li>
+<li><p>计算input文件的总字节数，总字节数/(mapred.map.tasks==0 ? 1: mapred.map.tasks )=goalsize</p>
+</li>
+<li><p>每个split的最小值minSize由mapred.min.split.size参数设置，这个参数默认设置为0，生产系统中很少修改。</p>
+</li>
+<li><p>调用computeSplitSize方法，计算出splitsize= Math.max(minSize, Math.min(goalSize, blockSize)),通常这个值=blockSize，输入的文件较小，文件字节数之和小于blocksize时，splitsize=输入文件字节数之和。</p>
+</li>
+<li><p>对于input的每个文件，计算split的个数。</p>
+<p>a) 文件大小/splitsize&gt;1.1，创建一个split，这个split的字节数=splitsize，文件剩余字节数=文件大小-splitsize</p>
+<p>b) 文件剩余字节数/splitsize&lt;1.1，剩余的部分作为一个split</p>
+</li>
+</ol>
+<p>举例说明：</p>
+<ol>
+<li><p>input只有一个文件，大小为100M,splitsize=blocksize,则split数为2，第一个split为64M,第二个为36M</p>
+</li>
+<li><p>input只有一个文件，大小为65M,splitsize=blocksize，则split数为1，split大小为65M</p>
+</li>
+<li><p>input只有一个文件，大小为129M,splitsize=blocksize，则split数为2，第一个split为64M,第二个为65M(最后一个split的大小可能超过splitsize)</p>
+</li>
+<li><p>input只有一个文件，大小为20M ,splitsize=blocksize，则split数为1，split大小为20M</p>
+</li>
+<li><p>input有两个文件，大小为100M和20M,splitsize=blocksize,则split数为3，第一个文件分为两个split，第一个split为64M,第二个为36M，第二个文件为一个split，大小为20M</p>
+</li>
+<li><p>input有两个文件，大小为25M和20M,splitsize=blocksize,则split数为2，第一个文件为一个split，大小为25M，第二个文件为一个split，大小为20M</p>
+</li>
+</ol>
+<p>假设一个job的input大小固定为100M,当只包含一个文件时，split个数为2，maptask数为2，但当包含10个10M的文件时，maptask数为10。</p>
+<h3 id="reduce-task数量"><a href="#reduce-task数量" class="headerlink" title="reduce task数量"></a>reduce task数量</h3><p>下面来分析reducetask，纯粹的mapreduce task的reduce task数很简单，就是参数mapred.reduce.tasks的值，hadoop-site.xml文件中和mapreduce job运行时不设置的话默认为1。</p>
+<p>在HIVE中运行sql的情况又不同，hive会估算reduce task的数量，估算方法如下：</p>
+<p>通常是ceil(input文件大小/1024<em>1024</em>1024)，每1GB大小的输入文件对应一个reduce task。</p>
+<p>特殊的情况是当sql只查询count(*)时，reduce task数被设置成1。</p>
+<h3 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h3><p>通过map和reduce task数量的分析可以看出，hadoop/hive估算的map和reduce task数可能和实际情况相差甚远。假定某个job的input数据量庞大，reduce task数量也会随之变大，而通过join和group by，实际output的数据可能不多，但reduce会输出大量的小文件，这个job的下游任务将会启动同样多的map来处理前面reduce产生的大量文件。在生产环境中每个user group有一个map task数的限额，一个job启动大量的map task很显然会造成其他job等待释放资源。</p>
+<p>Hive对于上面描述的情况有一种补救措施，参数hive.merge.smallfiles.avgsize控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于hive.merge.smallfiles.avgsize-默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过hive.merge.size.per.task-默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+<h3 id="map数据计算示例"><a href="#map数据计算示例" class="headerlink" title="map数据计算示例"></a>map数据计算示例</h3><p>hive&gt; set dfs.block.size;<br>dfs.block.size=268435456<br>hive&gt; set mapred.map.tasks;<br>mapred.map.tasks=2</p>
+<p>文件块大小为256MB,map.tasks为2</p>
+<p>查看文件大小和文件数：（共4539.059804MB,18个文件）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[dwapp@dw-yuntigw-63 hadoop]$ hadoop dfs -ls /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25;</span><br><span class="line">Found 18 items</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 290700555 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000000_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 290695945 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000001_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 290182606 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000002_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 271979933 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000003_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258448208 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000004_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258440338 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000005_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258419852 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000006_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258347423 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000007_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258349480 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000008_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258301657 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000009_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258270954 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000010_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258266805 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000011_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258253133 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000012_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258236047 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000013_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258239072 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000014_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258170671 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000015_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258160711 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000016_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258085783 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000017_0</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>文件：</th>
+<th>大小Bytes</th>
+<th>大小MB</th>
+<th></th>
+<th>splitsize(MB)</th>
+<th>每个文件需要的map数量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件1</td>
+<td>290700555</td>
+<td>277.2336531</td>
+<td></td>
+<td>256</td>
+<td>1.082943957</td>
+</tr>
+<tr>
+<td>文件2</td>
+<td>290695945</td>
+<td>277.2292566</td>
+<td></td>
+<td>256</td>
+<td>1.082926784</td>
+</tr>
+<tr>
+<td>文件3</td>
+<td>290182606</td>
+<td>276.7396984</td>
+<td></td>
+<td>256</td>
+<td>1.081014447</td>
+</tr>
+<tr>
+<td>文件4</td>
+<td>271979933</td>
+<td>259.3802767</td>
+<td></td>
+<td>256</td>
+<td>1.013204206</td>
+</tr>
+<tr>
+<td>文件5</td>
+<td>258448208</td>
+<td>246.4754181</td>
+<td></td>
+<td>256</td>
+<td>0.962794602</td>
+</tr>
+<tr>
+<td>文件6</td>
+<td>258440338</td>
+<td>246.4679127</td>
+<td></td>
+<td>256</td>
+<td>0.962765284</td>
+</tr>
+<tr>
+<td>文件7</td>
+<td>258419852</td>
+<td>246.4483757</td>
+<td></td>
+<td>256</td>
+<td>0.962688968</td>
+</tr>
+<tr>
+<td>文件8</td>
+<td>258347423</td>
+<td>246.379302</td>
+<td></td>
+<td>256</td>
+<td>0.962419149</td>
+</tr>
+<tr>
+<td>文件9</td>
+<td>258349480</td>
+<td>246.3812637</td>
+<td></td>
+<td>256</td>
+<td>0.962426811</td>
+</tr>
+<tr>
+<td>文件10</td>
+<td>258301657</td>
+<td>246.3356562</td>
+<td></td>
+<td>256</td>
+<td>0.962248657</td>
+</tr>
+<tr>
+<td>文件11</td>
+<td>258270954</td>
+<td>246.3063755</td>
+<td></td>
+<td>256</td>
+<td>0.962134279</td>
+</tr>
+<tr>
+<td>文件12</td>
+<td>258266805</td>
+<td>246.3024187</td>
+<td></td>
+<td>256</td>
+<td>0.962118823</td>
+</tr>
+<tr>
+<td>文件13</td>
+<td>258253133</td>
+<td>246.2893801</td>
+<td></td>
+<td>256</td>
+<td>0.962067891</td>
+</tr>
+<tr>
+<td>文件14</td>
+<td>258236047</td>
+<td>246.2730856</td>
+<td></td>
+<td>256</td>
+<td>0.962004241</td>
+</tr>
+<tr>
+<td>文件15</td>
+<td>258239072</td>
+<td>246.2759705</td>
+<td></td>
+<td>256</td>
+<td>0.96201551</td>
+</tr>
+<tr>
+<td>文件16</td>
+<td>258170671</td>
+<td>246.2107382</td>
+<td></td>
+<td>256</td>
+<td>0.961760696</td>
+</tr>
+<tr>
+<td>文件17</td>
+<td>258160711</td>
+<td>246.2012396</td>
+<td></td>
+<td>256</td>
+<td>0.961723592</td>
+</tr>
+<tr>
+<td>文件18</td>
+<td>258085783</td>
+<td>246.1297827</td>
+<td></td>
+<td>256</td>
+<td>0.961444464</td>
+</tr>
+<tr>
+<td>总文件大小：</td>
+<td>4759549173</td>
+<td>4539.059804</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>goalSize = 4539.059804 （文件总大小）/ mapred.map.tasks(2) = 2269.529902MB</p>
+<p>因此splitsize取值为256MB，所以一共分配18个map。</p>
+<p>修改map.tasks参数为32<br>set mapred.map.tasks = 32;</p>
+<table>
+<thead>
+<tr>
+<th>文件：</th>
+<th>大小Bytes</th>
+<th>大小MB</th>
+<th></th>
+<th>splitsize(MB)</th>
+<th>每个文件需要的map数量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件1</td>
+<td>290700555</td>
+<td>277.2336531</td>
+<td></td>
+<td>141.8</td>
+<td>1.955103336</td>
+</tr>
+<tr>
+<td>文件2</td>
+<td>290695945</td>
+<td>277.2292566</td>
+<td></td>
+<td>141.8</td>
+<td>1.955072332</td>
+</tr>
+<tr>
+<td>文件3</td>
+<td>290182606</td>
+<td>276.7396984</td>
+<td></td>
+<td>141.8</td>
+<td>1.951619876</td>
+</tr>
+<tr>
+<td>文件4</td>
+<td>271979933</td>
+<td>259.3802767</td>
+<td></td>
+<td>141.8</td>
+<td>1.829198002</td>
+</tr>
+<tr>
+<td>文件5</td>
+<td>258448208</td>
+<td>246.4754181</td>
+<td></td>
+<td>141.8</td>
+<td>1.738190537</td>
+</tr>
+<tr>
+<td>文件6</td>
+<td>258440338</td>
+<td>246.4679127</td>
+<td></td>
+<td>141.8</td>
+<td>1.738137607</td>
+</tr>
+<tr>
+<td>文件7</td>
+<td>258419852</td>
+<td>246.4483757</td>
+<td></td>
+<td>141.8</td>
+<td>1.737999829</td>
+</tr>
+<tr>
+<td>文件8</td>
+<td>258347423</td>
+<td>246.379302</td>
+<td></td>
+<td>141.8</td>
+<td>1.737512708</td>
+</tr>
+<tr>
+<td>文件9</td>
+<td>258349480</td>
+<td>246.3812637</td>
+<td></td>
+<td>141.8</td>
+<td>1.737526543</td>
+</tr>
+<tr>
+<td>文件10</td>
+<td>258301657</td>
+<td>246.3356562</td>
+<td></td>
+<td>141.8</td>
+<td>1.737204909</td>
+</tr>
+<tr>
+<td>文件11</td>
+<td>258270954</td>
+<td>246.3063755</td>
+<td></td>
+<td>141.8</td>
+<td>1.736998417</td>
+</tr>
+<tr>
+<td>文件12</td>
+<td>258266805</td>
+<td>246.3024187</td>
+<td></td>
+<td>141.8</td>
+<td>1.736970513</td>
+</tr>
+<tr>
+<td>文件13</td>
+<td>258253133</td>
+<td>246.2893801</td>
+<td></td>
+<td>141.8</td>
+<td>1.736878562</td>
+</tr>
+<tr>
+<td>文件14</td>
+<td>258236047</td>
+<td>246.2730856</td>
+<td></td>
+<td>141.8</td>
+<td>1.73676365</td>
+</tr>
+<tr>
+<td>文件15</td>
+<td>258239072</td>
+<td>246.2759705</td>
+<td></td>
+<td>141.8</td>
+<td>1.736783995</td>
+</tr>
+<tr>
+<td>文件16</td>
+<td>258170671</td>
+<td>246.2107382</td>
+<td></td>
+<td>141.8</td>
+<td>1.736323965</td>
+</tr>
+<tr>
+<td>文件17</td>
+<td>258160711</td>
+<td>246.2012396</td>
+<td></td>
+<td>141.8</td>
+<td>1.736256979</td>
+</tr>
+<tr>
+<td>文件18</td>
+<td>258085783</td>
+<td>246.1297827</td>
+<td></td>
+<td>141.8</td>
+<td>1.735753051</td>
+</tr>
+<tr>
+<td>总文件大小：</td>
+<td>4759549173</td>
+<td>4539.059804</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>goalSize = 4539.059804 / mapred.map.tasks(32) = 141.8456189</p>
+<p>因此splitsize取值为141.8MB，所以一共分配36个map。</p>
+<p>原文地址：</p>
+<p><a href="https://www.cnblogs.com/ibook360/p/4137592.html">https://www.cnblogs.com/ibook360/p/4137592.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>SQL练习题</title>
+    <url>/2021/11/29/SQL%E7%BB%83%E4%B9%A0%E9%A2%98/</url>
+    <content><![CDATA[<h1 id="SQL练习题"><a href="#SQL练习题" class="headerlink" title="SQL练习题"></a>SQL练习题</h1><p>–部门表<br>dept部门表(deptno部门编号/dname部门名称/loc地点)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table dept (deptno numeric(2),dname varchar(14),loc varchar(13));</span><br><span class="line">insert into dept values (10, &#x27;ACCOUNTING&#x27;, &#x27;NEW YORK&#x27;);</span><br><span class="line">insert into dept values (20, &#x27;RESEARCH&#x27;, &#x27;DALLAS&#x27;);</span><br><span class="line">insert into dept values (30, &#x27;SALES&#x27;, &#x27;CHICAGO&#x27;);</span><br><span class="line">insert into dept values (40, &#x27;OPERATIONS&#x27;, &#x27;BOSTON&#x27;);</span><br></pre></td></tr></table></figure>
+
+<p>–工资等级表<br>salgrade工资等级表(grade 等级/losal此等级的最低/hisal此等级的最高)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table salgrade (grade numeric,losal numeric,hisal numeric);</span><br><span class="line">insert into salgrade values (1, 700, 1200);</span><br><span class="line">insert into salgrade values (2, 1201, 1400);</span><br><span class="line">insert into salgrade values (3, 1401, 2000);</span><br><span class="line">insert into salgrade values (4, 2001, 3000);</span><br><span class="line">insert into salgrade values (5, 3001, 9999);</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<p>–员工表<br>emp员工表(empno员工号/ename员工姓名/job工作/mgr上级编号/hiredate受雇日期/sal薪金/comm佣金/deptno部门编号)<br>工资 ＝ 薪金 ＋ 佣金</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table emp (</span><br><span class="line">    empno numeric(4) not null,</span><br><span class="line">    ename varchar(10),</span><br><span class="line">    job varchar(9),</span><br><span class="line">    mgr numeric(4),</span><br><span class="line">    hiredate datetime,</span><br><span class="line">    sal numeric(7, 2),</span><br><span class="line">    comm numeric(7, 2),</span><br><span class="line">    deptno numeric(2)</span><br><span class="line">);</span><br><span class="line">insert into emp values (7369, &#x27;SMITH&#x27;, &#x27;CLERK&#x27;, 7902, &#x27;1980-12-17&#x27;, 800, null, 20);</span><br><span class="line">insert into emp values (7499, &#x27;ALLEN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-20&#x27;, 1600, 300, 30);</span><br><span class="line">insert into emp values (7521, &#x27;WARD&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-22&#x27;, 1250, 500, 30);</span><br><span class="line">insert into emp values (7566, &#x27;JONES&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-04-02&#x27;, 2975, null, 20);</span><br><span class="line">insert into emp values (7654, &#x27;MARTIN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-28&#x27;, 1250, 1400, 30);</span><br><span class="line">insert into emp values (7698, &#x27;BLAKE&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-05-01&#x27;, 2850, null, 30);</span><br><span class="line">insert into emp values (7782, &#x27;CLARK&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-06-09&#x27;, 2450, null, 10);</span><br><span class="line">insert into emp values (7788, &#x27;SCOTT&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1982-12-09&#x27;, 3000, null, 20);</span><br><span class="line">insert into emp values (7839, &#x27;KING&#x27;, &#x27;PRESIDENT&#x27;, null, &#x27;1981-11-17&#x27;, 5000, null, 10);</span><br><span class="line">insert into emp values (7844, &#x27;TURNER&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-08&#x27;, 1500, 0, 30);</span><br><span class="line">insert into emp values (7876, &#x27;ADAMS&#x27;, &#x27;CLERK&#x27;, 7788, &#x27;1983-01-12&#x27;, 1100, null, 20);</span><br><span class="line">insert into emp values (7900, &#x27;JAMES&#x27;, &#x27;CLERK&#x27;, 7698, &#x27;1981-12-03&#x27;, 950, null, 30);</span><br><span class="line">insert into emp values (7902, &#x27;FORD&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1981-12-03&#x27;, 3000, null, 20);</span><br><span class="line">insert into emp values (7934, &#x27;MILLER&#x27;, &#x27;CLERK&#x27;, 7782, &#x27;1982-01-23&#x27;, 1300, null, 10);</span><br></pre></td></tr></table></figure>
+
+<p>1.查询出部门编号为30的所有员工的编号和姓名</p>
+<p>2.找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。</p>
+<p>3.查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序</p>
+<p>4.列出薪金大于1500的各种工作及从事此工作的员工人数。</p>
+<p>5.列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。</p>
+<p>6.查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L  __</p>
+<p>7.查询每种工作的最高工资、最低工资、人数</p>
+<p>8.列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级</p>
+<p>9.列出薪金  高于  在部门30工作的  所有/任何一个员工的薪金的员工姓名和薪金、部门名称。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; use ruozedata</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; create table dept (</span><br><span class="line">    -&gt;     deptno numeric(2),</span><br><span class="line">    -&gt;     dname varchar(14),</span><br><span class="line">    -&gt;     loc varchar(13)</span><br><span class="line">    -&gt; );</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (10, &#x27;ACCOUNTING&#x27;, &#x27;NEW YORK&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (20, &#x27;RESEARCH&#x27;, &#x27;DALLAS&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (30, &#x27;SALES&#x27;, &#x27;CHICAGO&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (40, &#x27;OPERATIONS&#x27;, &#x27;BOSTON&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; create table salgrade (</span><br><span class="line">    -&gt;     grade numeric,</span><br><span class="line">    -&gt;     losal numeric,</span><br><span class="line">    -&gt;     hisal numeric</span><br><span class="line">    -&gt; );</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (1, 700, 1200);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (2, 1201, 1400);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (3, 1401, 2000);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (4, 2001, 3000);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (5, 3001, 9999);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; create table emp (</span><br><span class="line">    -&gt;     empno numeric(4) not null,</span><br><span class="line">    -&gt;     ename varchar(10),</span><br><span class="line">    -&gt;     job varchar(9),</span><br><span class="line">    -&gt;     mgr numeric(4),</span><br><span class="line">    -&gt;     hiredate datetime,</span><br><span class="line">    -&gt;     sal numeric(7, 2),</span><br><span class="line">    -&gt;     comm numeric(7, 2),</span><br><span class="line">    -&gt;     deptno numeric(2)</span><br><span class="line">    -&gt; );</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7369, &#x27;SMITH&#x27;, &#x27;CLERK&#x27;, 7902, &#x27;1980-12-17&#x27;, 800, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7499, &#x27;ALLEN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-20&#x27;, 1600, 300, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7521, &#x27;WARD&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-22&#x27;, 1250, 500, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7566, &#x27;JONES&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-04-02&#x27;, 2975, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7654, &#x27;MARTIN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-28&#x27;, 1250, 1400, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7698, &#x27;BLAKE&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-05-01&#x27;, 2850, null, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7782, &#x27;CLARK&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-06-09&#x27;, 2450, null, 10);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7788, &#x27;SCOTT&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1982-12-09&#x27;, 3000, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7839, &#x27;KING&#x27;, &#x27;PRESIDENT&#x27;, null, &#x27;1981-11-17&#x27;, 5000, null, 10); </span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7844, &#x27;TURNER&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-08&#x27;, 1500, 0, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7876, &#x27;ADAMS&#x27;, &#x27;CLERK&#x27;, 7788, &#x27;1983-01-12&#x27;, 1100, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7900, &#x27;JAMES&#x27;, &#x27;CLERK&#x27;, 7698, &#x27;1981-12-03&#x27;, 950, null, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7902, &#x27;FORD&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1981-12-03&#x27;, 3000, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7934, &#x27;MILLER&#x27;, &#x27;CLERK&#x27;, 7782, &#x27;1982-01-23&#x27;, 1300, null, 10);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+---------------------+</span><br><span class="line">| Tables_in_ruozedata |</span><br><span class="line">+---------------------+</span><br><span class="line">| dept                |</span><br><span class="line">| emp                 |</span><br><span class="line">| salgrade            |</span><br><span class="line">+---------------------+</span><br><span class="line">3 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from dept;</span><br><span class="line">+--------+------------+----------+</span><br><span class="line">| deptno | dname      | loc      |</span><br><span class="line">+--------+------------+----------+</span><br><span class="line">|     10 | ACCOUNTING | NEW YORK |</span><br><span class="line">|     20 | RESEARCH   | DALLAS   |</span><br><span class="line">|     30 | SALES      | CHICAGO  |</span><br><span class="line">|     40 | OPERATIONS | BOSTON   |</span><br><span class="line">+--------+------------+----------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from emp;</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">| empno | ename  | job       | mgr  | hiredate            | sal     | comm    | deptno |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">|  7369 | SMITH  | CLERK     | 7902 | 1980-12-17 00:00:00 |  800.00 |    NULL |     20 |</span><br><span class="line">|  7499 | ALLEN  | SALESMAN  | 7698 | 1981-02-20 00:00:00 | 1600.00 |  300.00 |     30 |</span><br><span class="line">|  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 00:00:00 | 1250.00 |  500.00 |     30 |</span><br><span class="line">|  7566 | JONES  | MANAGER   | 7839 | 1981-04-02 00:00:00 | 2975.00 |    NULL |     20 |</span><br><span class="line">|  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 00:00:00 | 1250.00 | 1400.00 |     30 |</span><br><span class="line">|  7698 | BLAKE  | MANAGER   | 7839 | 1981-05-01 00:00:00 | 2850.00 |    NULL |     30 |</span><br><span class="line">|  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 00:00:00 | 2450.00 |    NULL |     10 |</span><br><span class="line">|  7788 | SCOTT  | ANALYST   | 7566 | 1982-12-09 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7839 | KING   | PRESIDENT | NULL | 1981-11-17 00:00:00 | 5000.00 |    NULL |     10 |</span><br><span class="line">|  7844 | TURNER | SALESMAN  | 7698 | 1981-09-08 00:00:00 | 1500.00 |    0.00 |     30 |</span><br><span class="line">|  7876 | ADAMS  | CLERK     | 7788 | 1983-01-12 00:00:00 | 1100.00 |    NULL |     20 |</span><br><span class="line">|  7900 | JAMES  | CLERK     | 7698 | 1981-12-03 00:00:00 |  950.00 |    NULL |     30 |</span><br><span class="line">|  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7934 | MILLER | CLERK     | 7782 | 1982-01-23 00:00:00 | 1300.00 |    NULL |     10 |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">14 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from salgrade;</span><br><span class="line">+-------+-------+-------+</span><br><span class="line">| grade | losal | hisal |</span><br><span class="line">+-------+-------+-------+</span><br><span class="line">|     1 |   700 |  1200 |</span><br><span class="line">|     2 |  1201 |  1400 |</span><br><span class="line">|     3 |  1401 |  2000 |</span><br><span class="line">|     4 |  2001 |  3000 |</span><br><span class="line">|     5 |  3001 |  9999 |</span><br><span class="line">+-------+-------+-------+</span><br><span class="line">5 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
+
+<h2 id="一、查询出部门编号为30的所有员工的编号和姓名"><a href="#一、查询出部门编号为30的所有员工的编号和姓名" class="headerlink" title="一、查询出部门编号为30的所有员工的编号和姓名"></a>一、查询出部门编号为30的所有员工的编号和姓名</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select empno,ename from emp where deptno = 30;</span><br><span class="line">+-------+--------+</span><br><span class="line">| empno | ename  |</span><br><span class="line">+-------+--------+</span><br><span class="line">|  7499 | ALLEN  |</span><br><span class="line">|  7521 | WARD   |</span><br><span class="line">|  7654 | MARTIN |</span><br><span class="line">|  7698 | BLAKE  |</span><br><span class="line">|  7844 | TURNER |</span><br><span class="line">|  7900 | JAMES  |</span><br><span class="line">+-------+--------+</span><br><span class="line">6 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。"><a href="#二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。" class="headerlink" title="二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。"></a>二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select * from emp where job = &quot;MANAGER&quot; and deptno = 10 union all select * from emp where job = &quot;SALESMAN&quot; and deptno = 20;</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">| empno | ename | job     | mgr  | hiredate            | sal     | comm | deptno |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">|  7782 | CLARK | MANAGER | 7839 | 1981-06-09 00:00:00 | 2450.00 | NULL |     10 |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from emp where job = &quot;MANAGER&quot; and deptno = 10 or job = &quot;SALESMAN&quot; and deptno = 20;</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">| empno | ename | job     | mgr  | hiredate            | sal     | comm | deptno |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">|  7782 | CLARK | MANAGER | 7839 | 1981-06-09 00:00:00 | 2450.00 | NULL |     10 |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序"><a href="#三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序" class="headerlink" title="三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序"></a>三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select * from emp order by sal desc, hiredate;</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">| empno | ename  | job       | mgr  | hiredate            | sal     | comm    | deptno |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">|  7839 | KING   | PRESIDENT | NULL | 1981-11-17 00:00:00 | 5000.00 |    NULL |     10 |</span><br><span class="line">|  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7788 | SCOTT  | ANALYST   | 7566 | 1982-12-09 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7566 | JONES  | MANAGER   | 7839 | 1981-04-02 00:00:00 | 2975.00 |    NULL |     20 |</span><br><span class="line">|  7698 | BLAKE  | MANAGER   | 7839 | 1981-05-01 00:00:00 | 2850.00 |    NULL |     30 |</span><br><span class="line">|  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 00:00:00 | 2450.00 |    NULL |     10 |</span><br><span class="line">|  7499 | ALLEN  | SALESMAN  | 7698 | 1981-02-20 00:00:00 | 1600.00 |  300.00 |     30 |</span><br><span class="line">|  7844 | TURNER | SALESMAN  | 7698 | 1981-09-08 00:00:00 | 1500.00 |    0.00 |     30 |</span><br><span class="line">|  7934 | MILLER | CLERK     | 7782 | 1982-01-23 00:00:00 | 1300.00 |    NULL |     10 |</span><br><span class="line">|  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 00:00:00 | 1250.00 |  500.00 |     30 |</span><br><span class="line">|  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 00:00:00 | 1250.00 | 1400.00 |     30 |</span><br><span class="line">|  7876 | ADAMS  | CLERK     | 7788 | 1983-01-12 00:00:00 | 1100.00 |    NULL |     20 |</span><br><span class="line">|  7900 | JAMES  | CLERK     | 7698 | 1981-12-03 00:00:00 |  950.00 |    NULL |     30 |</span><br><span class="line">|  7369 | SMITH  | CLERK     | 7902 | 1980-12-17 00:00:00 |  800.00 |    NULL |     20 |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">14 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、列出薪金大于1500的各种工作及从事此工作的员工人数。"><a href="#四、列出薪金大于1500的各种工作及从事此工作的员工人数。" class="headerlink" title="四、列出薪金大于1500的各种工作及从事此工作的员工人数。"></a>四、列出薪金大于1500的各种工作及从事此工作的员工人数。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select job,count(job) from emp where sal &gt; 1500 group by job ;</span><br><span class="line">+-----------+------------+</span><br><span class="line">| job       | count(job) |</span><br><span class="line">+-----------+------------+</span><br><span class="line">| ANALYST   |          2 |</span><br><span class="line">| MANAGER   |          3 |</span><br><span class="line">| PRESIDENT |          1 |</span><br><span class="line">| SALESMAN  |          1 |</span><br><span class="line">+-----------+------------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。"><a href="#五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。" class="headerlink" title="五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。"></a>五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select ename from emp left join dept on emp.deptno = dept.deptno where dept.dname = &quot;SALES&quot;;</span><br><span class="line">+--------+</span><br><span class="line">| ename  |</span><br><span class="line">+--------+</span><br><span class="line">| ALLEN  |</span><br><span class="line">| WARD   |</span><br><span class="line">| MARTIN |</span><br><span class="line">| BLAKE  |</span><br><span class="line">| TURNER |</span><br><span class="line">| JAMES  |</span><br><span class="line">+--------+</span><br><span class="line">6 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp</span><br><span class="line">    -&gt; where deptno=</span><br><span class="line">    -&gt; (select deptno from dept where dname=&#x27;SALES&#x27;);</span><br><span class="line">+--------+</span><br><span class="line">| ename  |</span><br><span class="line">+--------+</span><br><span class="line">| ALLEN  |</span><br><span class="line">| WARD   |</span><br><span class="line">| MARTIN |</span><br><span class="line">| BLAKE  |</span><br><span class="line">| TURNER |</span><br><span class="line">| JAMES  |</span><br><span class="line">+--------+</span><br><span class="line">6 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、查询姓名以S开头的-以S结尾-包含S字符-第二个字母为L"><a href="#六、查询姓名以S开头的-以S结尾-包含S字符-第二个字母为L" class="headerlink" title="六、查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L"></a>六、查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select ename from emp where ename like &quot;S%&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| SMITH |</span><br><span class="line">| SCOTT |</span><br><span class="line">+-------+</span><br><span class="line">2 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp where ename like &quot;%S&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| JONES |</span><br><span class="line">| ADAMS |</span><br><span class="line">| JAMES |</span><br><span class="line">+-------+</span><br><span class="line">3 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp where ename like &quot;%S%&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| SMITH |</span><br><span class="line">| JONES |</span><br><span class="line">| SCOTT |</span><br><span class="line">| ADAMS |</span><br><span class="line">| JAMES |</span><br><span class="line">+-------+</span><br><span class="line">5 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp where ename like &quot;_L%&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| ALLEN |</span><br><span class="line">| BLAKE |</span><br><span class="line">| CLARK |</span><br><span class="line">+-------+</span><br><span class="line">3 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h2 id="七、查询每种工作的最高工资、最低工资、人数"><a href="#七、查询每种工作的最高工资、最低工资、人数" class="headerlink" title="七、查询每种工作的最高工资、最低工资、人数"></a>七、查询每种工作的最高工资、最低工资、人数</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select job,max(sal+ifnull(comm,0)) as sal_max,min(sal+ifnull(comm,0)) as sal_min,count(empno) as count from emp group by job;</span><br><span class="line">+-----------+---------+---------+-------+</span><br><span class="line">| job       | sal_max | sal_min | count |</span><br><span class="line">+-----------+---------+---------+-------+</span><br><span class="line">| ANALYST   | 3000.00 | 3000.00 |     2 |</span><br><span class="line">| CLERK     | 1300.00 |  800.00 |     4 |</span><br><span class="line">| MANAGER   | 2975.00 | 2450.00 |     3 |</span><br><span class="line">| PRESIDENT | 5000.00 | 5000.00 |     1 |</span><br><span class="line">| SALESMAN  | 2650.00 | 1500.00 |     4 |</span><br><span class="line">+-----------+---------+---------+-------+</span><br><span class="line">5 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h2 id="八、列出薪金-高于-公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级"><a href="#八、列出薪金-高于-公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级" class="headerlink" title="八、列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级"></a>八、列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级</h2><ol>
+<li><p>找出平均薪金：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select avg(sal+ifnull(comm,0)) from emp;</span><br><span class="line">+-------------------------+</span><br><span class="line">| avg(sal+ifnull(comm,0)) |</span><br><span class="line">+-------------------------+</span><br><span class="line">|             2230.357143 |</span><br><span class="line">+-------------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>薪金 高于 公司平均薪金的所有员工号,员工姓名,工资：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select empno,ename,sal+ifnull(comm,0) as empsal from emp where sal+ifnull(comm,0) &gt; (select avg(sal+ifnull(comm,0)) from emp);</span><br><span class="line">+-------+--------+---------+</span><br><span class="line">| empno | ename  | empsal  |</span><br><span class="line">+-------+--------+---------+</span><br><span class="line">|  7566 | JONES  | 2975.00 |</span><br><span class="line">|  7654 | MARTIN | 2650.00 |</span><br><span class="line">|  7698 | BLAKE  | 2850.00 |</span><br><span class="line">|  7782 | CLARK  | 2450.00 |</span><br><span class="line">|  7788 | SCOTT  | 3000.00 |</span><br><span class="line">|  7839 | KING   | 5000.00 |</span><br><span class="line">|  7902 | FORD   | 3000.00 |</span><br><span class="line">+-------+--------+---------+</span><br><span class="line">7 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure></li>
+<li><p>加上部门名称,工资等级</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select </span><br><span class="line">    -&gt; empno,ename,sal+ifnull(comm,0) as empsal,dname,grade</span><br><span class="line">    -&gt; from emp left join dept </span><br><span class="line">    -&gt; on emp.deptno = dept.deptno </span><br><span class="line">    -&gt; left join salgrade</span><br><span class="line">    -&gt; on sal+ifnull(comm,0) between losal and hisal</span><br><span class="line">    -&gt; where </span><br><span class="line">    -&gt; sal+ifnull(comm,0) &gt; (select avg(sal+ifnull(comm,0)) from emp);</span><br><span class="line">+-------+--------+---------+------------+-------+</span><br><span class="line">| empno | ename  | empsal  | dname      | grade |</span><br><span class="line">+-------+--------+---------+------------+-------+</span><br><span class="line">|  7782 | CLARK  | 2450.00 | ACCOUNTING |     4 |</span><br><span class="line">|  7566 | JONES  | 2975.00 | RESEARCH   |     4 |</span><br><span class="line">|  7788 | SCOTT  | 3000.00 | RESEARCH   |     4 |</span><br><span class="line">|  7902 | FORD   | 3000.00 | RESEARCH   |     4 |</span><br><span class="line">|  7654 | MARTIN | 2650.00 | SALES      |     4 |</span><br><span class="line">|  7698 | BLAKE  | 2850.00 | SALES      |     4 |</span><br><span class="line">|  7839 | KING   | 5000.00 | ACCOUNTING |     5 |</span><br><span class="line">+-------+--------+---------+------------+-------+</span><br><span class="line">7 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure></li>
+<li><p>加上领导名称</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select </span><br><span class="line">    -&gt; e1.empno,e1.ename,e1.sal+ifnull(e1.comm,0) as empsal,dname,grade,e2.ename as mgrname</span><br><span class="line">    -&gt; from emp e1 </span><br><span class="line">    -&gt; left join emp e2 on e1.mgr = e2.empno </span><br><span class="line">    -&gt; left join dept on e1.deptno = dept.deptno </span><br><span class="line">    -&gt; left join salgrade on e1.sal+ifnull(e1.comm,0) between losal and hisal</span><br><span class="line">    -&gt; where e1.sal+ifnull(e1.comm,0) &gt; (select avg(sal+ifnull(comm,0)) from emp);</span><br><span class="line">+-------+--------+---------+------------+-------+---------+</span><br><span class="line">| empno | ename  | empsal  | dname      | grade | mgrname |</span><br><span class="line">+-------+--------+---------+------------+-------+---------+</span><br><span class="line">|  7782 | CLARK  | 2450.00 | ACCOUNTING |     4 | KING    |</span><br><span class="line">|  7788 | SCOTT  | 3000.00 | RESEARCH   |     4 | JONES   |</span><br><span class="line">|  7902 | FORD   | 3000.00 | RESEARCH   |     4 | JONES   |</span><br><span class="line">|  7566 | JONES  | 2975.00 | RESEARCH   |     4 | KING    |</span><br><span class="line">|  7654 | MARTIN | 2650.00 | SALES      |     4 | BLAKE   |</span><br><span class="line">|  7698 | BLAKE  | 2850.00 | SALES      |     4 | KING    |</span><br><span class="line">|  7839 | KING   | 5000.00 | ACCOUNTING |     5 | NULL    |</span><br><span class="line">+-------+--------+---------+------------+-------+---------+</span><br><span class="line">7 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="九、列出薪金-高于-在部门30工作的-所有-任意一个员工的薪金的员工姓名和薪金、部门名称。"><a href="#九、列出薪金-高于-在部门30工作的-所有-任意一个员工的薪金的员工姓名和薪金、部门名称。" class="headerlink" title="九、列出薪金  高于  在部门30工作的  所有/任意一个员工的薪金的员工姓名和薪金、部门名称。"></a>九、列出薪金  高于  在部门30工作的  所有/任意一个员工的薪金的员工姓名和薪金、部门名称。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select ename,sal+ifnull(comm,0) as empsal,dname  from emp  left join dept on emp.deptno = dept.deptno where sal+ifnull(comm,0) &gt; ALL( select sal+ifnull(comm,0) from emp where deptno=30 );</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">| ename | empsal  | dname      |</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">| KING  | 5000.00 | ACCOUNTING |</span><br><span class="line">| JONES | 2975.00 | RESEARCH   |</span><br><span class="line">| SCOTT | 3000.00 | RESEARCH   |</span><br><span class="line">| FORD  | 3000.00 | RESEARCH   |</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename,sal+ifnull(comm,0) as empsal,dname  from emp  left join dept on emp.deptno = dept.deptno where sal+ifnull(comm,0) &gt; ANY( select sal+ifnull(comm,0) from emp where deptno==30 );</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">| ename  | empsal  | dname      |</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">| CLARK  | 2450.00 | ACCOUNTING |</span><br><span class="line">| KING   | 5000.00 | ACCOUNTING |</span><br><span class="line">| MILLER | 1300.00 | ACCOUNTING |</span><br><span class="line">| JONES  | 2975.00 | RESEARCH   |</span><br><span class="line">| SCOTT  | 3000.00 | RESEARCH   |</span><br><span class="line">| ADAMS  | 1100.00 | RESEARCH   |</span><br><span class="line">| FORD   | 3000.00 | RESEARCH   |</span><br><span class="line">| ALLEN  | 1900.00 | SALES      |</span><br><span class="line">| WARD   | 1750.00 | SALES      |</span><br><span class="line">| MARTIN | 2650.00 | SALES      |</span><br><span class="line">| BLAKE  | 2850.00 | SALES      |</span><br><span class="line">| TURNER | 1500.00 | SALES      |</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">12 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>在Linux系统上部署Mysql</title>
     <url>/2021/11/24/Mysql%E9%83%A8%E7%BD%B2/</url>
     <content><![CDATA[<h1 id="在Linux系统上部署Mysql"><a href="#在Linux系统上部署Mysql" class="headerlink" title="在Linux系统上部署Mysql"></a>在Linux系统上部署Mysql</h1><p>在Linux上部署Mysql的两种方式：</p>
@@ -1564,59 +2082,6 @@
 <p>再次重启，问题再次出现，hostname.err的用户用户组为：mysql:mysqladmin</p>
 <p>经查阅，发现my.cnf中[mysqld]下有默认启动用户<code>user = mysql</code>，指定为<code>user = mysqladmin</code>后重启，问题不再出现，且mysql服务开机自启动</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">#以下注释为默认参数，不指定的话，user=mysql</span><br><span class="line">#user 			= mysql</span><br><span class="line">user 			= mysqladmin</span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
-    <title>SQL练习题</title>
-    <url>/2021/11/29/SQL%E7%BB%83%E4%B9%A0%E9%A2%98/</url>
-    <content><![CDATA[<h1 id="SQL练习题"><a href="#SQL练习题" class="headerlink" title="SQL练习题"></a>SQL练习题</h1><p>–部门表<br>dept部门表(deptno部门编号/dname部门名称/loc地点)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table dept (deptno numeric(2),dname varchar(14),loc varchar(13));</span><br><span class="line">insert into dept values (10, &#x27;ACCOUNTING&#x27;, &#x27;NEW YORK&#x27;);</span><br><span class="line">insert into dept values (20, &#x27;RESEARCH&#x27;, &#x27;DALLAS&#x27;);</span><br><span class="line">insert into dept values (30, &#x27;SALES&#x27;, &#x27;CHICAGO&#x27;);</span><br><span class="line">insert into dept values (40, &#x27;OPERATIONS&#x27;, &#x27;BOSTON&#x27;);</span><br></pre></td></tr></table></figure>
-
-<p>–工资等级表<br>salgrade工资等级表(grade 等级/losal此等级的最低/hisal此等级的最高)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table salgrade (grade numeric,losal numeric,hisal numeric);</span><br><span class="line">insert into salgrade values (1, 700, 1200);</span><br><span class="line">insert into salgrade values (2, 1201, 1400);</span><br><span class="line">insert into salgrade values (3, 1401, 2000);</span><br><span class="line">insert into salgrade values (4, 2001, 3000);</span><br><span class="line">insert into salgrade values (5, 3001, 9999);</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<p>–员工表<br>emp员工表(empno员工号/ename员工姓名/job工作/mgr上级编号/hiredate受雇日期/sal薪金/comm佣金/deptno部门编号)<br>工资 ＝ 薪金 ＋ 佣金</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table emp (</span><br><span class="line">    empno numeric(4) not null,</span><br><span class="line">    ename varchar(10),</span><br><span class="line">    job varchar(9),</span><br><span class="line">    mgr numeric(4),</span><br><span class="line">    hiredate datetime,</span><br><span class="line">    sal numeric(7, 2),</span><br><span class="line">    comm numeric(7, 2),</span><br><span class="line">    deptno numeric(2)</span><br><span class="line">);</span><br><span class="line">insert into emp values (7369, &#x27;SMITH&#x27;, &#x27;CLERK&#x27;, 7902, &#x27;1980-12-17&#x27;, 800, null, 20);</span><br><span class="line">insert into emp values (7499, &#x27;ALLEN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-20&#x27;, 1600, 300, 30);</span><br><span class="line">insert into emp values (7521, &#x27;WARD&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-22&#x27;, 1250, 500, 30);</span><br><span class="line">insert into emp values (7566, &#x27;JONES&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-04-02&#x27;, 2975, null, 20);</span><br><span class="line">insert into emp values (7654, &#x27;MARTIN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-28&#x27;, 1250, 1400, 30);</span><br><span class="line">insert into emp values (7698, &#x27;BLAKE&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-05-01&#x27;, 2850, null, 30);</span><br><span class="line">insert into emp values (7782, &#x27;CLARK&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-06-09&#x27;, 2450, null, 10);</span><br><span class="line">insert into emp values (7788, &#x27;SCOTT&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1982-12-09&#x27;, 3000, null, 20);</span><br><span class="line">insert into emp values (7839, &#x27;KING&#x27;, &#x27;PRESIDENT&#x27;, null, &#x27;1981-11-17&#x27;, 5000, null, 10);</span><br><span class="line">insert into emp values (7844, &#x27;TURNER&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-08&#x27;, 1500, 0, 30);</span><br><span class="line">insert into emp values (7876, &#x27;ADAMS&#x27;, &#x27;CLERK&#x27;, 7788, &#x27;1983-01-12&#x27;, 1100, null, 20);</span><br><span class="line">insert into emp values (7900, &#x27;JAMES&#x27;, &#x27;CLERK&#x27;, 7698, &#x27;1981-12-03&#x27;, 950, null, 30);</span><br><span class="line">insert into emp values (7902, &#x27;FORD&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1981-12-03&#x27;, 3000, null, 20);</span><br><span class="line">insert into emp values (7934, &#x27;MILLER&#x27;, &#x27;CLERK&#x27;, 7782, &#x27;1982-01-23&#x27;, 1300, null, 10);</span><br></pre></td></tr></table></figure>
-
-<p>1.查询出部门编号为30的所有员工的编号和姓名</p>
-<p>2.找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。</p>
-<p>3.查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序</p>
-<p>4.列出薪金大于1500的各种工作及从事此工作的员工人数。</p>
-<p>5.列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。</p>
-<p>6.查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L  __</p>
-<p>7.查询每种工作的最高工资、最低工资、人数</p>
-<p>8.列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级</p>
-<p>9.列出薪金  高于  在部门30工作的  所有/任何一个员工的薪金的员工姓名和薪金、部门名称。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; use ruozedata</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; create table dept (</span><br><span class="line">    -&gt;     deptno numeric(2),</span><br><span class="line">    -&gt;     dname varchar(14),</span><br><span class="line">    -&gt;     loc varchar(13)</span><br><span class="line">    -&gt; );</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (10, &#x27;ACCOUNTING&#x27;, &#x27;NEW YORK&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (20, &#x27;RESEARCH&#x27;, &#x27;DALLAS&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (30, &#x27;SALES&#x27;, &#x27;CHICAGO&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into dept values (40, &#x27;OPERATIONS&#x27;, &#x27;BOSTON&#x27;);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; create table salgrade (</span><br><span class="line">    -&gt;     grade numeric,</span><br><span class="line">    -&gt;     losal numeric,</span><br><span class="line">    -&gt;     hisal numeric</span><br><span class="line">    -&gt; );</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (1, 700, 1200);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (2, 1201, 1400);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (3, 1401, 2000);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (4, 2001, 3000);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into salgrade values (5, 3001, 9999);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; create table emp (</span><br><span class="line">    -&gt;     empno numeric(4) not null,</span><br><span class="line">    -&gt;     ename varchar(10),</span><br><span class="line">    -&gt;     job varchar(9),</span><br><span class="line">    -&gt;     mgr numeric(4),</span><br><span class="line">    -&gt;     hiredate datetime,</span><br><span class="line">    -&gt;     sal numeric(7, 2),</span><br><span class="line">    -&gt;     comm numeric(7, 2),</span><br><span class="line">    -&gt;     deptno numeric(2)</span><br><span class="line">    -&gt; );</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7369, &#x27;SMITH&#x27;, &#x27;CLERK&#x27;, 7902, &#x27;1980-12-17&#x27;, 800, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7499, &#x27;ALLEN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-20&#x27;, 1600, 300, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7521, &#x27;WARD&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-02-22&#x27;, 1250, 500, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7566, &#x27;JONES&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-04-02&#x27;, 2975, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7654, &#x27;MARTIN&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-28&#x27;, 1250, 1400, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7698, &#x27;BLAKE&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-05-01&#x27;, 2850, null, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7782, &#x27;CLARK&#x27;, &#x27;MANAGER&#x27;, 7839, &#x27;1981-06-09&#x27;, 2450, null, 10);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7788, &#x27;SCOTT&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1982-12-09&#x27;, 3000, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7839, &#x27;KING&#x27;, &#x27;PRESIDENT&#x27;, null, &#x27;1981-11-17&#x27;, 5000, null, 10); </span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7844, &#x27;TURNER&#x27;, &#x27;SALESMAN&#x27;, 7698, &#x27;1981-09-08&#x27;, 1500, 0, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7876, &#x27;ADAMS&#x27;, &#x27;CLERK&#x27;, 7788, &#x27;1983-01-12&#x27;, 1100, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7900, &#x27;JAMES&#x27;, &#x27;CLERK&#x27;, 7698, &#x27;1981-12-03&#x27;, 950, null, 30);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7902, &#x27;FORD&#x27;, &#x27;ANALYST&#x27;, 7566, &#x27;1981-12-03&#x27;, 3000, null, 20);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into emp values (7934, &#x27;MILLER&#x27;, &#x27;CLERK&#x27;, 7782, &#x27;1982-01-23&#x27;, 1300, null, 10);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+---------------------+</span><br><span class="line">| Tables_in_ruozedata |</span><br><span class="line">+---------------------+</span><br><span class="line">| dept                |</span><br><span class="line">| emp                 |</span><br><span class="line">| salgrade            |</span><br><span class="line">+---------------------+</span><br><span class="line">3 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from dept;</span><br><span class="line">+--------+------------+----------+</span><br><span class="line">| deptno | dname      | loc      |</span><br><span class="line">+--------+------------+----------+</span><br><span class="line">|     10 | ACCOUNTING | NEW YORK |</span><br><span class="line">|     20 | RESEARCH   | DALLAS   |</span><br><span class="line">|     30 | SALES      | CHICAGO  |</span><br><span class="line">|     40 | OPERATIONS | BOSTON   |</span><br><span class="line">+--------+------------+----------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from emp;</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">| empno | ename  | job       | mgr  | hiredate            | sal     | comm    | deptno |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">|  7369 | SMITH  | CLERK     | 7902 | 1980-12-17 00:00:00 |  800.00 |    NULL |     20 |</span><br><span class="line">|  7499 | ALLEN  | SALESMAN  | 7698 | 1981-02-20 00:00:00 | 1600.00 |  300.00 |     30 |</span><br><span class="line">|  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 00:00:00 | 1250.00 |  500.00 |     30 |</span><br><span class="line">|  7566 | JONES  | MANAGER   | 7839 | 1981-04-02 00:00:00 | 2975.00 |    NULL |     20 |</span><br><span class="line">|  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 00:00:00 | 1250.00 | 1400.00 |     30 |</span><br><span class="line">|  7698 | BLAKE  | MANAGER   | 7839 | 1981-05-01 00:00:00 | 2850.00 |    NULL |     30 |</span><br><span class="line">|  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 00:00:00 | 2450.00 |    NULL |     10 |</span><br><span class="line">|  7788 | SCOTT  | ANALYST   | 7566 | 1982-12-09 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7839 | KING   | PRESIDENT | NULL | 1981-11-17 00:00:00 | 5000.00 |    NULL |     10 |</span><br><span class="line">|  7844 | TURNER | SALESMAN  | 7698 | 1981-09-08 00:00:00 | 1500.00 |    0.00 |     30 |</span><br><span class="line">|  7876 | ADAMS  | CLERK     | 7788 | 1983-01-12 00:00:00 | 1100.00 |    NULL |     20 |</span><br><span class="line">|  7900 | JAMES  | CLERK     | 7698 | 1981-12-03 00:00:00 |  950.00 |    NULL |     30 |</span><br><span class="line">|  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7934 | MILLER | CLERK     | 7782 | 1982-01-23 00:00:00 | 1300.00 |    NULL |     10 |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">14 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from salgrade;</span><br><span class="line">+-------+-------+-------+</span><br><span class="line">| grade | losal | hisal |</span><br><span class="line">+-------+-------+-------+</span><br><span class="line">|     1 |   700 |  1200 |</span><br><span class="line">|     2 |  1201 |  1400 |</span><br><span class="line">|     3 |  1401 |  2000 |</span><br><span class="line">|     4 |  2001 |  3000 |</span><br><span class="line">|     5 |  3001 |  9999 |</span><br><span class="line">+-------+-------+-------+</span><br><span class="line">5 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
-
-<h2 id="一、查询出部门编号为30的所有员工的编号和姓名"><a href="#一、查询出部门编号为30的所有员工的编号和姓名" class="headerlink" title="一、查询出部门编号为30的所有员工的编号和姓名"></a>一、查询出部门编号为30的所有员工的编号和姓名</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select empno,ename from emp where deptno = 30;</span><br><span class="line">+-------+--------+</span><br><span class="line">| empno | ename  |</span><br><span class="line">+-------+--------+</span><br><span class="line">|  7499 | ALLEN  |</span><br><span class="line">|  7521 | WARD   |</span><br><span class="line">|  7654 | MARTIN |</span><br><span class="line">|  7698 | BLAKE  |</span><br><span class="line">|  7844 | TURNER |</span><br><span class="line">|  7900 | JAMES  |</span><br><span class="line">+-------+--------+</span><br><span class="line">6 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<h2 id="二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。"><a href="#二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。" class="headerlink" title="二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。"></a>二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select * from emp where job = &quot;MANAGER&quot; and deptno = 10 union all select * from emp where job = &quot;SALESMAN&quot; and deptno = 20;</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">| empno | ename | job     | mgr  | hiredate            | sal     | comm | deptno |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">|  7782 | CLARK | MANAGER | 7839 | 1981-06-09 00:00:00 | 2450.00 | NULL |     10 |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from emp where job = &quot;MANAGER&quot; and deptno = 10 or job = &quot;SALESMAN&quot; and deptno = 20;</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">| empno | ename | job     | mgr  | hiredate            | sal     | comm | deptno |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">|  7782 | CLARK | MANAGER | 7839 | 1981-06-09 00:00:00 | 2450.00 | NULL |     10 |</span><br><span class="line">+-------+-------+---------+------+---------------------+---------+------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<h2 id="三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序"><a href="#三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序" class="headerlink" title="三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序"></a>三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select * from emp order by sal desc, hiredate;</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">| empno | ename  | job       | mgr  | hiredate            | sal     | comm    | deptno |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">|  7839 | KING   | PRESIDENT | NULL | 1981-11-17 00:00:00 | 5000.00 |    NULL |     10 |</span><br><span class="line">|  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7788 | SCOTT  | ANALYST   | 7566 | 1982-12-09 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7566 | JONES  | MANAGER   | 7839 | 1981-04-02 00:00:00 | 2975.00 |    NULL |     20 |</span><br><span class="line">|  7698 | BLAKE  | MANAGER   | 7839 | 1981-05-01 00:00:00 | 2850.00 |    NULL |     30 |</span><br><span class="line">|  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 00:00:00 | 2450.00 |    NULL |     10 |</span><br><span class="line">|  7499 | ALLEN  | SALESMAN  | 7698 | 1981-02-20 00:00:00 | 1600.00 |  300.00 |     30 |</span><br><span class="line">|  7844 | TURNER | SALESMAN  | 7698 | 1981-09-08 00:00:00 | 1500.00 |    0.00 |     30 |</span><br><span class="line">|  7934 | MILLER | CLERK     | 7782 | 1982-01-23 00:00:00 | 1300.00 |    NULL |     10 |</span><br><span class="line">|  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 00:00:00 | 1250.00 |  500.00 |     30 |</span><br><span class="line">|  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 00:00:00 | 1250.00 | 1400.00 |     30 |</span><br><span class="line">|  7876 | ADAMS  | CLERK     | 7788 | 1983-01-12 00:00:00 | 1100.00 |    NULL |     20 |</span><br><span class="line">|  7900 | JAMES  | CLERK     | 7698 | 1981-12-03 00:00:00 |  950.00 |    NULL |     30 |</span><br><span class="line">|  7369 | SMITH  | CLERK     | 7902 | 1980-12-17 00:00:00 |  800.00 |    NULL |     20 |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">14 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<h2 id="四、列出薪金大于1500的各种工作及从事此工作的员工人数。"><a href="#四、列出薪金大于1500的各种工作及从事此工作的员工人数。" class="headerlink" title="四、列出薪金大于1500的各种工作及从事此工作的员工人数。"></a>四、列出薪金大于1500的各种工作及从事此工作的员工人数。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select job,count(job) from emp where sal &gt; 1500 group by job ;</span><br><span class="line">+-----------+------------+</span><br><span class="line">| job       | count(job) |</span><br><span class="line">+-----------+------------+</span><br><span class="line">| ANALYST   |          2 |</span><br><span class="line">| MANAGER   |          3 |</span><br><span class="line">| PRESIDENT |          1 |</span><br><span class="line">| SALESMAN  |          1 |</span><br><span class="line">+-----------+------------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<h2 id="五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。"><a href="#五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。" class="headerlink" title="五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。"></a>五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select ename from emp left join dept on emp.deptno = dept.deptno where dept.dname = &quot;SALES&quot;;</span><br><span class="line">+--------+</span><br><span class="line">| ename  |</span><br><span class="line">+--------+</span><br><span class="line">| ALLEN  |</span><br><span class="line">| WARD   |</span><br><span class="line">| MARTIN |</span><br><span class="line">| BLAKE  |</span><br><span class="line">| TURNER |</span><br><span class="line">| JAMES  |</span><br><span class="line">+--------+</span><br><span class="line">6 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp</span><br><span class="line">    -&gt; where deptno=</span><br><span class="line">    -&gt; (select deptno from dept where dname=&#x27;SALES&#x27;);</span><br><span class="line">+--------+</span><br><span class="line">| ename  |</span><br><span class="line">+--------+</span><br><span class="line">| ALLEN  |</span><br><span class="line">| WARD   |</span><br><span class="line">| MARTIN |</span><br><span class="line">| BLAKE  |</span><br><span class="line">| TURNER |</span><br><span class="line">| JAMES  |</span><br><span class="line">+--------+</span><br><span class="line">6 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<h2 id="六、查询姓名以S开头的-以S结尾-包含S字符-第二个字母为L"><a href="#六、查询姓名以S开头的-以S结尾-包含S字符-第二个字母为L" class="headerlink" title="六、查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L"></a>六、查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select ename from emp where ename like &quot;S%&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| SMITH |</span><br><span class="line">| SCOTT |</span><br><span class="line">+-------+</span><br><span class="line">2 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp where ename like &quot;%S&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| JONES |</span><br><span class="line">| ADAMS |</span><br><span class="line">| JAMES |</span><br><span class="line">+-------+</span><br><span class="line">3 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp where ename like &quot;%S%&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| SMITH |</span><br><span class="line">| JONES |</span><br><span class="line">| SCOTT |</span><br><span class="line">| ADAMS |</span><br><span class="line">| JAMES |</span><br><span class="line">+-------+</span><br><span class="line">5 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename from emp where ename like &quot;_L%&quot;;</span><br><span class="line">+-------+</span><br><span class="line">| ename |</span><br><span class="line">+-------+</span><br><span class="line">| ALLEN |</span><br><span class="line">| BLAKE |</span><br><span class="line">| CLARK |</span><br><span class="line">+-------+</span><br><span class="line">3 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<h2 id="七、查询每种工作的最高工资、最低工资、人数"><a href="#七、查询每种工作的最高工资、最低工资、人数" class="headerlink" title="七、查询每种工作的最高工资、最低工资、人数"></a>七、查询每种工作的最高工资、最低工资、人数</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select job,max(sal+ifnull(comm,0)) as sal_max,min(sal+ifnull(comm,0)) as sal_min,count(empno) as count from emp group by job;</span><br><span class="line">+-----------+---------+---------+-------+</span><br><span class="line">| job       | sal_max | sal_min | count |</span><br><span class="line">+-----------+---------+---------+-------+</span><br><span class="line">| ANALYST   | 3000.00 | 3000.00 |     2 |</span><br><span class="line">| CLERK     | 1300.00 |  800.00 |     4 |</span><br><span class="line">| MANAGER   | 2975.00 | 2450.00 |     3 |</span><br><span class="line">| PRESIDENT | 5000.00 | 5000.00 |     1 |</span><br><span class="line">| SALESMAN  | 2650.00 | 1500.00 |     4 |</span><br><span class="line">+-----------+---------+---------+-------+</span><br><span class="line">5 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<h2 id="八、列出薪金-高于-公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级"><a href="#八、列出薪金-高于-公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级" class="headerlink" title="八、列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级"></a>八、列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级</h2><ol>
-<li><p>找出平均薪金：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select avg(sal+ifnull(comm,0)) from emp;</span><br><span class="line">+-------------------------+</span><br><span class="line">| avg(sal+ifnull(comm,0)) |</span><br><span class="line">+-------------------------+</span><br><span class="line">|             2230.357143 |</span><br><span class="line">+-------------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>薪金 高于 公司平均薪金的所有员工号,员工姓名,工资：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select empno,ename,sal+ifnull(comm,0) as empsal from emp where sal+ifnull(comm,0) &gt; (select avg(sal+ifnull(comm,0)) from emp);</span><br><span class="line">+-------+--------+---------+</span><br><span class="line">| empno | ename  | empsal  |</span><br><span class="line">+-------+--------+---------+</span><br><span class="line">|  7566 | JONES  | 2975.00 |</span><br><span class="line">|  7654 | MARTIN | 2650.00 |</span><br><span class="line">|  7698 | BLAKE  | 2850.00 |</span><br><span class="line">|  7782 | CLARK  | 2450.00 |</span><br><span class="line">|  7788 | SCOTT  | 3000.00 |</span><br><span class="line">|  7839 | KING   | 5000.00 |</span><br><span class="line">|  7902 | FORD   | 3000.00 |</span><br><span class="line">+-------+--------+---------+</span><br><span class="line">7 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure></li>
-<li><p>加上部门名称,工资等级</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select </span><br><span class="line">    -&gt; empno,ename,sal+ifnull(comm,0) as empsal,dname,grade</span><br><span class="line">    -&gt; from emp left join dept </span><br><span class="line">    -&gt; on emp.deptno = dept.deptno </span><br><span class="line">    -&gt; left join salgrade</span><br><span class="line">    -&gt; on sal+ifnull(comm,0) between losal and hisal</span><br><span class="line">    -&gt; where </span><br><span class="line">    -&gt; sal+ifnull(comm,0) &gt; (select avg(sal+ifnull(comm,0)) from emp);</span><br><span class="line">+-------+--------+---------+------------+-------+</span><br><span class="line">| empno | ename  | empsal  | dname      | grade |</span><br><span class="line">+-------+--------+---------+------------+-------+</span><br><span class="line">|  7782 | CLARK  | 2450.00 | ACCOUNTING |     4 |</span><br><span class="line">|  7566 | JONES  | 2975.00 | RESEARCH   |     4 |</span><br><span class="line">|  7788 | SCOTT  | 3000.00 | RESEARCH   |     4 |</span><br><span class="line">|  7902 | FORD   | 3000.00 | RESEARCH   |     4 |</span><br><span class="line">|  7654 | MARTIN | 2650.00 | SALES      |     4 |</span><br><span class="line">|  7698 | BLAKE  | 2850.00 | SALES      |     4 |</span><br><span class="line">|  7839 | KING   | 5000.00 | ACCOUNTING |     5 |</span><br><span class="line">+-------+--------+---------+------------+-------+</span><br><span class="line">7 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure></li>
-<li><p>加上领导名称</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select </span><br><span class="line">    -&gt; e1.empno,e1.ename,e1.sal+ifnull(e1.comm,0) as empsal,dname,grade,e2.ename as mgrname</span><br><span class="line">    -&gt; from emp e1 </span><br><span class="line">    -&gt; left join emp e2 on e1.mgr = e2.empno </span><br><span class="line">    -&gt; left join dept on e1.deptno = dept.deptno </span><br><span class="line">    -&gt; left join salgrade on e1.sal+ifnull(e1.comm,0) between losal and hisal</span><br><span class="line">    -&gt; where e1.sal+ifnull(e1.comm,0) &gt; (select avg(sal+ifnull(comm,0)) from emp);</span><br><span class="line">+-------+--------+---------+------------+-------+---------+</span><br><span class="line">| empno | ename  | empsal  | dname      | grade | mgrname |</span><br><span class="line">+-------+--------+---------+------------+-------+---------+</span><br><span class="line">|  7782 | CLARK  | 2450.00 | ACCOUNTING |     4 | KING    |</span><br><span class="line">|  7788 | SCOTT  | 3000.00 | RESEARCH   |     4 | JONES   |</span><br><span class="line">|  7902 | FORD   | 3000.00 | RESEARCH   |     4 | JONES   |</span><br><span class="line">|  7566 | JONES  | 2975.00 | RESEARCH   |     4 | KING    |</span><br><span class="line">|  7654 | MARTIN | 2650.00 | SALES      |     4 | BLAKE   |</span><br><span class="line">|  7698 | BLAKE  | 2850.00 | SALES      |     4 | KING    |</span><br><span class="line">|  7839 | KING   | 5000.00 | ACCOUNTING |     5 | NULL    |</span><br><span class="line">+-------+--------+---------+------------+-------+---------+</span><br><span class="line">7 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="九、列出薪金-高于-在部门30工作的-所有-任意一个员工的薪金的员工姓名和薪金、部门名称。"><a href="#九、列出薪金-高于-在部门30工作的-所有-任意一个员工的薪金的员工姓名和薪金、部门名称。" class="headerlink" title="九、列出薪金  高于  在部门30工作的  所有/任意一个员工的薪金的员工姓名和薪金、部门名称。"></a>九、列出薪金  高于  在部门30工作的  所有/任意一个员工的薪金的员工姓名和薪金、部门名称。</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select ename,sal+ifnull(comm,0) as empsal,dname  from emp  left join dept on emp.deptno = dept.deptno where sal+ifnull(comm,0) &gt; ALL( select sal+ifnull(comm,0) from emp where deptno=30 );</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">| ename | empsal  | dname      |</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">| KING  | 5000.00 | ACCOUNTING |</span><br><span class="line">| JONES | 2975.00 | RESEARCH   |</span><br><span class="line">| SCOTT | 3000.00 | RESEARCH   |</span><br><span class="line">| FORD  | 3000.00 | RESEARCH   |</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename,sal+ifnull(comm,0) as empsal,dname  from emp  left join dept on emp.deptno = dept.deptno where sal+ifnull(comm,0) &gt; ANY( select sal+ifnull(comm,0) from emp where deptno==30 );</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">| ename  | empsal  | dname      |</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">| CLARK  | 2450.00 | ACCOUNTING |</span><br><span class="line">| KING   | 5000.00 | ACCOUNTING |</span><br><span class="line">| MILLER | 1300.00 | ACCOUNTING |</span><br><span class="line">| JONES  | 2975.00 | RESEARCH   |</span><br><span class="line">| SCOTT  | 3000.00 | RESEARCH   |</span><br><span class="line">| ADAMS  | 1100.00 | RESEARCH   |</span><br><span class="line">| FORD   | 3000.00 | RESEARCH   |</span><br><span class="line">| ALLEN  | 1900.00 | SALES      |</span><br><span class="line">| WARD   | 1750.00 | SALES      |</span><br><span class="line">| MARTIN | 2650.00 | SALES      |</span><br><span class="line">| BLAKE  | 2850.00 | SALES      |</span><br><span class="line">| TURNER | 1500.00 | SALES      |</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">12 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
 
 ]]></content>
   </entry>
