@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
 <meta property="article:published_time" content="2021-12-14T12:09:56.000Z">
-<meta property="article:modified_time" content="2021-12-14T20:34:57.272Z">
+<meta property="article:modified_time" content="2021-12-14T20:59:55.770Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
@@ -141,7 +141,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop%E4%B8%AD%E7%9A%84block-Size%E5%92%8Csplit-Size%E6%98%AF%E4%BB%80%E4%B9%88%E5%85%B3%E7%B3%BB"><span class="nav-text">Hadoop中的block Size和split Size是什么关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3"><span class="nav-text">MapReduce Input Split（输入分&#x2F;切片）详解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#getSplits-%E6%96%B9%E6%B3%95%E5%9C%A8-FileInputFormat-addInputPath-job-path-%E4%B8%AD"><span class="nav-text">getSplits()方法在 FileInputFormat.addInputPath(job, path)中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop-map%E5%92%8Creduce%E6%95%B0%E9%87%8F%E4%BC%B0%E7%AE%97"><span class="nav-text">Hadoop map和reduce数量估算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#map-task%E6%95%B0%E9%87%8F"><span class="nav-text">map task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reduce-task%E6%95%B0%E9%87%8F"><span class="nav-text">reduce task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-text">总结：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#map%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%A4%BA%E4%BE%8B"><span class="nav-text">map数据计算示例</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop%E4%B8%AD%E7%9A%84block-Size%E5%92%8Csplit-Size%E6%98%AF%E4%BB%80%E4%B9%88%E5%85%B3%E7%B3%BB"><span class="nav-text">Hadoop中的block Size和split Size是什么关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3"><span class="nav-text">MapReduce Input Split（输入分&#x2F;切片）详解</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mapreduce%E4%B8%ADsplit%E5%88%92%E5%88%86%E5%88%86%E6%9E%90%EF%BC%88%E6%96%B0%E7%89%88api%EF%BC%89"><span class="nav-text">mapreduce中split划分分析（新版api）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97splitsize"><span class="nav-text">计算splitsize</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#getSplits-%E6%96%B9%E6%B3%95%E5%9C%A8-FileInputFormat-addInputPath-job-path-%E4%B8%AD"><span class="nav-text">getSplits()方法在 FileInputFormat.addInputPath(job, path)中</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop-map%E5%92%8Creduce%E6%95%B0%E9%87%8F%E4%BC%B0%E7%AE%97"><span class="nav-text">Hadoop map和reduce数量估算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#map-task%E6%95%B0%E9%87%8F"><span class="nav-text">map task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reduce-task%E6%95%B0%E9%87%8F"><span class="nav-text">reduce task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-text">总结：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#map%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%A4%BA%E4%BE%8B"><span class="nav-text">map数据计算示例</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -225,7 +225,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-15 04:34:57" itemprop="dateModified" datetime="2021-12-15T04:34:57+08:00">2021-12-15</time>
+        <time title="修改时间：2021-12-15 04:59:55" itemprop="dateModified" datetime="2021-12-15T04:59:55+08:00">2021-12-15</time>
       </span>
 
   
@@ -277,6 +277,9 @@
 <p><strong>性能</strong></p>
 <p>一般来说，block size 和 split size 设置成一致，性能较好。</p>
 <p>FileInputFormat generates splits in such a way that each split is all or part of a single file. 所以 hadoop处理大文件比处理小文件来得效率高得多。</p>
+<p><strong>如何避免切片：</strong></p>
+<p>将切片的最小值设置为大于文件的大小</p>
+<p>使用FileInputFormat的具体子类，重写isSplitable()方法，将返回值设置为false。</p>
 <p>参考：</p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_20641565/article/details/53457622">https://blog.csdn.net/qq_20641565/article/details/53457622</a></p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/wisgood/article/details/79178663">https://blog.csdn.net/wisgood/article/details/79178663</a></p>
@@ -300,7 +303,7 @@
 <li>拆分不会小于文件中的剩余数据或<code>minSize</code>。</li>
 <li>分割不会大于<code>goalSize</code>和<code>blockSize</code>中的较小者。</li>
 </ul>
-<p>（个人疑问，好像自己翻源码没有<em>goalSize</em>这个参数，都是用maxSize的表示的，）</p>
+<p>（个人疑问，好像自己翻源码没有<em>goalSize</em>这个参数，都是用maxSize的表示的）</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(maxSize, blockSize));</span><br><span class="line">&#125;</span><br><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(goalSize, blockSize));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>hadooop提供了一个设置map个数的参数mapred.map.tasks，我们可以通过这个参数来控制map的个数。但是通过这种方式设置map的个数，并不是每次都有效的。原因是mapred.map.tasks只是一个hadoop的参考数值，最终map的个数，还取决于其他的因素。</p>
@@ -335,99 +338,106 @@
 <p>参考：</p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Dr_Guo/article/details/51150278">https://blog.csdn.net/Dr_Guo/article/details/51150278</a></p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lylcore/article/details/9136555">https://blog.csdn.net/lylcore/article/details/9136555</a></p>
-<h2 id="getSplits-方法在-FileInputFormat-addInputPath-job-path-中"><a href="#getSplits-方法在-FileInputFormat-addInputPath-job-path-中" class="headerlink" title="getSplits()方法在 FileInputFormat.addInputPath(job, path)中"></a>getSplits()方法在 FileInputFormat.addInputPath(job, path)中</h2><p><strong>getsplit()计算切片的过程</strong>：</p>
-<ul>
-<li>通过listStatus(）获取输入文件列表files，会遍历输入目录的子目录，并过滤掉部分文件(例如文件_success)</li>
-<li>获取所有文件大小totalsize</li>
-<li>计算goalSize=totalsize/numMaps，numMaps时用户指定的map数量(默认是1)</li>
-<li>files中取出一个file</li>
-<li>计算splitSize，SplitSize=max(minSplitSzie,min(file.block,goalSize)),minsplitSize默认大小是1B。要使设置的numMaps生效，即min(file.block,goalSize)</li>
-<li>要选择goalSize，即设置的numMaps要大于totalsize/file.block才会生效。</li>
-<li>根据splitSize大小将文件分片，在分片的时候，如果剩余的大小不大于SplitSize*1.1，会将该区域作为一个分片，是为了防止map处理的数据太小。</li>
-<li>将file的分片加入到splits中</li>
-<li>直到左右的files遍历完，返回splits</li>
+<h1 id="mapreduce中split划分分析（新版api）"><a href="#mapreduce中split划分分析（新版api）" class="headerlink" title="mapreduce中split划分分析（新版api）"></a>mapreduce中split划分分析（新版api）</h1><h3 id="计算splitsize"><a href="#计算splitsize" class="headerlink" title="计算splitsize"></a>计算splitsize</h3><ul>
+<li><p>minSize :每个split的最小值，默认为1.getFormatMinSplitSize()为代码中写死，固定返回1，除非修改了hadoop的源代码.getMinSplitSize(job)取决于参数mapreduce.input.fileinputformat.split.minsize，如果没有设置该参数，返回1.故minSize默认为1.</p>
+</li>
+<li><p>maxSize：每个split的最大值，如果设置了mapreduce.input.fileinputformat.split.maxsize，则为该值，否则为Long的最大值。</p>
+</li>
+<li><p>blockSize ：默认为HDFS设置的文件存储BLOCK大小。注意：该值并不一定是唯一固定不变的。HDFS上不同的文件该值可能不同。故将文件划分成split的时候，对于每个不同的文件，需要获取该文件的blocksize。</p>
+</li>
+<li><p>splitSize ：根据公式，默认为blockSize 。</p>
+</li>
 </ul>
-<p><strong>如何避免切片：</strong></p>
-<p>将切片的最小值设置为大于文件的大小</p>
-<p>使用FileInputFormat的具体子类，重写isSplitable()方法，将返回值设置为false。</p>
-<pre><code>    /** 
-     * Generate the list of files and make them into FileSplits.
-     * @param job the job context
-     * @throws IOException
-     */
-    public List&lt;InputSplit&gt; getSplits(JobContext job) throws IOException &#123;
-        //用于记录分片开始的时间，最后会得到一个分片总用时，时间单位是纳秒
-      StopWatch sw = new StopWatch().start();
-      //用来计算分片大小
-      //minSize 就是 1
-      //maxSize 追到最下面可以发现其实就是long的最大值
-      long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
-      long maxSize = getMaxSplitSize(job);
-  
-      //存放切片对象
-      List&lt;InputSplit&gt; splits = new ArrayList&lt;InputSplit&gt;();
-      //得到路径下的所有文件
-      List&lt;FileStatus&gt; files = listStatus(job);
-      //遍历得到的文件
-      for (FileStatus file: files) &#123;
-        //得到文件路径
-        Path path = file.getPath();
-        //获取文件大小
-        long length = file.getLen();
-        //如果文件大小不为0的话
-        if (length != 0) &#123;
-            //定义块数组，存放块在datanode上的位置
-          BlockLocation[] blkLocations;
-          if (file instanceof LocatedFileStatus) &#123;
-            blkLocations = ((LocatedFileStatus) file).getBlockLocations();
-          &#125; else &#123;
-            FileSystem fs = path.getFileSystem(job.getConfiguration());
-            blkLocations = fs.getFileBlockLocations(file, 0, length);
-          //如果这个文件可以分片的话进行分片，zip、视频等不能进行分片
-          if (isSplitable(job, path)) &#123;
-            //获取块大小，hadoop1默认是64M  hadoop2默认是128M  hadoop3默认是256M
-            long blockSize = file.getBlockSize();
-            //得到片大小
-            //--&gt; 最终决定出切片的大小(128M) --&gt; blockSize值
-              //Math.max(minSize, Math.min(max, blockSize));这是实现
-            long splitSize = computeSplitSize(blockSize, minSize, maxSize);
-            //获取文件大小
-            long bytesRemaining = length;
-            //文件大小/片大小&gt;1.1 开始分片
-            //例如  文件大小为260M  260/128=2.03&gt;1.1 进入循环开始分片
-            //132/128 &lt;1.1  不再进行分片，循环结束
-            while (((double) bytesRemaining)/splitSize &gt; SPLIT_SLOP) &#123;
-              int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
-              splits.add(makeSplit(path, length-bytesRemaining, splitSize,
-                          blkLocations[blkIndex].getHosts(),
-                           blkLocations[blkIndex].getCachedHosts()));
-              //文件大小 = 原文件大小 - 当前分片大小
-              //260 -128 = 132 现在文件大小是132 MB
-              bytesRemaining -= splitSize;
-            &#125;
-             //循环结束之后,只要文件大小不等于0 此时也会在切一个片
-            if (bytesRemaining != 0) &#123;
-              int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
-              splits.add(makeSplit(path, length-bytesRemaining, bytesRemaining,
-                         blkLocations[blkIndex].getHosts(),
-                         blkLocations[blkIndex].getCachedHosts()));
-            &#125;
-          &#125; else &#123; // not splitable
-            splits.add(makeSplit(path, 0, length, blkLocations[0].getHosts(),
-                        blkLocations[0].getCachedHosts()));
-          &#125;
-        &#125; else &#123; 
-          //为零长度文件创建空主机数组
-          splits.add(makeSplit(path, 0, length, new String[0]));
-        &#125;
-      &#125;
-      // 保存文件数
-      job.getConfiguration().setLong(NUM_INPUT_FILES, files.size());
-      sw.stop();
-      //返回携带着切片文件的集合
-      return splits;
-    &#125;
+<h3 id="getSplits-方法在-FileInputFormat-addInputPath-job-path-中"><a href="#getSplits-方法在-FileInputFormat-addInputPath-job-path-中" class="headerlink" title="getSplits()方法在 FileInputFormat.addInputPath(job, path)中"></a>getSplits()方法在 FileInputFormat.addInputPath(job, path)中</h3><ol>
+<li><p>遍历输入目录中的每个文件，拿到该文件</p>
+</li>
+<li><p>计算文件长度，A:如果文件长度为0，如果mapred.split.zero.file.skip=true，则不划分split ; 如果mapred.split.zero.file.skip为false，生成一个length=0的split .B:如果长度不为0，跳到步骤3</p>
+</li>
+<li><p>判断该文件是否支持split :如果支持，跳到步骤4;如果不支持，该文件不切分，生成1个split，split的length等于文件长度。</p>
+</li>
+<li><p>根据当前文件，计算splitSize，本文中为100M</p>
+</li>
+<li><p>判断剩余待切分文件大小/splitsize是否大于SPLIT_SLOP(该值为1.1，代码中写死了) 如果true，切分成一个split，待切分文件大小更新为当前值-splitsize ，再次切分。生成的split的length等于splitsize； 如果false 将剩余的切到一个split里，生成的split length等于剩余待切分的文件大小。之所以需要判断剩余待切分文件大小/splitsize,主要是为了避免过多的小的split。比如文件中有100个109M大小的文件，如果splitSize=100M，如果不判断剩余待切分文件大小/splitsize，将会生成200个split，其中100个split的size为100M，而其中100个只有9M，存在100个过小的split。MapReduce首选的是处理大文件，过多的小split会影响性能。</p>
+<pre><code> /** 
+  * Generate the list of files and make them into FileSplits.
+  * @param job the job context
+  * @throws IOException
+  */
+ public List&lt;InputSplit&gt; getSplits(JobContext job) throws IOException &#123;
+     //用于记录分片开始的时间，最后会得到一个分片总用时，时间单位是纳秒
+   StopWatch sw = new StopWatch().start();
+   //用来计算分片大小
+   //minSize 就是 1
+   //maxSize 追到最下面可以发现其实就是long的最大值
+   long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
+   long maxSize = getMaxSplitSize(job);
+
+   //存放切片对象
+   List&lt;InputSplit&gt; splits = new ArrayList&lt;InputSplit&gt;();
+   //得到路径下的所有文件
+   List&lt;FileStatus&gt; files = listStatus(job);
+   //遍历得到的文件
+   for (FileStatus file: files) &#123;
+     //得到文件路径
+     Path path = file.getPath();
+     //获取文件大小
+     long length = file.getLen();
+     //如果文件大小不为0的话
+     if (length != 0) &#123;
+         //定义块数组，存放块在datanode上的位置
+       BlockLocation[] blkLocations;
+       if (file instanceof LocatedFileStatus) &#123;
+         blkLocations = ((LocatedFileStatus) file).getBlockLocations();
+       &#125; else &#123;
+         FileSystem fs = path.getFileSystem(job.getConfiguration());
+         blkLocations = fs.getFileBlockLocations(file, 0, length);
+       //如果这个文件可以分片的话进行分片，zip、视频等不能进行分片
+       if (isSplitable(job, path)) &#123;
+         //获取块大小，hadoop1默认是64M  hadoop2默认是128M  hadoop3默认是256M
+         long blockSize = file.getBlockSize();
+         //得到片大小
+         //--&gt; 最终决定出切片的大小(128M) --&gt; blockSize值
+           //Math.max(minSize, Math.min(max, blockSize));这是实现
+         long splitSize = computeSplitSize(blockSize, minSize, maxSize);
+         //获取文件大小
+         long bytesRemaining = length;
+         //文件大小/片大小&gt;1.1 开始分片
+         //例如  文件大小为260M  260/128=2.03&gt;1.1 进入循环开始分片
+         //132/128 &lt;1.1  不再进行分片，循环结束
+         while (((double) bytesRemaining)/splitSize &gt; SPLIT_SLOP) &#123;
+           int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+           splits.add(makeSplit(path, length-bytesRemaining, splitSize,
+                       blkLocations[blkIndex].getHosts(),
+                        blkLocations[blkIndex].getCachedHosts()));
+           //文件大小 = 原文件大小 - 当前分片大小
+           //260 -128 = 132 现在文件大小是132 MB
+           bytesRemaining -= splitSize;
+         &#125;
+          //循环结束之后,只要文件大小不等于0 此时也会在切一个片
+         if (bytesRemaining != 0) &#123;
+           int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+           splits.add(makeSplit(path, length-bytesRemaining, bytesRemaining,
+                      blkLocations[blkIndex].getHosts(),
+                      blkLocations[blkIndex].getCachedHosts()));
+         &#125;
+       &#125; else &#123; // not splitable
+         splits.add(makeSplit(path, 0, length, blkLocations[0].getHosts(),
+                     blkLocations[0].getCachedHosts()));
+       &#125;
+     &#125; else &#123; 
+       //为零长度文件创建空主机数组
+       splits.add(makeSplit(path, 0, length, new String[0]));
+     &#125;
+   &#125;
+   // 保存文件数
+   job.getConfiguration().setLong(NUM_INPUT_FILES, files.size());
+   sw.stop();
+   //返回携带着切片文件的集合
+   return splits;
+ &#125;
 </code></pre>
+</li>
+</ol>
 <h2 id="Hadoop-map和reduce数量估算"><a href="#Hadoop-map和reduce数量估算" class="headerlink" title="Hadoop map和reduce数量估算"></a>Hadoop map和reduce数量估算</h2><p>Hadoop在运行一个mapreduce job之前，需要估算这个job的maptask数和reducetask数。</p>
 <h3 id="map-task数量"><a href="#map-task数量" class="headerlink" title="map task数量"></a>map task数量</h3><p>首先分析一下job的maptask数，当一个job提交时，jobclient首先分析job被拆分的split数量，然后吧job.split文件放置在HDFS中，一个job的MapTask数量就等于split的个数。</p>
 <p>job.split中包含split的个数由FileInputFormat.getSplits计算出，方法的逻辑如下：</p>
