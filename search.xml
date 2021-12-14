@@ -1505,7 +1505,7 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/Dr_Guo/article/details/51150278">https://blog.csdn.net/Dr_Guo/article/details/51150278</a></p>
 <p><a href="https://blog.csdn.net/lylcore/article/details/9136555">https://blog.csdn.net/lylcore/article/details/9136555</a></p>
-<h1 id="mapreduce中split划分分析（新版api）"><a href="#mapreduce中split划分分析（新版api）" class="headerlink" title="mapreduce中split划分分析（新版api）"></a>mapreduce中split划分分析（新版api）</h1><h3 id="计算splitsize"><a href="#计算splitsize" class="headerlink" title="计算splitsize"></a>计算splitsize</h3><ul>
+<h2 id="mapreduce中split划分分析（新版api）"><a href="#mapreduce中split划分分析（新版api）" class="headerlink" title="mapreduce中split划分分析（新版api）"></a>mapreduce中split划分分析（新版api）</h2><h3 id="计算splitsize"><a href="#计算splitsize" class="headerlink" title="计算splitsize"></a>计算splitsize</h3><ul>
 <li><p>minSize :每个split的最小值，默认为1.getFormatMinSplitSize()为代码中写死，固定返回1，除非修改了hadoop的源代码.getMinSplitSize(job)取决于参数mapreduce.input.fileinputformat.split.minsize，如果没有设置该参数，返回1.故minSize默认为1.</p>
 </li>
 <li><p>maxSize：每个split的最大值，如果设置了mapreduce.input.fileinputformat.split.maxsize，则为该值，否则为Long的最大值。</p>
