@@ -20,22 +20,16 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="MapReduce Input Split（输入分&#x2F;切片）详解 输入分片（Input Split）：在进行map计算之前，mapreduce会根据输入文件计算输入分片（input split），每个输入分片（input split）针对一个map任务，输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。 分片大小范围可以在mapred-site.xml">
+<meta name="description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ? 概念 在 hdfs 架构中，存在 blocks 的概念。 通常来说，hdfs中的一个block 是 64MB 。 当我们把一个大文件导入hdfs中的时候，文件会按 64MB 每个bl">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MapReduce Input Split（输入分&#x2F;切片）详解">
 <meta property="og:url" content="https://k12coding.github.io/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/index.html">
 <meta property="og:site_name" content="k12的博客">
-<meta property="og:description" content="MapReduce Input Split（输入分&#x2F;切片）详解 输入分片（Input Split）：在进行map计算之前，mapreduce会根据输入文件计算输入分片（input split），每个输入分片（input split）针对一个map任务，输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。 分片大小范围可以在mapred-site.xml">
+<meta property="og:description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ? 概念 在 hdfs 架构中，存在 blocks 的概念。 通常来说，hdfs中的一个block 是 64MB 。 当我们把一个大文件导入hdfs中的时候，文件会按 64MB 每个bl">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
-<meta property="og:image" content="https://img-blog.csdn.net/20160414132403422?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
-<meta property="og:image" content="https://img-blog.csdn.net/20140407103622015?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center">
-<meta property="og:image" content="https://img-blog.csdn.net/20140407103853218?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center">
-<meta property="og:image" content="https://img-blog.csdn.net/20140407104727562?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center">
-<meta property="og:image" content="https://img-blog.csdn.net/20140407105057203?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center">
-<meta property="og:image" content="https://img-blog.csdn.net/20140407104039078?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center">
 <meta property="article:published_time" content="2021-12-14T12:09:56.000Z">
-<meta property="article:modified_time" content="2021-12-14T19:19:58.856Z">
+<meta property="article:modified_time" content="2021-12-14T20:34:57.272Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
@@ -147,7 +141,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3"><span class="nav-text">MapReduce Input Split（输入分&#x2F;切片）详解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#getSplits-%E6%96%B9%E6%B3%95%E5%9C%A8-FileInputFormat-addInputPath-job-path-%E4%B8%AD"><span class="nav-text">getSplits()方法在 FileInputFormat.addInputPath(job, path)中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop-map%E5%92%8Creduce%E6%95%B0%E9%87%8F%E4%BC%B0%E7%AE%97"><span class="nav-text">Hadoop map和reduce数量估算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#map-task%E6%95%B0%E9%87%8F"><span class="nav-text">map task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reduce-task%E6%95%B0%E9%87%8F"><span class="nav-text">reduce task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-text">总结：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#map%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%A4%BA%E4%BE%8B"><span class="nav-text">map数据计算示例</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop%E4%B8%AD%E7%9A%84block-Size%E5%92%8Csplit-Size%E6%98%AF%E4%BB%80%E4%B9%88%E5%85%B3%E7%B3%BB"><span class="nav-text">Hadoop中的block Size和split Size是什么关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3"><span class="nav-text">MapReduce Input Split（输入分&#x2F;切片）详解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#getSplits-%E6%96%B9%E6%B3%95%E5%9C%A8-FileInputFormat-addInputPath-job-path-%E4%B8%AD"><span class="nav-text">getSplits()方法在 FileInputFormat.addInputPath(job, path)中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop-map%E5%92%8Creduce%E6%95%B0%E9%87%8F%E4%BC%B0%E7%AE%97"><span class="nav-text">Hadoop map和reduce数量估算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#map-task%E6%95%B0%E9%87%8F"><span class="nav-text">map task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reduce-task%E6%95%B0%E9%87%8F"><span class="nav-text">reduce task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-text">总结：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#map%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%A4%BA%E4%BE%8B"><span class="nav-text">map数据计算示例</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -231,7 +225,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-15 03:19:58" itemprop="dateModified" datetime="2021-12-15T03:19:58+08:00">2021-12-15</time>
+        <time title="修改时间：2021-12-15 04:34:57" itemprop="dateModified" datetime="2021-12-15T04:34:57+08:00">2021-12-15</time>
       </span>
 
   
@@ -244,42 +238,70 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h2 id="MapReduce-Input-Split（输入分-切片）详解"><a href="#MapReduce-Input-Split（输入分-切片）详解" class="headerlink" title="MapReduce Input Split（输入分/切片）详解"></a>MapReduce Input Split（输入分/切片）详解</h2><p><strong><img src="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png" alt="img"></strong></p>
+        <h2 id="Hadoop中的block-Size和split-Size是什么关系"><a href="#Hadoop中的block-Size和split-Size是什么关系" class="headerlink" title="Hadoop中的block Size和split Size是什么关系"></a>Hadoop中的block Size和split Size是什么关系</h2><p><strong>问题</strong></p>
+<p>hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?</p>
+<p><strong>概念</strong></p>
+<p>在 hdfs 架构中，存在 blocks 的概念。 通常来说，hdfs中的一个block 是 64MB 。 当我们把一个大文件导入hdfs中的时候，文件会按 64MB 每个block来分割（版本不同，默认配置可能不同）。 如果你有1GB的文件要存入HDFS中， 1GB/64MB = 1024MB / 64MB = 16 个blocks 会被分割到不同的datanode上。</p>
+<p><strong>目的</strong></p>
+<p>数据分割(data splitting )策略是基于文件偏移进行的。文件分割的目的是有利于数据并行处理 ，以及便于数据容灾恢复。</p>
+<p><strong>区别</strong></p>
+<p>split 是逻辑意义上的split。 输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。</p>
+<p>通常在 M/R 程序或者其他数据处理技术上用到。根据你处理的数据量的情况，split size是允许用户自定义的。</p>
+<p>split size 定义好了之后，可以控制 M/R 中 Mapper 的数量。如果M/R中没有定义 split size ， 就用默认的HDFS配置作为 input split。<br>其中有俩个配置文件（如下）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">--minsize   默认大小为1</span><br><span class="line">mapreduce.input.fileinputformat.split.minsize  </span><br><span class="line"></span><br><span class="line">--maxsize   默认大小为Long.MAXValue </span><br><span class="line">mapreduce.input.fileinputformat.split.maxsize</span><br></pre></td></tr></table></figure>
+
+<p>1.如果blockSize小于maxSize &amp;&amp; blockSize 大于 minSize之间，那么split就是blockSize；</p>
+<p>2.如果blockSize小于maxSize &amp;&amp; blockSize 小于 minSize之间，那么split就是minSize；</p>
+<p>3.如果blockSize大于maxSize &amp;&amp; blockSize 大于 minSize之间，那么split就是maxSize；</p>
+<p><strong>举例</strong></p>
+<p>案例1：</p>
+<p>你有个100MB的文件，block size 是 64MB ， 那么就会被split成 2 块。这时如果你你没有指定 input split ， 你的M/R程序就会按2个input split 来处理 ， 并分配两个mapper来完成这个job。</p>
+<p>但如果你把 split size 指定为 100MB（split.minsize=100MB），那么M/R程序就会把数据处理成一个 split，这时只用分配一个mapper 就可以了。</p>
+<p>但如果你把 split size 指定为 25MB（split.maxsize=25MB），M/R就会将数据分成4个split，分配4个mapper来处理这个job。</p>
+<p>案例2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[test@dw01 ~]$ hadoop fs -dus -h /tmp/wordcount/input/*</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00000 246.32M</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00002 106.95M</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00003 7.09M</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-0004 0</span><br></pre></td></tr></table></figure>
+
+<p>在本例子中，mapreduce.input.fileinputformat.split.maxsize=104857440 （100MB），mapred.split.zero.file.skip=true，所有文件的blockSize 大小都是256MB，故splitSize=100MB</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00000 	划分成3个split</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00002 	划分成1个split</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00003 	划分成1个split</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-0004 	不划分split</span><br></pre></td></tr></table></figure>
+
+<p><strong>总结</strong></p>
+<ol>
+<li>block是物理上的数据分割，而split是逻辑上的分割。split是mapreduce中的概念，而block是hdfs中切块的大小。</li>
+<li>如果没有特别指定，split size 就等于 HDFS 的 block size 。</li>
+<li>用户可以在M/R 程序中自定义split size。</li>
+<li>一个split 可以包含多个blocks，也可以把一个block应用多个split操作。</li>
+<li>一个split不会包含两个File的Block,不会跨越File边界</li>
+<li>有多少个split，就有多少个mapper。</li>
+</ol>
+<p><strong>补充</strong></p>
+<p><strong>性能</strong></p>
+<p>一般来说，block size 和 split size 设置成一致，性能较好。</p>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. 所以 hadoop处理大文件比处理小文件来得效率高得多。</p>
+<p>参考：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_20641565/article/details/53457622">https://blog.csdn.net/qq_20641565/article/details/53457622</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/wisgood/article/details/79178663">https://blog.csdn.net/wisgood/article/details/79178663</a></p>
+<h2 id="MapReduce-Input-Split（输入分-切片）详解"><a href="#MapReduce-Input-Split（输入分-切片）详解" class="headerlink" title="MapReduce Input Split（输入分/切片）详解"></a>MapReduce Input Split（输入分/切片）详解</h2><p><strong><img src="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png" alt="img"></strong></p>
 <p><strong>输入分片（Input Split）</strong>：在进行map计算之前，mapreduce会根据输入文件计算输入分片（input split），每个输入分片（input split）针对一个map任务，输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。</p>
 <p>分片大小范围可以在mapred-site.xml中设置，mapred.min.split.size mapred.max.split.size，</p>
 <p>minSplitSize大小默认为1B，maxSplitSize大小默认为Long.MAX_VALUE = 9223372036854775807</p>
 <p><strong>那么分片到底是多大呢？</strong></p>
-<p>minSize=max{minSplitSize,mapred.min.split.size} </p>
-<p>maxSize=mapred.max.split.size</p>
-<p>splitSize=max{minSize,min{maxSize,blockSize}}</p>
-<p>我们再来看一下源码</p>
-<p><img src="https://img-blog.csdn.net/20160414132403422?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="img"></p>
-<p><strong>所以在我们没有设置分片的范围的时候，分片大小是由block块大小决定的，和它的大小一样。比如把一个258MB的文件上传到HDFS上，假设block块大小是128MB，那么它就会被分成三个block块，与之对应产生三个split****，所以最终会产生三个map task。我又发现了另一个问题，第三个block块里存的文件大小只有2MB，而它的block块大小是128MB，那它实际占用Linux file system的多大空间？</strong></p>
-<p><em><strong>*答案是实际的文件大小，而非一个块的大小。<br>*</strong></em></p>
-<p><strong>有大神已经验证这个答案了：<a target="_blank" rel="noopener" href="http://blog.csdn.net/samhacker/article/details/23089157">http://blog.csdn.net/samhacker/article/details/23089157</a></strong></p>
-<p>1、往hdfs里面添加新文件前，hadoop在linux上面所占的空间为 464 MB：</p>
-<p><img src="https://img-blog.csdn.net/20140407103622015?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>2、往hdfs里面添加大小为2673375 byte(大概2.5 MB)的文件：</p>
-<p><em>2673375 derby.jar</em></p>
-<p>3、此时，hadoop在linux上面所占的空间为 467 MB——**增加了一个实际文件大小(2.5 MB)的空间，而非一个block size(128 MB)**：</p>
-<p><img src="https://img-blog.csdn.net/20140407103853218?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>4、使用hadoop dfs -stat查看文件信息： </p>
-<p><img src="https://img-blog.csdn.net/20140407104727562?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>这里就很清楚地反映出： 文件的实际大小(file size)是2673375 byte， 但它的block size是128 MB。</p>
-<p>5、通过NameNode的web console来查看文件信息: </p>
-<p><img src="https://img-blog.csdn.net/20140407105057203?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>结果是一样的： 文件的实际大小(file size)是2673375 byte， 但它的block size是128 MB。</p>
-<p>6、不过使用‘hadoop fsck’查看文件信息，看出了一些不一样的内容—— ‘1（avg.block size 2673375 B）’: </p>
-<p><img src="https://img-blog.csdn.net/20140407104039078?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2FtaGFja2Vy/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>值得注意的是，结果中有一个 ‘1（avg.block size 2673375 B）’的字样。这里的 ‘block size’ 并不是指平常说的文件块大小(Block Size)—— 后者是一个元数据的概念，相反它反映的是文件的实际大小(file size)。以下是Hadoop Community的专家给我的回复： </p>
-<p><em>“The fsck is showing you an “average blocksize”, not the block size metadata attribute of the file like stat shows. In this specific case, the average is just the length of your file, which is lesser than one whole block.”</em></p>
-<p>最后一个问题是： 如果hdfs占用Linux file system的磁盘空间按实际文件大小算，那么这个”块大小“有必要存在吗？</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">long minSize = Math.max(this.getFormatMinSplitSize(), getMinSplitSize(job));</span><br><span class="line">long maxSize = getMaxSplitSize(job);</span><br><span class="line">long blockSize = file.getBlockSize();</span><br><span class="line">long splitSize = this.computeSplitSize(blockSize, minSize, maxSize);</span><br><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">        return Math.max(minSize, Math.min(maxSize, blockSize));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>*<em>所以在我们没有设置分片的范围的时候，分片大小是由block块大小决定的，和它的大小一样。比如把一个258MB的文件上传到HDFS上，假设block块大小是128MB，那么它就会被分成三个block块，与之对应产生三个split</em>***，所以最终会产生三个map task。我又发现了另一个问题，第三个block块里存的文件大小只有2MB，而它的block块大小是128MB，那它实际占用Linux file system的多大空间？</p>
+<p>答案是实际的文件大小，而非一个块的大小。有大神已经验证这个答案了：<a target="_blank" rel="noopener" href="http://blog.csdn.net/samhacker/article/details/23089157">http://blog.csdn.net/samhacker/article/details/23089157</a></p>
+<p>如果hdfs占用Linux file system的磁盘空间按实际文件大小算，那么这个”块大小“有必要存在吗？</p>
 <p>其实块大小还是必要的，一个显而易见的作用就是当文件通过append操作不断增长的过程中，可以通过来block size决定何时split文件。以下是Hadoop Community的专家给我的回复： </p>
 <p><em>“The block size is a meta attribute. If you append tothe file later, it still needs to know when to split further - so it keeps that value as a mere metadata it can use to advise itself on write boundaries.”</em> </p>
 <p><strong>补充：我还查到这样一段话</strong></p>
 <p>原文地址：<a target="_blank" rel="noopener" href="http://blog.csdn.net/lylcore/article/details/9136555">http://blog.csdn.net/lylcore/article/details/9136555</a></p>
-<p>一个split的大小是由goalSize, minSize, blockSize这三个值决定的。computeSplitSize的逻辑是，先从goalSize和blockSize两个值中选出最小的那个（比如一般不设置map数，这时blockSize为当前文件的块size，而goalSize是文件大小除以用户设置的map数得到的，如果没设置的话，默认是1）。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(maxSize, blockSize));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>一个split的大小是由goalSize, minSize, blockSize这三个值决定的。computeSplitSize的逻辑是，先从goalSize和blockSize两个值中选出最小的那个（比如一般不设置map数，这时blockSize为当前文件的块size，而goalSize是“InputFile大小”/“我们在配置文件中定义的mapred.map.tasks”值，如果没设置的话，默认是1）。</p>
+<p>goalSize这个计算意味着：</p>
+<ul>
+<li>拆分不会小于文件中的剩余数据或<code>minSize</code>。</li>
+<li>分割不会大于<code>goalSize</code>和<code>blockSize</code>中的较小者。</li>
+</ul>
+<p>（个人疑问，好像自己翻源码没有<em>goalSize</em>这个参数，都是用maxSize的表示的，）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(maxSize, blockSize));</span><br><span class="line">&#125;</span><br><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(goalSize, blockSize));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>hadooop提供了一个设置map个数的参数mapred.map.tasks，我们可以通过这个参数来控制map的个数。但是通过这种方式设置map的个数，并不是每次都有效的。原因是mapred.map.tasks只是一个hadoop的参考数值，最终map的个数，还取决于其他的因素。</p>
 <p>为了方便介绍，先来看几个名词：</p>
@@ -313,7 +335,22 @@
 <p>参考：</p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Dr_Guo/article/details/51150278">https://blog.csdn.net/Dr_Guo/article/details/51150278</a></p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lylcore/article/details/9136555">https://blog.csdn.net/lylcore/article/details/9136555</a></p>
-<h2 id="getSplits-方法在-FileInputFormat-addInputPath-job-path-中"><a href="#getSplits-方法在-FileInputFormat-addInputPath-job-path-中" class="headerlink" title="getSplits()方法在 FileInputFormat.addInputPath(job, path)中"></a>getSplits()方法在 FileInputFormat.addInputPath(job, path)中</h2><pre><code>    /** 
+<h2 id="getSplits-方法在-FileInputFormat-addInputPath-job-path-中"><a href="#getSplits-方法在-FileInputFormat-addInputPath-job-path-中" class="headerlink" title="getSplits()方法在 FileInputFormat.addInputPath(job, path)中"></a>getSplits()方法在 FileInputFormat.addInputPath(job, path)中</h2><p><strong>getsplit()计算切片的过程</strong>：</p>
+<ul>
+<li>通过listStatus(）获取输入文件列表files，会遍历输入目录的子目录，并过滤掉部分文件(例如文件_success)</li>
+<li>获取所有文件大小totalsize</li>
+<li>计算goalSize=totalsize/numMaps，numMaps时用户指定的map数量(默认是1)</li>
+<li>files中取出一个file</li>
+<li>计算splitSize，SplitSize=max(minSplitSzie,min(file.block,goalSize)),minsplitSize默认大小是1B。要使设置的numMaps生效，即min(file.block,goalSize)</li>
+<li>要选择goalSize，即设置的numMaps要大于totalsize/file.block才会生效。</li>
+<li>根据splitSize大小将文件分片，在分片的时候，如果剩余的大小不大于SplitSize*1.1，会将该区域作为一个分片，是为了防止map处理的数据太小。</li>
+<li>将file的分片加入到splits中</li>
+<li>直到左右的files遍历完，返回splits</li>
+</ul>
+<p><strong>如何避免切片：</strong></p>
+<p>将切片的最小值设置为大于文件的大小</p>
+<p>使用FileInputFormat的具体子类，重写isSplitable()方法，将返回值设置为false。</p>
+<pre><code>    /** 
      * Generate the list of files and make them into FileSplits.
      * @param job the job context
      * @throws IOException
@@ -352,7 +389,7 @@
             long blockSize = file.getBlockSize();
             //得到片大小
             //--&gt; 最终决定出切片的大小(128M) --&gt; blockSize值
-              //Math.max(minSize, Math.min(maxSize, blockSize));这是实现
+              //Math.max(minSize, Math.min(max, blockSize));这是实现
             long splitSize = computeSplitSize(blockSize, minSize, maxSize);
             //获取文件大小
             long bytesRemaining = length;
@@ -600,7 +637,8 @@
 <td></td>
 </tr>
 </tbody></table>
-<p>goalSize = 4539.059804 （文件总大小）/ mapred.map.tasks(2) = 2269.529902MB</p>
+<p>goalSize = 4539.059804 （文件总大小）/ mapred.map.tasks(2) = 2269.529902MB。</p>
+<p>分片大小：Math.max(minSize, Math.min(goalSize, blockSize))：blockSize</p>
 <p>因此splitsize取值为256MB，所以一共分配18个map。</p>
 <p>修改map.tasks参数为32<br>set mapred.map.tasks = 32;</p>
 <table>
@@ -768,6 +806,7 @@
 </tr>
 </tbody></table>
 <p>goalSize = 4539.059804 / mapred.map.tasks(32) = 141.8456189</p>
+<p>分片大小：Math.max(minSize, Math.min(goalSize, blockSize))：goalSize </p>
 <p>因此splitsize取值为141.8MB，所以一共分配36个map。</p>
 <p>原文地址：</p>
 <p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/ibook360/p/4137592.html">https://www.cnblogs.com/ibook360/p/4137592.html</a></p>
