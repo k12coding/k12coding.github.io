@@ -24,10 +24,10 @@
 <p>我们需要先new一个Configuration对象</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
 
-<p>（生产商一般不需要）如果需要设置，则调用Configuration对象的set方法，如下：</p>
+<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
 <li><p>获取FileSystem对象</p>
-<p>把Configuration对象conf传给FS类的get()方法获得FileSystem类对象hdfs</p>
+<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
 <li><p>进行文件操作</p>
 <p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
