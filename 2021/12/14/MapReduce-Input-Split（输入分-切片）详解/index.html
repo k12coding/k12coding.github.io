@@ -20,16 +20,16 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ? 概念 在 hdfs 架构中，存在 blocks 的概念。 通常来说，hdfs中的一个block 是 64MB 。 当我们把一个大文件导入hdfs中的时候，文件会按 64MB 每个bl">
+<meta name="description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MapReduce Input Split与map task数量">
 <meta property="og:url" content="https://k12coding.github.io/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/index.html">
 <meta property="og:site_name" content="k12的博客">
-<meta property="og:description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ? 概念 在 hdfs 架构中，存在 blocks 的概念。 通常来说，hdfs中的一个block 是 64MB 。 当我们把一个大文件导入hdfs中的时候，文件会按 64MB 每个bl">
+<meta property="og:description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
 <meta property="article:published_time" content="2021-12-14T12:09:56.000Z">
-<meta property="article:modified_time" content="2021-12-14T21:17:57.103Z">
+<meta property="article:modified_time" content="2021-12-14T21:19:22.829Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
@@ -225,7 +225,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-15 05:17:57" itemprop="dateModified" datetime="2021-12-15T05:17:57+08:00">2021-12-15</time>
+        <time title="修改时间：2021-12-15 05:19:22" itemprop="dateModified" datetime="2021-12-15T05:19:22+08:00">2021-12-15</time>
       </span>
 
   
@@ -240,6 +240,8 @@
     <div class="post-body" itemprop="articleBody">
         <h2 id="Hadoop中的block-Size和split-Size是什么关系"><a href="#Hadoop中的block-Size和split-Size是什么关系" class="headerlink" title="Hadoop中的block Size和split Size是什么关系"></a>Hadoop中的block Size和split Size是什么关系</h2><p><strong>问题</strong></p>
 <p>hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?</p>
+<span id="more"></span>
+
 <p><strong>概念</strong></p>
 <p>在 hdfs 架构中，存在 blocks 的概念。 通常来说，hdfs中的一个block 是 64MB 。 当我们把一个大文件导入hdfs中的时候，文件会按 64MB 每个block来分割（版本不同，默认配置可能不同）。 如果你有1GB的文件要存入HDFS中， 1GB/64MB = 1024MB / 64MB = 16 个blocks 会被分割到不同的datanode上。</p>
 <p><strong>目的</strong></p>
