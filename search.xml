@@ -386,6 +386,61 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
+    <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
+<h4 id="2-安装前："><a href="#2-安装前：" class="headerlink" title="2.安装前："></a>2.安装前：</h4><p>检验是否配置jdk ctrl+R 运行cmd 分别输入java，javac， java -version （java 和 -version 之间有空格）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\System32&gt;javac</span><br><span class="line">&#x27;javac&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br><span class="line">C:\Windows\System32&gt;java -version</span><br><span class="line">&#x27;java&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="二、方法-步骤"><a href="#二、方法-步骤" class="headerlink" title="二、方法/步骤"></a>二、方法/步骤</h3><span id="more"></span>
+<h4 id="1-安装JDK，JRE，-选择安装目录"><a href="#1-安装JDK，JRE，-选择安装目录" class="headerlink" title="1. 安装JDK，JRE， 选择安装目录"></a>1. 安装JDK，JRE， 选择安装目录</h4><p>安装过程中会出现两次 安装提示 。第一次是安装 jdk ，第二次是安装 jre 。建议两个都安装在同一个java文件夹中的不同文件夹中。（不能都安装在java文件夹的根目录下，jdk和jre安装在同一文件夹会出错）。</p>
+<p>（1）双击jdk-8u202-windows-x64.exe 进行安装。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-1.png"></p>
+<p>（2）点击“下一步”继续。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-2.png"></p>
+<p>（3）选择安装路径，然后点击下一步。</p>
+<p>默认是在C盘。我这里选择的是E盘。路径为：E:\Java\jdk1.8.0_202\</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-3.png"></p>
+<p>（4）中途会进行JRE的安装。选择JRE安装的路径，点击下一步。默认会选择C盘。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-4.png"> </p>
+<p>因为在选择的时候不能新建。自己新建一个文件夹：jre1.8.0_202文件夹。更改路径：E:\Java\jre1.8.0_202\</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-5.png"> </p>
+<p>（5）点击下一步，等待安装完成。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-6.png"> </p>
+<p>（6）安装完成，点击关闭。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-7.png"></p>
+<h4 id="2-配置系统环境"><a href="#2-配置系统环境" class="headerlink" title="2.配置系统环境"></a>2.配置系统环境</h4><p>配置环境变量：右击“我的电脑”–&gt;”属性”–&gt;”高级系统设置”–&gt;”环境变量”。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLASSPATH</span><br><span class="line">.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar</span><br><span class="line"></span><br><span class="line">JAVA_HOME</span><br><span class="line">E:\Java\jdk1.8.0_202</span><br><span class="line"></span><br><span class="line">PATH</span><br><span class="line">%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin</span><br></pre></td></tr></table></figure>
+
+<p><strong>（1）JAVA_HOME环境变量。</strong></p>
+<p>作用：它指向jdk的安装目录，Eclipse/NetBeans/Tomcat等软件就是通过搜索JAVA_HOME变量来找到并使用安装好的jdk。<br>配置方法：在系统变量里点击新建，变量名填写JAVA_HOME，变量值填写JDK的安装路径。（根据自己的安装路径填写）</p>
+<p>JAVA_HOME：E:\Java\jdk1.8.0_202</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-8.png"></p>
+<p><strong>（2）CLASSPATH环境变量。</strong></p>
+<p>作用：是指定类搜索路径，要使用已经编写好的类，前提当然是能够找到它们了，JVM就是通过CLASSPTH来寻找类的。我们需要把jdk安装目录下的lib子目录中的dt.jar和tools.jar设置到CLASSPATH中，当然，当前目录“.”也必须加入到该变量中。<br>配置方法：<br>新建CLASSPATH变量，变量值为：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar 。CLASSPATH变量名字，可以大写也可以小写。注意不要忘记前面的点和中间的分号。且要在英文输入的状态下的分号和逗号。</p>
+<p>CLASSPATH ：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar;</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-9.png"> </p>
+<p><strong>（3）path环境变量</strong></p>
+<p>作用：指定命令搜索路径，在i命令行下面执行命令如javac编译java程序时，它会到PATH变量所指定的路径中查找看是否能找到相应的命令程序。我们需要把jdk安装目录下的bin目录增加到现有的PATH变量中，bin目录中包含经常要用到的可执行文件如javac/java/javadoc等待，设置好PATH变量后，就可以在任何目录下执行javac/java等工具了。</p>
+<p>在系统变量里找到Path变量，这是系统自带的，不用新建。双击Path，由于原来的变量值已经存在，故应在已有的<strong>变量前追加</strong>上“;%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin”。注意前面的分号。</p>
+<p>Path：%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin;</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-10.png"> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-11.png"> </p>
+<p>或者：</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-12.png"> </p>
+<p>然后点击确定完成。</p>
+<h3 id="三、-测试环境。"><a href="#三、-测试环境。" class="headerlink" title="三、 测试环境。"></a>三、 测试环境。</h3><p>检验是否配置成功 ctrl+R 运行cmd 分别输入<code>java</code>，<code>javac</code>， <code>java -version</code>。</p>
+<p><strong>1.Java</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-13.png"> </p>
+<p><strong>2.Javac</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-14.png"></p>
+<p><strong>3.java –version</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-15.png"> </p>
+<p>若如图所示 显示版本信息 则说明安装和配置成功!</p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hadoop Shell命令</title>
     <url>/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<h1 id="Hadoop-Shell命令"><a href="#Hadoop-Shell命令" class="headerlink" title="Hadoop Shell命令"></a>Hadoop Shell命令</h1><h2 id="FS-Shell"><a href="#FS-Shell" class="headerlink" title="FS Shell"></a>FS Shell</h2><p>调用文件系统(FS)Shell命令应使用 bin/hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是<em>scheme://authority/path</em>。对HDFS文件系统，scheme是<em>hdfs</em>，对本地文件系统，scheme是<em>file</em>。其中scheme和authority参数都是可选的，如果未加指定，就会使用配置中指定的默认scheme。一个HDFS文件或目录比如*/parent/child<em>可以表示成</em>hdfs://namenode:namenodeport/parent/child<em>，或者更简单的</em>/parent/child<em>（假设你配置文件中的默认值是</em>namenode:namenodeport<em>）。大多数FS Shell命令的行为和对应的Unix Shell命令类似，不同之处会在下面介绍各命令使用详情时指出。出错信息会输出到</em>stderr<em>，其他信息输出到</em>stdout*。</p>
@@ -569,61 +624,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
-    <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
-    <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
-<h4 id="2-安装前："><a href="#2-安装前：" class="headerlink" title="2.安装前："></a>2.安装前：</h4><p>检验是否配置jdk ctrl+R 运行cmd 分别输入java，javac， java -version （java 和 -version 之间有空格）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\System32&gt;javac</span><br><span class="line">&#x27;javac&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br><span class="line">C:\Windows\System32&gt;java -version</span><br><span class="line">&#x27;java&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="二、方法-步骤"><a href="#二、方法-步骤" class="headerlink" title="二、方法/步骤"></a>二、方法/步骤</h3><span id="more"></span>
-<h4 id="1-安装JDK，JRE，-选择安装目录"><a href="#1-安装JDK，JRE，-选择安装目录" class="headerlink" title="1. 安装JDK，JRE， 选择安装目录"></a>1. 安装JDK，JRE， 选择安装目录</h4><p>安装过程中会出现两次 安装提示 。第一次是安装 jdk ，第二次是安装 jre 。建议两个都安装在同一个java文件夹中的不同文件夹中。（不能都安装在java文件夹的根目录下，jdk和jre安装在同一文件夹会出错）。</p>
-<p>（1）双击jdk-8u202-windows-x64.exe 进行安装。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-1.png"></p>
-<p>（2）点击“下一步”继续。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-2.png"></p>
-<p>（3）选择安装路径，然后点击下一步。</p>
-<p>默认是在C盘。我这里选择的是E盘。路径为：E:\Java\jdk1.8.0_202\</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-3.png"></p>
-<p>（4）中途会进行JRE的安装。选择JRE安装的路径，点击下一步。默认会选择C盘。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-4.png"> </p>
-<p>因为在选择的时候不能新建。自己新建一个文件夹：jre1.8.0_202文件夹。更改路径：E:\Java\jre1.8.0_202\</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-5.png"> </p>
-<p>（5）点击下一步，等待安装完成。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-6.png"> </p>
-<p>（6）安装完成，点击关闭。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-7.png"></p>
-<h4 id="2-配置系统环境"><a href="#2-配置系统环境" class="headerlink" title="2.配置系统环境"></a>2.配置系统环境</h4><p>配置环境变量：右击“我的电脑”–&gt;”属性”–&gt;”高级系统设置”–&gt;”环境变量”。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLASSPATH</span><br><span class="line">.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar</span><br><span class="line"></span><br><span class="line">JAVA_HOME</span><br><span class="line">E:\Java\jdk1.8.0_202</span><br><span class="line"></span><br><span class="line">PATH</span><br><span class="line">%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin</span><br></pre></td></tr></table></figure>
-
-<p><strong>（1）JAVA_HOME环境变量。</strong></p>
-<p>作用：它指向jdk的安装目录，Eclipse/NetBeans/Tomcat等软件就是通过搜索JAVA_HOME变量来找到并使用安装好的jdk。<br>配置方法：在系统变量里点击新建，变量名填写JAVA_HOME，变量值填写JDK的安装路径。（根据自己的安装路径填写）</p>
-<p>JAVA_HOME：E:\Java\jdk1.8.0_202</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-8.png"></p>
-<p><strong>（2）CLASSPATH环境变量。</strong></p>
-<p>作用：是指定类搜索路径，要使用已经编写好的类，前提当然是能够找到它们了，JVM就是通过CLASSPTH来寻找类的。我们需要把jdk安装目录下的lib子目录中的dt.jar和tools.jar设置到CLASSPATH中，当然，当前目录“.”也必须加入到该变量中。<br>配置方法：<br>新建CLASSPATH变量，变量值为：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar 。CLASSPATH变量名字，可以大写也可以小写。注意不要忘记前面的点和中间的分号。且要在英文输入的状态下的分号和逗号。</p>
-<p>CLASSPATH ：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar;</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-9.png"> </p>
-<p><strong>（3）path环境变量</strong></p>
-<p>作用：指定命令搜索路径，在i命令行下面执行命令如javac编译java程序时，它会到PATH变量所指定的路径中查找看是否能找到相应的命令程序。我们需要把jdk安装目录下的bin目录增加到现有的PATH变量中，bin目录中包含经常要用到的可执行文件如javac/java/javadoc等待，设置好PATH变量后，就可以在任何目录下执行javac/java等工具了。</p>
-<p>在系统变量里找到Path变量，这是系统自带的，不用新建。双击Path，由于原来的变量值已经存在，故应在已有的<strong>变量前追加</strong>上“;%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin”。注意前面的分号。</p>
-<p>Path：%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin;</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-10.png"> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-11.png"> </p>
-<p>或者：</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-12.png"> </p>
-<p>然后点击确定完成。</p>
-<h3 id="三、-测试环境。"><a href="#三、-测试环境。" class="headerlink" title="三、 测试环境。"></a>三、 测试环境。</h3><p>检验是否配置成功 ctrl+R 运行cmd 分别输入<code>java</code>，<code>javac</code>， <code>java -version</code>。</p>
-<p><strong>1.Java</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-13.png"> </p>
-<p><strong>2.Javac</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-14.png"></p>
-<p><strong>3.java –version</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-15.png"> </p>
-<p>若如图所示 显示版本信息 则说明安装和配置成功!</p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hello World</title>
     <url>/2021/09/18/hello-world/</url>
     <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
@@ -741,6 +741,38 @@
 <li><p>然后用编辑器修改好文本，发布</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1036,38 +1068,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1462,8 +1462,7 @@
 <p>如果hdfs占用Linux file system的磁盘空间按实际文件大小算，那么这个”块大小“有必要存在吗？</p>
 <p>其实块大小还是必要的，一个显而易见的作用就是当文件通过append操作不断增长的过程中，可以通过来block size决定何时split文件。以下是Hadoop Community的专家给我的回复： </p>
 <p><em>“The block size is a meta attribute. If you append tothe file later, it still needs to know when to split further - so it keeps that value as a mere metadata it can use to advise itself on write boundaries.”</em> </p>
-<p><strong>补充：我还查到这样一段话</strong></p>
-<p>原文地址：<a href="http://blog.csdn.net/lylcore/article/details/9136555">http://blog.csdn.net/lylcore/article/details/9136555</a></p>
+<p><strong>补充：</strong></p>
 <p>一个split的大小是由goalSize, minSize, blockSize这三个值决定的。computeSplitSize的逻辑是，先从goalSize和blockSize两个值中选出最小的那个（比如一般不设置map数，这时blockSize为当前文件的块size，而goalSize是“InputFile大小”/“我们在配置文件中定义的mapred.map.tasks”值，如果没设置的话，默认是1）。</p>
 <p>goalSize这个计算意味着：</p>
 <ul>
