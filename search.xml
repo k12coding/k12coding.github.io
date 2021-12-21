@@ -93,6 +93,129 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HDFS中的数据块(Block)</title>
+    <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
+    <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
+<ol>
+<li>数据分块，分布式的存储在多台机器上</li>
+<li>数据块冗余存储在多台机器以提高数据块的高可用性</li>
+<li>遵从主/从(master/slave)结构的分布式存储集群</li>
+</ol>
+<p>HDFS作为分布式存储的实现，肯定也具有上面3个特点。</p>
+<span id="more"></span>
+
+<h2 id="HDFS数据块"><a href="#HDFS数据块" class="headerlink" title="HDFS数据块"></a>HDFS数据块</h2><p>与一般文件系统一样，HDFS也有块（block）的概念，HDFS上的文件也被划分为块大小的多个分块作为独立的存储单元。与通常的磁盘文件系统不同的是：</p>
+<p><strong>HDFS中小于一个块大小的文件不会占据整个块的空间（当一个1MB的文件存储在一个128MB的块中时，文件只使用1MB的磁盘空间，而不是128MB）</strong></p>
+<p>在Hadoop1当中，文件的block块默认大小是64M，Hadoop2当中，文件的block块大小默认是128M，block块的大小可以通过<code>hdfs-site.xml</code>当中的配置文件（dfs.block.size）进行指定。</p>
+<p><strong>设置数据块的好处</strong></p>
+<p>（1）一个文件的大小可以大于集群任意节点磁盘的容量</p>
+<p>（2）容易对数据进行备份，提高容错能力</p>
+<p>（3）使用抽象块概念而非整个文件作为存储单元，大大简化存储子系统的设计</p>
+<p><strong>块缓存</strong><br>通常DataNode从磁盘中读取块，但对于访问频繁的文件，其对应的块可能被显示的缓存在DataNode的内存中，以堆外块缓存的形式存在。默认情况下，一个块仅缓存在一个DataNode的内存中，当然可以针对每个文件配置DataNode的数量。作业调度器通过在缓存块的DataNode上运行任务，可以利用块缓存的优势提高读操作的性能。</p>
+<h2 id="HDFS分布式存储"><a href="#HDFS分布式存储" class="headerlink" title="HDFS分布式存储"></a>HDFS分布式存储</h2><p>在HDFS中，数据块默认的大小是128M，当我们往HDFS上上传一个300多M的文件的时候，那么这个文件会被分成3个数据块： </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193738768-2015006415.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193745301-961787885.png" alt="img"></p>
+<p> 所有的数据块是分布式的存储在所有的DataNode上：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193756443-722084406.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193801770-1600366947.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193806888-1561633390.png" alt="img"></p>
+<p>为了提高每一个数据块的高可用性，在HDFS中每一个数据块默认备份存储3份，在这里我们看到的只有1份，是因为我们在<code>hdfs-site.xml</code>中配置了如下的配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;1&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;表示数据块的备份数量，不能大于DataNode的数量，默认值是3&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>我们也可以通过如下的命令，将文件<code>/user/hadoop-twq/cmd/big_file.txt</code>的所有的数据块都备份存储3份：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop fs -setrep 3 /user/hadoop-twq/cmd/big_file.txt</span><br></pre></td></tr></table></figure>
+
+<p>我们可以从如下可以看出：每一个数据块都冗余存储了3个备份</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193841533-1801289433.png" alt="img"> </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193847536-1876269159.png" alt="img"></p>
+<p> <img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193851762-2045344208.png" alt="img"></p>
+<p><strong>在这里，可能会问这里为什么看到的是2个备份呢？这个是因为我们的集群只有2个DataNode，所以最多只有2个备份，即使你设置成3个备份也没用，所以我们设置的备份数一般都是比集群的DataNode的个数相等或者要少</strong></p>
+<blockquote>
+<p>一定要注意：当我们上传362.4MB的数据到HDFS上后，如果数据块的备份数是3个话，那么在HDFS上真正存储的数据量大小是：362.4MB * 3 = 1087.2MB</p>
+</blockquote>
+<blockquote>
+<p>注意：我们上面是通过HDFS的WEB UI来查看HDFS文件的数据块的信息，除了这种方式查看数据块的信息，我们还可以通过命令fsck来查看</p>
+</blockquote>
+<h2 id="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"><a href="#问题：HDFS里面为什么一般设置块大小为64MB或128MB？" class="headerlink" title="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"></a>问题：HDFS里面为什么一般设置块大小为64MB或128MB？</h2><ul>
+<li><p>为什么不能远少于64MB？</p>
+<p>（1）<strong>减少硬盘寻道时间。</strong>HDFS设计前提是应对大数据量操作，若数据块大小设置过小，那需要读取的数据块数量就会增多，从而间接增加底层硬盘的寻道时间</p>
+<blockquote>
+<p>  “HDFS的块比磁盘块大，其目的是为了最小化寻址开销。如果块设置得足够大，从<strong>磁盘传输数据的时间</strong>可以明显大于<strong>定位这个块开始位置所需的时间</strong>。这样，传输一个由多个块组成的文件的时间就<strong>取决于磁盘传输速率</strong>。”</p>
+<p> “我们做一个估计计算，如果寻址时间为10ms左右，而传输速率为100MB/s，为了使寻址时间仅占传输时间的1%，我们需要设置块大小为100MB左右。而默认的块大小实际为64MB，但是很多情况下HDFS使用128MB的块设置。<strong>以后随着新一代磁盘驱动器传输速率的提升，块的大小将被设置得更大。</strong>”</p>
+</blockquote>
+<p>（2）<strong>减少NameNode内存消耗。</strong>由于NameNode记录着DataNode中的数据块信息，若数据块大小设置过小，则数据块数量增多，需要维护的数据块信息就会增多，从而消耗NameNode的内存。</p>
+</li>
+<li><p>为什么不能远大于64MB？</p>
+<p>原因主要从上层的MapReduce框架来寻找。</p>
+<p>（1）<strong>Map崩溃问题。</strong>系统需要重新启动，启动过程中需要重新加载数据，数据块越大，数据加载时间越长，系统恢复过程越长</p>
+<p>（2）<strong>监管时间问题。</strong>主节点监管其他节点的情况，每个节点会周期性的与主节点进行汇报通信。倘若某一个节点保持沉默的时间超过一个<strong>预设的时间间隔</strong>，主节点会记录这个节点状态为死亡，并将该节点的数据转发给别的节点。而这个“预设时间间隔”是从数据块的角度大致估算的。（加入对64MB的数据块，我可以假设你10分钟之内无论如何也能解决完了吧，超过10分钟还没反应，那我就认为你出故障或已经死了。）64MB大小的数据块，其时间尚可较为精准地估计，如果我将数据块大小设为640MB甚至上G，那这个“预设的时间间隔”便不好估算，估长估短对系统都会造成不必要的损失和资源浪费。</p>
+<p>（3）<strong>问题分解问题。</strong>数据量的大小与问题解决的复杂度呈线性关系。对于同一个算法，处理的数据量越大，时间复杂度越高。</p>
+<p>（4）<strong>约束Map输出。</strong>在Map Reduce框架里，Map之后的数据是要经过排序才执行Reduce操作的。这通常涉及到归并排序，而归并排序的算法思想便是“对小文件进行排序，然后将小文件归并成大文件”，因此“小文件”不宜过大。</p>
+<blockquote>
+<p>“<strong>但是，该参数也不会设置得过大。MapReduce中的map任务通常一次处理一个块中的数据，因此，如果任务数太少（少于集群中的节点数量），作业的运行速度就会变慢。</strong>”</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="数据块的实现"><a href="#数据块的实现" class="headerlink" title="数据块的实现"></a>数据块的实现</h2><p>在HDFS的实现中，数据块被抽象成类<code>org.apache.hadoop.hdfs.protocol.Block(我们以下简称Block)</code>。在Block类中有如下几个属性字段：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Block</span> <span class="keyword">implements</span> <span class="title">Writable</span>, <span class="title">Comparable</span>&lt;<span class="title">Block</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> blockId; <span class="comment">// 标识一个Block的唯一Id</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> numBytes; <span class="comment">// Block的大小(单位是字节)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> generationStamp; <span class="comment">// Block的生成时间戳</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们从WEB UI上的数据块信息也可以看到：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193921505-989550889.png" alt="img"></p>
+<p> 一个Block除了存储上面的3个字段信息，还需要知道这个Block含有多少个备份，每一个备份分别存储在哪一个DataNode上，为了存储这些信息，HDFS中有一个名为</p>
+<p><code>org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoContiguous</code>(下面我们简称为BlockInfo)</p>
+<p>的类来存储这些信息，这个BlockInfo类继承Block类，如下：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193930783-1441983482.png" alt="img"></p>
+<p>BlockInfo类中只有一个非常核心的属性，就是名为triplets的数组，这个数组的长度是<code>3*replication</code>，<code>replication</code>表示数据块的备份数。这个数组中存储了该数据块所有的备份数据块对应的DataNode信息，我们现在假设备份数是<code>3</code>，那么这个数组的长度是<code>3*3=9</code>，这个数组存储的数据如下： </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193941684-2013773685.png" alt="img"></p>
+<p>也就是说，triplets包含的信息：</p>
+<ul>
+<li>triplets[i]：Block所在的DataNode；</li>
+<li>triplets[i+1]：该DataNode上前一个Block；</li>
+<li>triplets[i+2]：该DataNode上后一个Block；</li>
+</ul>
+<p>其中i表示的是Block的第i个副本，i取值[0,replication)。</p>
+<p>我们在HDFS的NameNode中的Namespace管理中讲到了，一个HDFS文件包含一个BlockInfo数组，表示这个文件分成的若干个数据块，这个BlockInfo数组实际上就是我们这里说的<code>BlockInfoContiguous</code>数组。以下是INodeFile的属性：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">INodeFile</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> header = <span class="number">0L</span>; <span class="comment">// 用于标识存储策略ID、副本数和数据块大小的信息</span></span><br><span class="line">    <span class="keyword">private</span> BlockInfoContiguous[] blocks; <span class="comment">// 该文件包含的数据块数组</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那么，到现在为止，我们了解到了这些信息：文件包含了哪些Block，这些Block分别被实际存储在哪些DataNode上，DataNode上所有Block前后链表关系。</p>
+<p>如果从信息完整度来看，以上信息数据足够支持所有关于HDFS文件系统的正常操作，但还存在一个使用场景较多的问题：怎样通过blockId快速定位BlockInfo？</p>
+<p>我们其实可以在NameNode上用一个HashMap来维护blockId到Block的映射，也就是说我们可以使用<code>HashMap&lt;Block, BlockInfo&gt;</code>来维护，这样的话我们就可以快速的根据blockId定位BlockInfo，但是由于在内存使用、碰撞冲突解决和性能等方面存在问题，Hadoop团队之后使用重新实现的LightWeightGSet代替HashMap，该数据结构本质上也是利用链表解决碰撞冲突的<a href="https://issues.apache.org/jira/browse/HDFS-1114">HashTable</a>，但是在易用性、内存占用和性能等方面表现更好。</p>
+<p>HDFS为了解决通过blockId快速定位BlockInfo的问题，所以引入了BlocksMap，BlocksMap底层通过LightWeightGSet实现。</p>
+<p>在HDFS集群启动过程，DataNode会进行BR（BlockReport，其实就是将DataNode自身存储的数据块上报给NameNode），根据BR的每一个Block计算其HashCode，之后将对应的BlockInfo插入到相应位置逐渐构建起来巨大的BlocksMap。前面在INodeFile里也提到的BlockInfo集合，如果我们将BlocksMap里的BlockInfo与所有INodeFile里的BlockInfo分别收集起来，可以发现两个集合完全相同，事实上BlocksMap里所有的BlockInfo就是INodeFile中对应BlockInfo的引用；通过Block查找对应BlockInfo时，也是先对Block计算HashCode，根据结果快速定位到对应的BlockInfo信息。至此涉及到HDFS文件系统本身元数据的问题基本上已经解决了。</p>
+<h2 id="BlocksMap内存估算"><a href="#BlocksMap内存估算" class="headerlink" title="BlocksMap内存估算"></a>BlocksMap内存估算</h2><p>HDFS将文件按照一定的大小切成多个Block，为了保证数据可靠性，每个Block对应多个副本，存储在不同DataNode上。NameNode除需要维护Block本身的信息外，还需要维护从Block到DataNode列表的对应关系，用于描述每一个Block副本实际存储的物理位置，BlocksMap结构即用于Block到DataNode列表的映射关系，BlocksMap是常驻在内存中，而且占用内存非常大，所以对BlocksMap进行内存的估算是非常有必要的。</p>
+<p><strong>BlocksMap</strong>的内部结构：</p>
+<blockquote>
+<p>以下的内存估算是在64位操作系统上且没有开启指针压缩功能场景下</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class BlocksMap &#123;</span><br><span class="line">    private final int capacity; // 占 4 字节</span><br><span class="line">    // 我们使用GSet的实现者：LightWeightGSet</span><br><span class="line">    private GSet&lt;Block, BlockInfoContiguous&gt; blocks;  // 引用类型占8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以得出BlocksMap的直接内存大小是：<strong>对象头16字节 + 4字节 + 8字节 = 28字节</strong></p>
+<p><strong>Block</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Block implements Writable, Comparable&lt;Block&gt; &#123;</span><br><span class="line">    private long blockId; // 标识一个Block的唯一Id     占 8字节</span><br><span class="line">    private long numBytes; // Block的大小(单位是字节)   占 8字节</span><br><span class="line">    private long generationStamp; // Block的生成时间戳   占 8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以得出Block的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 8字节 = 40字节</strong></p>
+<p><strong>BlockInfoContiguous</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class BlockInfoContiguous extends Block &#123;</span><br><span class="line">    private BlockCollection bc;   // 引用类型占8字节</span><br><span class="line">    private LightWeightGSet.LinkedElement nextLinkedElement;  // 引用类型占8字节</span><br><span class="line">    private Object[] triplets;  // 引用类型 8字节 + 数组对象头24字节 + 3*3(备份数假设为3)*8 = 104字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以得出BlockInfoContiguous的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 104字节 = 136字节</strong></p>
+<p><strong>LightWeightGSet</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class LightWeightGSet&lt;K, E extends K&gt; implements GSet&lt;K, E&gt; &#123;</span><br><span class="line">    private final LinkedElement[] entries; // 引用类型 8字节 + 数组对象头24字节 = 32字节</span><br><span class="line">    private final int hash_mask; // 4字节</span><br><span class="line">    private int size = 0; // 4字节</span><br><span class="line">    private int modification = 0; // 4字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>　　LightWeightGSet本质是一个链式解决冲突的哈希表，为了避免rehash过程带来的性能开销，初始化时，LightWeightGSet的索引空间直接给到了整个JVM可用内存的2%，并且不再变化。 所以LightWeightGSet的直接内存大小为：**对象头16字节 + 32字节 + 4字节 + 4字节 + 4字节 + (2%<em>JVM可用内存) = 60字节 + (2%<em>JVM可用内存)</em></em></p>
+<p>假设集群中共1亿Block，NameNode可用内存空间固定大小128GB，则BlocksMap占用内存情况：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BlocksMap直接内存大小 + (Block直接内存大小 + BlockInfoContiguous直接内存大小) * 100M + LightWeightGSet直接内存大小</span><br><span class="line">即：</span><br><span class="line">28字节 + (40字节 + 136字节) * 100M + 60字节 + (2%*128G) = 19.7475GB</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>上面为什么是乘以100M呢？ 因为100M = 100 * 1024 * 1024 bytes = 104857600 bytes，约等于1亿字节，而上面的内存的单位都是字节的，我们乘以100M，就相当于1亿Block</p>
+</blockquote>
+<p>BlocksMap数据在NameNode整个生命周期内常驻内存，随着数据规模的增加，对应Block数会随之增多，BlocksMap所占用的JVM堆内存空间也会基本保持线性同步增加。</p>
+<hr>
+<p>参考：</p>
+<p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
+<p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>HDFS文件读写流程与副本放置策略</title>
     <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
@@ -336,129 +459,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS中的数据块(Block)</title>
-    <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
-    <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
-<ol>
-<li>数据分块，分布式的存储在多台机器上</li>
-<li>数据块冗余存储在多台机器以提高数据块的高可用性</li>
-<li>遵从主/从(master/slave)结构的分布式存储集群</li>
-</ol>
-<p>HDFS作为分布式存储的实现，肯定也具有上面3个特点。</p>
-<span id="more"></span>
-
-<h2 id="HDFS数据块"><a href="#HDFS数据块" class="headerlink" title="HDFS数据块"></a>HDFS数据块</h2><p>与一般文件系统一样，HDFS也有块（block）的概念，HDFS上的文件也被划分为块大小的多个分块作为独立的存储单元。与通常的磁盘文件系统不同的是：</p>
-<p><strong>HDFS中小于一个块大小的文件不会占据整个块的空间（当一个1MB的文件存储在一个128MB的块中时，文件只使用1MB的磁盘空间，而不是128MB）</strong></p>
-<p>在Hadoop1当中，文件的block块默认大小是64M，Hadoop2当中，文件的block块大小默认是128M，block块的大小可以通过<code>hdfs-site.xml</code>当中的配置文件（dfs.block.size）进行指定。</p>
-<p><strong>设置数据块的好处</strong></p>
-<p>（1）一个文件的大小可以大于集群任意节点磁盘的容量</p>
-<p>（2）容易对数据进行备份，提高容错能力</p>
-<p>（3）使用抽象块概念而非整个文件作为存储单元，大大简化存储子系统的设计</p>
-<p><strong>块缓存</strong><br>通常DataNode从磁盘中读取块，但对于访问频繁的文件，其对应的块可能被显示的缓存在DataNode的内存中，以堆外块缓存的形式存在。默认情况下，一个块仅缓存在一个DataNode的内存中，当然可以针对每个文件配置DataNode的数量。作业调度器通过在缓存块的DataNode上运行任务，可以利用块缓存的优势提高读操作的性能。</p>
-<h2 id="HDFS分布式存储"><a href="#HDFS分布式存储" class="headerlink" title="HDFS分布式存储"></a>HDFS分布式存储</h2><p>在HDFS中，数据块默认的大小是128M，当我们往HDFS上上传一个300多M的文件的时候，那么这个文件会被分成3个数据块： </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193738768-2015006415.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193745301-961787885.png" alt="img"></p>
-<p> 所有的数据块是分布式的存储在所有的DataNode上：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193756443-722084406.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193801770-1600366947.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193806888-1561633390.png" alt="img"></p>
-<p>为了提高每一个数据块的高可用性，在HDFS中每一个数据块默认备份存储3份，在这里我们看到的只有1份，是因为我们在<code>hdfs-site.xml</code>中配置了如下的配置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;1&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;表示数据块的备份数量，不能大于DataNode的数量，默认值是3&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>我们也可以通过如下的命令，将文件<code>/user/hadoop-twq/cmd/big_file.txt</code>的所有的数据块都备份存储3份：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop fs -setrep 3 /user/hadoop-twq/cmd/big_file.txt</span><br></pre></td></tr></table></figure>
-
-<p>我们可以从如下可以看出：每一个数据块都冗余存储了3个备份</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193841533-1801289433.png" alt="img"> </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193847536-1876269159.png" alt="img"></p>
-<p> <img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193851762-2045344208.png" alt="img"></p>
-<p><strong>在这里，可能会问这里为什么看到的是2个备份呢？这个是因为我们的集群只有2个DataNode，所以最多只有2个备份，即使你设置成3个备份也没用，所以我们设置的备份数一般都是比集群的DataNode的个数相等或者要少</strong></p>
-<blockquote>
-<p>一定要注意：当我们上传362.4MB的数据到HDFS上后，如果数据块的备份数是3个话，那么在HDFS上真正存储的数据量大小是：362.4MB * 3 = 1087.2MB</p>
-</blockquote>
-<blockquote>
-<p>注意：我们上面是通过HDFS的WEB UI来查看HDFS文件的数据块的信息，除了这种方式查看数据块的信息，我们还可以通过命令fsck来查看</p>
-</blockquote>
-<h2 id="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"><a href="#问题：HDFS里面为什么一般设置块大小为64MB或128MB？" class="headerlink" title="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"></a>问题：HDFS里面为什么一般设置块大小为64MB或128MB？</h2><ul>
-<li><p>为什么不能远少于64MB？</p>
-<p>（1）<strong>减少硬盘寻道时间。</strong>HDFS设计前提是应对大数据量操作，若数据块大小设置过小，那需要读取的数据块数量就会增多，从而间接增加底层硬盘的寻道时间</p>
-<blockquote>
-<p>  “HDFS的块比磁盘块大，其目的是为了最小化寻址开销。如果块设置得足够大，从<strong>磁盘传输数据的时间</strong>可以明显大于<strong>定位这个块开始位置所需的时间</strong>。这样，传输一个由多个块组成的文件的时间就<strong>取决于磁盘传输速率</strong>。”</p>
-<p> “我们做一个估计计算，如果寻址时间为10ms左右，而传输速率为100MB/s，为了使寻址时间仅占传输时间的1%，我们需要设置块大小为100MB左右。而默认的块大小实际为64MB，但是很多情况下HDFS使用128MB的块设置。<strong>以后随着新一代磁盘驱动器传输速率的提升，块的大小将被设置得更大。</strong>”</p>
-</blockquote>
-<p>（2）<strong>减少NameNode内存消耗。</strong>由于NameNode记录着DataNode中的数据块信息，若数据块大小设置过小，则数据块数量增多，需要维护的数据块信息就会增多，从而消耗NameNode的内存。</p>
-</li>
-<li><p>为什么不能远大于64MB？</p>
-<p>原因主要从上层的MapReduce框架来寻找。</p>
-<p>（1）<strong>Map崩溃问题。</strong>系统需要重新启动，启动过程中需要重新加载数据，数据块越大，数据加载时间越长，系统恢复过程越长</p>
-<p>（2）<strong>监管时间问题。</strong>主节点监管其他节点的情况，每个节点会周期性的与主节点进行汇报通信。倘若某一个节点保持沉默的时间超过一个<strong>预设的时间间隔</strong>，主节点会记录这个节点状态为死亡，并将该节点的数据转发给别的节点。而这个“预设时间间隔”是从数据块的角度大致估算的。（加入对64MB的数据块，我可以假设你10分钟之内无论如何也能解决完了吧，超过10分钟还没反应，那我就认为你出故障或已经死了。）64MB大小的数据块，其时间尚可较为精准地估计，如果我将数据块大小设为640MB甚至上G，那这个“预设的时间间隔”便不好估算，估长估短对系统都会造成不必要的损失和资源浪费。</p>
-<p>（3）<strong>问题分解问题。</strong>数据量的大小与问题解决的复杂度呈线性关系。对于同一个算法，处理的数据量越大，时间复杂度越高。</p>
-<p>（4）<strong>约束Map输出。</strong>在Map Reduce框架里，Map之后的数据是要经过排序才执行Reduce操作的。这通常涉及到归并排序，而归并排序的算法思想便是“对小文件进行排序，然后将小文件归并成大文件”，因此“小文件”不宜过大。</p>
-<blockquote>
-<p>“<strong>但是，该参数也不会设置得过大。MapReduce中的map任务通常一次处理一个块中的数据，因此，如果任务数太少（少于集群中的节点数量），作业的运行速度就会变慢。</strong>”</p>
-</blockquote>
-</li>
-</ul>
-<h2 id="数据块的实现"><a href="#数据块的实现" class="headerlink" title="数据块的实现"></a>数据块的实现</h2><p>在HDFS的实现中，数据块被抽象成类<code>org.apache.hadoop.hdfs.protocol.Block(我们以下简称Block)</code>。在Block类中有如下几个属性字段：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Block</span> <span class="keyword">implements</span> <span class="title">Writable</span>, <span class="title">Comparable</span>&lt;<span class="title">Block</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> blockId; <span class="comment">// 标识一个Block的唯一Id</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> numBytes; <span class="comment">// Block的大小(单位是字节)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> generationStamp; <span class="comment">// Block的生成时间戳</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们从WEB UI上的数据块信息也可以看到：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193921505-989550889.png" alt="img"></p>
-<p> 一个Block除了存储上面的3个字段信息，还需要知道这个Block含有多少个备份，每一个备份分别存储在哪一个DataNode上，为了存储这些信息，HDFS中有一个名为</p>
-<p><code>org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoContiguous</code>(下面我们简称为BlockInfo)</p>
-<p>的类来存储这些信息，这个BlockInfo类继承Block类，如下：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193930783-1441983482.png" alt="img"></p>
-<p>BlockInfo类中只有一个非常核心的属性，就是名为triplets的数组，这个数组的长度是<code>3*replication</code>，<code>replication</code>表示数据块的备份数。这个数组中存储了该数据块所有的备份数据块对应的DataNode信息，我们现在假设备份数是<code>3</code>，那么这个数组的长度是<code>3*3=9</code>，这个数组存储的数据如下： </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193941684-2013773685.png" alt="img"></p>
-<p>也就是说，triplets包含的信息：</p>
-<ul>
-<li>triplets[i]：Block所在的DataNode；</li>
-<li>triplets[i+1]：该DataNode上前一个Block；</li>
-<li>triplets[i+2]：该DataNode上后一个Block；</li>
-</ul>
-<p>其中i表示的是Block的第i个副本，i取值[0,replication)。</p>
-<p>我们在HDFS的NameNode中的Namespace管理中讲到了，一个HDFS文件包含一个BlockInfo数组，表示这个文件分成的若干个数据块，这个BlockInfo数组实际上就是我们这里说的<code>BlockInfoContiguous</code>数组。以下是INodeFile的属性：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">INodeFile</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> header = <span class="number">0L</span>; <span class="comment">// 用于标识存储策略ID、副本数和数据块大小的信息</span></span><br><span class="line">    <span class="keyword">private</span> BlockInfoContiguous[] blocks; <span class="comment">// 该文件包含的数据块数组</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>那么，到现在为止，我们了解到了这些信息：文件包含了哪些Block，这些Block分别被实际存储在哪些DataNode上，DataNode上所有Block前后链表关系。</p>
-<p>如果从信息完整度来看，以上信息数据足够支持所有关于HDFS文件系统的正常操作，但还存在一个使用场景较多的问题：怎样通过blockId快速定位BlockInfo？</p>
-<p>我们其实可以在NameNode上用一个HashMap来维护blockId到Block的映射，也就是说我们可以使用<code>HashMap&lt;Block, BlockInfo&gt;</code>来维护，这样的话我们就可以快速的根据blockId定位BlockInfo，但是由于在内存使用、碰撞冲突解决和性能等方面存在问题，Hadoop团队之后使用重新实现的LightWeightGSet代替HashMap，该数据结构本质上也是利用链表解决碰撞冲突的<a href="https://issues.apache.org/jira/browse/HDFS-1114">HashTable</a>，但是在易用性、内存占用和性能等方面表现更好。</p>
-<p>HDFS为了解决通过blockId快速定位BlockInfo的问题，所以引入了BlocksMap，BlocksMap底层通过LightWeightGSet实现。</p>
-<p>在HDFS集群启动过程，DataNode会进行BR（BlockReport，其实就是将DataNode自身存储的数据块上报给NameNode），根据BR的每一个Block计算其HashCode，之后将对应的BlockInfo插入到相应位置逐渐构建起来巨大的BlocksMap。前面在INodeFile里也提到的BlockInfo集合，如果我们将BlocksMap里的BlockInfo与所有INodeFile里的BlockInfo分别收集起来，可以发现两个集合完全相同，事实上BlocksMap里所有的BlockInfo就是INodeFile中对应BlockInfo的引用；通过Block查找对应BlockInfo时，也是先对Block计算HashCode，根据结果快速定位到对应的BlockInfo信息。至此涉及到HDFS文件系统本身元数据的问题基本上已经解决了。</p>
-<h2 id="BlocksMap内存估算"><a href="#BlocksMap内存估算" class="headerlink" title="BlocksMap内存估算"></a>BlocksMap内存估算</h2><p>HDFS将文件按照一定的大小切成多个Block，为了保证数据可靠性，每个Block对应多个副本，存储在不同DataNode上。NameNode除需要维护Block本身的信息外，还需要维护从Block到DataNode列表的对应关系，用于描述每一个Block副本实际存储的物理位置，BlocksMap结构即用于Block到DataNode列表的映射关系，BlocksMap是常驻在内存中，而且占用内存非常大，所以对BlocksMap进行内存的估算是非常有必要的。</p>
-<p><strong>BlocksMap</strong>的内部结构：</p>
-<blockquote>
-<p>以下的内存估算是在64位操作系统上且没有开启指针压缩功能场景下</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class BlocksMap &#123;</span><br><span class="line">    private final int capacity; // 占 4 字节</span><br><span class="line">    // 我们使用GSet的实现者：LightWeightGSet</span><br><span class="line">    private GSet&lt;Block, BlockInfoContiguous&gt; blocks;  // 引用类型占8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出BlocksMap的直接内存大小是：<strong>对象头16字节 + 4字节 + 8字节 = 28字节</strong></p>
-<p><strong>Block</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Block implements Writable, Comparable&lt;Block&gt; &#123;</span><br><span class="line">    private long blockId; // 标识一个Block的唯一Id     占 8字节</span><br><span class="line">    private long numBytes; // Block的大小(单位是字节)   占 8字节</span><br><span class="line">    private long generationStamp; // Block的生成时间戳   占 8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出Block的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 8字节 = 40字节</strong></p>
-<p><strong>BlockInfoContiguous</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class BlockInfoContiguous extends Block &#123;</span><br><span class="line">    private BlockCollection bc;   // 引用类型占8字节</span><br><span class="line">    private LightWeightGSet.LinkedElement nextLinkedElement;  // 引用类型占8字节</span><br><span class="line">    private Object[] triplets;  // 引用类型 8字节 + 数组对象头24字节 + 3*3(备份数假设为3)*8 = 104字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出BlockInfoContiguous的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 104字节 = 136字节</strong></p>
-<p><strong>LightWeightGSet</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class LightWeightGSet&lt;K, E extends K&gt; implements GSet&lt;K, E&gt; &#123;</span><br><span class="line">    private final LinkedElement[] entries; // 引用类型 8字节 + 数组对象头24字节 = 32字节</span><br><span class="line">    private final int hash_mask; // 4字节</span><br><span class="line">    private int size = 0; // 4字节</span><br><span class="line">    private int modification = 0; // 4字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>　　LightWeightGSet本质是一个链式解决冲突的哈希表，为了避免rehash过程带来的性能开销，初始化时，LightWeightGSet的索引空间直接给到了整个JVM可用内存的2%，并且不再变化。 所以LightWeightGSet的直接内存大小为：**对象头16字节 + 32字节 + 4字节 + 4字节 + 4字节 + (2%<em>JVM可用内存) = 60字节 + (2%<em>JVM可用内存)</em></em></p>
-<p>假设集群中共1亿Block，NameNode可用内存空间固定大小128GB，则BlocksMap占用内存情况：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BlocksMap直接内存大小 + (Block直接内存大小 + BlockInfoContiguous直接内存大小) * 100M + LightWeightGSet直接内存大小</span><br><span class="line">即：</span><br><span class="line">28字节 + (40字节 + 136字节) * 100M + 60字节 + (2%*128G) = 19.7475GB</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>上面为什么是乘以100M呢？ 因为100M = 100 * 1024 * 1024 bytes = 104857600 bytes，约等于1亿字节，而上面的内存的单位都是字节的，我们乘以100M，就相当于1亿Block</p>
-</blockquote>
-<p>BlocksMap数据在NameNode整个生命周期内常驻内存，随着数据规模的增加，对应Block数会随之增多，BlocksMap所占用的JVM堆内存空间也会基本保持线性同步增加。</p>
-<hr>
-<p>参考：</p>
-<p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
-<p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop Archives</title>
     <url>/2021/12/20/Hadoop-Archives/</url>
     <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
@@ -691,19 +691,18 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MapReduce代码（个人总结）</title>
+    <title>MapReduceClass extends Configured implements Tool代码（个人总结）</title>
     <url>/2021/12/18/hadoop-Interface-Tool/</url>
     <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
 <ol>
-<li><p>implements Tool</p>
-</li>
-<li><p>run()放置任务代码.以下为mapreduce代码</p>
-</li>
-<li><p>main方法中调用run()方法</p>
-</li>
+<li>extends Configured implements Tool</li>
+<li>run()放置任务代码.以下为mapreduce代码</li>
+<li>main方法中调用run()方法</li>
 </ol>
+<span id="more"></span>
+
 <p>代码如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">public class WordCount implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">          System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">          //		ToolRunner.runnew Configuration(),new 实现Tool接口的Class,参数args</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //获取job</span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyrMapper.class);</span><br><span class="line">        job.setReducerClass(MySumReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class TokenizerMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class IntSumReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">          System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">          //		ToolRunner.runnew Configuration(),new 实现Tool接口的Class,参数args</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //获取job</span><br><span class="line">        Configuration conf = super.getConf();</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
 
 <ol start="4">
 <li><p>补充：自定义序列化类</p>
@@ -861,6 +860,37 @@
 <h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
 <h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
 <p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
+    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
+
+<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
+
+<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
+<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
+<ul>
+<li><p><strong>log4j-1.2.xx.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
+</li>
+</ul>
+<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
@@ -1156,369 +1186,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
-    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
-
-<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
-
-<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
-
-<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
-<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
-<ul>
-<li><p><strong>log4j-1.2.xx.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
-</li>
-</ul>
-<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Linux快速整理</title>
-    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<p>环境搭建:</p>
-<p>vmware虚拟机+XShell登录虚拟机</p>
-<p>Linux快速整理：</p>
-<ol>
-<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
-</li>
-<li><p><code>pwd</code>查看当前所在目录路径地址</p>
-<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
-<span id="more"></span></li>
-<li><p>切换目录 <code>cd</code></p>
-<p>root用户的家目录：/root</p>
-<p>xxx用户的家目录：/home/xxx 默认</p>
-<p>家目录的修改：vi /etc/passwd 默认不修改</p>
-<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
-<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
-<p><code>cd -</code>回到上一次访问的目录</p>
-<p><code>cd ../</code> 回退上一层目录</p>
-<p><code>cd ../../</code> 回退上两层目录</p>
-</li>
-<li><p>目录 文件夹</p>
-<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
-<p>​                    写shell脚本时，路径要用绝对路径。</p>
-<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
-<p>查看当前文件夹下的内容 <code>ls</code></p>
-</li>
-<li><p>清空屏幕 <code>clear</code></p>
-</li>
-<li><p>ls查看当前光标所在的目录 文件有哪些</p>
-<p><code>ls -l</code>  等价于`ll``</p>
-<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
-<p><code>ll -h</code> 显示文件的大小</p>
-<p><code>ll -rt</code> 按时间排序</p>
-</li>
-<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
-</li>
-<li><p>创建文件夹 <code>mkdir</code> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
-
-<p>选项与参数：</p>
-<ul>
-<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
-<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
-</ul>
-<p>例如 </p>
-<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
-<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
-<p>删除空的目录：<code>rmdir</code></p>
-<p>选项与参数：</p>
-<ul>
-<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
-</ul>
-</li>
-<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
-<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
-<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
-<p><strong>思考：mv和cp哪个执行快？</strong></p>
-<ul>
-<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
-<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
-<li>都可修改名称。</li>
-</ul>
-</li>
-<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
-<ul>
-<li><p>touch rz.log 如何创建一个空文件</p>
-<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
-</li>
-<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
-</li>
-<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
-</li>
-</ul>
-</li>
-<li><p>查看文件内容</p>
-<ul>
-<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
-<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
-</li>
-<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
-<p>空白键（space）- 往下一页显示</p>
-<p>b  - 往回（back）一页显示</p>
-<p>q  - 退出more</p>
-</li>
-<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
-<p>/字符串：向下搜索”字符串”的功能</p>
-<p>?字符串：向上搜索”字符串”的功能</p>
-<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
-<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
-<p>G ：移动到最后一行</p>
-<p>g：移动到第一行</p>
-<p>q / ZZ ：-退出 less 命令</p>
-</li>
-</ul>
-<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
-<p><strong>log日志，内容较多，用tail命令</strong></p>
-<ul>
-<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
-<p>实时查看</p>
-<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
-<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
-<p>补充：flume exec source 切记使用 -F</p>
-<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
-<p>-c&lt;数目&gt; 显示的字节数</p>
-<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
-<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
-</li>
-</ul>
-</li>
-<li><p>文件上传下载工具</p>
-<p>安装： <code>yum install -y lrzsz</code></p>
-<p>文件下载到windows：<code>sz</code></p>
-<p>windows上传到linux: <code>rz</code></p>
-</li>
-<li><p>如何定位ERROR</p>
-<ul>
-<li><p>文件内容很小，几十兆</p>
-<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
-</li>
-<li><p>文件内容很大，几百兆 2G</p>
-<p>cat xxx.log | grep ERROR</p>
-<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
-</li>
-</ul>
-</li>
-<li><p>grep命令</p>
-<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
-<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
-<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
-<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
-<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
-<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
-</li>
-<li><p>环境变量$PATH</p>
-<p>打印环境变量：<code>echo $PATH</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
-
-<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
-
-<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
-<pre><code>                      ~/.bashrc       个人 不给其他人
-</code></pre>
-<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-<p>生效文件: <code>source xxxx</code></p>
-<pre><code>              `. ~/.bashrc`
-</code></pre>
-<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
-<p>配置环境变量:<code>vi /etc/profile</code></p>
-<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
-<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
-<p>export PATH=$JAVA_HOME/bin:$PATH</p>
-<p>新配置的变量在前面追加</p>
-<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
-
-<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
-</li>
-<li><p>别名alias</p>
-<p><code>alias</code> 命令用于设置指令的别名。</p>
-<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
-
-<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-</li>
-<li><p>查看历史命令history</p>
-<p>当前命令输入状态下：</p>
-<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
-
-*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
-</code></pre>
-<ul>
-<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
-<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
-</li>
-</ul>
-<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
-<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
-<p>使用! 执行历史命令。</p>
-<pre><code>* `!  [n]`  n为数字 执行第n条命令
-</code></pre>
-<ul>
-<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
-<li><code>!!</code> 执行上一条</li>
-</ul>
-<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
-<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
-
-<p>拓展：</p>
-<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
-</li>
-<li><p>删除<br>生成新文件:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
-
-<p>创建文件夹: <code>mkdir</code> </p>
-<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
-<ul>
-<li><p>-i 删除前逐一询问确认。</p>
-</li>
-<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
-</li>
-<li><p>-r 将目录及以下之档案亦逐一删除。</p>
-<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
-<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
-<p>K=’/home/jepson’</p>
-<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
-<li><p>用户 用户组</p>
-<p>创建用户：<code>useradd username</code></p>
-<p>查看用户信息：<code>id username</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
-
-<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
-<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
-<p>删除用户:<code>userdel username</code></p>
-<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
-<p>模拟切换用户丢失样式</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
-
-<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p>创建用户组：<code>groupadd groupname</code></p>
-<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
-
-<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
-<p>切换用户：<code>su</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
-
-<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
-<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
-<p>用户权限问题：connection连接拒绝、Permission denied</p>
-<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
-
-<p>/etc/passwd:</p>
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
-</li>
-<li><p>权限：chown chmod</p>
-<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
-
-<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
-<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
-<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
-</li>
-<li><p>查看大小</p>
-<p>文件：</p>
-<ul>
-<li>ll</li>
-<li>du -sh </li>
-</ul>
-<p>文件夹：</p>
-<ul>
-<li>du -sh</li>
-<li>用ll看到的并不是文件夹大小</li>
-</ul>
-</li>
-<li><p>删除执行中的程序或工作:<code>kill</code></p>
-<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
-<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
-<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
-<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
-<ul>
-<li>1 (HUP)：重新加载进程。</li>
-<li>2（INT）：中断（同 Ctrl + C）</li>
-<li>3（QUIT）：退出（同 Ctrl + \）</li>
-<li>9 (KILL)：强制杀死一个进程。</li>
-<li>15 (TERM)：正常停止一个进程。</li>
-</ul>
-<p>杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
-
-<p>强制杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
-
-<p>发送SIGHUP信号，可以使用一下信号</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
-
-<p>杀死指定用户所有进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
-
-<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
-<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
-<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
-<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
-</li>
-<li><p>其他命令</p>
-<ul>
-<li><p>搜索 <code>find</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录中的所有文件列出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
-<li><p>查看进程：<code>ps -ef</code> </p>
-</li>
-<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
-</li>
-<li><p>查看ip通不通：ping ip地址</p>
-</li>
-<li><p>测试端口号连通性：telnet ip地址 端口号</p>
-</li>
-</ul>
-</li>
-</ol>
 ]]></content>
   </entry>
   <entry>
@@ -2205,6 +1872,338 @@
 <p>经查阅，发现my.cnf中[mysqld]下有默认启动用户<code>user = mysql</code>，指定为<code>user = mysqladmin</code>后重启，问题不再出现，且mysql服务开机自启动</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">port            = 3306</span><br><span class="line">socket          = /usr/local/mysql/data/mysql.sock</span><br><span class="line">#以下注释为默认参数，不指定的话，user=mysql</span><br><span class="line">#user 			= mysql</span><br><span class="line">user 			= mysqladmin</span><br></pre></td></tr></table></figure>
 
+]]></content>
+  </entry>
+  <entry>
+    <title>Linux快速整理</title>
+    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<p>环境搭建:</p>
+<p>vmware虚拟机+XShell登录虚拟机</p>
+<p>Linux快速整理：</p>
+<ol>
+<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
+</li>
+<li><p><code>pwd</code>查看当前所在目录路径地址</p>
+<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
+<span id="more"></span></li>
+<li><p>切换目录 <code>cd</code></p>
+<p>root用户的家目录：/root</p>
+<p>xxx用户的家目录：/home/xxx 默认</p>
+<p>家目录的修改：vi /etc/passwd 默认不修改</p>
+<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
+<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
+<p><code>cd -</code>回到上一次访问的目录</p>
+<p><code>cd ../</code> 回退上一层目录</p>
+<p><code>cd ../../</code> 回退上两层目录</p>
+</li>
+<li><p>目录 文件夹</p>
+<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
+<p>​                    写shell脚本时，路径要用绝对路径。</p>
+<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
+<p>查看当前文件夹下的内容 <code>ls</code></p>
+</li>
+<li><p>清空屏幕 <code>clear</code></p>
+</li>
+<li><p>ls查看当前光标所在的目录 文件有哪些</p>
+<p><code>ls -l</code>  等价于`ll``</p>
+<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
+<p><code>ll -h</code> 显示文件的大小</p>
+<p><code>ll -rt</code> 按时间排序</p>
+</li>
+<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
+</li>
+<li><p>创建文件夹 <code>mkdir</code> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
+
+<p>选项与参数：</p>
+<ul>
+<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
+<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
+</ul>
+<p>例如 </p>
+<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
+<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
+<p>删除空的目录：<code>rmdir</code></p>
+<p>选项与参数：</p>
+<ul>
+<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
+</ul>
+</li>
+<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
+<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
+<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
+<p><strong>思考：mv和cp哪个执行快？</strong></p>
+<ul>
+<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
+<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
+<li>都可修改名称。</li>
+</ul>
+</li>
+<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
+<ul>
+<li><p>touch rz.log 如何创建一个空文件</p>
+<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
+</li>
+<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
+</li>
+<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
+</li>
+</ul>
+</li>
+<li><p>查看文件内容</p>
+<ul>
+<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
+<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
+</li>
+<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
+<p>空白键（space）- 往下一页显示</p>
+<p>b  - 往回（back）一页显示</p>
+<p>q  - 退出more</p>
+</li>
+<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
+<p>/字符串：向下搜索”字符串”的功能</p>
+<p>?字符串：向上搜索”字符串”的功能</p>
+<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
+<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
+<p>G ：移动到最后一行</p>
+<p>g：移动到第一行</p>
+<p>q / ZZ ：-退出 less 命令</p>
+</li>
+</ul>
+<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
+<p><strong>log日志，内容较多，用tail命令</strong></p>
+<ul>
+<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
+<p>实时查看</p>
+<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
+<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
+<p>补充：flume exec source 切记使用 -F</p>
+<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
+<p>-c&lt;数目&gt; 显示的字节数</p>
+<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
+<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
+</li>
+</ul>
+</li>
+<li><p>文件上传下载工具</p>
+<p>安装： <code>yum install -y lrzsz</code></p>
+<p>文件下载到windows：<code>sz</code></p>
+<p>windows上传到linux: <code>rz</code></p>
+</li>
+<li><p>如何定位ERROR</p>
+<ul>
+<li><p>文件内容很小，几十兆</p>
+<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
+</li>
+<li><p>文件内容很大，几百兆 2G</p>
+<p>cat xxx.log | grep ERROR</p>
+<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
+</li>
+</ul>
+</li>
+<li><p>grep命令</p>
+<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
+<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
+<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
+<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
+<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
+<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
+</li>
+<li><p>环境变量$PATH</p>
+<p>打印环境变量：<code>echo $PATH</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
+
+<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
+
+<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
+<pre><code>                      ~/.bashrc       个人 不给其他人
+</code></pre>
+<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+<p>生效文件: <code>source xxxx</code></p>
+<pre><code>              `. ~/.bashrc`
+</code></pre>
+<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
+<p>配置环境变量:<code>vi /etc/profile</code></p>
+<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
+<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
+<p>export PATH=$JAVA_HOME/bin:$PATH</p>
+<p>新配置的变量在前面追加</p>
+<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
+
+<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
+</li>
+<li><p>别名alias</p>
+<p><code>alias</code> 命令用于设置指令的别名。</p>
+<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+</li>
+<li><p>查看历史命令history</p>
+<p>当前命令输入状态下：</p>
+<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
+
+*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
+</code></pre>
+<ul>
+<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
+<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
+</li>
+</ul>
+<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
+<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
+<p>使用! 执行历史命令。</p>
+<pre><code>* `!  [n]`  n为数字 执行第n条命令
+</code></pre>
+<ul>
+<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
+<li><code>!!</code> 执行上一条</li>
+</ul>
+<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
+<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
+</li>
+<li><p>删除<br>生成新文件:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
+
+<p>创建文件夹: <code>mkdir</code> </p>
+<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
+<ul>
+<li><p>-i 删除前逐一询问确认。</p>
+</li>
+<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
+</li>
+<li><p>-r 将目录及以下之档案亦逐一删除。</p>
+<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
+<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
+<p>K=’/home/jepson’</p>
+<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
+<li><p>用户 用户组</p>
+<p>创建用户：<code>useradd username</code></p>
+<p>查看用户信息：<code>id username</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
+
+<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
+<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
+<p>删除用户:<code>userdel username</code></p>
+<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
+<p>模拟切换用户丢失样式</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
+
+<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>创建用户组：<code>groupadd groupname</code></p>
+<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
+
+<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
+<p>切换用户：<code>su</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
+
+<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
+<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
+<p>用户权限问题：connection连接拒绝、Permission denied</p>
+<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
+
+<p>/etc/passwd:</p>
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
+</li>
+<li><p>权限：chown chmod</p>
+<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
+
+<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
+<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
+<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
+</li>
+<li><p>查看大小</p>
+<p>文件：</p>
+<ul>
+<li>ll</li>
+<li>du -sh </li>
+</ul>
+<p>文件夹：</p>
+<ul>
+<li>du -sh</li>
+<li>用ll看到的并不是文件夹大小</li>
+</ul>
+</li>
+<li><p>删除执行中的程序或工作:<code>kill</code></p>
+<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
+<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
+<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
+<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
+<ul>
+<li>1 (HUP)：重新加载进程。</li>
+<li>2（INT）：中断（同 Ctrl + C）</li>
+<li>3（QUIT）：退出（同 Ctrl + \）</li>
+<li>9 (KILL)：强制杀死一个进程。</li>
+<li>15 (TERM)：正常停止一个进程。</li>
+</ul>
+<p>杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
+
+<p>强制杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
+
+<p>发送SIGHUP信号，可以使用一下信号</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
+
+<p>杀死指定用户所有进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
+
+<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
+<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
+<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
+<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
+</li>
+<li><p>其他命令</p>
+<ul>
+<li><p>搜索 <code>find</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录中的所有文件列出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
+<li><p>查看进程：<code>ps -ef</code> </p>
+</li>
+<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
+</li>
+<li><p>查看ip通不通：ping ip地址</p>
+</li>
+<li><p>测试端口号连通性：telnet ip地址 端口号</p>
+</li>
+</ul>
+</li>
+</ol>
 ]]></content>
   </entry>
   <entry>
