@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="JobControl设计原理分析​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MR作业的迭代：JobControl设计及用法">
+<meta property="og:url" content="https://k12coding.github.io/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="JobControl设计原理分析​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://k12coding.github.io/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo/k12blog/source_posts/MR作业的迭代：JobControl设计及用法/JobControl.jpg">
+<meta property="article:published_time" content="2021-12-21T02:44:25.000Z">
+<meta property="article:modified_time" content="2021-12-21T06:12:41.403Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://k12coding.github.io/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo/k12blog/source_posts/MR作业的迭代：JobControl设计及用法/JobControl.jpg">
+
+
+<link rel="canonical" href="https://k12coding.github.io/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://k12coding.github.io/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/","path":"2021/12/21/MR作业的迭代：JobControl设计及用法/","title":"MR作业的迭代：JobControl设计及用法"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>MR作业的迭代：JobControl设计及用法 | k12的博客</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">k12的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">k12的笔记</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#JobControl%E8%AE%BE%E8%AE%A1%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90"><span class="nav-text">JobControl设计原理分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JobControl%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-text">JobControl代码实现</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">k12</p>
+  <div class="site-description" itemprop="description">2</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MR作业的迭代：JobControl设计及用法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2021-12-21 10:44:25 / 修改时间：14:12:41" itemprop="dateCreated datePublished" datetime="2021-12-21T10:44:25+08:00">2021-12-21</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
+<p><img src="/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo\k12blog\source_posts\MR作业的迭代：JobControl设计及用法\JobControl.jpg" alt="img"></p>
+<p>​    JobControl 封装了一系列 MapReduce 作业及其对应的依赖关系。 它将处于不同状态的作业放入不同的哈希表中，并按照图所示的状态转移作业，直到所有作业运行完成。在实现的时候，JobControl 包含一个线程用于周期性地监控和更新各个作业的运行状态，调度依赖作业运行完成的作业，提交处于 READY 状态的作业等。同时，它还提供了一些API 用于挂起、恢复和暂停该线程。</p>
+<h2 id="JobControl代码实现"><a href="#JobControl代码实现" class="headerlink" title="JobControl代码实现"></a>JobControl代码实现</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br></pre></td><td class="code"><pre><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.HashSet;</span><br><span class="line"> </span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;</span><br><span class="line">import org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"> </span><br><span class="line">import mapreduce.SegmentUtil;</span><br><span class="line"> </span><br><span class="line">public class JobControlDemo &#123;</span><br><span class="line">	public static int main(String[] args) throws IOException, ClassNotFoundException, InterruptedException &#123;</span><br><span class="line">		Configuration conf = new Configuration();</span><br><span class="line">		String[] otherargs = new GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">		if (otherargs.length != 3) &#123;</span><br><span class="line">			System.err.println(&quot;Usage JobControlDemo &lt;InputPath1&gt; &lt;InputPath1&gt; &lt;OutPath&gt;&quot;);</span><br><span class="line">			System.exit(2);</span><br><span class="line">		&#125;</span><br><span class="line"> </span><br><span class="line">		// 创建基础作业</span><br><span class="line">		Job job1 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;1&quot;);</span><br><span class="line">		Job job2 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;2&quot;);</span><br><span class="line">		Job job3 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;3&quot;);</span><br><span class="line"> </span><br><span class="line">		// Job1作业参数配置</span><br><span class="line">		job1.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job1.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job1.setMapOutputValueClass(Text.class);</span><br><span class="line">		job1.setOutputKeyClass(Text.class);</span><br><span class="line">		job1.setOutputValueClass(Text.class);</span><br><span class="line">		job1.setMapperClass(MyMapper1.class);</span><br><span class="line">		job1.setReducerClass(MyReducer1.class);</span><br><span class="line">		job1.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job1.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job1, new Path(otherargs[0]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job1, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job2作业参数配置</span><br><span class="line">		job2.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job2.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job2.setMapOutputValueClass(Text.class);</span><br><span class="line">		job2.setOutputKeyClass(Text.class);</span><br><span class="line">		job2.setOutputValueClass(Text.class);</span><br><span class="line">		job2.setMapperClass(MyMapper2.class);</span><br><span class="line">		job2.setReducerClass(MyReducer2.class);</span><br><span class="line">		job2.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job2.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job2, new Path(otherargs[1]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job2, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job3作业参数配置</span><br><span class="line">		job3.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job3.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job3.setMapOutputValueClass(Text.class);</span><br><span class="line">		job3.setOutputKeyClass(Text.class);</span><br><span class="line">		job3.setOutputValueClass(Text.class);</span><br><span class="line">		job3.setMapperClass(MyMapper3.class);</span><br><span class="line">		job3.setReducerClass(MyReducer3.class);</span><br><span class="line">		job3.setInputFormatClass(KeyValueTextInputFormat.class);</span><br><span class="line">		job3.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line">		FileOutputFormat.setOutputPath(job3, new Path(otherargs[2]+File.separator+&quot;result&quot;));</span><br><span class="line"> </span><br><span class="line">		// 创建受控作业</span><br><span class="line">		ControlledJob cjob1 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob2 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob3 = new ControlledJob(conf);</span><br><span class="line"> </span><br><span class="line">		// 将普通作业包装成受控作业</span><br><span class="line">		cjob1.setJob(job1);</span><br><span class="line">		cjob2.setJob(job2);</span><br><span class="line">		cjob3.setJob(job3);</span><br><span class="line"> </span><br><span class="line">		// 设置依赖关系</span><br><span class="line">		//cjob2.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob2);</span><br><span class="line"> </span><br><span class="line">		// 新建作业控制器</span><br><span class="line">		JobControl jc = new JobControl(&quot;My control job&quot;);</span><br><span class="line"> </span><br><span class="line">		// 将受控作业添加到控制器中</span><br><span class="line">		jc.addJob(cjob1);</span><br><span class="line">		jc.addJob(cjob2);</span><br><span class="line">		jc.addJob(cjob3);</span><br><span class="line"> </span><br><span class="line">		/**</span><br><span class="line">		 * hadoop的JobControl类实现了线程Runnable接口。我们需要实例化一个线程来让它启动。直接调用JobControl的run()方法，线程将无法结束。</span><br><span class="line">		 */</span><br><span class="line">		//jc.run();</span><br><span class="line">		</span><br><span class="line">        Thread jcThread = new Thread(jc);  </span><br><span class="line">        jcThread.start();  </span><br><span class="line">        while(true)&#123;  </span><br><span class="line">            if(jc.allFinished())&#123;  </span><br><span class="line">                System.out.println(jc.getSuccessfulJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 0;  </span><br><span class="line">            &#125;  </span><br><span class="line">            if(jc.getFailedJobList().size() &gt; 0)&#123;  </span><br><span class="line">                System.out.println(jc.getFailedJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 1;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125; </span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第一个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper1 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl1=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl1.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl1[0].trim()), new Text(spl1[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer1 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k2, Iterable&lt;Text&gt; v2s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v2 : v2s) &#123;</span><br><span class="line">				context.write(k2, v2);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第二个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper2 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl2=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl2.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl2[0].trim()), new Text(spl2[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer2 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k3, Iterable&lt;Text&gt; v3s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v3 : v3s) &#123;</span><br><span class="line">				context.write(k3, v3);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第三个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper3 extends Mapper&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(Text key, Text value, Mapper&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			context.write(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer3 extends Reducer&lt;Text,Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k4, Iterable&lt;Text&gt; v4s,Reducer&lt;Text, Text, Text, Text&gt;.Context context) </span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			HashSet&lt;String&gt; hashSet=new HashSet&lt;String&gt;();</span><br><span class="line">			for (Text v4 : v4s) &#123;</span><br><span class="line">				hashSet.add(v4.toString().trim());</span><br><span class="line">			&#125;</span><br><span class="line">			if(hashSet.size()&gt;=2)&#123;</span><br><span class="line">				context.write(k4, new Text(&quot;OK&quot;));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试输入数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath1.txt</span><br><span class="line">hadoop  a</span><br><span class="line">spark   a</span><br><span class="line">hive    a</span><br><span class="line">hbase   a</span><br><span class="line">tachyon a</span><br><span class="line">storm   a</span><br><span class="line">redis   a</span><br><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath2.txt</span><br><span class="line">hadoop  b</span><br><span class="line">spark   b</span><br><span class="line">kafka   b</span><br><span class="line">tachyon b</span><br><span class="line">oozie   b</span><br><span class="line">flume   b</span><br><span class="line">sqoop   b</span><br><span class="line">solr    b</span><br></pre></td></tr></table></figure>
+
+<p>测试输出数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpathmerge2.txt/result/*</span><br><span class="line">hadoop  OK</span><br><span class="line">spark   OK</span><br><span class="line">tachyon OK</span><br></pre></td></tr></table></figure>
+
+<p>运行输出信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">[sshexec] cmd : bash -c &#x27;source  /home/jiuqian/.bashrc; /home/hduser/hadoop/bin/hadoop jar  /home/jiuqian/blb/JobControlDemo.jar -D mapreduce.map.java.opts=-Xmx2048m -D mapreduce.input.fileinputformat.split.minsize=1 -Dmapreduce.input.fileinputformat.split.maxsize=512000000 -D mapred.linerecordreader.maxlength=32768 /user/jiuqian/libin/input/inputpath1.txt /user/jiuqian/libin/input/inputpath2.txt /user/jiuqian/libin/input/inputpathmerge2.txt&#x27;</span><br><span class="line">16/02/27 12:37:45 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/192.168.1.2:8032</span><br><span class="line">16/02/27 12:37:46 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:46 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:46 INFO Configuration.deprecation: mapred.linerecordreader.maxlength is deprecated. Instead, use mapreduce.input.linerecordreader.line.maxlength</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17037/</span><br><span class="line">16/02/27 12:37:47 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:37:47 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17038/</span><br><span class="line">16/02/27 12:38:13 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:38:13 INFO input.FileInputFormat: Total input paths to process : 2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17039/</span><br><span class="line">[job name:	JobControlDemo1</span><br><span class="line">job id:	My control job0</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17037</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo2</span><br><span class="line">job id:	My control job1</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17038</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo3</span><br><span class="line">job id:	My control job2</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17039</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has 2 dependeng jobs:</span><br><span class="line">	 depending job 0:	JobControlDemo1</span><br><span class="line">	 depending job 1:	JobControlDemo2</span><br><span class="line">]</span><br><span class="line">[INFO] Executed tasks</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br><span class="line">[INFO] BUILD SUCCESS</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/12/21/MR-Chain/" rel="prev" title="MR Chain（ChainMapper与ChainReducer）">
+                  <i class="fa fa-chevron-left"></i> MR Chain（ChainMapper与ChainReducer）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/" rel="next" title="HIVE的部署">
+                  HIVE的部署 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
