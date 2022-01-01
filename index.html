@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">26</span>
+          <span class="site-state-item-count">27</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,89 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/01/mapjoin%E4%B8%8Ereducejoin/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/01/mapjoin%E4%B8%8Ereducejoin/" class="post-title-link" itemprop="url">mapjoin与reducejoin</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-01 01:51:17 / 修改时间：17:05:33" itemprop="dateCreated datePublished" datetime="2022-01-01T01:51:17+08:00">2022-01-01</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="数据准备"><a href="#数据准备" class="headerlink" title="数据准备"></a>数据准备</h2><p>data/input/join/emp.txt</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">7369    SMITH  CLERK  7902   1980-12-17 800.00    20</span><br><span class="line">7499   ALLEN  SALESMAN   7698   1981-2-20  1600.00    300.00 30</span><br><span class="line">7521   WARD   SALESMAN   7698   1981-2-22  1250.00    500.00 30</span><br><span class="line">7566   JONES  MANAGER    7839   1981-4-2   2975.00       20</span><br><span class="line">7654   MARTIN SALESMAN   7698   1981-9-28  1250.00    1400.00    30</span><br><span class="line">7698   BLAKE  MANAGER    7839   1981-5-1   2850.00       30</span><br><span class="line">7782   CLARK  MANAGER    7839   1981-6-9   2450.00       10</span><br><span class="line">7788   SCOTT  ANALYST    7566   1987-4-19  3000.00       20</span><br><span class="line">7839   KING   PRESIDENT     1981-11-17 5000.00       10</span><br><span class="line">7844   TURNER SALESMAN   7698   1981-9-8   1500.00    0.00   30</span><br><span class="line">7876   ADAMS  CLERK  7788   1987-5-23  1100.00       20</span><br><span class="line">7900   JAMES  CLERK  7698   1981-12-3  950.00    30</span><br><span class="line">7902   FORD   ANALYST    7566   1981-12-3  3000.00       20</span><br><span class="line">7934   MILLER CLERK  7782   1982-1-23  1300.00       10</span><br></pre></td></tr></table></figure>
+
+<p>data/input/join/dept.txt</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">10	ACCOUNTING	NEW YORK</span><br><span class="line">20	RESEARCH	DALLAS</span><br><span class="line">30	SALES	CHICAGO</span><br><span class="line">40	OPERATIONS	BOSTON</span><br></pre></td></tr></table></figure>
+
+<h2 id="自定义序列化类"><a href="#自定义序列化类" class="headerlink" title="自定义序列化类"></a>自定义序列化类</h2><p>info.java</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line">import org.apache.hadoop.io.Writable;</span><br><span class="line">import java.io.DataInput;</span><br><span class="line">import java.io.DataOutput;</span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * join结果最终需要的字段</span><br><span class="line"> */</span><br><span class="line">public class Info implements Writable &#123;</span><br><span class="line"></span><br><span class="line">    private int empno;</span><br><span class="line">    private String ename;</span><br><span class="line">    private int deptno;</span><br><span class="line">    private String dname;</span><br><span class="line">    private int flag;  // 标志位：用来区分数据来自于哪个表.mapjoin不需要flag，需要注释掉flag</span><br><span class="line"></span><br><span class="line">    public void write(DataOutput out) throws IOException &#123;</span><br><span class="line">        out.writeInt(empno);</span><br><span class="line">        out.writeUTF(ename);</span><br><span class="line">        out.writeInt(deptno);</span><br><span class="line">        out.writeUTF(dname);</span><br><span class="line">        out.writeInt(flag);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void readFields(DataInput in) throws IOException &#123;</span><br><span class="line">        this.empno = in.readInt();</span><br><span class="line">        this.ename = in.readUTF();</span><br><span class="line">        this.deptno = in.readInt();</span><br><span class="line">        this.dname = in.readUTF();</span><br><span class="line">        this.flag = in.readInt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname, int flag) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return empno + &quot;\t&quot; + ename + &quot;\t&quot; + deptno + &quot;\t&quot; + dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getEmpno() &#123;</span><br><span class="line">        return empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEmpno(int empno) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getEname() &#123;</span><br><span class="line">        return ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEname(String ename) &#123;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getDeptno() &#123;</span><br><span class="line">        return deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDeptno(int deptno) &#123;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getDname() &#123;</span><br><span class="line">        return dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDname(String dname) &#123;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getFlag() &#123;</span><br><span class="line">        return flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setFlag(int flag) &#123;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Map-Join"><a href="#Map-Join" class="headerlink" title="Map Join"></a>Map Join</h2><p>MapJoinDriver.java</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line">import org.apache.commons.lang3.StringUtils;</span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import java.io.BufferedReader;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.InputStreamReader;</span><br><span class="line">import java.net.URI;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public class MapJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String BigTable = &quot;data/input/join/emp.txt&quot;;</span><br><span class="line">        String SmallTable = &quot;data/input/join/dept.txt&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(MapJoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line"></span><br><span class="line">		//MapJoin需要把ReduceTasks数量设置为0</span><br><span class="line">        job.setNumReduceTasks(0);</span><br><span class="line"></span><br><span class="line">        // reduce的个数决定了最终文件输出的个数，如果没有reduce，那么就由map个数决定</span><br><span class="line">        job.setMapOutputKeyClass(Info.class);</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);</span><br><span class="line"></span><br><span class="line">        // 小表加入到缓存中</span><br><span class="line">        job.addCacheFile(new URI(SmallTable));</span><br><span class="line"></span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(BigTable));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        Map&lt;String,String&gt; cache = new HashMap&lt;String, String&gt;();</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            URI[] cacheFiles = context.getCacheFiles();</span><br><span class="line">            String path = cacheFiles[0].getPath();</span><br><span class="line"></span><br><span class="line">            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));</span><br><span class="line"></span><br><span class="line">            // 10	ACCOUNTING	NEW YORK</span><br><span class="line">            String line;</span><br><span class="line">            while(StringUtils.isNotEmpty(line = reader.readLine())) &#123;</span><br><span class="line">                String[] splits = line.split(&quot;\t&quot;);</span><br><span class="line">                cache.put(splits[0].trim(), splits[1].trim());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            IOUtils.closeStream(reader);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">            String ename = splits[1].trim();</span><br><span class="line">            int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">            Info info = new Info();</span><br><span class="line">            info.setEmpno(empno);</span><br><span class="line">            info.setEname(ename);</span><br><span class="line">            info.setDeptno(deptno);</span><br><span class="line"></span><br><span class="line">            // 大的数据每读一条，就和内存中的小的数据做比对</span><br><span class="line">            info.setDname(cache.get(deptno+&quot;&quot;));</span><br><span class="line"></span><br><span class="line">            context.write(info, NullWritable.get());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Reduce-Join"><a href="#Reduce-Join" class="headerlink" title="Reduce Join"></a>Reduce Join</h2><p>ReduceJoinDriver.java</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileSplit;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class ReduceJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String input = &quot;data/input/join/&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(JoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line">        job.setMapOutputKeyClass(IntWritable.class);</span><br><span class="line">        job.setMapOutputValueClass(Info.class);</span><br><span class="line">        job.setOutputKeyClass(Info.class);</span><br><span class="line">        job.setOutputValueClass(NullWritable.class);</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 我们join的条件是deptno，所以key的类型是IntWritable</span><br><span class="line">     *</span><br><span class="line">     * 我们是两个文件一起进来的</span><br><span class="line">     * 要区分出数据到底是emp的还是dept的</span><br><span class="line">     *</span><br><span class="line">     *在序列化类中没有的字段也要set</span><br><span class="line">     */</span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, IntWritable, Info&gt; &#123;</span><br><span class="line"></span><br><span class="line">        String name;//文件名称区别数据来源的</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            FileSplit fileSplit = (FileSplit) context.getInputSplit();</span><br><span class="line">            name = fileSplit.getPath().getName();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            if(name.contains(&quot;emp&quot;)) &#123; // 来自于emp</span><br><span class="line">                int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String ename = splits[1].trim();</span><br><span class="line">                int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(empno);</span><br><span class="line">                info.setEname(ename);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(&quot;&quot;);</span><br><span class="line">                info.setFlag(1); // 标志位</span><br><span class="line"></span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125; else &#123;  // 来自于dept</span><br><span class="line">                int deptno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String dname = splits[1].trim();</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(0);</span><br><span class="line">                info.setEname(&quot;&quot;);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(dname);</span><br><span class="line">                info.setFlag(2); // 标志位</span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyReducer extends Reducer&lt;IntWritable, Info,Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        // key = deptno</span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(IntWritable key, Iterable&lt;Info&gt; values, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">            String dname = &quot;&quot;;</span><br><span class="line">            </span><br><span class="line">            //提供一种思路：更规范的写法应该是新增一个depts，拼接时遍历两个List</span><br><span class="line">            //但这里一个deptno是dept表的唯一主键，只对应一个dname，所以也没有问题</span><br><span class="line">            List&lt;Info&gt; emps = new ArrayList&lt;Info&gt;();</span><br><span class="line"></span><br><span class="line">            for(Info info : values) &#123;</span><br><span class="line">                if(info.getFlag() == 1) &#123;  // emp</span><br><span class="line">                    Info tmp = new Info();</span><br><span class="line">                    tmp.setEmpno(info.getEmpno());</span><br><span class="line">                    tmp.setEname(info.getEname());</span><br><span class="line">                    tmp.setDeptno(info.getDeptno());</span><br><span class="line">                    emps.add(tmp);</span><br><span class="line">                &#125; else if(info.getFlag() == 2) &#123;  // dept</span><br><span class="line">                    dname = info.getDname();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            for(Info bean : emps) &#123;</span><br><span class="line">                bean.setDname(dname);</span><br><span class="line">                context.write(bean, NullWritable.get());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1011,85 +1094,6 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/" class="post-title-link" itemprop="url">MapReduce Input Split与map task数量</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2021-12-14 20:09:56" itemprop="dateCreated datePublished" datetime="2021-12-14T20:09:56+08:00">2021-12-14</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-15 05:19:22" itemprop="dateModified" datetime="2021-12-15T05:19:22+08:00">2021-12-15</time>
-      </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Hadoop中的block-Size和split-Size是什么关系"><a href="#Hadoop中的block-Size和split-Size是什么关系" class="headerlink" title="Hadoop中的block Size和split Size是什么关系"></a>Hadoop中的block Size和split Size是什么关系</h2><p><strong>问题</strong></p>
-<p>hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
     <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
@@ -1103,7 +1107,7 @@
 
 <div class="copyright">
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

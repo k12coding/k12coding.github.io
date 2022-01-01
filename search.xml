@@ -93,6 +93,66 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HDFS文件读写流程与副本放置策略</title>
+    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
+<ol>
+<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
+</li>
+<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
+<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
+<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
+</li>
+<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
+<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
+</li>
+<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
+</li>
+<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
+</li>
+<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
+</li>
+<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
+</li>
+</ol>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
+<ol>
+<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
+</li>
+<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
+</li>
+<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
+</li>
+<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
+</li>
+<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
+<ul>
+<li>假如ok就关闭与DN通信。</li>
+<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
+</ul>
+<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
+<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
+<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
+</li>
+<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
+</li>
+</ol>
+<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
+<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
+<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
+<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
+</blockquote>
+<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
+<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
+<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
+<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
+<p>假如还有更多副本：随机放。</p>
+<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
+<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
+<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
+]]></content>
+  </entry>
+  <entry>
     <title>HDFS中的数据块(Block)</title>
     <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
     <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
@@ -213,66 +273,6 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS文件读写流程与副本放置策略</title>
-    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
-<ol>
-<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
-</li>
-<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
-<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
-<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
-</li>
-<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
-<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
-</li>
-<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
-</li>
-<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
-</li>
-<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
-</li>
-<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
-</li>
-</ol>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
-<ol>
-<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
-</li>
-<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
-</li>
-<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
-</li>
-<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
-</li>
-<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
-<ul>
-<li>假如ok就关闭与DN通信。</li>
-<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
-</ul>
-<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
-<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
-<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
-</li>
-<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
-</li>
-</ol>
-<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
-<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
-<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
-<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
-</blockquote>
-<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
-<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
-<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
-<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
-<p>假如还有更多副本：随机放。</p>
-<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
-<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
-<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
 ]]></content>
   </entry>
   <entry>
@@ -981,6 +981,30 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>mapjoin与reducejoin</title>
+    <url>/2022/01/01/mapjoin%E4%B8%8Ereducejoin/</url>
+    <content><![CDATA[<h2 id="数据准备"><a href="#数据准备" class="headerlink" title="数据准备"></a>数据准备</h2><p>data/input/join/emp.txt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">7369    SMITH  CLERK  7902   1980-12-17 800.00    20</span><br><span class="line">7499   ALLEN  SALESMAN   7698   1981-2-20  1600.00    300.00 30</span><br><span class="line">7521   WARD   SALESMAN   7698   1981-2-22  1250.00    500.00 30</span><br><span class="line">7566   JONES  MANAGER    7839   1981-4-2   2975.00       20</span><br><span class="line">7654   MARTIN SALESMAN   7698   1981-9-28  1250.00    1400.00    30</span><br><span class="line">7698   BLAKE  MANAGER    7839   1981-5-1   2850.00       30</span><br><span class="line">7782   CLARK  MANAGER    7839   1981-6-9   2450.00       10</span><br><span class="line">7788   SCOTT  ANALYST    7566   1987-4-19  3000.00       20</span><br><span class="line">7839   KING   PRESIDENT     1981-11-17 5000.00       10</span><br><span class="line">7844   TURNER SALESMAN   7698   1981-9-8   1500.00    0.00   30</span><br><span class="line">7876   ADAMS  CLERK  7788   1987-5-23  1100.00       20</span><br><span class="line">7900   JAMES  CLERK  7698   1981-12-3  950.00    30</span><br><span class="line">7902   FORD   ANALYST    7566   1981-12-3  3000.00       20</span><br><span class="line">7934   MILLER CLERK  7782   1982-1-23  1300.00       10</span><br></pre></td></tr></table></figure>
+
+<p>data/input/join/dept.txt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">10	ACCOUNTING	NEW YORK</span><br><span class="line">20	RESEARCH	DALLAS</span><br><span class="line">30	SALES	CHICAGO</span><br><span class="line">40	OPERATIONS	BOSTON</span><br></pre></td></tr></table></figure>
+
+<h2 id="自定义序列化类"><a href="#自定义序列化类" class="headerlink" title="自定义序列化类"></a>自定义序列化类</h2><p>info.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.io.Writable;</span><br><span class="line">import java.io.DataInput;</span><br><span class="line">import java.io.DataOutput;</span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * join结果最终需要的字段</span><br><span class="line"> */</span><br><span class="line">public class Info implements Writable &#123;</span><br><span class="line"></span><br><span class="line">    private int empno;</span><br><span class="line">    private String ename;</span><br><span class="line">    private int deptno;</span><br><span class="line">    private String dname;</span><br><span class="line">    private int flag;  // 标志位：用来区分数据来自于哪个表.mapjoin不需要flag，需要注释掉flag</span><br><span class="line"></span><br><span class="line">    public void write(DataOutput out) throws IOException &#123;</span><br><span class="line">        out.writeInt(empno);</span><br><span class="line">        out.writeUTF(ename);</span><br><span class="line">        out.writeInt(deptno);</span><br><span class="line">        out.writeUTF(dname);</span><br><span class="line">        out.writeInt(flag);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void readFields(DataInput in) throws IOException &#123;</span><br><span class="line">        this.empno = in.readInt();</span><br><span class="line">        this.ename = in.readUTF();</span><br><span class="line">        this.deptno = in.readInt();</span><br><span class="line">        this.dname = in.readUTF();</span><br><span class="line">        this.flag = in.readInt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname, int flag) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return empno + &quot;\t&quot; + ename + &quot;\t&quot; + deptno + &quot;\t&quot; + dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getEmpno() &#123;</span><br><span class="line">        return empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEmpno(int empno) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getEname() &#123;</span><br><span class="line">        return ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEname(String ename) &#123;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getDeptno() &#123;</span><br><span class="line">        return deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDeptno(int deptno) &#123;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getDname() &#123;</span><br><span class="line">        return dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDname(String dname) &#123;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getFlag() &#123;</span><br><span class="line">        return flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setFlag(int flag) &#123;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Map-Join"><a href="#Map-Join" class="headerlink" title="Map Join"></a>Map Join</h2><p>MapJoinDriver.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.lang3.StringUtils;</span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import java.io.BufferedReader;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.InputStreamReader;</span><br><span class="line">import java.net.URI;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public class MapJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String BigTable = &quot;data/input/join/emp.txt&quot;;</span><br><span class="line">        String SmallTable = &quot;data/input/join/dept.txt&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(MapJoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line"></span><br><span class="line">		//MapJoin需要把ReduceTasks数量设置为0</span><br><span class="line">        job.setNumReduceTasks(0);</span><br><span class="line"></span><br><span class="line">        // reduce的个数决定了最终文件输出的个数，如果没有reduce，那么就由map个数决定</span><br><span class="line">        job.setMapOutputKeyClass(Info.class);</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);</span><br><span class="line"></span><br><span class="line">        // 小表加入到缓存中</span><br><span class="line">        job.addCacheFile(new URI(SmallTable));</span><br><span class="line"></span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(BigTable));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        Map&lt;String,String&gt; cache = new HashMap&lt;String, String&gt;();</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            URI[] cacheFiles = context.getCacheFiles();</span><br><span class="line">            String path = cacheFiles[0].getPath();</span><br><span class="line"></span><br><span class="line">            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));</span><br><span class="line"></span><br><span class="line">            // 10	ACCOUNTING	NEW YORK</span><br><span class="line">            String line;</span><br><span class="line">            while(StringUtils.isNotEmpty(line = reader.readLine())) &#123;</span><br><span class="line">                String[] splits = line.split(&quot;\t&quot;);</span><br><span class="line">                cache.put(splits[0].trim(), splits[1].trim());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            IOUtils.closeStream(reader);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">            String ename = splits[1].trim();</span><br><span class="line">            int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">            Info info = new Info();</span><br><span class="line">            info.setEmpno(empno);</span><br><span class="line">            info.setEname(ename);</span><br><span class="line">            info.setDeptno(deptno);</span><br><span class="line"></span><br><span class="line">            // 大的数据每读一条，就和内存中的小的数据做比对</span><br><span class="line">            info.setDname(cache.get(deptno+&quot;&quot;));</span><br><span class="line"></span><br><span class="line">            context.write(info, NullWritable.get());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Reduce-Join"><a href="#Reduce-Join" class="headerlink" title="Reduce Join"></a>Reduce Join</h2><p>ReduceJoinDriver.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileSplit;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class ReduceJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String input = &quot;data/input/join/&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(JoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line">        job.setMapOutputKeyClass(IntWritable.class);</span><br><span class="line">        job.setMapOutputValueClass(Info.class);</span><br><span class="line">        job.setOutputKeyClass(Info.class);</span><br><span class="line">        job.setOutputValueClass(NullWritable.class);</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 我们join的条件是deptno，所以key的类型是IntWritable</span><br><span class="line">     *</span><br><span class="line">     * 我们是两个文件一起进来的</span><br><span class="line">     * 要区分出数据到底是emp的还是dept的</span><br><span class="line">     *</span><br><span class="line">     *在序列化类中没有的字段也要set</span><br><span class="line">     */</span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, IntWritable, Info&gt; &#123;</span><br><span class="line"></span><br><span class="line">        String name;//文件名称区别数据来源的</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            FileSplit fileSplit = (FileSplit) context.getInputSplit();</span><br><span class="line">            name = fileSplit.getPath().getName();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            if(name.contains(&quot;emp&quot;)) &#123; // 来自于emp</span><br><span class="line">                int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String ename = splits[1].trim();</span><br><span class="line">                int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(empno);</span><br><span class="line">                info.setEname(ename);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(&quot;&quot;);</span><br><span class="line">                info.setFlag(1); // 标志位</span><br><span class="line"></span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125; else &#123;  // 来自于dept</span><br><span class="line">                int deptno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String dname = splits[1].trim();</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(0);</span><br><span class="line">                info.setEname(&quot;&quot;);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(dname);</span><br><span class="line">                info.setFlag(2); // 标志位</span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyReducer extends Reducer&lt;IntWritable, Info,Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        // key = deptno</span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(IntWritable key, Iterable&lt;Info&gt; values, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">            String dname = &quot;&quot;;</span><br><span class="line">            </span><br><span class="line">            //提供一种思路：更规范的写法应该是新增一个depts，拼接时遍历两个List</span><br><span class="line">            //但这里一个deptno是dept表的唯一主键，只对应一个dname，所以也没有问题</span><br><span class="line">            List&lt;Info&gt; emps = new ArrayList&lt;Info&gt;();</span><br><span class="line"></span><br><span class="line">            for(Info info : values) &#123;</span><br><span class="line">                if(info.getFlag() == 1) &#123;  // emp</span><br><span class="line">                    Info tmp = new Info();</span><br><span class="line">                    tmp.setEmpno(info.getEmpno());</span><br><span class="line">                    tmp.setEname(info.getEname());</span><br><span class="line">                    tmp.setDeptno(info.getDeptno());</span><br><span class="line">                    emps.add(tmp);</span><br><span class="line">                &#125; else if(info.getFlag() == 2) &#123;  // dept</span><br><span class="line">                    dname = info.getDname();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            for(Info bean : emps) &#123;</span><br><span class="line">                bean.setDname(dname);</span><br><span class="line">                context.write(bean, NullWritable.get());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
