@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="WHERE 与 HAVINGWHERE与HAVING的根本区别在于：  WHERE子句在GROUP BY分组和聚合函数之前对数据行进行过滤； HAVING子句对GROUP BY分组和聚合函数之后的数据行进行过滤。  因此，WHERE子句中不能使用聚合函数。例如，以下语句将会返回错误： 12345-- 查找人数大于 5 的部门select dept_id, count(*)from employee">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SQL:WHERE、ON、HAVING的区别">
+<meta property="og:url" content="https://k12coding.github.io/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="WHERE 与 HAVINGWHERE与HAVING的根本区别在于：  WHERE子句在GROUP BY分组和聚合函数之前对数据行进行过滤； HAVING子句对GROUP BY分组和聚合函数之后的数据行进行过滤。  因此，WHERE子句中不能使用聚合函数。例如，以下语句将会返回错误： 12345-- 查找人数大于 5 的部门select dept_id, count(*)from employee">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-01-04T18:19:13.000Z">
+<meta property="article:modified_time" content="2022-01-04T18:42:42.770Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://k12coding.github.io/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://k12coding.github.io/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/","path":"2022/01/05/SQL-WHERE、ON、HAVING的区别/","title":"SQL:WHERE、ON、HAVING的区别"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>SQL:WHERE、ON、HAVING的区别 | k12的博客</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">k12的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">k12的笔记</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#WHERE-%E4%B8%8E-HAVING"><span class="nav-text">WHERE 与 HAVING</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WHERE-%E4%B8%8E-ON"><span class="nav-text">WHERE 与 ON</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A5%E5%85%85"><span class="nav-text">补充</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">k12</p>
+  <div class="site-description" itemprop="description">2</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SQL:WHERE、ON、HAVING的区别
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-05 02:19:13 / 修改时间：02:42:42" itemprop="dateCreated datePublished" datetime="2022-01-05T02:19:13+08:00">2022-01-05</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h2 id="WHERE-与-HAVING"><a href="#WHERE-与-HAVING" class="headerlink" title="WHERE 与 HAVING"></a>WHERE 与 HAVING</h2><p><code>WHERE</code>与<code>HAVING</code>的根本区别在于：</p>
+<ul>
+<li><code>WHERE</code>子句在<code>GROUP BY</code>分组和聚合函数<strong>之前</strong>对数据行进行过滤；</li>
+<li><code>HAVING</code>子句对<code>GROUP BY</code>分组和聚合函数<strong>之后</strong>的数据行进行过滤。</li>
+</ul>
+<p>因此，<code>WHERE</code>子句中不能使用聚合函数。例如，以下语句将会返回错误：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">where <span class="title">count</span><span class="params">(*)</span> &gt; 5</span></span><br><span class="line"><span class="function">group by dept_id</span>;</span><br></pre></td></tr></table></figure>
+
+<p>由于在执行<code>WHERE</code>子句时，还没有计算聚合函数 count(*)，所以无法使用。正确的方法是使用HAVING对聚合之后的结果进行过滤：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 5</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">4</span>|       <span class="number">9</span>|</span><br><span class="line">      <span class="number">5</span>|       <span class="number">8</span>|</span><br></pre></td></tr></table></figure>
+
+<p>另一方面，<code>HAVING</code>子句中不能使用除了分组字段和聚合函数之外的其他字段。例如，以下语句将会返回错误：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-- 统计每个部门月薪大于等于 <span class="number">30000</span> 的员工人数</span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having salary &gt;= <span class="number">30000</span>;</span><br></pre></td></tr></table></figure>
+
+<p>因为经过<code>GROUP BY</code>分组和聚合函数之后，不再存在 salary 字段，<code>HAVING</code>子句中只能使用分组字段或者聚合函数。</p>
+<blockquote>
+<p>SQLite 虽然允许<code>HAVING</code>子句中出现其他字段，但是得到的结果不正确。</p>
+</blockquote>
+<p>从性能的角度来说，<code>HAVING</code>子句中如果使用了分组字段作为过滤条件，应该替换成<code>WHERE</code>子句；因为<code>WHERE</code>可以在执行分组操作和计算聚合函数之前过滤掉不需要的数据，性能会更好。下面示例中的语句 1 应该替换成语句 2：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having dept_id = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where dept_id = <span class="number">1</span></span><br><span class="line">group by dept_id;</span><br></pre></td></tr></table></figure>
+
+<p>当然，<code>WHERE</code>和<code>HAVING</code>可以组合在一起使用。例如：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where salary &gt; <span class="number">10000</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 1</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">1</span>|       <span class="number">3</span>|</span><br></pre></td></tr></table></figure>
+
+<p>该语句返回了月薪大于 10000 的员工人数大于 1 的部门；<code>WHERE</code>用于过滤月薪大于 10000 的员工；<code>HAVING</code>用于过滤员工数量大于 1 的部门。</p>
+<h2 id="WHERE-与-ON"><a href="#WHERE-与-ON" class="headerlink" title="WHERE 与 ON"></a>WHERE 与 ON</h2><p>当查询涉及多个表的关联时，我们既可以使用<code>WHERE</code>子句也可以使用<code>ON</code>子句指定连接条件和过滤条件。这两者之间的主要区别在于：</p>
+<ul>
+<li>对于内连接（inner join）查询，<code>WHERE</code>和<code>ON</code>中的过滤条件等效；</li>
+<li>对于外连接（outer join）查询，<code>ON</code>中的过滤条件在连接操作之前执行，<code>WHERE</code>中的过滤条件（逻辑上）在连接操作之后执行。</li>
+</ul>
+<p>对于内连接查询而言，以下三个语句的结果相同：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.salary </span><br><span class="line">from employee e, department d</span><br><span class="line">where e.dept_id = d.dept_id</span><br><span class="line">and e.emp_id = <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id and e.emp_id = <span class="number">10</span>)</span></span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">3</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id)</span></span></span><br><span class="line"><span class="function">where e.emp_id </span>= <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br></pre></td></tr></table></figure>
+
+<p>语句 1 在<code>WHERE</code>中指定连接条件和过滤条件；语句 2 在<code>ON</code>中指定连接条件和过滤条件；语句 3 在<code>ON</code>中指定连接条件，在<code>WHERE</code>中指定其他过滤条件。上面语句不但结果相同，数据库的执行计划也相同。以 MySQL 为例，以上语句的执行计划如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">id|select_type|table|partitions|type |possible_keys       |key    |key_len|ref  |rows|filtered|Extra|</span><br><span class="line">--|-----------|-----|----------|-----|--------------------|-------|-------|-----|----|--------|-----|</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |e    |          |<span class="keyword">const</span>|PRIMARY,idx_emp_dept|PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |d    |          |<span class="keyword">const</span>|PRIMARY             |PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br></pre></td></tr></table></figure>
+
+<p>尽管如此，仍然建议将两个表的连接条件放在<code>ON</code>子句中，将其他过滤条件放在<code>WHERE</code>子句中；这样语义更加明确，更容易阅读和理解。对于上面的示例而言，推荐使用语句 3 的写法。</p>
+<p>数据库在通过连接两张或多张表来返回记录时，都会生成一张中间的临时表，然后再将这张临时表返回给用户。</p>
+<p>在使用 <strong>left join</strong> 时，<strong>on</strong> 和 <strong>where</strong> 条件的区别如下：</p>
+<p>1、<strong>on</strong> 条件是在生成临时表时使用的条件，它不管 <strong>on</strong> 中的条件是否为真，都会返回左边表中的记录。</p>
+<p>2、where 条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有 <strong>left join</strong> 的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。</p>
+<p>假设有两张表：</p>
+<p>表1：tab1</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">id size</span><br><span class="line">1  10</span><br><span class="line">2  20</span><br><span class="line">3  30</span><br></pre></td></tr></table></figure>
+
+<p>表2：tab2</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">size name</span><br><span class="line">10   AAA</span><br><span class="line">20   BBB</span><br><span class="line">20   CCC</span><br></pre></td></tr></table></figure>
+
+<p>两条SQL:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1、select * from tab1 left join tab2 on tab1.size = tab2.size where tab2.name=&#x27;AAA&#x27;</span><br><span class="line">2、select * from tab1 left join tab2 on tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><strong>第一条SQL的过程：</strong></p>
+<p>1、中间表</p>
+<p>on 条件:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tab1.size = tab2.size</span><br><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 20 BBB</span><br><span class="line">2 20 20 CCC</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
+
+<p>2、再对中间表过滤</p>
+<p>where 条件：</p>
+<p>tab2.name=’AAA’</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br></pre></td></tr></table></figure>
+
+<p><strong>第二条SQL的过程：</strong></p>
+<p>1、中间表</p>
+<p>on 条件:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br><span class="line">(条件不为真也会返回左表中的记录) tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 (null) (null)</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
+
+<p>其实以上结果的关键原因就是 <strong>left join,right join,full join</strong> 的特殊性。</p>
+<p>不管 on 上的条件是否为真都会返回 left 或 right 表中的记录，full 则具有 left 和 right 的特性的并集。</p>
+<p>而 inner jion 没这个特殊性，则条件放在 on 中和 where 中，返回的结果集是相同的。</p>
+<h2 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h2><ul>
+<li><p>SQL标准要求HAVING必须仅引用GROUP BY子句中的列或聚合函数中使用的列。 但是，MySQL支持对此行为的扩展，并允许HAVING引用SELECT列表中的列和外部子查询中的列。</p>
+<p>如果HAVING子句引用了不明确的列，则会出现警告。在下面的语句中，col2不明确，因为它同时用作别名和列名:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(col1) <span class="keyword">AS</span> col2 <span class="keyword">FROM</span> t <span class="keyword">GROUP</span> <span class="keyword">BY</span> col2 <span class="keyword">HAVING</span> col2 <span class="operator">=</span> <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+
+<p>优先考虑标准SQL行为，因此如果HAVING使用的列名同时出现在GROUP BY和输出列列表使用的别名中，则会优先选择GROUP BY列中的列名。</p>
+</li>
+<li><p>不要对应该出现在WHERE子句中的项使用HAVING。例如，不要写下面的内容</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">HAVING</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p>改为写这个:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">WHERE</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure></li>
+<li><p>HAVING子句可以引用聚合函数，而WHERE子句不能</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">user</span>, <span class="built_in">MAX</span>(salary) <span class="keyword">FROM</span> users <span class="keyword">GROUP</span> <span class="keyword">BY</span> <span class="keyword">user</span> <span class="keyword">HAVING</span> <span class="built_in">MAX</span>(salary) <span class="operator">&gt;</span> <span class="number">10</span>;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/horses/article/details/105380420">https://blog.csdn.net/horses/article/details/105380420</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/sql-different-on-and-where.html">https://www.runoob.com/w3cnote/sql-different-on-and-where.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/BxScope/p/10859260.html">https://www.cnblogs.com/BxScope/p/10859260.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/01/01/mapjoin%E4%B8%8Ereducejoin/" rel="prev" title="mapjoin与reducejoin">
+                  <i class="fa fa-chevron-left"></i> mapjoin与reducejoin
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
