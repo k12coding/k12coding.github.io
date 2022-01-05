@@ -1,98 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>HDFS API</title>
-    <url>/2021/12/13/HDFS-API/</url>
-    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
-<span id="more"></span>
-
-<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>导入需要的package</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
-
-<p>类中具体方法可参考：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
-<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
-<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><p>获取Configuration对象</p>
-<p>我们需要先new一个Configuration对象</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
-
-<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>获取FileSystem对象</p>
-<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
-<li><p>进行文件操作</p>
-<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>释放资源</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
-
-<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
-
-<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p><strong>Deprecated.</strong> </p>
-<p>Renames Path src to Path dst</p>
-<ul>
-<li>Fails if src is a file and dst is a directory.</li>
-<li>Fails if src is a directory and dst is a file.</li>
-<li>Fails if the parent of dst does not exist or is a file.</li>
-</ul>
-<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
-<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
-<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
-<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
-<ul>
-<li><strong>Parameters:</strong></li>
-</ul>
-<p> <code>src</code> - path to be renamed</p>
-<p> <code>dst</code> - new path after rename</p>
-<ul>
-<li><strong>Throws:</strong></li>
-</ul>
-<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
-<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
-<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
-<p> <code>IOException</code> - on failure</p>
-</blockquote>
-<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
-
-<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
-
-<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
-
-<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
-</ul>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>HDFS中的数据块(Block)</title>
     <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
     <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
@@ -213,6 +121,98 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS API</title>
+    <url>/2021/12/13/HDFS-API/</url>
+    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
+<span id="more"></span>
+
+<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>导入需要的package</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
+
+<p>类中具体方法可参考：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
+<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
+<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p>获取Configuration对象</p>
+<p>我们需要先new一个Configuration对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
+
+<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>获取FileSystem对象</p>
+<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
+<li><p>进行文件操作</p>
+<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>释放资源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
+
+<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
+
+<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Deprecated.</strong> </p>
+<p>Renames Path src to Path dst</p>
+<ul>
+<li>Fails if src is a file and dst is a directory.</li>
+<li>Fails if src is a directory and dst is a file.</li>
+<li>Fails if the parent of dst does not exist or is a file.</li>
+</ul>
+<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
+<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
+<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
+<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
+<ul>
+<li><strong>Parameters:</strong></li>
+</ul>
+<p> <code>src</code> - path to be renamed</p>
+<p> <code>dst</code> - new path after rename</p>
+<ul>
+<li><strong>Throws:</strong></li>
+</ul>
+<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
+<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
+<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
+<p> <code>IOException</code> - on failure</p>
+</blockquote>
+<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
+
+<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
+
+<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
+
+<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
+</ul>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -421,6 +421,73 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hadoop Archives</title>
+    <url>/2021/12/20/Hadoop-Archives/</url>
+    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
+<p>Hadoop存档(har文件)目录包含</p>
+<ul>
+<li><p>元数据（采用_index和_masterindex形式）</p>
+</li>
+<li><p>数据部分data（part- *）文件。</p>
+</li>
+</ul>
+<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
+<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
+<span id="more"></span>
+
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<ul>
+<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
+<li>-p 父目录:指定归档文件基于的相对路径</li>
+<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
+<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
+<li>&lt;dest&gt;:har文件保存到的目标路径</li>
+</ul>
+<p><strong>Example:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
+<p>如果想归档目录 /foo/bar，可以省略src：</p>
+<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
+<p><strong>补充说明</strong></p>
+<ol>
+<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
+<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
+<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
+</ol>
+<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
+<p>Hadoop Archives的URI是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
+<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
+<p>依次取消存档：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<p>要并行解压缩，请使用DistCp：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
+<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
+<li><p>准备文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>创建har文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
+<li><p>查看文件组成结构</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
+<li><p>使用hdfs文件系统查看har文件目录内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
     <title>Hadoop Shell命令</title>
     <url>/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<h1 id="Hadoop-Shell命令"><a href="#Hadoop-Shell命令" class="headerlink" title="Hadoop Shell命令"></a>Hadoop Shell命令</h1><h2 id="FS-Shell"><a href="#FS-Shell" class="headerlink" title="FS Shell"></a>FS Shell</h2><p>调用文件系统(FS)Shell命令应使用 bin/hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是<em>scheme://authority/path</em>。对HDFS文件系统，scheme是<em>hdfs</em>，对本地文件系统，scheme是<em>file</em>。其中scheme和authority参数都是可选的，如果未加指定，就会使用配置中指定的默认scheme。一个HDFS文件或目录比如*/parent/child<em>可以表示成</em>hdfs://namenode:namenodeport/parent/child<em>，或者更简单的</em>/parent/child<em>（假设你配置文件中的默认值是</em>namenode:namenodeport<em>）。大多数FS Shell命令的行为和对应的Unix Shell命令类似，不同之处会在下面介绍各命令使用详情时指出。出错信息会输出到</em>stderr<em>，其他信息输出到</em>stdout*。</p>
@@ -604,70 +671,39 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hadoop Archives</title>
-    <url>/2021/12/20/Hadoop-Archives/</url>
-    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
-<p>Hadoop存档(har文件)目录包含</p>
-<ul>
-<li><p>元数据（采用_index和_masterindex形式）</p>
-</li>
-<li><p>数据部分data（part- *）文件。</p>
-</li>
-</ul>
-<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
-<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
+    <title>MR Chain（ChainMapper与ChainReducer）</title>
+    <url>/2021/12/21/MR-Chain/</url>
+    <content><![CDATA[<h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
+<p>​    在Map阶段，数据依次经过Mapper1和Mapper2处理；在Reducer阶段，数据经过shuffle和sort排序后，交给对应的Reduce处理，但Reducer处理之后还可以交给其它的Mapper进行处理，最终产生的结果写入到hdfs输出目录上。</p>
+<p><strong>注意</strong>：对于任意一个MapReduce作业，Map和Reduce阶段可以有无限多个Mapper，但是<strong>Reducer只能有一个</strong>。</p>
+<p>​    通过链式MapReducer模式可以有效的减少网络间传输数据的带宽，因为大量的计算基本都是在本地进行的。如果通过迭代作业的方式实现多个MapReduce作业组合的话就会在网络间传输大量的数据，这样会非常的耗时。(所以这里只是一个MR作业，MR作业的迭代实现用JobControl：)</p>
+<p><img src="/2021/12/21/MR-Chain/hexo\k12blog\source_posts\MR-Chain\Chain.jpg" alt="Chain"></p>
 <span id="more"></span>
 
-<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
+<h2 id="ChainMapper"><a href="#ChainMapper" class="headerlink" title="ChainMapper"></a>ChainMapper</h2><h3 id="官方说明"><a href="#官方说明" class="headerlink" title="官方说明"></a>官方说明</h3><p>​    ChainMapper类允许使用多个Map子类作为一个Map任务。</p>
+<p>​    这些map子类的执行与liunx的管道命令十分相似，第一个map的输出会成为第二个map的输入，第二个map的输出也会变成第三个map的输入，以此类推，直到最后一个map的输出会变成整个mapTask的输出。</p>
+<p>​    该特性的关键功能是链中的Mappers不需要知道它们是在链中执行的。这使具有可重用的专门的映射器可以组合起来，在单个任务中执行组合操作。</p>
+<p><strong>注意</strong>：在创建链式是每个Mapper的键/值的输出是链中下一个Mapper或Reducer的输入。它假定所有的映射器和链中的Reduce都使用匹配输出和输入键和值类，因为没有对链接代码进行转换。</p>
+<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = Job.getInstance(conf);</span><br><span class="line"></span><br><span class="line">Configuration mapAConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, AMap.class, LongWritable.class, Text.class,</span><br><span class="line"> Text.class, Text.class, true, mapAConf);</span><br><span class="line"></span><br><span class="line">Configuration mapBConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, BMap.class, Text.class, Text.class,</span><br><span class="line"> LongWritable.class, Text.class, false, mapBConf);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForComplettion(true);</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
 
-<p><strong>参数说明</strong></p>
-<ul>
-<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
-<li>-p 父目录:指定归档文件基于的相对路径</li>
-<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
-<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
-<li>&lt;dest&gt;:har文件保存到的目标路径</li>
-</ul>
-<p><strong>Example:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
+<h3 id="addMapper函数的参数说明"><a href="#addMapper函数的参数说明" class="headerlink" title="addMapper函数的参数说明"></a>addMapper函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void addMapper(Job job, Class&lt;? extends Mapper&gt; klass,</span><br><span class="line">  Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">  Configuration mapperConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此map的class</span><br><span class="line"># 3. 此map的输入的key类型</span><br><span class="line"># 4. 此map的输入的value类型</span><br><span class="line"># 5. 此map的输出的key类型</span><br><span class="line"># 6. 此map的输出的value类型</span><br><span class="line"># 7. 此map的配置文件类conf</span><br></pre></td></tr></table></figure>
 
-<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
-<p>如果想归档目录 /foo/bar，可以省略src：</p>
-<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
-<p><strong>补充说明</strong></p>
-<ol>
-<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
-<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
-<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
-</ol>
-<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
-<p>Hadoop Archives的URI是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
 
-<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
 
-<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
-<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
-<p>依次取消存档：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+<h2 id="ChainReducer"><a href="#ChainReducer" class="headerlink" title="ChainReducer"></a>ChainReducer</h2><h3 id="官方说明-1"><a href="#官方说明-1" class="headerlink" title="官方说明"></a>官方说明</h3><p>ChainReducer类允许多个map在reduce执行完之后执行在一个reducerTask中，<br>reducer的每一条输出，都被作为输入给ChainReducer类设置的第一个map，然后第一个map的输出作为第二个map的输入，以此类推，最后一个map的输出会作为整个reducerTask的输出，写到磁盘上。</p>
+<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = new Job(conf);</span><br><span class="line">....</span><br><span class="line"></span><br><span class="line">Configuration reduceConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainReducer.setReducer(job, XReduce.class, LongWritable.class, Text.class,</span><br><span class="line">  Text.class, Text.class, true, reduceConf);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, CMap.class, Text.class, Text.class,</span><br><span class="line">  LongWritable.class, Text.class, false, null);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, DMap.class, LongWritable.class, Text.class,</span><br><span class="line">  LongWritable.class, LongWritable.class, true, null);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForCompletion(true);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 
-<p>要并行解压缩，请使用DistCp：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+<h3 id="setReducer函数的参数说明"><a href="#setReducer函数的参数说明" class="headerlink" title="setReducer函数的参数说明"></a>setReducer函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void setReducer(Job job, Class&lt;? extends Reducer&gt; klass,</span><br><span class="line"> Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">   Configuration reducerConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此reducer的class</span><br><span class="line"># 3. 此reducer的输入的key类型</span><br><span class="line"># 4. 此reducer的输入的value类型</span><br><span class="line"># 5. 此reducer的输出的key类型</span><br><span class="line"># 6. 此reducer的输出的value类型</span><br><span class="line"># 7. 此reducer的配置文件类conf</span><br></pre></td></tr></table></figure>
 
-<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
-<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
-<li><p>准备文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>创建har文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
-<li><p>查看文件组成结构</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
-<li><p>使用hdfs文件系统查看har文件目录内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
-</ol>
+
+
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><h3 id="案例描述"><a href="#案例描述" class="headerlink" title="案例描述"></a>案例描述</h3><p>统计出一篇文章的高频词汇（只收集出现次数大于3的单词），去除谓词，并且过滤掉敏感词汇。</p>
+<h3 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h3><p>在MapTask中有三个子Mapper，分别命名为M1,M2,M3，在ReduceTask阶段有一个Reduce命名为R1和一个Mpaaer命名为RM1。</p>
+<h4 id="MapTask阶段"><a href="#MapTask阶段" class="headerlink" title="MapTask阶段"></a>MapTask阶段</h4><p>M1负责将文本内容按行切分每个单词，M2负责将M1输出的单词进行谓词过滤，M3将M2输出的内容进行敏感词过滤。</p>
+<h4 id="ReduceTask阶段"><a href="#ReduceTask阶段" class="headerlink" title="ReduceTask阶段"></a>ReduceTask阶段</h4><p>Reduce过程中R1负责将shuffle阶段中的单词进行统计，统计好之后将结果交给RM1处理，RM1主要是将单词数量大于5的单词进行输出。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by yanzhe on 2017/8/18.</span><br><span class="line"> */</span><br><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        args = new String[]&#123;&quot;d:/java/mr/data/data.txt&quot;, &quot;d:/java/mr/out&quot;&#125; ;</span><br><span class="line"></span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line"></span><br><span class="line">        FileSystem fs = FileSystem.get(conf) ;</span><br><span class="line"></span><br><span class="line">        Path outPath = new Path(args[1]) ;</span><br><span class="line">        if (fs.exists(outPath))&#123;</span><br><span class="line">            fs.delete(outPath,true) ;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Job job = Job.getInstance(conf) ;</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper1.class, LongWritable.class, Text.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper2.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper3.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.setReducer(job, Reducer1.class, Text.class, IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.addMapper(job, ReducerMapper1.class, Text.class,</span><br><span class="line">                IntWritable.class, Text.class, IntWritable.class, job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        FileInputFormat.addInputPath(job,new Path(args[0]));</span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job,outPath);</span><br><span class="line"></span><br><span class="line">        job.setNumReduceTasks(2);</span><br><span class="line">        job.setCombinerClass(Combiner1.class);</span><br><span class="line">        job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line"></span><br><span class="line">        job.waitForCompletion(true) ;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public class Mapper1 extends Mapper&lt;LongWritable, Text, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map1===========&quot; + value.toString());</span><br><span class="line">            String line = value.toString() ;</span><br><span class="line">            String[] strArr = line.split(&quot; &quot;) ;</span><br><span class="line"></span><br><span class="line">            for (String w: strArr) &#123;</span><br><span class="line">                context.write(new Text(w), new IntWritable(1));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Mapper2 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map2==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;of&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;of&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class Mapper3 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map3==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;google&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;xxx&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Reducer1 extends Reducer&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(Text key, Iterable&lt;IntWritable&gt; values, Context context) </span><br><span class="line">        throws IOException, InterruptedException &#123;</span><br><span class="line">            int count = 0 ;</span><br><span class="line">            for (IntWritable iw: values) &#123;</span><br><span class="line">                count += iw.get();</span><br><span class="line">            &#125;</span><br><span class="line">            context.write(key, new IntWritable(count));</span><br><span class="line">            System.out.println(&quot;reduce=========&quot; + key.toString() + &quot;:&quot; + count);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class ReducerMapper1 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            if (value.get() &gt; 5)</span><br><span class="line">                context.write(key, value);</span><br><span class="line"></span><br><span class="line">            System.out.println(&quot;reduceMap======&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>原文链接：<a href="https://blog.csdn.net/u010521842/article/details/77413104">https://blog.csdn.net/u010521842/article/details/77413104</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -778,42 +814,6 @@
 <p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
 <p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
 <p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>MR Chain（ChainMapper与ChainReducer）</title>
-    <url>/2021/12/21/MR-Chain/</url>
-    <content><![CDATA[<h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
-<p>​    在Map阶段，数据依次经过Mapper1和Mapper2处理；在Reducer阶段，数据经过shuffle和sort排序后，交给对应的Reduce处理，但Reducer处理之后还可以交给其它的Mapper进行处理，最终产生的结果写入到hdfs输出目录上。</p>
-<p><strong>注意</strong>：对于任意一个MapReduce作业，Map和Reduce阶段可以有无限多个Mapper，但是<strong>Reducer只能有一个</strong>。</p>
-<p>​    通过链式MapReducer模式可以有效的减少网络间传输数据的带宽，因为大量的计算基本都是在本地进行的。如果通过迭代作业的方式实现多个MapReduce作业组合的话就会在网络间传输大量的数据，这样会非常的耗时。(所以这里只是一个MR作业，MR作业的迭代实现用JobControl：)</p>
-<p><img src="/2021/12/21/MR-Chain/hexo\k12blog\source_posts\MR-Chain\Chain.jpg" alt="Chain"></p>
-<span id="more"></span>
-
-<h2 id="ChainMapper"><a href="#ChainMapper" class="headerlink" title="ChainMapper"></a>ChainMapper</h2><h3 id="官方说明"><a href="#官方说明" class="headerlink" title="官方说明"></a>官方说明</h3><p>​    ChainMapper类允许使用多个Map子类作为一个Map任务。</p>
-<p>​    这些map子类的执行与liunx的管道命令十分相似，第一个map的输出会成为第二个map的输入，第二个map的输出也会变成第三个map的输入，以此类推，直到最后一个map的输出会变成整个mapTask的输出。</p>
-<p>​    该特性的关键功能是链中的Mappers不需要知道它们是在链中执行的。这使具有可重用的专门的映射器可以组合起来，在单个任务中执行组合操作。</p>
-<p><strong>注意</strong>：在创建链式是每个Mapper的键/值的输出是链中下一个Mapper或Reducer的输入。它假定所有的映射器和链中的Reduce都使用匹配输出和输入键和值类，因为没有对链接代码进行转换。</p>
-<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = Job.getInstance(conf);</span><br><span class="line"></span><br><span class="line">Configuration mapAConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, AMap.class, LongWritable.class, Text.class,</span><br><span class="line"> Text.class, Text.class, true, mapAConf);</span><br><span class="line"></span><br><span class="line">Configuration mapBConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, BMap.class, Text.class, Text.class,</span><br><span class="line"> LongWritable.class, Text.class, false, mapBConf);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForComplettion(true);</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
-
-<h3 id="addMapper函数的参数说明"><a href="#addMapper函数的参数说明" class="headerlink" title="addMapper函数的参数说明"></a>addMapper函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void addMapper(Job job, Class&lt;? extends Mapper&gt; klass,</span><br><span class="line">  Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">  Configuration mapperConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此map的class</span><br><span class="line"># 3. 此map的输入的key类型</span><br><span class="line"># 4. 此map的输入的value类型</span><br><span class="line"># 5. 此map的输出的key类型</span><br><span class="line"># 6. 此map的输出的value类型</span><br><span class="line"># 7. 此map的配置文件类conf</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="ChainReducer"><a href="#ChainReducer" class="headerlink" title="ChainReducer"></a>ChainReducer</h2><h3 id="官方说明-1"><a href="#官方说明-1" class="headerlink" title="官方说明"></a>官方说明</h3><p>ChainReducer类允许多个map在reduce执行完之后执行在一个reducerTask中，<br>reducer的每一条输出，都被作为输入给ChainReducer类设置的第一个map，然后第一个map的输出作为第二个map的输入，以此类推，最后一个map的输出会作为整个reducerTask的输出，写到磁盘上。</p>
-<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = new Job(conf);</span><br><span class="line">....</span><br><span class="line"></span><br><span class="line">Configuration reduceConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainReducer.setReducer(job, XReduce.class, LongWritable.class, Text.class,</span><br><span class="line">  Text.class, Text.class, true, reduceConf);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, CMap.class, Text.class, Text.class,</span><br><span class="line">  LongWritable.class, Text.class, false, null);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, DMap.class, LongWritable.class, Text.class,</span><br><span class="line">  LongWritable.class, LongWritable.class, true, null);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForCompletion(true);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-<h3 id="setReducer函数的参数说明"><a href="#setReducer函数的参数说明" class="headerlink" title="setReducer函数的参数说明"></a>setReducer函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void setReducer(Job job, Class&lt;? extends Reducer&gt; klass,</span><br><span class="line"> Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">   Configuration reducerConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此reducer的class</span><br><span class="line"># 3. 此reducer的输入的key类型</span><br><span class="line"># 4. 此reducer的输入的value类型</span><br><span class="line"># 5. 此reducer的输出的key类型</span><br><span class="line"># 6. 此reducer的输出的value类型</span><br><span class="line"># 7. 此reducer的配置文件类conf</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><h3 id="案例描述"><a href="#案例描述" class="headerlink" title="案例描述"></a>案例描述</h3><p>统计出一篇文章的高频词汇（只收集出现次数大于3的单词），去除谓词，并且过滤掉敏感词汇。</p>
-<h3 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h3><p>在MapTask中有三个子Mapper，分别命名为M1,M2,M3，在ReduceTask阶段有一个Reduce命名为R1和一个Mpaaer命名为RM1。</p>
-<h4 id="MapTask阶段"><a href="#MapTask阶段" class="headerlink" title="MapTask阶段"></a>MapTask阶段</h4><p>M1负责将文本内容按行切分每个单词，M2负责将M1输出的单词进行谓词过滤，M3将M2输出的内容进行敏感词过滤。</p>
-<h4 id="ReduceTask阶段"><a href="#ReduceTask阶段" class="headerlink" title="ReduceTask阶段"></a>ReduceTask阶段</h4><p>Reduce过程中R1负责将shuffle阶段中的单词进行统计，统计好之后将结果交给RM1处理，RM1主要是将单词数量大于5的单词进行输出。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by yanzhe on 2017/8/18.</span><br><span class="line"> */</span><br><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        args = new String[]&#123;&quot;d:/java/mr/data/data.txt&quot;, &quot;d:/java/mr/out&quot;&#125; ;</span><br><span class="line"></span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line"></span><br><span class="line">        FileSystem fs = FileSystem.get(conf) ;</span><br><span class="line"></span><br><span class="line">        Path outPath = new Path(args[1]) ;</span><br><span class="line">        if (fs.exists(outPath))&#123;</span><br><span class="line">            fs.delete(outPath,true) ;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Job job = Job.getInstance(conf) ;</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper1.class, LongWritable.class, Text.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper2.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper3.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.setReducer(job, Reducer1.class, Text.class, IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.addMapper(job, ReducerMapper1.class, Text.class,</span><br><span class="line">                IntWritable.class, Text.class, IntWritable.class, job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        FileInputFormat.addInputPath(job,new Path(args[0]));</span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job,outPath);</span><br><span class="line"></span><br><span class="line">        job.setNumReduceTasks(2);</span><br><span class="line">        job.setCombinerClass(Combiner1.class);</span><br><span class="line">        job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line"></span><br><span class="line">        job.waitForCompletion(true) ;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public class Mapper1 extends Mapper&lt;LongWritable, Text, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map1===========&quot; + value.toString());</span><br><span class="line">            String line = value.toString() ;</span><br><span class="line">            String[] strArr = line.split(&quot; &quot;) ;</span><br><span class="line"></span><br><span class="line">            for (String w: strArr) &#123;</span><br><span class="line">                context.write(new Text(w), new IntWritable(1));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Mapper2 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map2==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;of&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;of&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class Mapper3 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map3==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;google&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;xxx&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Reducer1 extends Reducer&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(Text key, Iterable&lt;IntWritable&gt; values, Context context) </span><br><span class="line">        throws IOException, InterruptedException &#123;</span><br><span class="line">            int count = 0 ;</span><br><span class="line">            for (IntWritable iw: values) &#123;</span><br><span class="line">                count += iw.get();</span><br><span class="line">            &#125;</span><br><span class="line">            context.write(key, new IntWritable(count));</span><br><span class="line">            System.out.println(&quot;reduce=========&quot; + key.toString() + &quot;:&quot; + count);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class ReducerMapper1 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            if (value.get() &gt; 5)</span><br><span class="line">                context.write(key, value);</span><br><span class="line"></span><br><span class="line">            System.out.println(&quot;reduceMap======&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>原文链接：<a href="https://blog.csdn.net/u010521842/article/details/77413104">https://blog.csdn.net/u010521842/article/details/77413104</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1077,6 +1077,38 @@
 ]]></content>
   </entry>
   <entry>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>将Hexo部署到GitHub</title>
     <url>/2021/10/24/%E5%B0%86Hexo%E9%83%A8%E7%BD%B2%E5%88%B0GitHub/</url>
     <content><![CDATA[<p>参考<a href="https://hexo.io/zh-cn/docs">Hexo文档</a> </p>
@@ -1146,38 +1178,6 @@
 <li><p>然后用编辑器修改好文本，发布</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
