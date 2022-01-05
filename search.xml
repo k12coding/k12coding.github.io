@@ -1,129 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>HDFS中的数据块(Block)</title>
-    <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
-    <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
-<ol>
-<li>数据分块，分布式的存储在多台机器上</li>
-<li>数据块冗余存储在多台机器以提高数据块的高可用性</li>
-<li>遵从主/从(master/slave)结构的分布式存储集群</li>
-</ol>
-<p>HDFS作为分布式存储的实现，肯定也具有上面3个特点。</p>
-<span id="more"></span>
-
-<h2 id="HDFS数据块"><a href="#HDFS数据块" class="headerlink" title="HDFS数据块"></a>HDFS数据块</h2><p>与一般文件系统一样，HDFS也有块（block）的概念，HDFS上的文件也被划分为块大小的多个分块作为独立的存储单元。与通常的磁盘文件系统不同的是：</p>
-<p><strong>HDFS中小于一个块大小的文件不会占据整个块的空间（当一个1MB的文件存储在一个128MB的块中时，文件只使用1MB的磁盘空间，而不是128MB）</strong></p>
-<p>在Hadoop1当中，文件的block块默认大小是64M，Hadoop2当中，文件的block块大小默认是128M，block块的大小可以通过<code>hdfs-site.xml</code>当中的配置文件（dfs.block.size）进行指定。</p>
-<p><strong>设置数据块的好处</strong></p>
-<p>（1）一个文件的大小可以大于集群任意节点磁盘的容量</p>
-<p>（2）容易对数据进行备份，提高容错能力</p>
-<p>（3）使用抽象块概念而非整个文件作为存储单元，大大简化存储子系统的设计</p>
-<p><strong>块缓存</strong><br>通常DataNode从磁盘中读取块，但对于访问频繁的文件，其对应的块可能被显示的缓存在DataNode的内存中，以堆外块缓存的形式存在。默认情况下，一个块仅缓存在一个DataNode的内存中，当然可以针对每个文件配置DataNode的数量。作业调度器通过在缓存块的DataNode上运行任务，可以利用块缓存的优势提高读操作的性能。</p>
-<h2 id="HDFS分布式存储"><a href="#HDFS分布式存储" class="headerlink" title="HDFS分布式存储"></a>HDFS分布式存储</h2><p>在HDFS中，数据块默认的大小是128M，当我们往HDFS上上传一个300多M的文件的时候，那么这个文件会被分成3个数据块： </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193738768-2015006415.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193745301-961787885.png" alt="img"></p>
-<p> 所有的数据块是分布式的存储在所有的DataNode上：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193756443-722084406.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193801770-1600366947.png" alt="img"></p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193806888-1561633390.png" alt="img"></p>
-<p>为了提高每一个数据块的高可用性，在HDFS中每一个数据块默认备份存储3份，在这里我们看到的只有1份，是因为我们在<code>hdfs-site.xml</code>中配置了如下的配置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;1&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;表示数据块的备份数量，不能大于DataNode的数量，默认值是3&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>我们也可以通过如下的命令，将文件<code>/user/hadoop-twq/cmd/big_file.txt</code>的所有的数据块都备份存储3份：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop fs -setrep 3 /user/hadoop-twq/cmd/big_file.txt</span><br></pre></td></tr></table></figure>
-
-<p>我们可以从如下可以看出：每一个数据块都冗余存储了3个备份</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193841533-1801289433.png" alt="img"> </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193847536-1876269159.png" alt="img"></p>
-<p> <img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193851762-2045344208.png" alt="img"></p>
-<p><strong>在这里，可能会问这里为什么看到的是2个备份呢？这个是因为我们的集群只有2个DataNode，所以最多只有2个备份，即使你设置成3个备份也没用，所以我们设置的备份数一般都是比集群的DataNode的个数相等或者要少</strong></p>
-<blockquote>
-<p>一定要注意：当我们上传362.4MB的数据到HDFS上后，如果数据块的备份数是3个话，那么在HDFS上真正存储的数据量大小是：362.4MB * 3 = 1087.2MB</p>
-</blockquote>
-<blockquote>
-<p>注意：我们上面是通过HDFS的WEB UI来查看HDFS文件的数据块的信息，除了这种方式查看数据块的信息，我们还可以通过命令fsck来查看</p>
-</blockquote>
-<h2 id="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"><a href="#问题：HDFS里面为什么一般设置块大小为64MB或128MB？" class="headerlink" title="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"></a>问题：HDFS里面为什么一般设置块大小为64MB或128MB？</h2><ul>
-<li><p>为什么不能远少于64MB？</p>
-<p>（1）<strong>减少硬盘寻道时间。</strong>HDFS设计前提是应对大数据量操作，若数据块大小设置过小，那需要读取的数据块数量就会增多，从而间接增加底层硬盘的寻道时间</p>
-<blockquote>
-<p>  “HDFS的块比磁盘块大，其目的是为了最小化寻址开销。如果块设置得足够大，从<strong>磁盘传输数据的时间</strong>可以明显大于<strong>定位这个块开始位置所需的时间</strong>。这样，传输一个由多个块组成的文件的时间就<strong>取决于磁盘传输速率</strong>。”</p>
-<p> “我们做一个估计计算，如果寻址时间为10ms左右，而传输速率为100MB/s，为了使寻址时间仅占传输时间的1%，我们需要设置块大小为100MB左右。而默认的块大小实际为64MB，但是很多情况下HDFS使用128MB的块设置。<strong>以后随着新一代磁盘驱动器传输速率的提升，块的大小将被设置得更大。</strong>”</p>
-</blockquote>
-<p>（2）<strong>减少NameNode内存消耗。</strong>由于NameNode记录着DataNode中的数据块信息，若数据块大小设置过小，则数据块数量增多，需要维护的数据块信息就会增多，从而消耗NameNode的内存。</p>
-</li>
-<li><p>为什么不能远大于64MB？</p>
-<p>原因主要从上层的MapReduce框架来寻找。</p>
-<p>（1）<strong>Map崩溃问题。</strong>系统需要重新启动，启动过程中需要重新加载数据，数据块越大，数据加载时间越长，系统恢复过程越长</p>
-<p>（2）<strong>监管时间问题。</strong>主节点监管其他节点的情况，每个节点会周期性的与主节点进行汇报通信。倘若某一个节点保持沉默的时间超过一个<strong>预设的时间间隔</strong>，主节点会记录这个节点状态为死亡，并将该节点的数据转发给别的节点。而这个“预设时间间隔”是从数据块的角度大致估算的。（加入对64MB的数据块，我可以假设你10分钟之内无论如何也能解决完了吧，超过10分钟还没反应，那我就认为你出故障或已经死了。）64MB大小的数据块，其时间尚可较为精准地估计，如果我将数据块大小设为640MB甚至上G，那这个“预设的时间间隔”便不好估算，估长估短对系统都会造成不必要的损失和资源浪费。</p>
-<p>（3）<strong>问题分解问题。</strong>数据量的大小与问题解决的复杂度呈线性关系。对于同一个算法，处理的数据量越大，时间复杂度越高。</p>
-<p>（4）<strong>约束Map输出。</strong>在Map Reduce框架里，Map之后的数据是要经过排序才执行Reduce操作的。这通常涉及到归并排序，而归并排序的算法思想便是“对小文件进行排序，然后将小文件归并成大文件”，因此“小文件”不宜过大。</p>
-<blockquote>
-<p>“<strong>但是，该参数也不会设置得过大。MapReduce中的map任务通常一次处理一个块中的数据，因此，如果任务数太少（少于集群中的节点数量），作业的运行速度就会变慢。</strong>”</p>
-</blockquote>
-</li>
-</ul>
-<h2 id="数据块的实现"><a href="#数据块的实现" class="headerlink" title="数据块的实现"></a>数据块的实现</h2><p>在HDFS的实现中，数据块被抽象成类<code>org.apache.hadoop.hdfs.protocol.Block(我们以下简称Block)</code>。在Block类中有如下几个属性字段：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Block</span> <span class="keyword">implements</span> <span class="title">Writable</span>, <span class="title">Comparable</span>&lt;<span class="title">Block</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> blockId; <span class="comment">// 标识一个Block的唯一Id</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> numBytes; <span class="comment">// Block的大小(单位是字节)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> generationStamp; <span class="comment">// Block的生成时间戳</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们从WEB UI上的数据块信息也可以看到：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193921505-989550889.png" alt="img"></p>
-<p> 一个Block除了存储上面的3个字段信息，还需要知道这个Block含有多少个备份，每一个备份分别存储在哪一个DataNode上，为了存储这些信息，HDFS中有一个名为</p>
-<p><code>org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoContiguous</code>(下面我们简称为BlockInfo)</p>
-<p>的类来存储这些信息，这个BlockInfo类继承Block类，如下：</p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193930783-1441983482.png" alt="img"></p>
-<p>BlockInfo类中只有一个非常核心的属性，就是名为triplets的数组，这个数组的长度是<code>3*replication</code>，<code>replication</code>表示数据块的备份数。这个数组中存储了该数据块所有的备份数据块对应的DataNode信息，我们现在假设备份数是<code>3</code>，那么这个数组的长度是<code>3*3=9</code>，这个数组存储的数据如下： </p>
-<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193941684-2013773685.png" alt="img"></p>
-<p>也就是说，triplets包含的信息：</p>
-<ul>
-<li>triplets[i]：Block所在的DataNode；</li>
-<li>triplets[i+1]：该DataNode上前一个Block；</li>
-<li>triplets[i+2]：该DataNode上后一个Block；</li>
-</ul>
-<p>其中i表示的是Block的第i个副本，i取值[0,replication)。</p>
-<p>我们在HDFS的NameNode中的Namespace管理中讲到了，一个HDFS文件包含一个BlockInfo数组，表示这个文件分成的若干个数据块，这个BlockInfo数组实际上就是我们这里说的<code>BlockInfoContiguous</code>数组。以下是INodeFile的属性：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">INodeFile</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> header = <span class="number">0L</span>; <span class="comment">// 用于标识存储策略ID、副本数和数据块大小的信息</span></span><br><span class="line">    <span class="keyword">private</span> BlockInfoContiguous[] blocks; <span class="comment">// 该文件包含的数据块数组</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>那么，到现在为止，我们了解到了这些信息：文件包含了哪些Block，这些Block分别被实际存储在哪些DataNode上，DataNode上所有Block前后链表关系。</p>
-<p>如果从信息完整度来看，以上信息数据足够支持所有关于HDFS文件系统的正常操作，但还存在一个使用场景较多的问题：怎样通过blockId快速定位BlockInfo？</p>
-<p>我们其实可以在NameNode上用一个HashMap来维护blockId到Block的映射，也就是说我们可以使用<code>HashMap&lt;Block, BlockInfo&gt;</code>来维护，这样的话我们就可以快速的根据blockId定位BlockInfo，但是由于在内存使用、碰撞冲突解决和性能等方面存在问题，Hadoop团队之后使用重新实现的LightWeightGSet代替HashMap，该数据结构本质上也是利用链表解决碰撞冲突的<a href="https://issues.apache.org/jira/browse/HDFS-1114">HashTable</a>，但是在易用性、内存占用和性能等方面表现更好。</p>
-<p>HDFS为了解决通过blockId快速定位BlockInfo的问题，所以引入了BlocksMap，BlocksMap底层通过LightWeightGSet实现。</p>
-<p>在HDFS集群启动过程，DataNode会进行BR（BlockReport，其实就是将DataNode自身存储的数据块上报给NameNode），根据BR的每一个Block计算其HashCode，之后将对应的BlockInfo插入到相应位置逐渐构建起来巨大的BlocksMap。前面在INodeFile里也提到的BlockInfo集合，如果我们将BlocksMap里的BlockInfo与所有INodeFile里的BlockInfo分别收集起来，可以发现两个集合完全相同，事实上BlocksMap里所有的BlockInfo就是INodeFile中对应BlockInfo的引用；通过Block查找对应BlockInfo时，也是先对Block计算HashCode，根据结果快速定位到对应的BlockInfo信息。至此涉及到HDFS文件系统本身元数据的问题基本上已经解决了。</p>
-<h2 id="BlocksMap内存估算"><a href="#BlocksMap内存估算" class="headerlink" title="BlocksMap内存估算"></a>BlocksMap内存估算</h2><p>HDFS将文件按照一定的大小切成多个Block，为了保证数据可靠性，每个Block对应多个副本，存储在不同DataNode上。NameNode除需要维护Block本身的信息外，还需要维护从Block到DataNode列表的对应关系，用于描述每一个Block副本实际存储的物理位置，BlocksMap结构即用于Block到DataNode列表的映射关系，BlocksMap是常驻在内存中，而且占用内存非常大，所以对BlocksMap进行内存的估算是非常有必要的。</p>
-<p><strong>BlocksMap</strong>的内部结构：</p>
-<blockquote>
-<p>以下的内存估算是在64位操作系统上且没有开启指针压缩功能场景下</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class BlocksMap &#123;</span><br><span class="line">    private final int capacity; // 占 4 字节</span><br><span class="line">    // 我们使用GSet的实现者：LightWeightGSet</span><br><span class="line">    private GSet&lt;Block, BlockInfoContiguous&gt; blocks;  // 引用类型占8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出BlocksMap的直接内存大小是：<strong>对象头16字节 + 4字节 + 8字节 = 28字节</strong></p>
-<p><strong>Block</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Block implements Writable, Comparable&lt;Block&gt; &#123;</span><br><span class="line">    private long blockId; // 标识一个Block的唯一Id     占 8字节</span><br><span class="line">    private long numBytes; // Block的大小(单位是字节)   占 8字节</span><br><span class="line">    private long generationStamp; // Block的生成时间戳   占 8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出Block的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 8字节 = 40字节</strong></p>
-<p><strong>BlockInfoContiguous</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class BlockInfoContiguous extends Block &#123;</span><br><span class="line">    private BlockCollection bc;   // 引用类型占8字节</span><br><span class="line">    private LightWeightGSet.LinkedElement nextLinkedElement;  // 引用类型占8字节</span><br><span class="line">    private Object[] triplets;  // 引用类型 8字节 + 数组对象头24字节 + 3*3(备份数假设为3)*8 = 104字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以得出BlockInfoContiguous的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 104字节 = 136字节</strong></p>
-<p><strong>LightWeightGSet</strong>的结构如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class LightWeightGSet&lt;K, E extends K&gt; implements GSet&lt;K, E&gt; &#123;</span><br><span class="line">    private final LinkedElement[] entries; // 引用类型 8字节 + 数组对象头24字节 = 32字节</span><br><span class="line">    private final int hash_mask; // 4字节</span><br><span class="line">    private int size = 0; // 4字节</span><br><span class="line">    private int modification = 0; // 4字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>　　LightWeightGSet本质是一个链式解决冲突的哈希表，为了避免rehash过程带来的性能开销，初始化时，LightWeightGSet的索引空间直接给到了整个JVM可用内存的2%，并且不再变化。 所以LightWeightGSet的直接内存大小为：**对象头16字节 + 32字节 + 4字节 + 4字节 + 4字节 + (2%<em>JVM可用内存) = 60字节 + (2%<em>JVM可用内存)</em></em></p>
-<p>假设集群中共1亿Block，NameNode可用内存空间固定大小128GB，则BlocksMap占用内存情况：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BlocksMap直接内存大小 + (Block直接内存大小 + BlockInfoContiguous直接内存大小) * 100M + LightWeightGSet直接内存大小</span><br><span class="line">即：</span><br><span class="line">28字节 + (40字节 + 136字节) * 100M + 60字节 + (2%*128G) = 19.7475GB</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>上面为什么是乘以100M呢？ 因为100M = 100 * 1024 * 1024 bytes = 104857600 bytes，约等于1亿字节，而上面的内存的单位都是字节的，我们乘以100M，就相当于1亿Block</p>
-</blockquote>
-<p>BlocksMap数据在NameNode整个生命周期内常驻内存，随着数据规模的增加，对应Block数会随之增多，BlocksMap所占用的JVM堆内存空间也会基本保持线性同步增加。</p>
-<hr>
-<p>参考：</p>
-<p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
-<p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>HDFS API</title>
     <url>/2021/12/13/HDFS-API/</url>
     <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
@@ -276,108 +153,126 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HIVE UDF 与 HIVE源码编译</title>
-    <url>/2021/12/29/HIVE-UDF/</url>
-    <content><![CDATA[<h2 id="一、实现UDF"><a href="#一、实现UDF" class="headerlink" title="一、实现UDF"></a>一、实现UDF</h2><p>需求：添加随机数<code>add_random</code>、去除随机数<code>remove_random</code></p>
-<p>UDF函数中实现evaluate方法。</p>
-<p>UDFAddRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>UDFRemoveRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="二、在查询中使用函数"><a href="#二、在查询中使用函数" class="headerlink" title="二、在查询中使用函数"></a>二、在查询中使用函数</h2><h3 id="临时函数"><a href="#临时函数" class="headerlink" title="临时函数"></a>临时函数</h3><ol>
-<li><p>将包含函数的jar包上传到服务器上，我的存放目录是<code>/home/hadoop/lib</code></p>
-</li>
-<li><p>开启hive会话，执行以下命令添加jar：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; add jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Added [/home/hadoop/lib/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [/home/hadoop/lib/ruozedata-hive-1.0.jar]</span><br></pre></td></tr></table></figure></li>
-<li><p>执行以下命令创建名为add_random的临时函数：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create temporary function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.025 seconds</span><br></pre></td></tr></table></figure>
-
-<p>remove_random同理。</p>
-</li>
-<li><p>使用函数</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.331 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">OK</span><br><span class="line">ename	_c1</span><br><span class="line">SMITH	SMITH_8</span><br><span class="line">ALLEN	ALLEN_5</span><br><span class="line">WARD	WARD_1</span><br><span class="line">JONES	JONES_0</span><br><span class="line">MARTIN	MARTIN_0</span><br><span class="line">BLAKE	BLAKE_9</span><br><span class="line">CLARK	CLARK_5</span><br><span class="line">SCOTT	SCOTT_7</span><br><span class="line">KING	KING_8</span><br><span class="line">TURNER	TURNER_6</span><br><span class="line">ADAMS	ADAMS_6</span><br><span class="line">JAMES	JAMES_2</span><br><span class="line">FORD	FORD_6</span><br><span class="line">MILLER	MILLER_0</span><br><span class="line">Time taken: 0.882 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; </span><br></pre></td></tr></table></figure></li>
-<li><p>这个UDF只在当前会话窗口生效，当您关闭了窗口此函数就不存在了；</p>
-</li>
-<li><p>如果您想在当前窗口将这个UDF清理掉，请依次执行以下两个命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">drop temporary function if exists add_random;</span><br><span class="line">delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br></pre></td></tr></table></figure></li>
-<li><p>删除后再使用add_random会报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; drop temporary function if exists add_random;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.024 seconds</span><br><span class="line">hive (hive)&gt; delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Deleted [/home/hadoop/lib/ruozedata-hive-1.0.jar] from class path</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">FAILED: SemanticException [Error 10011]: Invalid function add_random</span><br></pre></td></tr></table></figure></li>
+    <title>HDFS中的数据块(Block)</title>
+    <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
+    <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
+<ol>
+<li>数据分块，分布式的存储在多台机器上</li>
+<li>数据块冗余存储在多台机器以提高数据块的高可用性</li>
+<li>遵从主/从(master/slave)结构的分布式存储集群</li>
 </ol>
-<h3 id="永久函数"><a href="#永久函数" class="headerlink" title="永久函数"></a>永久函数</h3><ol>
-<li><p>UDF永久生效,并且对所有hive会话都生效</p>
+<p>HDFS作为分布式存储的实现，肯定也具有上面3个特点。</p>
+<span id="more"></span>
+
+<h2 id="HDFS数据块"><a href="#HDFS数据块" class="headerlink" title="HDFS数据块"></a>HDFS数据块</h2><p>与一般文件系统一样，HDFS也有块（block）的概念，HDFS上的文件也被划分为块大小的多个分块作为独立的存储单元。与通常的磁盘文件系统不同的是：</p>
+<p><strong>HDFS中小于一个块大小的文件不会占据整个块的空间（当一个1MB的文件存储在一个128MB的块中时，文件只使用1MB的磁盘空间，而不是128MB）</strong></p>
+<p>在Hadoop1当中，文件的block块默认大小是64M，Hadoop2当中，文件的block块大小默认是128M，block块的大小可以通过<code>hdfs-site.xml</code>当中的配置文件（dfs.block.size）进行指定。</p>
+<p><strong>设置数据块的好处</strong></p>
+<p>（1）一个文件的大小可以大于集群任意节点磁盘的容量</p>
+<p>（2）容易对数据进行备份，提高容错能力</p>
+<p>（3）使用抽象块概念而非整个文件作为存储单元，大大简化存储子系统的设计</p>
+<p><strong>块缓存</strong><br>通常DataNode从磁盘中读取块，但对于访问频繁的文件，其对应的块可能被显示的缓存在DataNode的内存中，以堆外块缓存的形式存在。默认情况下，一个块仅缓存在一个DataNode的内存中，当然可以针对每个文件配置DataNode的数量。作业调度器通过在缓存块的DataNode上运行任务，可以利用块缓存的优势提高读操作的性能。</p>
+<h2 id="HDFS分布式存储"><a href="#HDFS分布式存储" class="headerlink" title="HDFS分布式存储"></a>HDFS分布式存储</h2><p>在HDFS中，数据块默认的大小是128M，当我们往HDFS上上传一个300多M的文件的时候，那么这个文件会被分成3个数据块： </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193738768-2015006415.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193745301-961787885.png" alt="img"></p>
+<p> 所有的数据块是分布式的存储在所有的DataNode上：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193756443-722084406.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193801770-1600366947.png" alt="img"></p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193806888-1561633390.png" alt="img"></p>
+<p>为了提高每一个数据块的高可用性，在HDFS中每一个数据块默认备份存储3份，在这里我们看到的只有1份，是因为我们在<code>hdfs-site.xml</code>中配置了如下的配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.replication&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;1&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;表示数据块的备份数量，不能大于DataNode的数量，默认值是3&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>我们也可以通过如下的命令，将文件<code>/user/hadoop-twq/cmd/big_file.txt</code>的所有的数据块都备份存储3份：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop fs -setrep 3 /user/hadoop-twq/cmd/big_file.txt</span><br></pre></td></tr></table></figure>
+
+<p>我们可以从如下可以看出：每一个数据块都冗余存储了3个备份</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193841533-1801289433.png" alt="img"> </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193847536-1876269159.png" alt="img"></p>
+<p> <img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193851762-2045344208.png" alt="img"></p>
+<p><strong>在这里，可能会问这里为什么看到的是2个备份呢？这个是因为我们的集群只有2个DataNode，所以最多只有2个备份，即使你设置成3个备份也没用，所以我们设置的备份数一般都是比集群的DataNode的个数相等或者要少</strong></p>
+<blockquote>
+<p>一定要注意：当我们上传362.4MB的数据到HDFS上后，如果数据块的备份数是3个话，那么在HDFS上真正存储的数据量大小是：362.4MB * 3 = 1087.2MB</p>
+</blockquote>
+<blockquote>
+<p>注意：我们上面是通过HDFS的WEB UI来查看HDFS文件的数据块的信息，除了这种方式查看数据块的信息，我们还可以通过命令fsck来查看</p>
+</blockquote>
+<h2 id="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"><a href="#问题：HDFS里面为什么一般设置块大小为64MB或128MB？" class="headerlink" title="问题：HDFS里面为什么一般设置块大小为64MB或128MB？"></a>问题：HDFS里面为什么一般设置块大小为64MB或128MB？</h2><ul>
+<li><p>为什么不能远少于64MB？</p>
+<p>（1）<strong>减少硬盘寻道时间。</strong>HDFS设计前提是应对大数据量操作，若数据块大小设置过小，那需要读取的数据块数量就会增多，从而间接增加底层硬盘的寻道时间</p>
+<blockquote>
+<p>  “HDFS的块比磁盘块大，其目的是为了最小化寻址开销。如果块设置得足够大，从<strong>磁盘传输数据的时间</strong>可以明显大于<strong>定位这个块开始位置所需的时间</strong>。这样，传输一个由多个块组成的文件的时间就<strong>取决于磁盘传输速率</strong>。”</p>
+<p> “我们做一个估计计算，如果寻址时间为10ms左右，而传输速率为100MB/s，为了使寻址时间仅占传输时间的1%，我们需要设置块大小为100MB左右。而默认的块大小实际为64MB，但是很多情况下HDFS使用128MB的块设置。<strong>以后随着新一代磁盘驱动器传输速率的提升，块的大小将被设置得更大。</strong>”</p>
+</blockquote>
+<p>（2）<strong>减少NameNode内存消耗。</strong>由于NameNode记录着DataNode中的数据块信息，若数据块大小设置过小，则数据块数量增多，需要维护的数据块信息就会增多，从而消耗NameNode的内存。</p>
 </li>
-<li><p>hdfs上创建目录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -mkdir /lib/udflib</span><br></pre></td></tr></table></figure></li>
-<li><p>将jar文件上传到hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -put /home/hadoop/lib/ruozedata-hive-1.0.jar /lib/udflib</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -ls /lib/udflib</span><br><span class="line">Found 1 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup       6098 2021-12-28 17:25 /lib/udflib/ruozedata-hive-1.0.jar</span><br></pre></td></tr></table></figure></li>
-<li><p>开启hive会话，执行以下命令添加jar：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;</span><br><span class="line">           &gt; using jar &#x27;hdfs:///lib/udflib/ruozedata-hive-1.0.jar&#x27;;</span><br><span class="line">Added [/tmp/38a5942b-b210-4c46-b700-9a64ae6090b7_resources/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [hdfs:///lib/udflib/ruozedata-hive-1.0.jar]</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.097 seconds</span><br></pre></td></tr></table></figure></li>
-<li><p>函数可以使用，新开hive会话也可使用。</p>
+<li><p>为什么不能远大于64MB？</p>
+<p>原因主要从上层的MapReduce框架来寻找。</p>
+<p>（1）<strong>Map崩溃问题。</strong>系统需要重新启动，启动过程中需要重新加载数据，数据块越大，数据加载时间越长，系统恢复过程越长</p>
+<p>（2）<strong>监管时间问题。</strong>主节点监管其他节点的情况，每个节点会周期性的与主节点进行汇报通信。倘若某一个节点保持沉默的时间超过一个<strong>预设的时间间隔</strong>，主节点会记录这个节点状态为死亡，并将该节点的数据转发给别的节点。而这个“预设时间间隔”是从数据块的角度大致估算的。（加入对64MB的数据块，我可以假设你10分钟之内无论如何也能解决完了吧，超过10分钟还没反应，那我就认为你出故障或已经死了。）64MB大小的数据块，其时间尚可较为精准地估计，如果我将数据块大小设为640MB甚至上G，那这个“预设的时间间隔”便不好估算，估长估短对系统都会造成不必要的损失和资源浪费。</p>
+<p>（3）<strong>问题分解问题。</strong>数据量的大小与问题解决的复杂度呈线性关系。对于同一个算法，处理的数据量越大，时间复杂度越高。</p>
+<p>（4）<strong>约束Map输出。</strong>在Map Reduce框架里，Map之后的数据是要经过排序才执行Reduce操作的。这通常涉及到归并排序，而归并排序的算法思想便是“对小文件进行排序，然后将小文件归并成大文件”，因此“小文件”不宜过大。</p>
+<blockquote>
+<p>“<strong>但是，该参数也不会设置得过大。MapReduce中的map任务通常一次处理一个块中的数据，因此，如果任务数太少（少于集群中的节点数量），作业的运行速度就会变慢。</strong>”</p>
+</blockquote>
 </li>
-</ol>
-<h2 id="三、整合函数到hive源码中，编译hive"><a href="#三、整合函数到hive源码中，编译hive" class="headerlink" title="三、整合函数到hive源码中，编译hive"></a>三、整合函数到hive源码中，编译hive</h2><ol>
-<li><p>解压src包到相应目录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src</span><br></pre></td></tr></table></figure></li>
-<li><p>把函数放到目录<code>ql/src/java/org/apache/hadoop/hive/ql/udf</code>下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/udf</span><br><span class="line">[hadoop@hadoop001 udf]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/udf</span><br></pre></td></tr></table></figure></li>
-<li><p>修改FunctionRegistry.java </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ vi FunctionRegistry.java </span><br></pre></td></tr></table></figure>
+</ul>
+<h2 id="数据块的实现"><a href="#数据块的实现" class="headerlink" title="数据块的实现"></a>数据块的实现</h2><p>在HDFS的实现中，数据块被抽象成类<code>org.apache.hadoop.hdfs.protocol.Block(我们以下简称Block)</code>。在Block类中有如下几个属性字段：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Block</span> <span class="keyword">implements</span> <span class="title">Writable</span>, <span class="title">Comparable</span>&lt;<span class="title">Block</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> blockId; <span class="comment">// 标识一个Block的唯一Id</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> numBytes; <span class="comment">// Block的大小(单位是字节)</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> generationStamp; <span class="comment">// Block的生成时间戳</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>到相关位置插入添加的函数信息：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>编译</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
+<p>我们从WEB UI上的数据块信息也可以看到：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193921505-989550889.png" alt="img"></p>
+<p> 一个Block除了存储上面的3个字段信息，还需要知道这个Block含有多少个备份，每一个备份分别存储在哪一个DataNode上，为了存储这些信息，HDFS中有一个名为</p>
+<p><code>org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoContiguous</code>(下面我们简称为BlockInfo)</p>
+<p>的类来存储这些信息，这个BlockInfo类继承Block类，如下：</p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193930783-1441983482.png" alt="img"></p>
+<p>BlockInfo类中只有一个非常核心的属性，就是名为triplets的数组，这个数组的长度是<code>3*replication</code>，<code>replication</code>表示数据块的备份数。这个数组中存储了该数据块所有的备份数据块对应的DataNode信息，我们现在假设备份数是<code>3</code>，那么这个数组的长度是<code>3*3=9</code>，这个数组存储的数据如下： </p>
+<p><img src="/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/1598893-20190908193941684-2013773685.png" alt="img"></p>
+<p>也就是说，triplets包含的信息：</p>
+<ul>
+<li>triplets[i]：Block所在的DataNode；</li>
+<li>triplets[i+1]：该DataNode上前一个Block；</li>
+<li>triplets[i+2]：该DataNode上后一个Block；</li>
+</ul>
+<p>其中i表示的是Block的第i个副本，i取值[0,replication)。</p>
+<p>我们在HDFS的NameNode中的Namespace管理中讲到了，一个HDFS文件包含一个BlockInfo数组，表示这个文件分成的若干个数据块，这个BlockInfo数组实际上就是我们这里说的<code>BlockInfoContiguous</code>数组。以下是INodeFile的属性：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">INodeFile</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> header = <span class="number">0L</span>; <span class="comment">// 用于标识存储策略ID、副本数和数据块大小的信息</span></span><br><span class="line">    <span class="keyword">private</span> BlockInfoContiguous[] blocks; <span class="comment">// 该文件包含的数据块数组</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>等待编译</p>
-<p><img src="/2021/12/29/HIVE-UDF/BUILDSUCCESS.png" alt="img"></p>
-<p>目录<code>packaging/target/</code>下的<code>apache-hive-3.1.2-bin.tar.gz</code>就是我们需要的tar包。（不想重新部署的话可以参考第7步）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure></li>
-<li><p>部署hive（省略）</p>
-</li>
-<li><p>检查函数</p>
-<p>用<code>show functions</code>或者<code>desc function 函数名</code>都可以</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = d35e6d35-1d7b-40ae-b86e-3bf09fc0f5d2</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = 5fca1029-8f4a-4c52-9d22-0b2a0942cc85</span><br><span class="line"></span><br><span class="line">hive (default)&gt; desc function add_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;add_random&#x27;</span><br><span class="line">Time taken: 0.078 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; desc function remove_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;remove_random&#x27;</span><br><span class="line">Time taken: 0.049 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>替换jar包</p>
-<p>找到我们需要替换的<code>hive-exec-3.1.2.jar</code>包</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:26 hive-exec-3.1.2.jar</span><br></pre></td></tr></table></figure>
+<p>那么，到现在为止，我们了解到了这些信息：文件包含了哪些Block，这些Block分别被实际存储在哪些DataNode上，DataNode上所有Block前后链表关系。</p>
+<p>如果从信息完整度来看，以上信息数据足够支持所有关于HDFS文件系统的正常操作，但还存在一个使用场景较多的问题：怎样通过blockId快速定位BlockInfo？</p>
+<p>我们其实可以在NameNode上用一个HashMap来维护blockId到Block的映射，也就是说我们可以使用<code>HashMap&lt;Block, BlockInfo&gt;</code>来维护，这样的话我们就可以快速的根据blockId定位BlockInfo，但是由于在内存使用、碰撞冲突解决和性能等方面存在问题，Hadoop团队之后使用重新实现的LightWeightGSet代替HashMap，该数据结构本质上也是利用链表解决碰撞冲突的<a href="https://issues.apache.org/jira/browse/HDFS-1114">HashTable</a>，但是在易用性、内存占用和性能等方面表现更好。</p>
+<p>HDFS为了解决通过blockId快速定位BlockInfo的问题，所以引入了BlocksMap，BlocksMap底层通过LightWeightGSet实现。</p>
+<p>在HDFS集群启动过程，DataNode会进行BR（BlockReport，其实就是将DataNode自身存储的数据块上报给NameNode），根据BR的每一个Block计算其HashCode，之后将对应的BlockInfo插入到相应位置逐渐构建起来巨大的BlocksMap。前面在INodeFile里也提到的BlockInfo集合，如果我们将BlocksMap里的BlockInfo与所有INodeFile里的BlockInfo分别收集起来，可以发现两个集合完全相同，事实上BlocksMap里所有的BlockInfo就是INodeFile中对应BlockInfo的引用；通过Block查找对应BlockInfo时，也是先对Block计算HashCode，根据结果快速定位到对应的BlockInfo信息。至此涉及到HDFS文件系统本身元数据的问题基本上已经解决了。</p>
+<h2 id="BlocksMap内存估算"><a href="#BlocksMap内存估算" class="headerlink" title="BlocksMap内存估算"></a>BlocksMap内存估算</h2><p>HDFS将文件按照一定的大小切成多个Block，为了保证数据可靠性，每个Block对应多个副本，存储在不同DataNode上。NameNode除需要维护Block本身的信息外，还需要维护从Block到DataNode列表的对应关系，用于描述每一个Block副本实际存储的物理位置，BlocksMap结构即用于Block到DataNode列表的映射关系，BlocksMap是常驻在内存中，而且占用内存非常大，所以对BlocksMap进行内存的估算是非常有必要的。</p>
+<p><strong>BlocksMap</strong>的内部结构：</p>
+<blockquote>
+<p>以下的内存估算是在64位操作系统上且没有开启指针压缩功能场景下</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class BlocksMap &#123;</span><br><span class="line">    private final int capacity; // 占 4 字节</span><br><span class="line">    // 我们使用GSet的实现者：LightWeightGSet</span><br><span class="line">    private GSet&lt;Block, BlockInfoContiguous&gt; blocks;  // 引用类型占8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>进入到正在使用的hive目录下，找到要被替换的包，改名备份</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/hive/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar</span><br><span class="line">[hadoop@hadoop001 lib]$ mv hive-exec-3.1.2.jar hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
+<p>可以得出BlocksMap的直接内存大小是：<strong>对象头16字节 + 4字节 + 8字节 = 28字节</strong></p>
+<p><strong>Block</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Block implements Writable, Comparable&lt;Block&gt; &#123;</span><br><span class="line">    private long blockId; // 标识一个Block的唯一Id     占 8字节</span><br><span class="line">    private long numBytes; // Block的大小(单位是字节)   占 8字节</span><br><span class="line">    private long generationStamp; // Block的生成时间戳   占 8字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>替换</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ cp /home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib/hive-exec-3.1.2.jar ./</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.*</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:46 hive-exec-3.1.2.jar</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
+<p>可以得出Block的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 8字节 = 40字节</strong></p>
+<p><strong>BlockInfoContiguous</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class BlockInfoContiguous extends Block &#123;</span><br><span class="line">    private BlockCollection bc;   // 引用类型占8字节</span><br><span class="line">    private LightWeightGSet.LinkedElement nextLinkedElement;  // 引用类型占8字节</span><br><span class="line">    private Object[] triplets;  // 引用类型 8字节 + 数组对象头24字节 + 3*3(备份数假设为3)*8 = 104字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>然后重启Hive即可找到函数。</p>
-</li>
-</ol>
-<h2 id="四、Hive源码编译"><a href="#四、Hive源码编译" class="headerlink" title="四、Hive源码编译"></a>四、Hive源码编译</h2><p>个人在上面操作的源码编译上遇到好几个坑，又是改仓库又是修改java文件的。</p>
-<p>一开始是直接下载hive官网下载地址<a href="https://dlcdn.apache.org/hive/hive-3.1.2/%E7%9A%84src%E5%8C%85%E3%80%82">https://dlcdn.apache.org/hive/hive-3.1.2/的src包。</a></p>
-<p>在目录下执行命令开始编译</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
+<p>可以得出BlockInfoContiguous的直接内存大小是：<strong>对象头16字节 + 8字节 + 8字节 + 104字节 = 136字节</strong></p>
+<p><strong>LightWeightGSet</strong>的结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class LightWeightGSet&lt;K, E extends K&gt; implements GSet&lt;K, E&gt; &#123;</span><br><span class="line">    private final LinkedElement[] entries; // 引用类型 8字节 + 数组对象头24字节 = 32字节</span><br><span class="line">    private final int hash_mask; // 4字节</span><br><span class="line">    private int size = 0; // 4字节</span><br><span class="line">    private int modification = 0; // 4字节</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>问题一：<strong>pentaho-aggdesigner-algorithm-5.1.5-jhyde.jar</strong>缺失</p>
-<p>在maven的conf/settings.xml 中添加阿里云仓库地址</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi app/maven/conf/settings.xml </span><br></pre></td></tr></table></figure>
+<p>　　LightWeightGSet本质是一个链式解决冲突的哈希表，为了避免rehash过程带来的性能开销，初始化时，LightWeightGSet的索引空间直接给到了整个JVM可用内存的2%，并且不再变化。 所以LightWeightGSet的直接内存大小为：**对象头16字节 + 32字节 + 4字节 + 4字节 + 4字节 + (2%<em>JVM可用内存) = 60字节 + (2%<em>JVM可用内存)</em></em></p>
+<p>假设集群中共1亿Block，NameNode可用内存空间固定大小128GB，则BlocksMap占用内存情况：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BlocksMap直接内存大小 + (Block直接内存大小 + BlockInfoContiguous直接内存大小) * 100M + LightWeightGSet直接内存大小</span><br><span class="line">即：</span><br><span class="line">28字节 + (40字节 + 136字节) * 100M + 60字节 + (2%*128G) = 19.7475GB</span><br></pre></td></tr></table></figure>
 
-<p>注意：<code>&lt;mirror&gt;&lt;/mirror&gt;</code>标签要在<code>&lt;mirrors&gt;&lt;/mirrors&gt;</code>内,我最开始没注意，原来文本下面有个<code>&lt;mirrors&gt;</code>没注释掉</p>
-<p><img src="/2021/12/29/HIVE-UDF/aliyun.png" alt="img"></p>
-<p>我这里注释掉了，因为后来使用maven仓库下载的，没有用到阿里云。</p>
-<p>问题二：添加阿里云仓库后，重新编译，依然报错</p>
-<p><img src="/2021/12/29/HIVE-UDF/LLAP.png" alt="image-20211231161907516"></p>
-<p>网上搜查发现有同样问题的，然后需要根据错误提示，参考<a href="https://github.com/gitlbo/hive/commits/3.1.2%E4%BF%AE%E6%94%B9%E6%BA%90%E7%A0%81%E4%B8%AD%E7%9A%84%E6%9F%90%E5%87%A0%E4%B8%AA%E7%B1%BB%E3%80%82%E4%BA%8E%E6%98%AF%E6%88%91%E6%8C%89%E6%AD%A5%E9%AA%A4%E4%BF%AE%E6%94%B9%E5%90%8E%EF%BC%8C%E5%8F%AF%E4%BB%A5%E7%BC%96%E8%AF%91%E8%BF%99%E4%B8%AA%E7%BB%84%E4%BB%B6%E4%BA%86%EF%BC%8C%E4%BD%86%E5%8F%88%E6%9C%89%E5%85%B6%E4%BB%96%E5%9C%B0%E6%96%B9%E6%8A%A5%E9%94%99%E3%80%82">https://github.com/gitlbo/hive/commits/3.1.2修改源码中的某几个类。于是我按步骤修改后，可以编译这个组件了，但又有其他地方报错。</a></p>
-<p>既然都要按照修改，为什么不直接用最新的src包呢，于是我下载了一个新的src包。</p>
-<p><img src="/2021/12/29/HIVE-UDF/hive1.png" alt="image-20211231162607453"></p>
-<p><img src="/2021/12/29/HIVE-UDF/hive2.png" alt="image-20211231162633319"></p>
-<p><img src="/2021/12/29/HIVE-UDF/hive3.png" alt="image-20211231162658887"></p>
-<p><img src="/2021/12/29/HIVE-UDF/hive4.png" alt="image-20211231162727453"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ wget -O apache-hive-3.1.2-src.zip https://codeload.github.com/gitlbo/hive/zip/c073e71ef43699b7aa68cad7c69a2e8f487089fd</span><br></pre></td></tr></table></figure>
-
-<p>然后解压，修改pom.xml里的hadoop.version为我的版本3.2.2.然后其他根据个人需要修改。</p>
-<p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
-
+<blockquote>
+<p>上面为什么是乘以100M呢？ 因为100M = 100 * 1024 * 1024 bytes = 104857600 bytes，约等于1亿字节，而上面的内存的单位都是字节的，我们乘以100M，就相当于1亿Block</p>
+</blockquote>
+<p>BlocksMap数据在NameNode整个生命周期内常驻内存，随着数据规模的增加，对应Block数会随之增多，BlocksMap所占用的JVM堆内存空间也会基本保持线性同步增加。</p>
+<hr>
+<p>参考：</p>
+<p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
+<p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -600,6 +495,111 @@
 
 <p>打印类的路径</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
+    <title>HIVE UDF 与 HIVE源码编译</title>
+    <url>/2021/12/29/HIVE-UDF/</url>
+    <content><![CDATA[<h2 id="一、实现UDF"><a href="#一、实现UDF" class="headerlink" title="一、实现UDF"></a>一、实现UDF</h2><p>需求：添加随机数<code>add_random</code>、去除随机数<code>remove_random</code></p>
+<p>UDF函数中实现evaluate方法。</p>
+<p>UDFAddRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>UDFRemoveRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、在查询中使用函数"><a href="#二、在查询中使用函数" class="headerlink" title="二、在查询中使用函数"></a>二、在查询中使用函数</h2><h3 id="临时函数"><a href="#临时函数" class="headerlink" title="临时函数"></a>临时函数</h3><ol>
+<li><p>将包含函数的jar包上传到服务器上，我的存放目录是<code>/home/hadoop/lib</code></p>
+</li>
+<li><p>开启hive会话，执行以下命令添加jar：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; add jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Added [/home/hadoop/lib/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [/home/hadoop/lib/ruozedata-hive-1.0.jar]</span><br></pre></td></tr></table></figure></li>
+<li><p>执行以下命令创建名为add_random的临时函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create temporary function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.025 seconds</span><br></pre></td></tr></table></figure>
+
+<p>remove_random同理。</p>
+</li>
+<li><p>使用函数</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.331 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">OK</span><br><span class="line">ename	_c1</span><br><span class="line">SMITH	SMITH_8</span><br><span class="line">ALLEN	ALLEN_5</span><br><span class="line">WARD	WARD_1</span><br><span class="line">JONES	JONES_0</span><br><span class="line">MARTIN	MARTIN_0</span><br><span class="line">BLAKE	BLAKE_9</span><br><span class="line">CLARK	CLARK_5</span><br><span class="line">SCOTT	SCOTT_7</span><br><span class="line">KING	KING_8</span><br><span class="line">TURNER	TURNER_6</span><br><span class="line">ADAMS	ADAMS_6</span><br><span class="line">JAMES	JAMES_2</span><br><span class="line">FORD	FORD_6</span><br><span class="line">MILLER	MILLER_0</span><br><span class="line">Time taken: 0.882 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; </span><br></pre></td></tr></table></figure></li>
+<li><p>这个UDF只在当前会话窗口生效，当您关闭了窗口此函数就不存在了；</p>
+</li>
+<li><p>如果您想在当前窗口将这个UDF清理掉，请依次执行以下两个命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">drop temporary function if exists add_random;</span><br><span class="line">delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br></pre></td></tr></table></figure></li>
+<li><p>删除后再使用add_random会报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; drop temporary function if exists add_random;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.024 seconds</span><br><span class="line">hive (hive)&gt; delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Deleted [/home/hadoop/lib/ruozedata-hive-1.0.jar] from class path</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">FAILED: SemanticException [Error 10011]: Invalid function add_random</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="永久函数"><a href="#永久函数" class="headerlink" title="永久函数"></a>永久函数</h3><ol>
+<li><p>UDF永久生效,并且对所有hive会话都生效</p>
+</li>
+<li><p>hdfs上创建目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -mkdir /lib/udflib</span><br></pre></td></tr></table></figure></li>
+<li><p>将jar文件上传到hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -put /home/hadoop/lib/ruozedata-hive-1.0.jar /lib/udflib</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -ls /lib/udflib</span><br><span class="line">Found 1 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup       6098 2021-12-28 17:25 /lib/udflib/ruozedata-hive-1.0.jar</span><br></pre></td></tr></table></figure></li>
+<li><p>开启hive会话，执行以下命令添加jar：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;</span><br><span class="line">           &gt; using jar &#x27;hdfs:///lib/udflib/ruozedata-hive-1.0.jar&#x27;;</span><br><span class="line">Added [/tmp/38a5942b-b210-4c46-b700-9a64ae6090b7_resources/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [hdfs:///lib/udflib/ruozedata-hive-1.0.jar]</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.097 seconds</span><br></pre></td></tr></table></figure></li>
+<li><p>函数可以使用，新开hive会话也可使用。</p>
+</li>
+</ol>
+<h2 id="三、整合函数到hive源码中，编译hive"><a href="#三、整合函数到hive源码中，编译hive" class="headerlink" title="三、整合函数到hive源码中，编译hive"></a>三、整合函数到hive源码中，编译hive</h2><ol>
+<li><p>解压src包到相应目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src</span><br></pre></td></tr></table></figure></li>
+<li><p>把函数放到目录<code>ql/src/java/org/apache/hadoop/hive/ql/udf</code>下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/udf</span><br><span class="line">[hadoop@hadoop001 udf]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/udf</span><br></pre></td></tr></table></figure></li>
+<li><p>修改FunctionRegistry.java </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ vi FunctionRegistry.java </span><br></pre></td></tr></table></figure>
+
+<p>到相关位置插入添加的函数信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>编译</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
+
+<p>等待编译</p>
+<p><img src="/2021/12/29/HIVE-UDF/BUILDSUCCESS.png" alt="img"></p>
+<p>目录<code>packaging/target/</code>下的<code>apache-hive-3.1.2-bin.tar.gz</code>就是我们需要的tar包。（不想重新部署的话可以参考第7步）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure></li>
+<li><p>部署hive（省略）</p>
+</li>
+<li><p>检查函数</p>
+<p>用<code>show functions</code>或者<code>desc function 函数名</code>都可以</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = d35e6d35-1d7b-40ae-b86e-3bf09fc0f5d2</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = 5fca1029-8f4a-4c52-9d22-0b2a0942cc85</span><br><span class="line"></span><br><span class="line">hive (default)&gt; desc function add_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;add_random&#x27;</span><br><span class="line">Time taken: 0.078 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; desc function remove_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;remove_random&#x27;</span><br><span class="line">Time taken: 0.049 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>替换jar包</p>
+<p>找到我们需要替换的<code>hive-exec-3.1.2.jar</code>包</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:26 hive-exec-3.1.2.jar</span><br></pre></td></tr></table></figure>
+
+<p>进入到正在使用的hive目录下，找到要被替换的包，改名备份</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/hive/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar</span><br><span class="line">[hadoop@hadoop001 lib]$ mv hive-exec-3.1.2.jar hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
+
+<p>替换</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ cp /home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib/hive-exec-3.1.2.jar ./</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.*</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:46 hive-exec-3.1.2.jar</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
+
+<p>然后重启Hive即可找到函数。</p>
+</li>
+</ol>
+<h2 id="四、Hive源码编译"><a href="#四、Hive源码编译" class="headerlink" title="四、Hive源码编译"></a>四、Hive源码编译</h2><p>个人在上面操作的源码编译上遇到好几个坑，又是改仓库又是修改java文件的。</p>
+<p>一开始是直接下载hive官网下载地址<a href="https://dlcdn.apache.org/hive/hive-3.1.2/%E7%9A%84src%E5%8C%85%E3%80%82">https://dlcdn.apache.org/hive/hive-3.1.2/的src包。</a></p>
+<p>在目录下执行命令开始编译</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
+
+<p>问题一：<strong>pentaho-aggdesigner-algorithm-5.1.5-jhyde.jar</strong>缺失</p>
+<p>在maven的conf/settings.xml 中添加阿里云仓库地址</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi app/maven/conf/settings.xml </span><br></pre></td></tr></table></figure>
+
+<p>注意：<code>&lt;mirror&gt;&lt;/mirror&gt;</code>标签要在<code>&lt;mirrors&gt;&lt;/mirrors&gt;</code>内,我最开始没注意，原来文本下面有个<code>&lt;mirrors&gt;</code>没注释掉</p>
+<p><img src="/2021/12/29/HIVE-UDF/aliyun.png" alt="img"></p>
+<p>我这里注释掉了，因为后来使用maven仓库下载的，没有用到阿里云。</p>
+<p>问题二：添加阿里云仓库后，重新编译，依然报错</p>
+<p><img src="/2021/12/29/HIVE-UDF/LLAP.png" alt="image-20211231161907516"></p>
+<p>网上搜查发现有同样问题的，然后需要根据错误提示，参考<a href="https://github.com/gitlbo/hive/commits/3.1.2%E4%BF%AE%E6%94%B9%E6%BA%90%E7%A0%81%E4%B8%AD%E7%9A%84%E6%9F%90%E5%87%A0%E4%B8%AA%E7%B1%BB%E3%80%82%E4%BA%8E%E6%98%AF%E6%88%91%E6%8C%89%E6%AD%A5%E9%AA%A4%E4%BF%AE%E6%94%B9%E5%90%8E%EF%BC%8C%E5%8F%AF%E4%BB%A5%E7%BC%96%E8%AF%91%E8%BF%99%E4%B8%AA%E7%BB%84%E4%BB%B6%E4%BA%86%EF%BC%8C%E4%BD%86%E5%8F%88%E6%9C%89%E5%85%B6%E4%BB%96%E5%9C%B0%E6%96%B9%E6%8A%A5%E9%94%99%E3%80%82">https://github.com/gitlbo/hive/commits/3.1.2修改源码中的某几个类。于是我按步骤修改后，可以编译这个组件了，但又有其他地方报错。</a></p>
+<p>既然都要按照修改，为什么不直接用最新的src包呢，于是我下载了一个新的src包。</p>
+<p><img src="/2021/12/29/HIVE-UDF/hive1.png" alt="image-20211231162607453"></p>
+<p><img src="/2021/12/29/HIVE-UDF/hive2.png" alt="image-20211231162633319"></p>
+<p><img src="/2021/12/29/HIVE-UDF/hive3.png" alt="image-20211231162658887"></p>
+<p><img src="/2021/12/29/HIVE-UDF/hive4.png" alt="image-20211231162727453"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ wget -O apache-hive-3.1.2-src.zip https://codeload.github.com/gitlbo/hive/zip/c073e71ef43699b7aa68cad7c69a2e8f487089fd</span><br></pre></td></tr></table></figure>
+
+<p>然后解压，修改pom.xml里的hadoop.version为我的版本3.2.2.然后其他根据个人需要修改。</p>
+<p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
 
 ]]></content>
   </entry>
@@ -1029,24 +1029,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>什么是尾递归</title>
     <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
     <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
@@ -1074,6 +1056,24 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1146,6 +1146,69 @@
 <li><p>然后用编辑器修改好文本，发布</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
+    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
+
+<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
+
+<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
+<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
+<ul>
+<li><p><strong>log4j-1.2.xx.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
+</li>
+</ul>
+<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
@@ -1441,69 +1504,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
-    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
-
-<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
-
-<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
-
-<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
-<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
-<ul>
-<li><p><strong>log4j-1.2.xx.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
-</li>
-</ul>
-<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
