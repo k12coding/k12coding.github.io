@@ -93,66 +93,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS文件读写流程与副本放置策略</title>
-    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
-<ol>
-<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
-</li>
-<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
-<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
-<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
-</li>
-<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
-<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
-</li>
-<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
-</li>
-<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
-</li>
-<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
-</li>
-<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
-</li>
-</ol>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
-<ol>
-<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
-</li>
-<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
-</li>
-<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
-</li>
-<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
-</li>
-<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
-<ul>
-<li>假如ok就关闭与DN通信。</li>
-<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
-</ul>
-<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
-<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
-<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
-</li>
-<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
-</li>
-</ol>
-<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
-<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
-<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
-<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
-</blockquote>
-<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
-<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
-<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
-<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
-<p>假如还有更多副本：随机放。</p>
-<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
-<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
-<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
-]]></content>
-  </entry>
-  <entry>
     <title>HDFS中的数据块(Block)</title>
     <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
     <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
@@ -273,6 +213,171 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS文件读写流程与副本放置策略</title>
+    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
+<ol>
+<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
+</li>
+<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
+<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
+<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
+</li>
+<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
+<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
+</li>
+<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
+</li>
+<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
+</li>
+<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
+</li>
+<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
+</li>
+</ol>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
+<ol>
+<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
+</li>
+<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
+</li>
+<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
+</li>
+<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
+</li>
+<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
+<ul>
+<li>假如ok就关闭与DN通信。</li>
+<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
+</ul>
+<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
+<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
+<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
+</li>
+<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
+</li>
+</ol>
+<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
+<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
+<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
+<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
+</blockquote>
+<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
+<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
+<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
+<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
+<p>假如还有更多副本：随机放。</p>
+<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
+<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
+<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HIVE UDF 与 HIVE源码编译</title>
+    <url>/2021/12/29/HIVE-UDF/</url>
+    <content><![CDATA[<h2 id="一、实现UDF"><a href="#一、实现UDF" class="headerlink" title="一、实现UDF"></a>一、实现UDF</h2><p>需求：添加随机数<code>add_random</code>、去除随机数<code>remove_random</code></p>
+<p>UDF函数中实现evaluate方法。</p>
+<p>UDFAddRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>UDFRemoveRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、在查询中使用函数"><a href="#二、在查询中使用函数" class="headerlink" title="二、在查询中使用函数"></a>二、在查询中使用函数</h2><h3 id="临时函数"><a href="#临时函数" class="headerlink" title="临时函数"></a>临时函数</h3><ol>
+<li><p>将包含函数的jar包上传到服务器上，我的存放目录是<code>/home/hadoop/lib</code></p>
+</li>
+<li><p>开启hive会话，执行以下命令添加jar：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; add jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Added [/home/hadoop/lib/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [/home/hadoop/lib/ruozedata-hive-1.0.jar]</span><br></pre></td></tr></table></figure></li>
+<li><p>执行以下命令创建名为add_random的临时函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create temporary function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.025 seconds</span><br></pre></td></tr></table></figure>
+
+<p>remove_random同理。</p>
+</li>
+<li><p>使用函数</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.331 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">OK</span><br><span class="line">ename	_c1</span><br><span class="line">SMITH	SMITH_8</span><br><span class="line">ALLEN	ALLEN_5</span><br><span class="line">WARD	WARD_1</span><br><span class="line">JONES	JONES_0</span><br><span class="line">MARTIN	MARTIN_0</span><br><span class="line">BLAKE	BLAKE_9</span><br><span class="line">CLARK	CLARK_5</span><br><span class="line">SCOTT	SCOTT_7</span><br><span class="line">KING	KING_8</span><br><span class="line">TURNER	TURNER_6</span><br><span class="line">ADAMS	ADAMS_6</span><br><span class="line">JAMES	JAMES_2</span><br><span class="line">FORD	FORD_6</span><br><span class="line">MILLER	MILLER_0</span><br><span class="line">Time taken: 0.882 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; </span><br></pre></td></tr></table></figure></li>
+<li><p>这个UDF只在当前会话窗口生效，当您关闭了窗口此函数就不存在了；</p>
+</li>
+<li><p>如果您想在当前窗口将这个UDF清理掉，请依次执行以下两个命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">drop temporary function if exists add_random;</span><br><span class="line">delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br></pre></td></tr></table></figure></li>
+<li><p>删除后再使用add_random会报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; drop temporary function if exists add_random;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.024 seconds</span><br><span class="line">hive (hive)&gt; delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Deleted [/home/hadoop/lib/ruozedata-hive-1.0.jar] from class path</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">FAILED: SemanticException [Error 10011]: Invalid function add_random</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="永久函数"><a href="#永久函数" class="headerlink" title="永久函数"></a>永久函数</h3><ol>
+<li><p>UDF永久生效,并且对所有hive会话都生效</p>
+</li>
+<li><p>hdfs上创建目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -mkdir /lib/udflib</span><br></pre></td></tr></table></figure></li>
+<li><p>将jar文件上传到hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -put /home/hadoop/lib/ruozedata-hive-1.0.jar /lib/udflib</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -ls /lib/udflib</span><br><span class="line">Found 1 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup       6098 2021-12-28 17:25 /lib/udflib/ruozedata-hive-1.0.jar</span><br></pre></td></tr></table></figure></li>
+<li><p>开启hive会话，执行以下命令添加jar：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;</span><br><span class="line">           &gt; using jar &#x27;hdfs:///lib/udflib/ruozedata-hive-1.0.jar&#x27;;</span><br><span class="line">Added [/tmp/38a5942b-b210-4c46-b700-9a64ae6090b7_resources/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [hdfs:///lib/udflib/ruozedata-hive-1.0.jar]</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.097 seconds</span><br></pre></td></tr></table></figure></li>
+<li><p>函数可以使用，新开hive会话也可使用。</p>
+</li>
+</ol>
+<h2 id="三、整合函数到hive源码中，编译hive"><a href="#三、整合函数到hive源码中，编译hive" class="headerlink" title="三、整合函数到hive源码中，编译hive"></a>三、整合函数到hive源码中，编译hive</h2><ol>
+<li><p>解压src包到相应目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src</span><br></pre></td></tr></table></figure></li>
+<li><p>把函数放到目录<code>ql/src/java/org/apache/hadoop/hive/ql/udf</code>下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/udf</span><br><span class="line">[hadoop@hadoop001 udf]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/udf</span><br></pre></td></tr></table></figure></li>
+<li><p>修改FunctionRegistry.java </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ vi FunctionRegistry.java </span><br></pre></td></tr></table></figure>
+
+<p>到相关位置插入添加的函数信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>编译</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
+
+<p>等待编译</p>
+<p><img src="/2021/12/29/HIVE-UDF/BUILDSUCCESS.png" alt="img"></p>
+<p>目录<code>packaging/target/</code>下的<code>apache-hive-3.1.2-bin.tar.gz</code>就是我们需要的tar包。（不想重新部署的话可以参考第7步）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure></li>
+<li><p>部署hive（省略）</p>
+</li>
+<li><p>检查函数</p>
+<p>用<code>show functions</code>或者<code>desc function 函数名</code>都可以</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = d35e6d35-1d7b-40ae-b86e-3bf09fc0f5d2</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = 5fca1029-8f4a-4c52-9d22-0b2a0942cc85</span><br><span class="line"></span><br><span class="line">hive (default)&gt; desc function add_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;add_random&#x27;</span><br><span class="line">Time taken: 0.078 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; desc function remove_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;remove_random&#x27;</span><br><span class="line">Time taken: 0.049 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>替换jar包</p>
+<p>找到我们需要替换的<code>hive-exec-3.1.2.jar</code>包</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:26 hive-exec-3.1.2.jar</span><br></pre></td></tr></table></figure>
+
+<p>进入到正在使用的hive目录下，找到要被替换的包，改名备份</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/hive/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar</span><br><span class="line">[hadoop@hadoop001 lib]$ mv hive-exec-3.1.2.jar hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
+
+<p>替换</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ cp /home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib/hive-exec-3.1.2.jar ./</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.*</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:46 hive-exec-3.1.2.jar</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
+
+<p>然后重启Hive即可找到函数。</p>
+</li>
+</ol>
+<h2 id="四、Hive源码编译"><a href="#四、Hive源码编译" class="headerlink" title="四、Hive源码编译"></a>四、Hive源码编译</h2><p>个人在上面操作的源码编译上遇到好几个坑，又是改仓库又是修改java文件的。</p>
+<p>一开始是直接下载hive官网下载地址<a href="https://dlcdn.apache.org/hive/hive-3.1.2/%E7%9A%84src%E5%8C%85%E3%80%82">https://dlcdn.apache.org/hive/hive-3.1.2/的src包。</a></p>
+<p>在目录下执行命令开始编译</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
+
+<p>问题一：<strong>pentaho-aggdesigner-algorithm-5.1.5-jhyde.jar</strong>缺失</p>
+<p>在maven的conf/settings.xml 中添加阿里云仓库地址</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi app/maven/conf/settings.xml </span><br></pre></td></tr></table></figure>
+
+<p>注意：<code>&lt;mirror&gt;&lt;/mirror&gt;</code>标签要在<code>&lt;mirrors&gt;&lt;/mirrors&gt;</code>内,我最开始没注意，原来文本下面有个<code>&lt;mirrors&gt;</code>没注释掉</p>
+<p><img src="/2021/12/29/HIVE-UDF/aliyun.png" alt="img"></p>
+<p>我这里注释掉了，因为后来使用maven仓库下载的，没有用到阿里云。</p>
+<p>问题二：添加阿里云仓库后，重新编译，依然报错</p>
+<p><img src="/2021/12/29/HIVE-UDF/LLAP.png" alt="image-20211231161907516"></p>
+<p>网上搜查发现有同样问题的，然后需要根据错误提示，参考<a href="https://github.com/gitlbo/hive/commits/3.1.2%E4%BF%AE%E6%94%B9%E6%BA%90%E7%A0%81%E4%B8%AD%E7%9A%84%E6%9F%90%E5%87%A0%E4%B8%AA%E7%B1%BB%E3%80%82%E4%BA%8E%E6%98%AF%E6%88%91%E6%8C%89%E6%AD%A5%E9%AA%A4%E4%BF%AE%E6%94%B9%E5%90%8E%EF%BC%8C%E5%8F%AF%E4%BB%A5%E7%BC%96%E8%AF%91%E8%BF%99%E4%B8%AA%E7%BB%84%E4%BB%B6%E4%BA%86%EF%BC%8C%E4%BD%86%E5%8F%88%E6%9C%89%E5%85%B6%E4%BB%96%E5%9C%B0%E6%96%B9%E6%8A%A5%E9%94%99%E3%80%82">https://github.com/gitlbo/hive/commits/3.1.2修改源码中的某几个类。于是我按步骤修改后，可以编译这个组件了，但又有其他地方报错。</a></p>
+<p>既然都要按照修改，为什么不直接用最新的src包呢，于是我下载了一个新的src包。</p>
+<p><img src="/2021/12/29/HIVE-UDF/hive1.png" alt="image-20211231162607453"></p>
+<p><img src="/2021/12/29/HIVE-UDF/hive2.png" alt="image-20211231162633319"></p>
+<p><img src="/2021/12/29/HIVE-UDF/hive3.png" alt="image-20211231162658887"></p>
+<p><img src="/2021/12/29/HIVE-UDF/hive4.png" alt="image-20211231162727453"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ wget -O apache-hive-3.1.2-src.zip https://codeload.github.com/gitlbo/hive/zip/c073e71ef43699b7aa68cad7c69a2e8f487089fd</span><br></pre></td></tr></table></figure>
+
+<p>然后解压，修改pom.xml里的hadoop.version为我的版本3.2.2.然后其他根据个人需要修改。</p>
+<p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
@@ -495,111 +600,6 @@
 
 <p>打印类的路径</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
-    <title>HIVE UDF 与 HIVE源码编译</title>
-    <url>/2021/12/29/HIVE-UDF/</url>
-    <content><![CDATA[<h2 id="一、实现UDF"><a href="#一、实现UDF" class="headerlink" title="一、实现UDF"></a>一、实现UDF</h2><p>需求：添加随机数<code>add_random</code>、去除随机数<code>remove_random</code></p>
-<p>UDF函数中实现evaluate方法。</p>
-<p>UDFAddRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>UDFRemoveRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="二、在查询中使用函数"><a href="#二、在查询中使用函数" class="headerlink" title="二、在查询中使用函数"></a>二、在查询中使用函数</h2><h3 id="临时函数"><a href="#临时函数" class="headerlink" title="临时函数"></a>临时函数</h3><ol>
-<li><p>将包含函数的jar包上传到服务器上，我的存放目录是<code>/home/hadoop/lib</code></p>
-</li>
-<li><p>开启hive会话，执行以下命令添加jar：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; add jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Added [/home/hadoop/lib/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [/home/hadoop/lib/ruozedata-hive-1.0.jar]</span><br></pre></td></tr></table></figure></li>
-<li><p>执行以下命令创建名为add_random的临时函数：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create temporary function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.025 seconds</span><br></pre></td></tr></table></figure>
-
-<p>remove_random同理。</p>
-</li>
-<li><p>使用函数</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.331 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">OK</span><br><span class="line">ename	_c1</span><br><span class="line">SMITH	SMITH_8</span><br><span class="line">ALLEN	ALLEN_5</span><br><span class="line">WARD	WARD_1</span><br><span class="line">JONES	JONES_0</span><br><span class="line">MARTIN	MARTIN_0</span><br><span class="line">BLAKE	BLAKE_9</span><br><span class="line">CLARK	CLARK_5</span><br><span class="line">SCOTT	SCOTT_7</span><br><span class="line">KING	KING_8</span><br><span class="line">TURNER	TURNER_6</span><br><span class="line">ADAMS	ADAMS_6</span><br><span class="line">JAMES	JAMES_2</span><br><span class="line">FORD	FORD_6</span><br><span class="line">MILLER	MILLER_0</span><br><span class="line">Time taken: 0.882 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; </span><br></pre></td></tr></table></figure></li>
-<li><p>这个UDF只在当前会话窗口生效，当您关闭了窗口此函数就不存在了；</p>
-</li>
-<li><p>如果您想在当前窗口将这个UDF清理掉，请依次执行以下两个命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">drop temporary function if exists add_random;</span><br><span class="line">delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br></pre></td></tr></table></figure></li>
-<li><p>删除后再使用add_random会报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; drop temporary function if exists add_random;</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.024 seconds</span><br><span class="line">hive (hive)&gt; delete jar /home/hadoop/lib/ruozedata-hive-1.0.jar;</span><br><span class="line">Deleted [/home/hadoop/lib/ruozedata-hive-1.0.jar] from class path</span><br><span class="line">hive (hive)&gt; select ename,add_random(ename) from emp;</span><br><span class="line">FAILED: SemanticException [Error 10011]: Invalid function add_random</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="永久函数"><a href="#永久函数" class="headerlink" title="永久函数"></a>永久函数</h3><ol>
-<li><p>UDF永久生效,并且对所有hive会话都生效</p>
-</li>
-<li><p>hdfs上创建目录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -mkdir /lib/udflib</span><br></pre></td></tr></table></figure></li>
-<li><p>将jar文件上传到hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -put /home/hadoop/lib/ruozedata-hive-1.0.jar /lib/udflib</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -ls /lib/udflib</span><br><span class="line">Found 1 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup       6098 2021-12-28 17:25 /lib/udflib/ruozedata-hive-1.0.jar</span><br></pre></td></tr></table></figure></li>
-<li><p>开启hive会话，执行以下命令添加jar：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create function add_random as &#x27;com.ruozedata.hive.udf.UDFAddRandom&#x27;</span><br><span class="line">           &gt; using jar &#x27;hdfs:///lib/udflib/ruozedata-hive-1.0.jar&#x27;;</span><br><span class="line">Added [/tmp/38a5942b-b210-4c46-b700-9a64ae6090b7_resources/ruozedata-hive-1.0.jar] to class path</span><br><span class="line">Added resources: [hdfs:///lib/udflib/ruozedata-hive-1.0.jar]</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.097 seconds</span><br></pre></td></tr></table></figure></li>
-<li><p>函数可以使用，新开hive会话也可使用。</p>
-</li>
-</ol>
-<h2 id="三、整合函数到hive源码中，编译hive"><a href="#三、整合函数到hive源码中，编译hive" class="headerlink" title="三、整合函数到hive源码中，编译hive"></a>三、整合函数到hive源码中，编译hive</h2><ol>
-<li><p>解压src包到相应目录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src</span><br></pre></td></tr></table></figure></li>
-<li><p>把函数放到目录<code>ql/src/java/org/apache/hadoop/hive/ql/udf</code>下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/udf</span><br><span class="line">[hadoop@hadoop001 udf]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/udf</span><br></pre></td></tr></table></figure></li>
-<li><p>修改FunctionRegistry.java </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/ql/src/java/org/apache/hadoop/hive/ql/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ vi FunctionRegistry.java </span><br></pre></td></tr></table></figure>
-
-<p>到相关位置插入添加的函数信息：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>编译</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
-
-<p>等待编译</p>
-<p><img src="/2021/12/29/HIVE-UDF/BUILDSUCCESS.png" alt="img"></p>
-<p>目录<code>packaging/target/</code>下的<code>apache-hive-3.1.2-bin.tar.gz</code>就是我们需要的tar包。（不想重新部署的话可以参考第7步）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure></li>
-<li><p>部署hive（省略）</p>
-</li>
-<li><p>检查函数</p>
-<p>用<code>show functions</code>或者<code>desc function 函数名</code>都可以</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = d35e6d35-1d7b-40ae-b86e-3bf09fc0f5d2</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = 5fca1029-8f4a-4c52-9d22-0b2a0942cc85</span><br><span class="line"></span><br><span class="line">hive (default)&gt; desc function add_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;add_random&#x27;</span><br><span class="line">Time taken: 0.078 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; desc function remove_random;</span><br><span class="line">OK</span><br><span class="line">tab_name</span><br><span class="line">There is no documentation for function &#x27;remove_random&#x27;</span><br><span class="line">Time taken: 0.049 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>替换jar包</p>
-<p>找到我们需要替换的<code>hive-exec-3.1.2.jar</code>包</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:26 hive-exec-3.1.2.jar</span><br></pre></td></tr></table></figure>
-
-<p>进入到正在使用的hive目录下，找到要被替换的包，改名备份</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ pwd</span><br><span class="line">/home/hadoop/software/hive/lib</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar</span><br><span class="line">[hadoop@hadoop001 lib]$ mv hive-exec-3.1.2.jar hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
-
-<p>替换</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ cp /home/hadoop/software/apache-hive-3.1.2-src/packaging/target/apache-hive-3.1.2-bin/apache-hive-3.1.2-bin/lib/hive-exec-3.1.2.jar ./</span><br><span class="line">[hadoop@hadoop001 lib]$ ll hive-exec-3.1.2.*</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 41063609 Dec 31 06:46 hive-exec-3.1.2.jar</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 40623961 Aug 23  2019 hive-exec-3.1.2.jar_bak</span><br></pre></td></tr></table></figure>
-
-<p>然后重启Hive即可找到函数。</p>
-</li>
-</ol>
-<h2 id="四、Hive源码编译"><a href="#四、Hive源码编译" class="headerlink" title="四、Hive源码编译"></a>四、Hive源码编译</h2><p>个人在上面操作的源码编译上遇到好几个坑，又是改仓库又是修改java文件的。</p>
-<p>一开始是直接下载hive官网下载地址<a href="https://dlcdn.apache.org/hive/hive-3.1.2/%E7%9A%84src%E5%8C%85%E3%80%82">https://dlcdn.apache.org/hive/hive-3.1.2/的src包。</a></p>
-<p>在目录下执行命令开始编译</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</span><br></pre></td></tr></table></figure>
-
-<p>问题一：<strong>pentaho-aggdesigner-algorithm-5.1.5-jhyde.jar</strong>缺失</p>
-<p>在maven的conf/settings.xml 中添加阿里云仓库地址</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi app/maven/conf/settings.xml </span><br></pre></td></tr></table></figure>
-
-<p>注意：<code>&lt;mirror&gt;&lt;/mirror&gt;</code>标签要在<code>&lt;mirrors&gt;&lt;/mirrors&gt;</code>内,我最开始没注意，原来文本下面有个<code>&lt;mirrors&gt;</code>没注释掉</p>
-<p><img src="/2021/12/29/HIVE-UDF/aliyun.png" alt="img"></p>
-<p>我这里注释掉了，因为后来使用maven仓库下载的，没有用到阿里云。</p>
-<p>问题二：添加阿里云仓库后，重新编译，依然报错</p>
-<p><img src="/2021/12/29/HIVE-UDF/LLAP.png" alt="image-20211231161907516"></p>
-<p>网上搜查发现有同样问题的，然后需要根据错误提示，参考<a href="https://github.com/gitlbo/hive/commits/3.1.2%E4%BF%AE%E6%94%B9%E6%BA%90%E7%A0%81%E4%B8%AD%E7%9A%84%E6%9F%90%E5%87%A0%E4%B8%AA%E7%B1%BB%E3%80%82%E4%BA%8E%E6%98%AF%E6%88%91%E6%8C%89%E6%AD%A5%E9%AA%A4%E4%BF%AE%E6%94%B9%E5%90%8E%EF%BC%8C%E5%8F%AF%E4%BB%A5%E7%BC%96%E8%AF%91%E8%BF%99%E4%B8%AA%E7%BB%84%E4%BB%B6%E4%BA%86%EF%BC%8C%E4%BD%86%E5%8F%88%E6%9C%89%E5%85%B6%E4%BB%96%E5%9C%B0%E6%96%B9%E6%8A%A5%E9%94%99%E3%80%82">https://github.com/gitlbo/hive/commits/3.1.2修改源码中的某几个类。于是我按步骤修改后，可以编译这个组件了，但又有其他地方报错。</a></p>
-<p>既然都要按照修改，为什么不直接用最新的src包呢，于是我下载了一个新的src包。</p>
-<p><img src="/2021/12/29/HIVE-UDF/hive1.png" alt="image-20211231162607453"></p>
-<p><img src="/2021/12/29/HIVE-UDF/hive2.png" alt="image-20211231162633319"></p>
-<p><img src="/2021/12/29/HIVE-UDF/hive3.png" alt="image-20211231162658887"></p>
-<p><img src="/2021/12/29/HIVE-UDF/hive4.png" alt="image-20211231162727453"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ wget -O apache-hive-3.1.2-src.zip https://codeload.github.com/gitlbo/hive/zip/c073e71ef43699b7aa68cad7c69a2e8f487089fd</span><br></pre></td></tr></table></figure>
-
-<p>然后解压，修改pom.xml里的hadoop.version为我的版本3.2.2.然后其他根据个人需要修改。</p>
-<p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
 
 ]]></content>
   </entry>
@@ -1181,37 +1181,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
-    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
-
-<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
-
-<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
-
-<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
-<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
-<ul>
-<li><p><strong>log4j-1.2.xx.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
-</li>
-</ul>
-<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
-]]></content>
-  </entry>
-  <entry>
     <title>简明 VIM 练级攻略（转载）</title>
     <url>/2021/12/02/%E7%AE%80%E6%98%8E-VIM-%E7%BB%83%E7%BA%A7%E6%94%BB%E7%95%A5%EF%BC%88%E8%BD%AC%E8%BD%BD%EF%BC%89/</url>
     <content><![CDATA[<p>下面的文章翻译自《<a href="http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/">Learn Vim Progressively</a>》，我觉得这是给新手最好的VIM的升级教程了，没有列举所有的命令，只是列举了那些最有用的命令。非常不错。</p>
@@ -1504,6 +1473,37 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
+    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
+
+<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
+
+<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
+<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
+<ul>
+<li><p><strong>log4j-1.2.xx.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
+</li>
+</ul>
+<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
