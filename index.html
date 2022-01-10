@@ -213,7 +213,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2022-01-11 01:45:28 / 修改时间：01:53:56" itemprop="dateCreated datePublished" datetime="2022-01-11T01:45:28+08:00">2022-01-11</time>
+      <time title="创建时间：2022-01-11 01:45:28 / 修改时间：01:56:20" itemprop="dateCreated datePublished" datetime="2022-01-11T01:45:28+08:00">2022-01-11</time>
     </span>
 
   
@@ -235,11 +235,11 @@
 <p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
 
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/hexo\k12blog\source_posts\spark部署时修改spark-env-sh\image-20220111014835002.png" alt="image-20220111014835002"></p>
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
 <h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
 
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/hexo\k12blog\source_posts\spark部署时修改spark-env-sh\image-20220111015125093.png" alt="image-20220111015125093"></p>
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
 <p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
 
       
