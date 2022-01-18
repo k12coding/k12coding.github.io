@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-count">38</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,167 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/" class="post-title-link" itemprop="url">更新CentOS6.5的yum源</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-19 00:59:04 / 修改时间：01:06:15" itemprop="dateCreated datePublished" datetime="2022-01-19T00:59:04+08:00">2022-01-19</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>原文地址：<a target="_blank" rel="noopener" href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/" class="post-title-link" itemprop="url">CentOS6.5安装NodeJS14.18.3</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-19 00:40:25 / 修改时间：00:57:52" itemprop="dateCreated datePublished" datetime="2022-01-19T00:40:25+08:00">2022-01-19</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
+<li><p>tar包下载</p>
+<p><a target="_blank" rel="noopener" href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
+<p>点击下载：<a target="_blank" rel="noopener" href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
+</li>
+<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
+<p>点击下载：<a target="_blank" rel="noopener" href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
+<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
+<li><p>下载并解压</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
+<li><p>修改环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
+<li><p>刷新配置，查看版本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1106,236 +1267,6 @@
 <p><strong>remove_random</strong>:</p>
 <p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/" class="post-title-link" itemprop="url">SQL:WHERE、ON、HAVING的区别</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-05 02:19:13 / 修改时间：02:42:42" itemprop="dateCreated datePublished" datetime="2022-01-05T02:19:13+08:00">2022-01-05</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="WHERE-与-HAVING"><a href="#WHERE-与-HAVING" class="headerlink" title="WHERE 与 HAVING"></a>WHERE 与 HAVING</h2><p><code>WHERE</code>与<code>HAVING</code>的根本区别在于：</p>
-<ul>
-<li><code>WHERE</code>子句在<code>GROUP BY</code>分组和聚合函数<strong>之前</strong>对数据行进行过滤；</li>
-<li><code>HAVING</code>子句对<code>GROUP BY</code>分组和聚合函数<strong>之后</strong>的数据行进行过滤。</li>
-</ul>
-<p>因此，<code>WHERE</code>子句中不能使用聚合函数。例如，以下语句将会返回错误：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">where <span class="title">count</span><span class="params">(*)</span> &gt; 5</span></span><br><span class="line"><span class="function">group by dept_id</span>;</span><br></pre></td></tr></table></figure>
-
-<p>由于在执行<code>WHERE</code>子句时，还没有计算聚合函数 count(*)，所以无法使用。正确的方法是使用HAVING对聚合之后的结果进行过滤：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 5</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">4</span>|       <span class="number">9</span>|</span><br><span class="line">      <span class="number">5</span>|       <span class="number">8</span>|</span><br></pre></td></tr></table></figure>
-
-<p>另一方面，<code>HAVING</code>子句中不能使用除了分组字段和聚合函数之外的其他字段。例如，以下语句将会返回错误：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">-- 统计每个部门月薪大于等于 <span class="number">30000</span> 的员工人数</span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having salary &gt;= <span class="number">30000</span>;</span><br></pre></td></tr></table></figure>
-
-<p>因为经过<code>GROUP BY</code>分组和聚合函数之后，不再存在 salary 字段，<code>HAVING</code>子句中只能使用分组字段或者聚合函数。</p>
-<blockquote>
-<p>SQLite 虽然允许<code>HAVING</code>子句中出现其他字段，但是得到的结果不正确。</p>
-</blockquote>
-<p>从性能的角度来说，<code>HAVING</code>子句中如果使用了分组字段作为过滤条件，应该替换成<code>WHERE</code>子句；因为<code>WHERE</code>可以在执行分组操作和计算聚合函数之前过滤掉不需要的数据，性能会更好。下面示例中的语句 1 应该替换成语句 2：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having dept_id = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where dept_id = <span class="number">1</span></span><br><span class="line">group by dept_id;</span><br></pre></td></tr></table></figure>
-
-<p>当然，<code>WHERE</code>和<code>HAVING</code>可以组合在一起使用。例如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where salary &gt; <span class="number">10000</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 1</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">1</span>|       <span class="number">3</span>|</span><br></pre></td></tr></table></figure>
-
-<p>该语句返回了月薪大于 10000 的员工人数大于 1 的部门；<code>WHERE</code>用于过滤月薪大于 10000 的员工；<code>HAVING</code>用于过滤员工数量大于 1 的部门。</p>
-<h2 id="WHERE-与-ON"><a href="#WHERE-与-ON" class="headerlink" title="WHERE 与 ON"></a>WHERE 与 ON</h2><p>当查询涉及多个表的关联时，我们既可以使用<code>WHERE</code>子句也可以使用<code>ON</code>子句指定连接条件和过滤条件。这两者之间的主要区别在于：</p>
-<ul>
-<li>对于内连接（inner join）查询，<code>WHERE</code>和<code>ON</code>中的过滤条件等效；</li>
-<li>对于外连接（outer join）查询，<code>ON</code>中的过滤条件在连接操作之前执行，<code>WHERE</code>中的过滤条件（逻辑上）在连接操作之后执行。</li>
-</ul>
-<p>对于内连接查询而言，以下三个语句的结果相同：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.salary </span><br><span class="line">from employee e, department d</span><br><span class="line">where e.dept_id = d.dept_id</span><br><span class="line">and e.emp_id = <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id and e.emp_id = <span class="number">10</span>)</span></span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">3</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id)</span></span></span><br><span class="line"><span class="function">where e.emp_id </span>= <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br></pre></td></tr></table></figure>
-
-<p>语句 1 在<code>WHERE</code>中指定连接条件和过滤条件；语句 2 在<code>ON</code>中指定连接条件和过滤条件；语句 3 在<code>ON</code>中指定连接条件，在<code>WHERE</code>中指定其他过滤条件。上面语句不但结果相同，数据库的执行计划也相同。以 MySQL 为例，以上语句的执行计划如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">id|select_type|table|partitions|type |possible_keys       |key    |key_len|ref  |rows|filtered|Extra|</span><br><span class="line">--|-----------|-----|----------|-----|--------------------|-------|-------|-----|----|--------|-----|</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |e    |          |<span class="keyword">const</span>|PRIMARY,idx_emp_dept|PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |d    |          |<span class="keyword">const</span>|PRIMARY             |PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br></pre></td></tr></table></figure>
-
-<p>尽管如此，仍然建议将两个表的连接条件放在<code>ON</code>子句中，将其他过滤条件放在<code>WHERE</code>子句中；这样语义更加明确，更容易阅读和理解。对于上面的示例而言，推荐使用语句 3 的写法。</p>
-<p>数据库在通过连接两张或多张表来返回记录时，都会生成一张中间的临时表，然后再将这张临时表返回给用户。</p>
-<p>在使用 <strong>left join</strong> 时，<strong>on</strong> 和 <strong>where</strong> 条件的区别如下：</p>
-<p>1、<strong>on</strong> 条件是在生成临时表时使用的条件，它不管 <strong>on</strong> 中的条件是否为真，都会返回左边表中的记录。</p>
-<p>2、where 条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有 <strong>left join</strong> 的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。</p>
-<p>假设有两张表：</p>
-<p>表1：tab1</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">id size</span><br><span class="line">1  10</span><br><span class="line">2  20</span><br><span class="line">3  30</span><br></pre></td></tr></table></figure>
-
-<p>表2：tab2</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">size name</span><br><span class="line">10   AAA</span><br><span class="line">20   BBB</span><br><span class="line">20   CCC</span><br></pre></td></tr></table></figure>
-
-<p>两条SQL:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1、select * from tab1 left join tab2 on tab1.size = tab2.size where tab2.name=&#x27;AAA&#x27;</span><br><span class="line">2、select * from tab1 left join tab2 on tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br></pre></td></tr></table></figure>
-
-<p><strong>第一条SQL的过程：</strong></p>
-<p>1、中间表</p>
-<p>on 条件:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tab1.size = tab2.size</span><br><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 20 BBB</span><br><span class="line">2 20 20 CCC</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
-
-<p>2、再对中间表过滤</p>
-<p>where 条件：</p>
-<p>tab2.name=’AAA’</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br></pre></td></tr></table></figure>
-
-<p><strong>第二条SQL的过程：</strong></p>
-<p>1、中间表</p>
-<p>on 条件:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br><span class="line">(条件不为真也会返回左表中的记录) tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 (null) (null)</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
-
-<p>其实以上结果的关键原因就是 <strong>left join,right join,full join</strong> 的特殊性。</p>
-<p>不管 on 上的条件是否为真都会返回 left 或 right 表中的记录，full 则具有 left 和 right 的特性的并集。</p>
-<p>而 inner jion 没这个特殊性，则条件放在 on 中和 where 中，返回的结果集是相同的。</p>
-<h2 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h2><ul>
-<li><p>SQL标准要求HAVING必须仅引用GROUP BY子句中的列或聚合函数中使用的列。 但是，MySQL支持对此行为的扩展，并允许HAVING引用SELECT列表中的列和外部子查询中的列。</p>
-<p>如果HAVING子句引用了不明确的列，则会出现警告。在下面的语句中，col2不明确，因为它同时用作别名和列名:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(col1) <span class="keyword">AS</span> col2 <span class="keyword">FROM</span> t <span class="keyword">GROUP</span> <span class="keyword">BY</span> col2 <span class="keyword">HAVING</span> col2 <span class="operator">=</span> <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
-
-<p>优先考虑标准SQL行为，因此如果HAVING使用的列名同时出现在GROUP BY和输出列列表使用的别名中，则会优先选择GROUP BY列中的列名。</p>
-</li>
-<li><p>不要对应该出现在WHERE子句中的项使用HAVING。例如，不要写下面的内容</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">HAVING</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
-
-<p>改为写这个:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">WHERE</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure></li>
-<li><p>HAVING子句可以引用聚合函数，而WHERE子句不能</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">user</span>, <span class="built_in">MAX</span>(salary) <span class="keyword">FROM</span> users <span class="keyword">GROUP</span> <span class="keyword">BY</span> <span class="keyword">user</span> <span class="keyword">HAVING</span> <span class="built_in">MAX</span>(salary) <span class="operator">&gt;</span> <span class="number">10</span>;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>参考链接：</p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/horses/article/details/105380420">https://blog.csdn.net/horses/article/details/105380420</a></p>
-<p><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/sql-different-on-and-where.html">https://www.runoob.com/w3cnote/sql-different-on-and-where.html</a></p>
-<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/BxScope/p/10859260.html">https://www.cnblogs.com/BxScope/p/10859260.html</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/01/MapReduce-Join/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/01/MapReduce-Join/" class="post-title-link" itemprop="url">MapReduce Join</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2022-01-01 16:38:34" itemprop="dateCreated datePublished" datetime="2022-01-01T16:38:34+08:00">2022-01-01</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-01-05 16:39:35" itemprop="dateModified" datetime="2022-01-05T16:39:35+08:00">2022-01-05</time>
-      </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>   在传统数据库（如：MySql）中，JOIN操作常常是非常耗时的。而在HADOOP中进行JOIN操作，同样常见且耗时，由于Hadoop的独特设计思想，当进行JOIN操作时，有一些特殊的技巧。下面分别介绍MapReduce中的几种常见join，比如有最常见的 map side join，reduce side join，semi join（这些在Hive中都有） 等。Map side join在处理多个小表关联大表时非常有用，而 reduce join 在处理多表关联时是比较麻烦的，会造成大量的网络IO，效率低下，但在有些时候也是非常有用的。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2022/01/01/MapReduce-Join/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
       
     </div>
 
