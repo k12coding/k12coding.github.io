@@ -213,7 +213,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2022-01-21 04:26:18 / 修改时间：04:34:29" itemprop="dateCreated datePublished" datetime="2022-01-21T04:26:18+08:00">2022-01-21</time>
+      <time title="创建时间：2022-01-21 04:26:18 / 修改时间：04:38:26" itemprop="dateCreated datePublished" datetime="2022-01-21T04:26:18+08:00">2022-01-21</time>
     </span>
 
   
@@ -276,7 +276,10 @@
 <li><h3 id="启动hadoop和hive的metastore服务"><a href="#启动hadoop和hive的metastore服务" class="headerlink" title="启动hadoop和hive的metastore服务"></a>启动hadoop和hive的metastore服务</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start-all.sh</span><br><span class="line">hive --service metastore &amp;</span><br></pre></td></tr></table></figure></li>
 <li><h3 id="找到spark-sql的入口程序："><a href="#找到spark-sql的入口程序：" class="headerlink" title="找到spark-sql的入口程序："></a>找到spark-sql的入口程序：</h3><p><code>org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver</code></p>
 </li>
-<li><h3 id="配置VM-options"><a href="#配置VM-options" class="headerlink" title="配置VM options"></a>配置VM options</h3><p>VM options:<code>-Dscala.usejavacp=true -Dspark.master=local[2] -Djline.WindowsTerminal.directConsole=false</code></p>
+<li><h3 id="配置VM-options"><a href="#配置VM-options" class="headerlink" title="配置VM options"></a>配置VM options</h3><p>VM options:</p>
+<p>-Dscala.usejavacp=true </p>
+<p>-Dspark.master=local[2] </p>
+<p>-Djline.WindowsTerminal.directConsole=false</p>
 <p>启动程序：</p>
 <img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-05.png" alt="image-20220120054854489" style="zoom:50%;"></li>
 <li><h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>执行查询</p>
