@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-count">40</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,119 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/10/dependencies%E4%B8%8EdependencyManagement%E7%9A%84%E5%8C%BA%E5%88%AB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/10/dependencies%E4%B8%8EdependencyManagement%E7%9A%84%E5%8C%BA%E5%88%AB/" class="post-title-link" itemprop="url">dependencies与dependencyManagement的区别</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-10 18:03:01 / 修改时间：20:28:07" itemprop="dateCreated datePublished" datetime="2022-01-10T18:03:01+08:00">2022-01-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="个人小结"><a href="#个人小结" class="headerlink" title="个人小结"></a>个人小结</h2><ul>
+<li>对于依赖的版本，在<code>&lt;properties&gt;</code>中统一声明。</li>
+<li>所有在 dependencies 中定义的依赖都会被在子项目中自动引入，并被子项目继承。</li>
+<li>dependencyManagement 提供的是版本号的管理方式。</li>
+<li>在parent pom 中定义了定义了gav的依赖，子项目可以不用写version属性，除非要另外自定义版本。</li>
+<li>使用 dependencyManagement 声明的依赖若指定了版本，可以：<ol>
+<li>指定传递依赖的版本（即使传递依赖有自定义版本，也会被覆盖掉）；</li>
+<li>当直接依赖没有指定版本时，指定其版本。</li>
+</ol>
+</li>
+</ul>
+<h2 id="DepencyManagement应用场景"><a href="#DepencyManagement应用场景" class="headerlink" title="DepencyManagement应用场景"></a>DepencyManagement应用场景</h2><p>​    当我们的项目模块很多的时候，我们使用Maven管理项目非常方便，帮助我们管理构建、文档、报告、依赖、scms、发布、分发的方法。可以方便的编译代码、进行依赖管理、管理二进制库等等。</p>
+<p>​    由于我们的模块很多，所以我们又抽象了一层，抽出一个itoo-base-parent来管理子项目的公共的依赖。为了项目的正确运行，必须让所有的子项目使用依赖项的统一版本，必须确保应用的各个项目的依赖项和版本一致，才能保证测试的和发布的是相同的结果。</p>
+<p>​    在我们项目顶层的POM文件中，我们会看到dependencyManagement元素。通过它元素来管理jar包的版本，让子项目中引用一个依赖而不用显示的列出版本号。Maven会沿着父子层次向上走，直到找到一个拥有dependencyManagement元素的项目，然后它就会使用在这个dependencyManagement元素中指定的版本号。</p>
+<p>来看看我们项目中的应用：</p>
+<p> pom继承关系图：</p>
+<p><img src="https://img-blog.csdn.net/20150721204949922?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p>Itoo-base-parent(pom.xml)</p>
+<pre><code>&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.eclipse.persistence&lt;/groupId&gt;
+            &lt;artifactId&gt;org.eclipse.persistence.jpa&lt;/artifactId&gt;
+            &lt;version&gt;$&#123;org.eclipse.persistence.jpa.version&#125;&lt;/version&gt;
+            &lt;scope&gt;provided&lt;/scope&gt;
+        &lt;/dependency&gt;
+        
+        &lt;dependency&gt;
+            &lt;groupId&gt;javax&lt;/groupId&gt;
+            &lt;artifactId&gt;javaee-api&lt;/artifactId&gt;
+            &lt;version&gt;$&#123;javaee-api.version&#125;&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+</code></pre>
+<p>Itoo-base(pom.xml)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">&lt;parent&gt;</span><br><span class="line">	&lt;artifactId&gt;itoo-base-parent&lt;/artifactId&gt;</span><br><span class="line">	&lt;groupId&gt;com.tgb&lt;/groupId&gt;</span><br><span class="line"></span><br><span class="line">	&lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;</span><br><span class="line">	&lt;relativePath&gt;../itoo-base-parent/pom.xml&lt;/relativePath&gt;</span><br><span class="line">&lt;/parent&gt;</span><br><span class="line">&lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;</span><br><span class="line">&lt;artifactId&gt;itoo-base&lt;/artifactId&gt;</span><br><span class="line">&lt;packaging&gt;ejb&lt;/packaging&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;!--依赖关系--&gt;</span><br><span class="line">&lt;dependencies&gt;</span><br><span class="line">	&lt;dependency&gt;</span><br><span class="line">		&lt;groupId&gt;javax&lt;/groupId&gt;</span><br><span class="line">		&lt;artifactId&gt;javaee-api&lt;/artifactId&gt;</span><br><span class="line">	&lt;/dependency&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;dependency&gt;</span><br><span class="line">		&lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;</span><br><span class="line">		&lt;artifactId&gt;jackson-annotations&lt;/artifactId&gt;</span><br><span class="line">	&lt;/dependency&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;dependency&gt;</span><br><span class="line">		&lt;groupId&gt;org.eclipse.persistence&lt;/groupId&gt;</span><br><span class="line">		&lt;artifactId&gt;org.eclipse.persistence.jpa&lt;/artifactId&gt;</span><br><span class="line">		&lt;scope&gt;provided&lt;/scope&gt;</span><br><span class="line">	&lt;/dependency&gt;</span><br><span class="line">&lt;/dependencies&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="优点分析"><a href="#优点分析" class="headerlink" title="优点分析"></a>优点分析</h3><p>统一管理项目的版本号，确保应用的各个项目的依赖和版本一致，才能保证测试的和发布的是相同的成果，因此，在顶层pom中定义共同的依赖关系。同时可以避免在每个使用的子项目中都声明一个版本号，这样想升级或者切换到另一个版本时，只需要在父类容器里更新，不需要任何一个子项目的修改；如果某个子项目需要另外一个版本号时，只需要在dependencies中声明一个版本号即可。子类就会使用子类声明的版本号，不继承于父类版本号。</p>
+<h2 id="Dependencies"><a href="#Dependencies" class="headerlink" title="Dependencies"></a>Dependencies</h2><p>相对于dependencyManagement，所有生命在dependencies里的依赖都会自动引入，并默认被所有的子项目继承。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>dependencies即使在子项目中不写该依赖项，那么子项目仍然会从父项目中继承该依赖项（全部继承）</p>
+</li>
+<li><p>dependencyManagement里只是声明依赖，并不实现引入，因此子项目需要显示的声明需要用的依赖。如果不在子项目中声明依赖，是不会从父项目中继承下来的；只有在子项目中写了该依赖项，并且没有指定具体版本，才会从父项目中继承该项，并且version和scope都读取自父pom;另外如果子项目中指定了版本号，那么会使用子项目中指定的jar版本。</p>
+</li>
+</ul>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/liutengteng130/article/details/46991829">https://blog.csdn.net/liutengteng130/article/details/46991829</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/clover-forever/p/15548681.html">https://www.cnblogs.com/clover-forever/p/15548681.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1086,89 +1199,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/12/20/Hadoop-Archives/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/18/hadoop-Interface-Tool/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/12/18/hadoop-Interface-Tool/" class="post-title-link" itemprop="url">MapReduceClass extends Configured implements Tool代码</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2021-12-18 03:20:41" itemprop="dateCreated datePublished" datetime="2021-12-18T03:20:41+08:00">2021-12-18</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-21 08:22:54" itemprop="dateModified" datetime="2021-12-21T08:22:54+08:00">2021-12-21</time>
-      </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
-<ol>
-<li>extends Configured implements Tool</li>
-<li>run()放置任务代码.以下为mapreduce代码</li>
-<li>main方法中调用run()方法</li>
-</ol>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/18/hadoop-Interface-Tool/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
