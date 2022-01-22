@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-count">42</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,85 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/" class="post-title-link" itemprop="url">spark部署时修改spark-env.sh</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-11 01:45:28 / 修改时间：01:56:20" itemprop="dateCreated datePublished" datetime="2022-01-11T01:45:28+08:00">2022-01-11</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>可以运行Spark</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
+
+<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
+<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1140,82 +1219,6 @@
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
 <p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/21/MR-Chain/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/12/21/MR-Chain/" class="post-title-link" itemprop="url">MR Chain（ChainMapper与ChainReducer）</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2021-12-21 09:06:33 / 修改时间：14:15:09" itemprop="dateCreated datePublished" datetime="2021-12-21T09:06:33+08:00">2021-12-21</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
-<p>​    在Map阶段，数据依次经过Mapper1和Mapper2处理；在Reducer阶段，数据经过shuffle和sort排序后，交给对应的Reduce处理，但Reducer处理之后还可以交给其它的Mapper进行处理，最终产生的结果写入到hdfs输出目录上。</p>
-<p><strong>注意</strong>：对于任意一个MapReduce作业，Map和Reduce阶段可以有无限多个Mapper，但是<strong>Reducer只能有一个</strong>。</p>
-<p>​    通过链式MapReducer模式可以有效的减少网络间传输数据的带宽，因为大量的计算基本都是在本地进行的。如果通过迭代作业的方式实现多个MapReduce作业组合的话就会在网络间传输大量的数据，这样会非常的耗时。(所以这里只是一个MR作业，MR作业的迭代实现用JobControl：)</p>
-<p><img src="/2021/12/21/MR-Chain/hexo\k12blog\source_posts\MR-Chain\Chain.jpg" alt="Chain"></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/21/MR-Chain/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
       
     </div>
 
