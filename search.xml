@@ -722,59 +722,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>IDEA中测试Hive源码</title>
-    <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
-    <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
-<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFAddRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFRemoveRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>修改ql/src/java/org/apache/hadoop/hive/ql/exec/FunctionRegistry.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在WINDOWS上部署maven，编译hive</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220106155419571.png" alt="image-20220106155419571"></p>
-<p>编译好的整个文件夹导入到idea中</p>
-<p>使用快捷键Ctrl+Alt+shift+S打开项目的jdk配置，把内存改大点再rebuild</p>
-<p>rebuild，期间如有报错，按提示修改，最终Build completed successfully</p>
-<ul>
-<li><p>设置hive-site.xml与服务器上的一样，CliDriver目录下的resources文件夹（需要自己手动创建）</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143625518.png" alt="image-20220107143625518"></p>
-<p>简单做法：只有一个hive-site.xml也可以了</p>
-<p>hive-site.xml：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;ruozedata001&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.bind.host&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;hadoop001&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.port&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;10000&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<p>复杂做法：5个都放进去</p>
-</li>
-<li><p>metastore</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107162612716.png" alt="metastore"></p>
-<p>在hive-site.xml中添加<code>hive.metastore.uris：thrift://hadoop001:9083</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>在服务器上执行<code>hive --service metastore</code>启动服务端metastore </p>
-</li>
-<li><p>修改运行环境，IDEA 的 VM 添加 ：</p>
-<p>设置系统属性jline.WindowsTerminal.directConsole为false，控制台才能接受输入，否则输入命令后回车没有反应：</p>
-<p><code>-Djline.WindowsTerminal.directConsole=false</code> </p>
-<p>修改系统用户名称，否则无权限访问hdfs：</p>
-<p><code>-DHADOOP_USER_NAME=hadoop</code></p>
-</li>
-</ul>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107164818544.png" alt="image-20220107164818544"></p>
-<p>运行入口文件CliDriver.java</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143910446.png" alt="image-20220107143910446"></p>
-<p>验证函数是否存在；</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143958077.png" alt="image-20220107143958077"></p>
-<p>测试使用：</p>
-<p><strong>add_ramdom</strong>:</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
-<p><strong>remove_random</strong>:</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop基础知识</title>
     <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
     <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
@@ -1015,6 +962,59 @@
 <li><p>统计查询</p>
 </li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>IDEA中测试Hive源码</title>
+    <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
+    <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
+<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFAddRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFRemoveRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>修改ql/src/java/org/apache/hadoop/hive/ql/exec/FunctionRegistry.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在WINDOWS上部署maven，编译hive</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220106155419571.png" alt="image-20220106155419571"></p>
+<p>编译好的整个文件夹导入到idea中</p>
+<p>使用快捷键Ctrl+Alt+shift+S打开项目的jdk配置，把内存改大点再rebuild</p>
+<p>rebuild，期间如有报错，按提示修改，最终Build completed successfully</p>
+<ul>
+<li><p>设置hive-site.xml与服务器上的一样，CliDriver目录下的resources文件夹（需要自己手动创建）</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143625518.png" alt="image-20220107143625518"></p>
+<p>简单做法：只有一个hive-site.xml也可以了</p>
+<p>hive-site.xml：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;ruozedata001&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.bind.host&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;hadoop001&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.port&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;10000&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<p>复杂做法：5个都放进去</p>
+</li>
+<li><p>metastore</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107162612716.png" alt="metastore"></p>
+<p>在hive-site.xml中添加<code>hive.metastore.uris：thrift://hadoop001:9083</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>在服务器上执行<code>hive --service metastore</code>启动服务端metastore </p>
+</li>
+<li><p>修改运行环境，IDEA 的 VM 添加 ：</p>
+<p>设置系统属性jline.WindowsTerminal.directConsole为false，控制台才能接受输入，否则输入命令后回车没有反应：</p>
+<p><code>-Djline.WindowsTerminal.directConsole=false</code> </p>
+<p>修改系统用户名称，否则无权限访问hdfs：</p>
+<p><code>-DHADOOP_USER_NAME=hadoop</code></p>
+</li>
+</ul>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107164818544.png" alt="image-20220107164818544"></p>
+<p>运行入口文件CliDriver.java</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143910446.png" alt="image-20220107143910446"></p>
+<p>验证函数是否存在；</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143958077.png" alt="image-20220107143958077"></p>
+<p>测试使用：</p>
+<p><strong>add_ramdom</strong>:</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
+<p><strong>remove_random</strong>:</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
 ]]></content>
   </entry>
   <entry>
@@ -1308,6 +1308,61 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
+    <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
+<h4 id="2-安装前："><a href="#2-安装前：" class="headerlink" title="2.安装前："></a>2.安装前：</h4><p>检验是否配置jdk ctrl+R 运行cmd 分别输入java，javac， java -version （java 和 -version 之间有空格）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\System32&gt;javac</span><br><span class="line">&#x27;javac&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br><span class="line">C:\Windows\System32&gt;java -version</span><br><span class="line">&#x27;java&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="二、方法-步骤"><a href="#二、方法-步骤" class="headerlink" title="二、方法/步骤"></a>二、方法/步骤</h3><span id="more"></span>
+<h4 id="1-安装JDK，JRE，-选择安装目录"><a href="#1-安装JDK，JRE，-选择安装目录" class="headerlink" title="1. 安装JDK，JRE， 选择安装目录"></a>1. 安装JDK，JRE， 选择安装目录</h4><p>安装过程中会出现两次 安装提示 。第一次是安装 jdk ，第二次是安装 jre 。建议两个都安装在同一个java文件夹中的不同文件夹中。（不能都安装在java文件夹的根目录下，jdk和jre安装在同一文件夹会出错）。</p>
+<p>（1）双击jdk-8u202-windows-x64.exe 进行安装。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-1.png"></p>
+<p>（2）点击“下一步”继续。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-2.png"></p>
+<p>（3）选择安装路径，然后点击下一步。</p>
+<p>默认是在C盘。我这里选择的是E盘。路径为：E:\Java\jdk1.8.0_202\</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-3.png"></p>
+<p>（4）中途会进行JRE的安装。选择JRE安装的路径，点击下一步。默认会选择C盘。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-4.png"> </p>
+<p>因为在选择的时候不能新建。自己新建一个文件夹：jre1.8.0_202文件夹。更改路径：E:\Java\jre1.8.0_202\</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-5.png"> </p>
+<p>（5）点击下一步，等待安装完成。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-6.png"> </p>
+<p>（6）安装完成，点击关闭。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-7.png"></p>
+<h4 id="2-配置系统环境"><a href="#2-配置系统环境" class="headerlink" title="2.配置系统环境"></a>2.配置系统环境</h4><p>配置环境变量：右击“我的电脑”–&gt;”属性”–&gt;”高级系统设置”–&gt;”环境变量”。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLASSPATH</span><br><span class="line">.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar</span><br><span class="line"></span><br><span class="line">JAVA_HOME</span><br><span class="line">E:\Java\jdk1.8.0_202</span><br><span class="line"></span><br><span class="line">PATH</span><br><span class="line">%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin</span><br></pre></td></tr></table></figure>
+
+<p><strong>（1）JAVA_HOME环境变量。</strong></p>
+<p>作用：它指向jdk的安装目录，Eclipse/NetBeans/Tomcat等软件就是通过搜索JAVA_HOME变量来找到并使用安装好的jdk。<br>配置方法：在系统变量里点击新建，变量名填写JAVA_HOME，变量值填写JDK的安装路径。（根据自己的安装路径填写）</p>
+<p>JAVA_HOME：E:\Java\jdk1.8.0_202</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-8.png"></p>
+<p><strong>（2）CLASSPATH环境变量。</strong></p>
+<p>作用：是指定类搜索路径，要使用已经编写好的类，前提当然是能够找到它们了，JVM就是通过CLASSPTH来寻找类的。我们需要把jdk安装目录下的lib子目录中的dt.jar和tools.jar设置到CLASSPATH中，当然，当前目录“.”也必须加入到该变量中。<br>配置方法：<br>新建CLASSPATH变量，变量值为：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar 。CLASSPATH变量名字，可以大写也可以小写。注意不要忘记前面的点和中间的分号。且要在英文输入的状态下的分号和逗号。</p>
+<p>CLASSPATH ：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar;</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-9.png"> </p>
+<p><strong>（3）path环境变量</strong></p>
+<p>作用：指定命令搜索路径，在i命令行下面执行命令如javac编译java程序时，它会到PATH变量所指定的路径中查找看是否能找到相应的命令程序。我们需要把jdk安装目录下的bin目录增加到现有的PATH变量中，bin目录中包含经常要用到的可执行文件如javac/java/javadoc等待，设置好PATH变量后，就可以在任何目录下执行javac/java等工具了。</p>
+<p>在系统变量里找到Path变量，这是系统自带的，不用新建。双击Path，由于原来的变量值已经存在，故应在已有的<strong>变量前追加</strong>上“;%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin”。注意前面的分号。</p>
+<p>Path：%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin;</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-10.png"> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-11.png"> </p>
+<p>或者：</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-12.png"> </p>
+<p>然后点击确定完成。</p>
+<h3 id="三、-测试环境。"><a href="#三、-测试环境。" class="headerlink" title="三、 测试环境。"></a>三、 测试环境。</h3><p>检验是否配置成功 ctrl+R 运行cmd 分别输入<code>java</code>，<code>javac</code>， <code>java -version</code>。</p>
+<p><strong>1.Java</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-13.png"> </p>
+<p><strong>2.Javac</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-14.png"></p>
+<p><strong>3.java –version</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-15.png"> </p>
+<p>若如图所示 显示版本信息 则说明安装和配置成功!</p>
+]]></content>
+  </entry>
+  <entry>
     <title>Secondary NameNode:它究竟有什么作用？</title>
     <url>/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/</url>
     <content><![CDATA[<p>英文原文：<a href="http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/">http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/</a></p>
@@ -1386,61 +1441,6 @@
 <p>NN挂了，瞬间启动Standby–&gt;Active，对外提供读写服务。</p>
 <p>参考链接：</p>
 <p><a href="https://blog.csdn.net/xh16319/article/details/31375197">https://blog.csdn.net/xh16319/article/details/31375197</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
-    <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
-    <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
-<h4 id="2-安装前："><a href="#2-安装前：" class="headerlink" title="2.安装前："></a>2.安装前：</h4><p>检验是否配置jdk ctrl+R 运行cmd 分别输入java，javac， java -version （java 和 -version 之间有空格）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\System32&gt;javac</span><br><span class="line">&#x27;javac&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br><span class="line">C:\Windows\System32&gt;java -version</span><br><span class="line">&#x27;java&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="二、方法-步骤"><a href="#二、方法-步骤" class="headerlink" title="二、方法/步骤"></a>二、方法/步骤</h3><span id="more"></span>
-<h4 id="1-安装JDK，JRE，-选择安装目录"><a href="#1-安装JDK，JRE，-选择安装目录" class="headerlink" title="1. 安装JDK，JRE， 选择安装目录"></a>1. 安装JDK，JRE， 选择安装目录</h4><p>安装过程中会出现两次 安装提示 。第一次是安装 jdk ，第二次是安装 jre 。建议两个都安装在同一个java文件夹中的不同文件夹中。（不能都安装在java文件夹的根目录下，jdk和jre安装在同一文件夹会出错）。</p>
-<p>（1）双击jdk-8u202-windows-x64.exe 进行安装。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-1.png"></p>
-<p>（2）点击“下一步”继续。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-2.png"></p>
-<p>（3）选择安装路径，然后点击下一步。</p>
-<p>默认是在C盘。我这里选择的是E盘。路径为：E:\Java\jdk1.8.0_202\</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-3.png"></p>
-<p>（4）中途会进行JRE的安装。选择JRE安装的路径，点击下一步。默认会选择C盘。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-4.png"> </p>
-<p>因为在选择的时候不能新建。自己新建一个文件夹：jre1.8.0_202文件夹。更改路径：E:\Java\jre1.8.0_202\</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-5.png"> </p>
-<p>（5）点击下一步，等待安装完成。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-6.png"> </p>
-<p>（6）安装完成，点击关闭。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-7.png"></p>
-<h4 id="2-配置系统环境"><a href="#2-配置系统环境" class="headerlink" title="2.配置系统环境"></a>2.配置系统环境</h4><p>配置环境变量：右击“我的电脑”–&gt;”属性”–&gt;”高级系统设置”–&gt;”环境变量”。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLASSPATH</span><br><span class="line">.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar</span><br><span class="line"></span><br><span class="line">JAVA_HOME</span><br><span class="line">E:\Java\jdk1.8.0_202</span><br><span class="line"></span><br><span class="line">PATH</span><br><span class="line">%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin</span><br></pre></td></tr></table></figure>
-
-<p><strong>（1）JAVA_HOME环境变量。</strong></p>
-<p>作用：它指向jdk的安装目录，Eclipse/NetBeans/Tomcat等软件就是通过搜索JAVA_HOME变量来找到并使用安装好的jdk。<br>配置方法：在系统变量里点击新建，变量名填写JAVA_HOME，变量值填写JDK的安装路径。（根据自己的安装路径填写）</p>
-<p>JAVA_HOME：E:\Java\jdk1.8.0_202</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-8.png"></p>
-<p><strong>（2）CLASSPATH环境变量。</strong></p>
-<p>作用：是指定类搜索路径，要使用已经编写好的类，前提当然是能够找到它们了，JVM就是通过CLASSPTH来寻找类的。我们需要把jdk安装目录下的lib子目录中的dt.jar和tools.jar设置到CLASSPATH中，当然，当前目录“.”也必须加入到该变量中。<br>配置方法：<br>新建CLASSPATH变量，变量值为：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar 。CLASSPATH变量名字，可以大写也可以小写。注意不要忘记前面的点和中间的分号。且要在英文输入的状态下的分号和逗号。</p>
-<p>CLASSPATH ：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar;</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-9.png"> </p>
-<p><strong>（3）path环境变量</strong></p>
-<p>作用：指定命令搜索路径，在i命令行下面执行命令如javac编译java程序时，它会到PATH变量所指定的路径中查找看是否能找到相应的命令程序。我们需要把jdk安装目录下的bin目录增加到现有的PATH变量中，bin目录中包含经常要用到的可执行文件如javac/java/javadoc等待，设置好PATH变量后，就可以在任何目录下执行javac/java等工具了。</p>
-<p>在系统变量里找到Path变量，这是系统自带的，不用新建。双击Path，由于原来的变量值已经存在，故应在已有的<strong>变量前追加</strong>上“;%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin”。注意前面的分号。</p>
-<p>Path：%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin;</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-10.png"> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-11.png"> </p>
-<p>或者：</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-12.png"> </p>
-<p>然后点击确定完成。</p>
-<h3 id="三、-测试环境。"><a href="#三、-测试环境。" class="headerlink" title="三、 测试环境。"></a>三、 测试环境。</h3><p>检验是否配置成功 ctrl+R 运行cmd 分别输入<code>java</code>，<code>javac</code>， <code>java -version</code>。</p>
-<p><strong>1.Java</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-13.png"> </p>
-<p><strong>2.Javac</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-14.png"></p>
-<p><strong>3.java –version</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-15.png"> </p>
-<p>若如图所示 显示版本信息 则说明安装和配置成功!</p>
 ]]></content>
   </entry>
   <entry>
@@ -1538,33 +1538,39 @@
 ]]></content>
   </entry>
   <entry>
-    <title>spark读取GBK编码文件乱码问题</title>
-    <url>/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
-<li><p>SPARK 常用的textFile方法默认是写死了读UTF－8格式的文件，其他编码格式文件会显示乱码</p>
-</li>
-<li><p>查看textFile方法的实现</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">def textFile(</span><br><span class="line">    path: String,</span><br><span class="line">    minPartitions: Int = defaultMinPartitions): RDD[String] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>读文件的时候用到了hadoopFile方法，读取的文件时调用<strong>TextInputformat</strong>类来解析文本文件，输出K V键值对。继续查看TextInputformat方法读取文件的实现，其中读记录生成K V键值对的方法的实现如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public RecordReader&lt;LongWritable, Text&gt; getRecordReader(InputSplit genericSplit, JobConf job, Reporter reporter) throws IOException &#123;</span><br><span class="line">    reporter.setStatus(genericSplit.toString());</span><br><span class="line">    String delimiter = job.get(&quot;textinputformat.record.delimiter&quot;);</span><br><span class="line">    byte[] recordDelimiterBytes = null;</span><br><span class="line">    if (null != delimiter) &#123;</span><br><span class="line">        recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    return new LineRecordReader(job, (FileSplit)genericSplit, recordDelimiterBytes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>虽然代码中有<code>delimiter.getBytes(Charsets.UTF_8)</code>，但并不是最后输出的关键，这里是指定分隔符用UTF-8解码，并设置分隔符。继续往下看，最后发现LineRecordReader–&gt;readLine–&gt;Text，返回指定的字符集UTF-8。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Text extends BinaryComparable implements WritableComparable&lt;BinaryComparable&gt; &#123;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetEncoder&gt; ENCODER_FACTORY = new ThreadLocal&lt;CharsetEncoder&gt;() &#123;</span><br><span class="line">        protected CharsetEncoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newEncoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetDecoder&gt; DECODER_FACTORY = new ThreadLocal&lt;CharsetDecoder&gt;() &#123;</span><br><span class="line">        protected CharsetDecoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
-
-<p>所以hadoopFile返回的HadoopRDD，其中输入TextInputformat和输出valueClass均为Text，返回的是字符集UTF-8，而我们输入的是GBK编码，用UTF-8解码就会造成乱码。所以HadoopRDD中的value也是乱码的。</p>
-</li>
-<li><p>如果我们想要读取GBK文件避免乱码，可以通过对HadoopRDD进行操作：</p>
-<p>对HadoopRDD中的value按照GBK的方式读取变成字符串，运行之后能够正常显示:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HadoopRDD.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)</span><br></pre></td></tr></table></figure>
-
-<p>说明：关于String类：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">String.getBytes(Charset charset)。</span><br><span class="line">	返回值：byte[]  返回的是一个 字节数组。</span><br><span class="line">	方法的作用：将String以指定的编码格式(既参数charset)进行解码，然后以字节数组的形式存储这些解码后的字节。</span><br><span class="line">String(byte[] bytes,Charset charset)</span><br><span class="line">	返回值：String  返回的是一串字符串。</span><br><span class="line">	方法的作用：将字节数组bytes以charset的编码格式进行解码。</span><br></pre></td></tr></table></figure></li>
-<li><p>案例</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package com.ruozedata.spark.job</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.io.&#123;LongWritable, Text&#125;</span><br><span class="line">import org.apache.hadoop.mapred.TextInputFormat</span><br><span class="line">import org.apache.spark.&#123;SparkConf, SparkContext&#125;</span><br><span class="line">import java.io.&#123;File, FileOutputStream, OutputStreamWriter&#125;</span><br><span class="line"></span><br><span class="line">object jobApp &#123;</span><br><span class="line">	def main(args: Array[String]): Unit = &#123;</span><br><span class="line">		val sparkConf = new SparkConf().setMaster(&quot;local[2]&quot;).setAppName(this.getClass.getCanonicalName)</span><br><span class="line">		val sc = new SparkContext(sparkConf)</span><br><span class="line"></span><br><span class="line">		val GBKPATH = &quot;data/GBKtext.txt&quot;</span><br><span class="line">		val UTF8PATH = &quot;data/UTF8text.txt&quot;</span><br><span class="line">		val GBKFile = new File(GBKPATH)</span><br><span class="line">		val UTF8File = new File(UTF8PATH)</span><br><span class="line">		UTF8File</span><br><span class="line">		if(GBKFile.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line">		if(UTF8File.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		val GBKwriter = new OutputStreamWriter(new FileOutputStream(GBKFile), &quot;GBK&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第一行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第二行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第三行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.flush()</span><br><span class="line">		GBKwriter.close()</span><br><span class="line"></span><br><span class="line">		val UTF8writer = new OutputStreamWriter(new FileOutputStream(UTF8File), &quot;UTF-8&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第一行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第二行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第三行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.flush()</span><br><span class="line">		UTF8writer.close()</span><br><span class="line"></span><br><span class="line">    	//val UTF8rdd = sc.textFile(UTF8PATH).collect().foreach(println)</span><br><span class="line">    	/**textFile读UTF-8文件，显示如下：</span><br><span class="line">    	*这是第一行GBK数据</span><br><span class="line">		*这是第二行GBK数据</span><br><span class="line">		*这是第三行GBK数据</span><br><span class="line">		*/</span><br><span class="line">		//val GBKrdd1 = sc.textFile(GBKPATH).collect().foreach(println)</span><br><span class="line">		/**textFile读GBK文件，显示如下：</span><br><span class="line">		 *���ǵ�һ��GBK����</span><br><span class="line">		 *���ǵڶ���GBK����</span><br><span class="line">		 *���ǵ�����GBK����</span><br><span class="line">		 */</span><br><span class="line">		 //textFile实现方法：</span><br><span class="line">		 //hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">		 //	minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">		</span><br><span class="line">		val GBKrdd2 = sc.hadoopFile(GBKPATH, classOf[TextInputFormat], classOf[LongWritable], classOf[Text])</span><br><span class="line">			.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)).collect.foreach(println)</span><br><span class="line"></span><br><span class="line">		sc.stop()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+    <title>mapreduce执行速度慢的原因</title>
+    <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
+    <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
+<li>CPU、内存小、网络不好都有可能导致运行速度慢</li>
+<li>出现数据倾斜</li>
+<li>map和reduce数设置不合理</li>
+<li>小文件过多</li>
+<li>大量的不可分块的超大文件</li>
+<li>spilt次数过多</li>
 </ol>
-<p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
-<p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
+<p>优化方案：</p>
+<ol>
+<li>解决数据倾斜：数据倾斜可能是partition不合理，导致部分partition中的数据过多，部分过少。可通过分析数据，自定义分区器解决。</li>
+<li>合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、 reduce 任务间竞争资源，造成处理超时等错误。</li>
+<li>设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少 reduce 的等待时间。</li>
+<li>合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致 mr 运行较慢。</li>
+<li>减少spill次数（环形缓冲区，调大环形缓冲区的内存，从而接收更多数据）：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill 次数，从而减少磁盘 IO。</li>
+<li>减少merge次数（mapreduce两端的合并文件的数目）：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。</li>
+</ol>
+<h2 id="相比Spark执行速度慢的原因"><a href="#相比Spark执行速度慢的原因" class="headerlink" title="相比Spark执行速度慢的原因"></a>相比Spark执行速度慢的原因</h2><h3 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h3><p>其实Spark和MapReduce的计算都发生在内存中，区别在于：</p>
+<ul>
+<li>MapReduce通常需要将计算的中间结果写入磁盘，然后还要读取磁盘，从而导致了频繁的磁盘IO。</li>
+<li>Spark则不需要将计算的中间结果写入磁盘，这得益于Spark的RDD（弹性分布式数据集，很强大）和DAG（有向无环图），其中DAG记录了job的stage以及在job执行过程中父RDD和子RDD之间的依赖关系。中间结果能够以RDD的形式存放在内存中，且能够从DAG中恢复，大大减少了磁盘IO。</li>
+</ul>
+<h3 id="Shuffle的不同"><a href="#Shuffle的不同" class="headerlink" title="Shuffle的不同"></a>Shuffle的不同</h3><p>Spark和MapReduce在计算过程中通常都不可避免的会进行Shuffle，两者至少有一点不同：</p>
+<ul>
+<li>MapReduce在Shuffle时需要花费大量时间进行排序，排序在MapReduce的Shuffle中似乎是不可避免的；</li>
+<li>Spark在Shuffle时则只有部分场景才需要排序，支持基于Hash的分布式聚合，更加省时；</li>
+</ul>
+<h3 id="多进程模型-vs-多线程模型的区别"><a href="#多进程模型-vs-多线程模型的区别" class="headerlink" title="多进程模型 vs 多线程模型的区别"></a>多进程模型 vs 多线程模型的区别</h3><p>MapReduce采用了多进程模型，而Spark采用了多线程模型。多进程模型的好处是便于细粒度控制每个任务占用的资源，但每次任务的启动都会消耗一定的启动时间。就是说MapReduce的Map Task和Reduce Task是进程级别的，而Spark Task则是基于线程模型的，就是说mapreduce 中的 map 和 reduce 都是 jvm 进程，每次启动都需要重新申请资源，消耗了不必要的时间（假设容器启动时间大概1s，如果有1200个block，那么单独启动<a href="https://www.zhihu.com/search?q=map%E8%BF%9B%E7%A8%8B%E4%BA%8B%E4%BB%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22:%22answer%22,%22sourceId%22:1247877997%7D">map进程事件</a>就需要20分钟）</p>
+<p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
+<p>参考链接：</p>
+<p><a href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1596,6 +1602,36 @@
 
 <p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
 <p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>spark读取GBK编码文件乱码问题</title>
+    <url>/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
+<li><p>SPARK 常用的textFile方法默认是写死了读UTF－8格式的文件，其他编码格式文件会显示乱码</p>
+</li>
+<li><p>查看textFile方法的实现</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">def textFile(</span><br><span class="line">    path: String,</span><br><span class="line">    minPartitions: Int = defaultMinPartitions): RDD[String] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>读文件的时候用到了hadoopFile方法，读取的文件时调用<strong>TextInputformat</strong>类来解析文本文件，输出K V键值对。继续查看TextInputformat方法读取文件的实现，其中读记录生成K V键值对的方法的实现如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public RecordReader&lt;LongWritable, Text&gt; getRecordReader(InputSplit genericSplit, JobConf job, Reporter reporter) throws IOException &#123;</span><br><span class="line">    reporter.setStatus(genericSplit.toString());</span><br><span class="line">    String delimiter = job.get(&quot;textinputformat.record.delimiter&quot;);</span><br><span class="line">    byte[] recordDelimiterBytes = null;</span><br><span class="line">    if (null != delimiter) &#123;</span><br><span class="line">        recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    return new LineRecordReader(job, (FileSplit)genericSplit, recordDelimiterBytes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>虽然代码中有<code>delimiter.getBytes(Charsets.UTF_8)</code>，但并不是最后输出的关键，这里是指定分隔符用UTF-8解码，并设置分隔符。继续往下看，最后发现LineRecordReader–&gt;readLine–&gt;Text，返回指定的字符集UTF-8。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Text extends BinaryComparable implements WritableComparable&lt;BinaryComparable&gt; &#123;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetEncoder&gt; ENCODER_FACTORY = new ThreadLocal&lt;CharsetEncoder&gt;() &#123;</span><br><span class="line">        protected CharsetEncoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newEncoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetDecoder&gt; DECODER_FACTORY = new ThreadLocal&lt;CharsetDecoder&gt;() &#123;</span><br><span class="line">        protected CharsetDecoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>所以hadoopFile返回的HadoopRDD，其中输入TextInputformat和输出valueClass均为Text，返回的是字符集UTF-8，而我们输入的是GBK编码，用UTF-8解码就会造成乱码。所以HadoopRDD中的value也是乱码的。</p>
+</li>
+<li><p>如果我们想要读取GBK文件避免乱码，可以通过对HadoopRDD进行操作：</p>
+<p>对HadoopRDD中的value按照GBK的方式读取变成字符串，运行之后能够正常显示:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HadoopRDD.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>说明：关于String类：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">String.getBytes(Charset charset)。</span><br><span class="line">	返回值：byte[]  返回的是一个 字节数组。</span><br><span class="line">	方法的作用：将String以指定的编码格式(既参数charset)进行解码，然后以字节数组的形式存储这些解码后的字节。</span><br><span class="line">String(byte[] bytes,Charset charset)</span><br><span class="line">	返回值：String  返回的是一串字符串。</span><br><span class="line">	方法的作用：将字节数组bytes以charset的编码格式进行解码。</span><br></pre></td></tr></table></figure></li>
+<li><p>案例</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package com.ruozedata.spark.job</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.io.&#123;LongWritable, Text&#125;</span><br><span class="line">import org.apache.hadoop.mapred.TextInputFormat</span><br><span class="line">import org.apache.spark.&#123;SparkConf, SparkContext&#125;</span><br><span class="line">import java.io.&#123;File, FileOutputStream, OutputStreamWriter&#125;</span><br><span class="line"></span><br><span class="line">object jobApp &#123;</span><br><span class="line">	def main(args: Array[String]): Unit = &#123;</span><br><span class="line">		val sparkConf = new SparkConf().setMaster(&quot;local[2]&quot;).setAppName(this.getClass.getCanonicalName)</span><br><span class="line">		val sc = new SparkContext(sparkConf)</span><br><span class="line"></span><br><span class="line">		val GBKPATH = &quot;data/GBKtext.txt&quot;</span><br><span class="line">		val UTF8PATH = &quot;data/UTF8text.txt&quot;</span><br><span class="line">		val GBKFile = new File(GBKPATH)</span><br><span class="line">		val UTF8File = new File(UTF8PATH)</span><br><span class="line">		UTF8File</span><br><span class="line">		if(GBKFile.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line">		if(UTF8File.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		val GBKwriter = new OutputStreamWriter(new FileOutputStream(GBKFile), &quot;GBK&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第一行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第二行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第三行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.flush()</span><br><span class="line">		GBKwriter.close()</span><br><span class="line"></span><br><span class="line">		val UTF8writer = new OutputStreamWriter(new FileOutputStream(UTF8File), &quot;UTF-8&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第一行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第二行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第三行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.flush()</span><br><span class="line">		UTF8writer.close()</span><br><span class="line"></span><br><span class="line">    	//val UTF8rdd = sc.textFile(UTF8PATH).collect().foreach(println)</span><br><span class="line">    	/**textFile读UTF-8文件，显示如下：</span><br><span class="line">    	*这是第一行GBK数据</span><br><span class="line">		*这是第二行GBK数据</span><br><span class="line">		*这是第三行GBK数据</span><br><span class="line">		*/</span><br><span class="line">		//val GBKrdd1 = sc.textFile(GBKPATH).collect().foreach(println)</span><br><span class="line">		/**textFile读GBK文件，显示如下：</span><br><span class="line">		 *���ǵ�һ��GBK����</span><br><span class="line">		 *���ǵڶ���GBK����</span><br><span class="line">		 *���ǵ�����GBK����</span><br><span class="line">		 */</span><br><span class="line">		 //textFile实现方法：</span><br><span class="line">		 //hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">		 //	minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">		</span><br><span class="line">		val GBKrdd2 = sc.hadoopFile(GBKPATH, classOf[TextInputFormat], classOf[LongWritable], classOf[Text])</span><br><span class="line">			.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)).collect.foreach(println)</span><br><span class="line"></span><br><span class="line">		sc.stop()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
+<p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1661,6 +1697,78 @@
 <p>再次测试：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
 
+]]></content>
+  </entry>
+  <entry>
+    <title>将Hexo部署到GitHub</title>
+    <url>/2021/10/24/%E5%B0%86Hexo%E9%83%A8%E7%BD%B2%E5%88%B0GitHub/</url>
+    <content><![CDATA[<p>参考<a href="https://hexo.io/zh-cn/docs">Hexo文档</a> </p>
+<span id="more"></span>
+
+<h2 id="一、安装Git"><a href="#一、安装Git" class="headerlink" title="一、安装Git"></a>一、安装Git</h2><ol>
+<li><p><a href="https://gitforwindows.org/">gitforwindows</a> 下载安装</p>
+</li>
+<li><p>安装完查看git版本：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git --version</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装Node-js"><a href="#二、安装Node-js" class="headerlink" title="二、安装Node.js"></a>二、安装Node.js</h2><ol>
+<li><p><a href="https://nodejs.org/en/download/">node.js</a> 选择LTS的window版本，下载安装</p>
+</li>
+<li><p>安装完查看node.js版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li>
+<li><p>更改npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+<li><p>查看npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm get registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="三、安装Hexo"><a href="#三、安装Hexo" class="headerlink" title="三、安装Hexo"></a>三、安装Hexo</h2><ol>
+<li><p>安装Hexo</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="四、建站"><a href="#四、建站" class="headerlink" title="四、建站"></a>四、建站</h2><ol>
+<li><p>初始化博客目录</p>
+<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure></li>
+<li><p>常用命令：</p>
+<ul>
+<li>清理缓存： <code>hexo clean</code></li>
+<li>生成静态文件： <code>hexo g/generate</code></li>
+<li>生成静态文件： <code>hexo s/server</code></li>
+<li>组合版：<code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</code></li>
+<li>发布到github：<code>hexo d</code></li>
+</ul>
+<p>本地访问地址：<a href="http://localhost:4000/">http://localhost:4000</a></p>
+</li>
+<li><p>修改网站基本配置信息参考<a href="https://hexo.io/zh-cn/docs/configuration">配置</a></p>
+</li>
+</ol>
+<h2 id="五、将hexo部署到GitHub"><a href="#五、将hexo部署到GitHub" class="headerlink" title="五、将hexo部署到GitHub"></a>五、将hexo部署到GitHub</h2><ol>
+<li><p>生成SSH添加到GitHub</p>
+<p>生成key，可以git部署网站</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</span><br></pre></td></tr></table></figure>
+
+<p>然后需要配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global user.email “you@example.com”</span><br><span class="line">git config --global user.name “Your Name”</span><br></pre></td></tr></table></figure>
+
+<p>将这个文件拷贝到git的<a href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>查看是否配置成功</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure></li>
+<li><p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 <code>&lt;你的 GitHub 用户名&gt;.github.io</code> 访问，你的 repository 应该直接命名为 <code>&lt;你的 GitHub 用户名&gt;.github.io</code>。</p>
+</li>
+<li><p>安装 hexo-deployer-git.：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure></li>
+<li><p>在 _config.yml（如果有已存在的请删除）添加如下配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">    type: git  </span><br><span class="line">    repo: https://github.com/&lt;username&gt;/&lt;project&gt; </span><br></pre></td></tr></table></figure></li>
+<li><p>运行 hexo </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
+<li><p>查看 <code>username.github.io</code> 上的网页是否部署成功。</p>
+</li>
+</ol>
+<h2 id="六、发布文章"><a href="#六、发布文章" class="headerlink" title="六、发布文章"></a>六、发布文章</h2><ol>
+<li><p>创建文章</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new post &quot;title&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>然后用编辑器修改好文本，发布</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -1774,78 +1882,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>将Hexo部署到GitHub</title>
-    <url>/2021/10/24/%E5%B0%86Hexo%E9%83%A8%E7%BD%B2%E5%88%B0GitHub/</url>
-    <content><![CDATA[<p>参考<a href="https://hexo.io/zh-cn/docs">Hexo文档</a> </p>
-<span id="more"></span>
-
-<h2 id="一、安装Git"><a href="#一、安装Git" class="headerlink" title="一、安装Git"></a>一、安装Git</h2><ol>
-<li><p><a href="https://gitforwindows.org/">gitforwindows</a> 下载安装</p>
-</li>
-<li><p>安装完查看git版本：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git --version</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装Node-js"><a href="#二、安装Node-js" class="headerlink" title="二、安装Node.js"></a>二、安装Node.js</h2><ol>
-<li><p><a href="https://nodejs.org/en/download/">node.js</a> 选择LTS的window版本，下载安装</p>
-</li>
-<li><p>安装完查看node.js版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li>
-<li><p>更改npm镜像源：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
-<li><p>查看npm镜像源：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm get registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="三、安装Hexo"><a href="#三、安装Hexo" class="headerlink" title="三、安装Hexo"></a>三、安装Hexo</h2><ol>
-<li><p>安装Hexo</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="四、建站"><a href="#四、建站" class="headerlink" title="四、建站"></a>四、建站</h2><ol>
-<li><p>初始化博客目录</p>
-<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure></li>
-<li><p>常用命令：</p>
-<ul>
-<li>清理缓存： <code>hexo clean</code></li>
-<li>生成静态文件： <code>hexo g/generate</code></li>
-<li>生成静态文件： <code>hexo s/server</code></li>
-<li>组合版：<code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</code></li>
-<li>发布到github：<code>hexo d</code></li>
-</ul>
-<p>本地访问地址：<a href="http://localhost:4000/">http://localhost:4000</a></p>
-</li>
-<li><p>修改网站基本配置信息参考<a href="https://hexo.io/zh-cn/docs/configuration">配置</a></p>
-</li>
-</ol>
-<h2 id="五、将hexo部署到GitHub"><a href="#五、将hexo部署到GitHub" class="headerlink" title="五、将hexo部署到GitHub"></a>五、将hexo部署到GitHub</h2><ol>
-<li><p>生成SSH添加到GitHub</p>
-<p>生成key，可以git部署网站</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</span><br></pre></td></tr></table></figure>
-
-<p>然后需要配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global user.email “you@example.com”</span><br><span class="line">git config --global user.name “Your Name”</span><br></pre></td></tr></table></figure>
-
-<p>将这个文件拷贝到git的<a href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>查看是否配置成功</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure></li>
-<li><p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 <code>&lt;你的 GitHub 用户名&gt;.github.io</code> 访问，你的 repository 应该直接命名为 <code>&lt;你的 GitHub 用户名&gt;.github.io</code>。</p>
-</li>
-<li><p>安装 hexo-deployer-git.：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure></li>
-<li><p>在 _config.yml（如果有已存在的请删除）添加如下配置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">    type: git  </span><br><span class="line">    repo: https://github.com/&lt;username&gt;/&lt;project&gt; </span><br></pre></td></tr></table></figure></li>
-<li><p>运行 hexo </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
-<li><p>查看 <code>username.github.io</code> 上的网页是否部署成功。</p>
-</li>
-</ol>
-<h2 id="六、发布文章"><a href="#六、发布文章" class="headerlink" title="六、发布文章"></a>六、发布文章</h2><ol>
-<li><p>创建文章</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new post &quot;title&quot;</span><br></pre></td></tr></table></figure></li>
-<li><p>然后用编辑器修改好文本，发布</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>数据本地性（data locality）</title>
     <url>/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/</url>
     <content><![CDATA[<h1 id="一、什么是数据本地性（data-locality）"><a href="#一、什么是数据本地性（data-locality）" class="headerlink" title="一、什么是数据本地性（data locality）"></a>一、什么是数据本地性（data locality）</h1><p>大数据中有一个很有名的概念就是“移动数据不如移动计算”，之所以有数据本地性就是因为数据在网络中传输会有不小的I/O消耗，如果能够想办法尽量减少这个I/O消耗就能够提升效率。那么如何减少I/O消耗呢，当然是尽量不让数据在网络上传输，即使无法避免数据在网络上传输，也要尽量缩短传输距离，这个数据需要传输多远的距离（实际意味着数据传输的代价）就是数据本地性，数据本地性根据传输距离分为几个级别，不在网络上传输肯定是最好的级别，其它级别划分依据传输距离越远级别越低，Spark在分配任务的时候会考虑到数据本地性，优先将任务分配给数据本地性最好的Executor执行。</p>
@@ -1877,6 +1913,38 @@
 <li><p><a href="https://www.cnblogs.com/cc11001100/p/10301716.html">Spark笔记之数据本地性（data locality）</a></p>
 </li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2189,38 +2257,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
