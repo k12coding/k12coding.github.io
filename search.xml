@@ -26,32 +26,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>CentOS6.5安装NodeJS14.18.3</title>
-    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
-    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
-<li><p>tar包下载</p>
-<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
-<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
-</li>
-<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
-<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
-<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
-<li><p>下载并解压</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
-<li><p>修改环境变量</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
-<li><p>刷新配置，查看版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>HDFS API</title>
     <url>/2021/12/13/HDFS-API/</url>
     <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
@@ -141,6 +115,32 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
 </ul>
 <p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>CentOS6.5安装NodeJS14.18.3</title>
+    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
+    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
+<li><p>tar包下载</p>
+<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
+<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
+</li>
+<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
+<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
+<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
+<li><p>下载并解压</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
+<li><p>修改环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
+<li><p>刷新配置，查看版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -324,6 +324,49 @@
 <p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
 <p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
 <p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -669,7 +712,7 @@
 <p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
 <span id="more"></span>
 
-<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
 <h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
 
@@ -1308,61 +1351,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
-    <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
-    <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
-<h4 id="2-安装前："><a href="#2-安装前：" class="headerlink" title="2.安装前："></a>2.安装前：</h4><p>检验是否配置jdk ctrl+R 运行cmd 分别输入java，javac， java -version （java 和 -version 之间有空格）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\System32&gt;javac</span><br><span class="line">&#x27;javac&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br><span class="line">C:\Windows\System32&gt;java -version</span><br><span class="line">&#x27;java&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="二、方法-步骤"><a href="#二、方法-步骤" class="headerlink" title="二、方法/步骤"></a>二、方法/步骤</h3><span id="more"></span>
-<h4 id="1-安装JDK，JRE，-选择安装目录"><a href="#1-安装JDK，JRE，-选择安装目录" class="headerlink" title="1. 安装JDK，JRE， 选择安装目录"></a>1. 安装JDK，JRE， 选择安装目录</h4><p>安装过程中会出现两次 安装提示 。第一次是安装 jdk ，第二次是安装 jre 。建议两个都安装在同一个java文件夹中的不同文件夹中。（不能都安装在java文件夹的根目录下，jdk和jre安装在同一文件夹会出错）。</p>
-<p>（1）双击jdk-8u202-windows-x64.exe 进行安装。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-1.png"></p>
-<p>（2）点击“下一步”继续。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-2.png"></p>
-<p>（3）选择安装路径，然后点击下一步。</p>
-<p>默认是在C盘。我这里选择的是E盘。路径为：E:\Java\jdk1.8.0_202\</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-3.png"></p>
-<p>（4）中途会进行JRE的安装。选择JRE安装的路径，点击下一步。默认会选择C盘。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-4.png"> </p>
-<p>因为在选择的时候不能新建。自己新建一个文件夹：jre1.8.0_202文件夹。更改路径：E:\Java\jre1.8.0_202\</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-5.png"> </p>
-<p>（5）点击下一步，等待安装完成。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-6.png"> </p>
-<p>（6）安装完成，点击关闭。</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-7.png"></p>
-<h4 id="2-配置系统环境"><a href="#2-配置系统环境" class="headerlink" title="2.配置系统环境"></a>2.配置系统环境</h4><p>配置环境变量：右击“我的电脑”–&gt;”属性”–&gt;”高级系统设置”–&gt;”环境变量”。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLASSPATH</span><br><span class="line">.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar</span><br><span class="line"></span><br><span class="line">JAVA_HOME</span><br><span class="line">E:\Java\jdk1.8.0_202</span><br><span class="line"></span><br><span class="line">PATH</span><br><span class="line">%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin</span><br></pre></td></tr></table></figure>
-
-<p><strong>（1）JAVA_HOME环境变量。</strong></p>
-<p>作用：它指向jdk的安装目录，Eclipse/NetBeans/Tomcat等软件就是通过搜索JAVA_HOME变量来找到并使用安装好的jdk。<br>配置方法：在系统变量里点击新建，变量名填写JAVA_HOME，变量值填写JDK的安装路径。（根据自己的安装路径填写）</p>
-<p>JAVA_HOME：E:\Java\jdk1.8.0_202</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-8.png"></p>
-<p><strong>（2）CLASSPATH环境变量。</strong></p>
-<p>作用：是指定类搜索路径，要使用已经编写好的类，前提当然是能够找到它们了，JVM就是通过CLASSPTH来寻找类的。我们需要把jdk安装目录下的lib子目录中的dt.jar和tools.jar设置到CLASSPATH中，当然，当前目录“.”也必须加入到该变量中。<br>配置方法：<br>新建CLASSPATH变量，变量值为：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar 。CLASSPATH变量名字，可以大写也可以小写。注意不要忘记前面的点和中间的分号。且要在英文输入的状态下的分号和逗号。</p>
-<p>CLASSPATH ：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar;</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-9.png"> </p>
-<p><strong>（3）path环境变量</strong></p>
-<p>作用：指定命令搜索路径，在i命令行下面执行命令如javac编译java程序时，它会到PATH变量所指定的路径中查找看是否能找到相应的命令程序。我们需要把jdk安装目录下的bin目录增加到现有的PATH变量中，bin目录中包含经常要用到的可执行文件如javac/java/javadoc等待，设置好PATH变量后，就可以在任何目录下执行javac/java等工具了。</p>
-<p>在系统变量里找到Path变量，这是系统自带的，不用新建。双击Path，由于原来的变量值已经存在，故应在已有的<strong>变量前追加</strong>上“;%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin”。注意前面的分号。</p>
-<p>Path：%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin;</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-10.png"> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-11.png"> </p>
-<p>或者：</p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-12.png"> </p>
-<p>然后点击确定完成。</p>
-<h3 id="三、-测试环境。"><a href="#三、-测试环境。" class="headerlink" title="三、 测试环境。"></a>三、 测试环境。</h3><p>检验是否配置成功 ctrl+R 运行cmd 分别输入<code>java</code>，<code>javac</code>， <code>java -version</code>。</p>
-<p><strong>1.Java</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-13.png"> </p>
-<p><strong>2.Javac</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-14.png"></p>
-<p><strong>3.java –version</strong></p>
-<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-15.png"> </p>
-<p>若如图所示 显示版本信息 则说明安装和配置成功!</p>
-]]></content>
-  </entry>
-  <entry>
     <title>Secondary NameNode:它究竟有什么作用？</title>
     <url>/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/</url>
     <content><![CDATA[<p>英文原文：<a href="http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/">http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/</a></p>
@@ -1444,6 +1432,83 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
+    <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
+<h4 id="2-安装前："><a href="#2-安装前：" class="headerlink" title="2.安装前："></a>2.安装前：</h4><p>检验是否配置jdk ctrl+R 运行cmd 分别输入java，javac， java -version （java 和 -version 之间有空格）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\System32&gt;javac</span><br><span class="line">&#x27;javac&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br><span class="line">C:\Windows\System32&gt;java -version</span><br><span class="line">&#x27;java&#x27; 不是内部或外部命令，也不是可运行的程序</span><br><span class="line">或批处理文件。</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="二、方法-步骤"><a href="#二、方法-步骤" class="headerlink" title="二、方法/步骤"></a>二、方法/步骤</h3><span id="more"></span>
+<h4 id="1-安装JDK，JRE，-选择安装目录"><a href="#1-安装JDK，JRE，-选择安装目录" class="headerlink" title="1. 安装JDK，JRE， 选择安装目录"></a>1. 安装JDK，JRE， 选择安装目录</h4><p>安装过程中会出现两次 安装提示 。第一次是安装 jdk ，第二次是安装 jre 。建议两个都安装在同一个java文件夹中的不同文件夹中。（不能都安装在java文件夹的根目录下，jdk和jre安装在同一文件夹会出错）。</p>
+<p>（1）双击jdk-8u202-windows-x64.exe 进行安装。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-1.png"></p>
+<p>（2）点击“下一步”继续。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-2.png"></p>
+<p>（3）选择安装路径，然后点击下一步。</p>
+<p>默认是在C盘。我这里选择的是E盘。路径为：E:\Java\jdk1.8.0_202\</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-3.png"></p>
+<p>（4）中途会进行JRE的安装。选择JRE安装的路径，点击下一步。默认会选择C盘。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-4.png"> </p>
+<p>因为在选择的时候不能新建。自己新建一个文件夹：jre1.8.0_202文件夹。更改路径：E:\Java\jre1.8.0_202\</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-5.png"> </p>
+<p>（5）点击下一步，等待安装完成。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-6.png"> </p>
+<p>（6）安装完成，点击关闭。</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-7.png"></p>
+<h4 id="2-配置系统环境"><a href="#2-配置系统环境" class="headerlink" title="2.配置系统环境"></a>2.配置系统环境</h4><p>配置环境变量：右击“我的电脑”–&gt;”属性”–&gt;”高级系统设置”–&gt;”环境变量”。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CLASSPATH</span><br><span class="line">.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar</span><br><span class="line"></span><br><span class="line">JAVA_HOME</span><br><span class="line">E:\Java\jdk1.8.0_202</span><br><span class="line"></span><br><span class="line">PATH</span><br><span class="line">%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin</span><br></pre></td></tr></table></figure>
+
+<p><strong>（1）JAVA_HOME环境变量。</strong></p>
+<p>作用：它指向jdk的安装目录，Eclipse/NetBeans/Tomcat等软件就是通过搜索JAVA_HOME变量来找到并使用安装好的jdk。<br>配置方法：在系统变量里点击新建，变量名填写JAVA_HOME，变量值填写JDK的安装路径。（根据自己的安装路径填写）</p>
+<p>JAVA_HOME：E:\Java\jdk1.8.0_202</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-8.png"></p>
+<p><strong>（2）CLASSPATH环境变量。</strong></p>
+<p>作用：是指定类搜索路径，要使用已经编写好的类，前提当然是能够找到它们了，JVM就是通过CLASSPTH来寻找类的。我们需要把jdk安装目录下的lib子目录中的dt.jar和tools.jar设置到CLASSPATH中，当然，当前目录“.”也必须加入到该变量中。<br>配置方法：<br>新建CLASSPATH变量，变量值为：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\tools.jar 。CLASSPATH变量名字，可以大写也可以小写。注意不要忘记前面的点和中间的分号。且要在英文输入的状态下的分号和逗号。</p>
+<p>CLASSPATH ：.;%JAVA_HOME%\lib;%JAVA_HOME%\lib\dt.jar;%JAVA_HOME%\lib\tools.jar;</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-9.png"> </p>
+<p><strong>（3）path环境变量</strong></p>
+<p>作用：指定命令搜索路径，在i命令行下面执行命令如javac编译java程序时，它会到PATH变量所指定的路径中查找看是否能找到相应的命令程序。我们需要把jdk安装目录下的bin目录增加到现有的PATH变量中，bin目录中包含经常要用到的可执行文件如javac/java/javadoc等待，设置好PATH变量后，就可以在任何目录下执行javac/java等工具了。</p>
+<p>在系统变量里找到Path变量，这是系统自带的，不用新建。双击Path，由于原来的变量值已经存在，故应在已有的<strong>变量前追加</strong>上“;%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin”。注意前面的分号。</p>
+<p>Path：%JAVA_HOME%\bin;%JAVA_HOME%\jre\bin;</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-10.png"> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-11.png"> </p>
+<p>或者：</p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-12.png"> </p>
+<p>然后点击确定完成。</p>
+<h3 id="三、-测试环境。"><a href="#三、-测试环境。" class="headerlink" title="三、 测试环境。"></a>三、 测试环境。</h3><p>检验是否配置成功 ctrl+R 运行cmd 分别输入<code>java</code>，<code>javac</code>， <code>java -version</code>。</p>
+<p><strong>1.Java</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-13.png"> </p>
+<p><strong>2.Javac</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-14.png"></p>
+<p><strong>3.java –version</strong></p>
+<p> <img src="/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/image-15.png"> </p>
+<p>若如图所示 显示版本信息 则说明安装和配置成功!</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>MapReduceClass extends Configured implements Tool代码</title>
+    <url>/2021/12/18/hadoop-Interface-Tool/</url>
+    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
+<ol>
+<li>extends Configured implements Tool</li>
+<li>run()放置任务代码.以下为mapreduce代码</li>
+<li>main方法中调用run()方法</li>
+</ol>
+<span id="more"></span>
+
+<p>代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li><p>补充：自定义序列化类</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>参考链接：</p>
+<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>dependencies与dependencyManagement的区别</title>
     <url>/2022/01/10/dependencies%E4%B8%8EdependencyManagement%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
     <content><![CDATA[<h2 id="个人小结"><a href="#个人小结" class="headerlink" title="个人小结"></a>个人小结</h2><ul>
@@ -1498,46 +1563,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MapReduceClass extends Configured implements Tool代码</title>
-    <url>/2021/12/18/hadoop-Interface-Tool/</url>
-    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
-<ol>
-<li>extends Configured implements Tool</li>
-<li>run()放置任务代码.以下为mapreduce代码</li>
-<li>main方法中调用run()方法</li>
-</ol>
-<span id="more"></span>
-
-<p>代码如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<ol start="4">
-<li><p>补充：自定义序列化类</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>参考链接：</p>
-<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>mapreduce执行速度慢的原因</title>
     <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
     <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
@@ -1574,6 +1599,24 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>spark-sql启动参数</title>
     <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
     <content><![CDATA[<p>不带参数，直接启动，报错：</p>
@@ -1582,26 +1625,6 @@
 <p>带参数启动成功：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>spark部署时修改spark-env.sh</title>
-    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
-    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
-
-<p>可以运行Spark</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
-
-<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
-<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
 ]]></content>
   </entry>
   <entry>
@@ -1632,6 +1655,26 @@
 </ol>
 <p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
 <p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>spark部署时修改spark-env.sh</title>
+    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
+    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>可以运行Spark</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
+
+<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
+<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
 ]]></content>
   </entry>
   <entry>
@@ -1916,6 +1959,23 @@
 ]]></content>
   </entry>
   <entry>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
+]]></content>
+  </entry>
+  <entry>
     <title>画图详解yarn的资源调度流程</title>
     <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
@@ -1945,23 +2005,6 @@
 <h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
 <h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
 <p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2978,7 +3021,7 @@
 <p>假设一个job的input大小固定为100M,当只包含一个文件时，split个数为2，maptask数为2，但当包含10个10M的文件时，maptask数为10。</p>
 <h3 id="reduce-task数量"><a href="#reduce-task数量" class="headerlink" title="reduce task数量"></a>reduce task数量</h3><p>下面来分析reducetask，纯粹的mapreduce task的reduce task数很简单，就是参数mapred.reduce.tasks的值，hadoop-site.xml文件中和mapreduce job运行时不设置的话默认为1。</p>
 <p>在HIVE中运行sql的情况又不同，hive会估算reduce task的数量，估算方法如下：</p>
-<p>通常是ceil(input文件大小/1024<em>1024</em>1024)，每1GB大小的输入文件对应一个reduce task。</p>
+<p>通常是<code>ceil(input文件大小/1024*1024*1024)</code>，每1GB大小的输入文件对应一个reduce task。</p>
 <p>特殊的情况是当sql只查询count(*)时，reduce task数被设置成1。</p>
 <h3 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h3><p>通过map和reduce task数量的分析可以看出，hadoop/hive估算的map和reduce task数可能和实际情况相差甚远。假定某个job的input数据量庞大，reduce task数量也会随之变大，而通过join和group by，实际output的数据可能不多，但reduce会输出大量的小文件，这个job的下游任务将会启动同样多的map来处理前面reduce产生的大量文件。在生产环境中每个user group有一个map task数的限额，一个job启动大量的map task很显然会造成其他job等待释放资源。</p>
 <p>Hive对于上面描述的情况有一种补救措施，参数hive.merge.smallfiles.avgsize控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于hive.merge.smallfiles.avgsize-默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过hive.merge.size.per.task-默认为256MB。</p>

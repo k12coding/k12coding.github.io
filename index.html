@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-count">46</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,108 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">HDFS小文件问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 20:30:19 / 修改时间：21:08:10" itemprop="dateCreated datePublished" datetime="2022-01-26T20:30:19+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a target="_blank" rel="noopener" href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1130,206 +1232,6 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
 <li><p>刷新配置，查看版本</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/" class="post-title-link" itemprop="url">Hadoop支持LZO压缩</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2022-01-18 23:17:28" itemprop="dateCreated datePublished" datetime="2022-01-18T23:17:28+08:00">2022-01-18</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-01-19 01:39:13" itemprop="dateModified" datetime="2022-01-19T01:39:13+08:00">2022-01-19</time>
-      </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="一、Hadoop支持LZO压缩"><a href="#一、Hadoop支持LZO压缩" class="headerlink" title="一、Hadoop支持LZO压缩"></a>一、Hadoop支持LZO压缩</h2><h3 id="1-lzop"><a href="#1-lzop" class="headerlink" title="1.lzop"></a>1.lzop</h3><p>lzo格式文件压缩解压需要用到服务器的lzop工具，hadoop 的<a target="_blank" rel="noopener" href="https://so.csdn.net/so/search?q=native&spm=1001.2101.3001.7020">native</a>库（hadoop checknative是没有的lzo,zip相关信息）并不支持</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#安装以前先执行以下命令</span><br><span class="line">[hadoop@hadoop001 ~]$ which lzop</span><br><span class="line">/usr/bin/lzop</span><br></pre></td></tr></table></figure>
-
-<p> 【<em><strong>注意</strong></em>】这代表你已经有lzop，如果找不到，就执行以下命令</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#若没有执行如下安装命令【这些命令一定要在root用户下安装，否则没有权限】</span><br><span class="line">[root@hadoop001 ~]# yum install -y svn ncurses-devel</span><br><span class="line">[root@hadoop001 ~]# yum install -y gcc gcc-c++ make cmake</span><br><span class="line">[root@hadoop001 ~]# yum install -y openssl openssl-devel svn ncurses-devel zlib-devel libtool</span><br><span class="line">[root@hadoop001 ~]# yum install -y lzo lzo-devel lzop autoconf automake cmake </span><br><span class="line">[root@hadoop001 ~]# yum -y install lzo-devel zlib-devel gcc autoconf automake libtool</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-安装hadoop-lzo"><a href="#2-安装hadoop-lzo" class="headerlink" title="2.安装hadoop-lzo"></a>2.安装hadoop-lzo</h3><ol>
-<li><h4 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/twitter/hadoop-lzo/archive/master.zip</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="解压"><a href="#解压" class="headerlink" title="解压"></a>解压</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br><span class="line">[hadoop@hadoop001 source]$ unzip master</span><br><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">drwxrwxr-x.  5 hadoop hadoop    4096 Jan 11 22:03 hadoop-lzo-master</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="修改pom-xml"><a href="#修改pom-xml" class="headerlink" title="修改pom.xml"></a>修改pom.xml</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 source]cd hadoop-lzo-master</span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ vi pom.xml </span><br><span class="line">&lt;hadoop.current.version&gt;3.2.2&lt;/hadoop.current.version&gt;</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="声明两个临时环境变量"><a href="#声明两个临时环境变量" class="headerlink" title="声明两个临时环境变量"></a>声明两个临时环境变量</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export C_INCLUDE_PATH=/home/hadoop/app/hadoop/lzo/include     </span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export LIBRARY_PATH=/home/hadoop/app/hadoop/lzo/lib </span><br></pre></td></tr></table></figure></li>
-<li><h4 id="编译（不需要阿里云仓库）"><a href="#编译（不需要阿里云仓库）" class="headerlink" title="编译（不需要阿里云仓库）"></a>编译（不需要阿里云仓库）</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ mvn clean package -Dmaven.test.skip=true</span><br></pre></td></tr></table></figure>
-
-<p>查看编译后的jar，hadoop-lzo-0.4.21-SNAPSHOT.jar则为我们需要的jar</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ cd target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 444</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 antrun</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop   4096 Jan 11 22:03 apidocs</span><br><span class="line">drwxrwxr-x. 5 hadoop hadoop   4096 Jan 11 22:03 classes</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 generated-sources</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 180550 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 181006 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-javadoc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  52043 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-sources.jar</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 javadoc-bundle-options</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 maven-archiver</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 native</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 test-classes</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="上传jar包"><a href="#上传jar包" class="headerlink" title="上传jar包"></a>上传jar包</h4><p>将hadoop-lzo-0.4.21-SNAPSHOT.jar包复制到我们的hadoop的$HADOOP_HOME/share/hadoop/common/目录下才能被hadoop使用</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 target]$ cp hadoop-lzo-0.4.21-SNAPSHOT.jar ~/app/hadoop/share/hadoop/common/ </span><br></pre></td></tr></table></figure>
-
-<p>如果是集群，需要使用<code>xsync hadoop-lzo-0.4.21.jar</code>命令同步到集群中的其他机器</p>
-</li>
-<li><h4 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h4><p>core-site.xml</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codecs&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;</span><br><span class="line">		org.apache.hadoop.io.compress.GzipCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.DefaultCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.BZip2Codec,</span><br><span class="line">		org.apache.hadoop.io.compress.SnappyCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzoCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzopCodec</span><br><span class="line">	&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codec.lzo.class&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>mapred-site.xml（如果修改了，则默认输出格式为lzo）</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.output.fileoutputformat.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.output.fileoutputformat.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzopCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><ul>
-<li><p><strong>配置了mapred-site.xml</strong>:</p>
-<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount /input /output</p>
-</li>
-<li><p>没有配置mapred-site.xml(指定输出文件格式为lzo)：</p>
-<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount <strong>-Dmapreduce.output.fileoutputformat.compress=true</strong> <strong>-Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</strong> /input /output</p>
-</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.output.fileoutputformat.compress=true -Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec /wc/input/wc.data /output</span><br><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop fs -ls /output</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2022-01-11 22:18 /output/_SUCCESS</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         95 2022-01-11 22:18 /output/part-r-00000.lzo</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="3-LZO创建索引"><a href="#3-LZO创建索引" class="headerlink" title="3.LZO创建索引"></a>3.LZO创建索引</h3><ol>
-<li><h3 id="创建LZO文件的索引"><a href="#创建LZO文件的索引" class="headerlink" title="创建LZO文件的索引"></a>创建LZO文件的索引</h3><p>创建LZO文件的索引，LZO压缩文件的可切片特性依赖于其索引，故我们需要手动为LZO压缩文件创建索引。若无索引，则LZO文件的切片只有一个。</p>
-<p>命令：<code>hadoop jar $HADOOP_HOME/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.DistributedLzoIndexer XXX.lzo</code></p>
-</li>
-<li><h3 id="执行wc-没有创建索引"><a href="#执行wc-没有创建索引" class="headerlink" title="执行wc(没有创建索引)"></a>执行wc(没有创建索引)</h3><p>创建需要分片处理的bigwcneedspilt.data.lzo（203M）文件，并上传到hdfs上</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigwcneedspilt.data</span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigwc*</span><br><span class="line">157M	bigwc.data</span><br><span class="line">51M	bigwc.data.lzo</span><br><span class="line">625M	bigwcneedspilt.data</span><br><span class="line">203M	bigwcneedspilt.data.lzo</span><br><span class="line">18M	bigwc.txt</span><br><span class="line">[hadoop@hadoop001 data]$ hadoop fs -put bigwcneedspilt.data.lzo /user/hadoop/data/</span><br></pre></td></tr></table></figure>
-
-<p>执行wc(没有创建索引)</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output1</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-1.png" alt="image-20220113175318333"></p>
-<p>可以看到此时切片并没有生效，依然只有一个</p>
-</li>
-<li><h3 id="对上传的LZO文件创建索引"><a href="#对上传的LZO文件创建索引" class="headerlink" title="对上传的LZO文件创建索引"></a>对上传的LZO文件创建索引</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar  com.hadoop.compression.lzo.DistributedLzoIndexer /user/hadoop/data/bigwcneedspilt.data.lzo</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220113183629075.png" alt="image-20220113183629075"></p>
-</li>
-<li><h3 id="执行wc-已经创建索引"><a href="#执行wc-已经创建索引" class="headerlink" title="执行wc(已经创建索引)"></a>执行wc(已经创建索引)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output2</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-2.png" alt="image-20220113193027590"></p>
-<p>此时已经成功切片</p>
-</li>
-</ol>
-<h2 id="二、Hive支持处理LZO压缩格式的数据的统计查询"><a href="#二、Hive支持处理LZO压缩格式的数据的统计查询" class="headerlink" title="二、Hive支持处理LZO压缩格式的数据的统计查询"></a>二、Hive支持处理LZO压缩格式的数据的统计查询</h2><h3 id="开启压缩的方式"><a href="#开启压缩的方式" class="headerlink" title="开启压缩的方式"></a>开启压缩的方式</h3><ul>
-<li>在**<code>$HIVE_HOME/conf/hive-site.xml</code>**中设置</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- 设置hive语句执行输出文件是否开启压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.output&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether the final outputs of a query (to a local/HDFS file or a Hive table) </span><br><span class="line">        is compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables </span><br><span class="line">        mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;!-- 控制多个MR Job的中间结果文件是否启用压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.intermediate&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether intermediate files produced by Hive between multiple map-reduce jobs are compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>在hive中开启</p>
-<p>查看默认状态：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=false</span><br><span class="line">hive (hive)&gt; set mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure>
-
-<p>开启支持压缩，格式为lzop（lzo在文件构建索引后才会支持数据分片）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h3 id="数据与环境准备"><a href="#数据与环境准备" class="headerlink" title="数据与环境准备"></a>数据与环境准备</h3><p>数据准备：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigemp.data </span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigemp*</span><br><span class="line">823M	bigemp.data</span><br><span class="line">206M	bigemp.data.lzo</span><br></pre></td></tr></table></figure>
-
-<p>为了方便测试分片，我重启了hadoop，修改了hdfs-site.xml设置了blocksize=10M。然后mapr-site.xml没有配置上面的4个值。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.blocksize&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;10485760&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="未开启（未添加索引）"><a href="#未开启（未添加索引）" class="headerlink" title="未开启（未添加索引）"></a>未开启（未添加索引）</h3><h4 id="建表"><a href="#建表" class="headerlink" title="建表"></a>建表</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE big_emp (id int,name string,dept string)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br></pre></td></tr></table></figure>
-
-<h4 id="从本地load-LZO压缩数据bigemp-data-lzo到表big-emp"><a href="#从本地load-LZO压缩数据bigemp-data-lzo到表big-emp" class="headerlink" title="从本地load LZO压缩数据bigemp.data.lzo到表big_emp"></a>从本地load LZO压缩数据<code>bigemp.data.lzo</code>到表<code>big_emp</code></h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LOAD DATA LOCAL INPATH &#x27;/home/hadoop/data/bigemp.data.lzo&#x27; OVERWRITE INTO TABLE big_emp</span><br></pre></td></tr></table></figure>
-
-<h4 id="查看大小"><a href="#查看大小" class="headerlink" title="查看大小"></a>查看大小</h4><p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114164409879.png" alt="image-20220114164409879"></p>
-<h4 id="查询统计测试"><a href="#查询统计测试" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select count(1) from big_emp;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-3.png" alt="image-20220114045505294"></p>
-<p>因为我们的块大小是默认的128M，而bigemp.data.lzo这个lzo压缩文件的大小远远大于128M*1.1，但是我们可以看见Map只有一个，可见lzo是不支持分片的。</p>
-<h3 id="已开启（已添加索引）"><a href="#已开启（已添加索引）" class="headerlink" title="已开启（已添加索引）"></a><strong>已开启（已添加索引）</strong></h3><h4 id="开启压缩"><a href="#开启压缩" class="headerlink" title="开启压缩"></a>开启压缩</h4><p>生成的压缩文件格式必须为设置为<strong>LzopCodec</strong>，lzoCode的压缩文件格式后缀为<code>.lzo_deflate</code>是无法创建索引的。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=true</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</span><br></pre></td></tr></table></figure>
-
-<h4 id="建表，并插入big-emp的数据"><a href="#建表，并插入big-emp的数据" class="headerlink" title="建表，并插入big_emp的数据"></a>建表，并插入big_emp的数据</h4><p>（若不是直接load的lzo文件，需要开启压缩，且压缩格式为LzopCodec，load数据并不能改变文件格式和压缩格式。）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE big_emp_split ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br><span class="line">as select * from big_emp;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114171956115.png" alt="image-20220114171956115"></p>
-<h4 id="构建LZO文件索引"><a href="#构建LZO文件索引" class="headerlink" title="构建LZO文件索引"></a>构建LZO文件索引</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114172032219.png" alt="image-20220114172032219"></p>
-<h4 id="查询统计测试-1"><a href="#查询统计测试-1" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select count(1) from big_emp_split;</span><br></pre></td></tr></table></figure>
-
-<p><strong>当做到这步，遇到好几个问题：</strong></p>
-<ol>
-<li><p>直接返回结果，没有启动MR</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; select count(1) from big_emp_split;</span><br><span class="line">OK</span><br><span class="line">_c0</span><br><span class="line">39999996</span><br><span class="line">Time taken: 0.27 seconds, Fetched: 1 row(s)</span><br></pre></td></tr></table></figure>
-
-<p>可能是有缓存，添加where条件可以运行MR程序。</p>
-</li>
-<li><p>当设置<code>SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</code>后，count(1)报错。</p>
-<p>设置成<code>SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec;</code>可以运行成功。</p>
-<p>参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/blfshiye/p/5424097.html">https://www.cnblogs.com/blfshiye/p/5424097.html</a></p>
-</li>
-<li><p>但结果比未生成索引时的多了几条，map数量仍然为1，即生成索引后仍然没有分片成功。推断是把索引文件作为输入了，所以数据变多。网上查阅，应该是因为把索引文件当成小文件合并了，所以map数量为1，且数据变多。解决办法：修改<code>CombineHiveInputFormat</code>为<code>HiveInputFormat</code>。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure>
-
-<p>参考：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43589563/article/details/122353909">https://blog.csdn.net/weixin_43589563/article/details/122353909</a></p>
-</li>
-<li><p>问题解决，分片成功。</p>
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-4.png" alt="image-20220114163716493"></p>
-<p>这里我们可以看到map数量是21，也就是说lzo压缩文件构建索引以后是支持分片的。</p>
-</li>
-</ol>
-<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><p>这个开启压缩，在生成表的时候需要（生成lzo文件），在做统计的时候不需要设置。lzo文件生成索引后，索引不被合并掉，就支持分片。</p>
-<h3 id="Hive支持处理LZO压缩格式分片步骤"><a href="#Hive支持处理LZO压缩格式分片步骤" class="headerlink" title="Hive支持处理LZO压缩格式分片步骤"></a>Hive支持处理LZO压缩格式分片步骤</h3><ol>
-<li><p>默认设置即可</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SET hive.exec.compress.output=false;</span><br><span class="line">SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure></li>
-<li><p>更改hive.input.format，防止索引被合并</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure></li>
-<li><p>为lzo文件创建索引</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure></li>
-<li><p>统计查询</p>
-</li>
 </ol>
 
       
