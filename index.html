@@ -213,7 +213,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2022-01-26 14:33:46 / 修改时间：16:15:51" itemprop="dateCreated datePublished" datetime="2022-01-26T14:33:46+08:00">2022-01-26</time>
+      <time title="创建时间：2022-01-26 14:33:46 / 修改时间：16:20:13" itemprop="dateCreated datePublished" datetime="2022-01-26T14:33:46+08:00">2022-01-26</time>
     </span>
 
   
@@ -259,7 +259,7 @@
 <p>两个NameNode一个是Active状态的，一个是Standby状态的，一个时间点只能有一个Active状态的。</p>
 <p>NameNode提供服务,两个NameNode上存储的元数据是实时同步的，当Active的NameNode出现问题时，通过Zookeeper实时切换到Standby的NameNode上，并将Standby改为Active状态。</p>
 <p>客户端通过连接一个Zookeeper的代理来确定当时哪个NameNode处于服务状态。</p>
-<h3 id="HDFS-HA架构"><a href="#HDFS-HA架构" class="headerlink" title="HDFS HA架构"></a>HDFS HA架构</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-04.png" alt="img"></p>
+<h3 id="HDFS-HA架构"><a href="#HDFS-HA架构" class="headerlink" title="HDFS HA架构"></a>HDFS HA架构</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-004.png" alt="img"></p>
 <ol>
 <li>Active NameNode 和 Standby NameNode：两台 NameNode 形成互备，一台处于 Active 状态，为主 NameNode，另外一台处于 Standby 状态，为备 NameNode，只有主 NameNode 才能对外提供读写服务；</li>
 <li>ZKFailoverController（主备切换控制器，FC）：ZKFailoverController 作为独立的进程运行，对 NameNode 的主备切换进行总体控制。ZKFailoverController 能及时检测到 NameNode 的健康状况，在主 NameNode 故障时借助 Zookeeper 实现自动的主备选举和切换（当然 NameNode 目前也支持不依赖于 Zookeeper 的手动主备切换）；</li>
