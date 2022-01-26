@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-count">44</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,134 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/Hadoop-HA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/Hadoop-HA/" class="post-title-link" itemprop="url">Hadoop HA</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 14:33:46 / 修改时间：15:38:39" itemprop="dateCreated datePublished" datetime="2022-01-26T14:33:46+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="什么是HA？"><a href="#什么是HA？" class="headerlink" title="什么是HA？"></a>什么是HA？</h1><p>   HA的意思是High Availability高可用，指当当前工作中的机器宕机后，会自动处理这个异常，并将工作无缝地转移到其他备用机器上去，以来保证服务的高可用。</p>
+<p>   HA方式安装部署才是最常见的生产环境上的安装部署方式。Hadoop HA是Hadoop 2.x中新添加的特性，包括NameNode HA 和 ResourceManager HA。因为DataNode和NodeManager本身就是被设计为高可用的，所以不用对他们进行特殊的高可用处理。</p>
+<h2 id="NameNode-HA"><a href="#NameNode-HA" class="headerlink" title="NameNode HA"></a>NameNode HA</h2><p>​    在Hadoop2.0之前，NameNode只有一个，存在单点问题（虽然Hadoop1.0有SecondaryNameNode，CheckPointNode，BackupNode这些，但是单点问题依然存在），在hadoop2.0引入了HA机制。Hadoop2.0的HA机制官方介绍了有2种方式，一种是NFS（Network File System）方式，另外一种是QJM（Quorum Journal Manager）方式。</p>
+<p>​    Hadoop2.0的HA 机制有两个NameNode，一个是Active状态，另一个是Standby状态。两者的状态可以切换，但同时最多只有1个是Active状态。只有Active Namenode提供对外的服务。Active NameNode和Standby NameNode之间通过<strong>NFS</strong>或者<strong>JN（JournalNode，QJM方式）</strong>来同步数据。</p>
+<p>​    Active NameNode会把最近的操作记录写到本地的一个edits文件中（edits file），并传输到NFS或者JN中。Standby NameNode定期的检查，从NFS或者JN把最近的edit文件读过来，然后把edits文件和fsimage文件合并成一个新的fsimage，合并完成之后会通知Active NameNode获取这个新fsimage。Active NameNode获得这个新的fsimage文件之后，替换原来旧的fsimage文件。</p>
+<p>​    这样，保持了Active NameNode和Standby NameNode的数据实时同步，Standby NameNode可以随时切换成Active NameNode（譬如Active NameNode挂了）。而且还有一个原来Hadoop1.0的SecondaryNameNode，CheckpointNode，BackupNode的功能：合并edits文件和fsimage文件，使fsimage文件一直保持更新。所以启动了hadoop2.0的HA机制之后，SecondaryNameNode，CheckpointNode，BackupNode这些都不需要了。</p>
+<h3 id="数据同步方式：NFS与-QJM（Quorum-Journal-Manager-）"><a href="#数据同步方式：NFS与-QJM（Quorum-Journal-Manager-）" class="headerlink" title="数据同步方式：NFS与 QJM（Quorum Journal Manager ）"></a>数据同步方式：NFS与 QJM（Quorum Journal Manager ）</h3><h4 id="NFS"><a href="#NFS" class="headerlink" title="NFS"></a>NFS</h4><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-01.png" alt="img"></p>
+<p>NFS作为Active NameNode和Standby NameNode之间数据共享的存储。Active NameNode会把最近的edits文件写到NFS，而Standby NameNode从NFS中把数据读过来。这个方式的缺点是，如果Active NameNode或者Standby Namenode有一个和NFS之间网络有问题，则会造成他们之前数据的同步出问题。</p>
+<h4 id="QJM（Quorum-Journal-Manager-）"><a href="#QJM（Quorum-Journal-Manager-）" class="headerlink" title="QJM（Quorum Journal Manager ）"></a>QJM（Quorum Journal Manager ）</h4><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-02.png" alt="img"></p>
+<p>QJM的方式可以解决上述NFS容错机制不足的问题。Active NameNode和Standby NameNode之间是通过一组JournalNode（数量是奇数，可以是3,5,7…,2n+1）来共享数据。Active NameNode把最近的edits文件写到2n+1个JournalNode上，只要有n+1个写入成功就认为这次写入操作成功了，然后Standby NameNode就可以从JournalNode上读取了。可以看到，QJM方式有容错机制，可以容忍n个JournalNode的失败。</p>
+<p>Active和Standby两个NameNode之间的数据交互流程为：</p>
+<p>1）NameNode在启动后，会先加载FSImage文件和共享目录上的EditLog Segment文件；</p>
+<p>2）Standby NameNode会启动EditLogTailer线程和StandbyCheckpointer线程，正式进入Standby模式；</p>
+<p>3）Active NameNode把EditLog提交到JournalNode集群；</p>
+<p>4）Standby NameNode上的EditLogTailer 线程定时从JournalNode集群上同步EditLog；</p>
+<p>5）Standby NameNode上的StandbyCheckpointer线程定时进行Checkpoint，并将Checkpoint之后的FSImage文件上传到Active NameNode。（在Hadoop 2.0中不再有Secondary NameNode这个角色了，StandbyCheckpointer线程的作用其实是为了替代 Hadoop 1.0版本中的Secondary NameNode的功能。）</p>
+<p>QJM方式有明显的优点，一是本身就有fencing的功能，二是通过多个Journal节点增强了系统的健壮性，所以建议在生产环境中采用QJM的方式。JournalNode消耗的资源很少，不需要额外的机器专门来启动JournalNode，可以从Hadoop集群中选几台机器同时作为JournalNode。</p>
+<h3 id="主备NameNode切换"><a href="#主备NameNode切换" class="headerlink" title="主备NameNode切换"></a>主备NameNode切换</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-03.png" alt="img"></p>
+<p>Active NameNode和Standby NameNode可以随时切换，可以人工和自动。人工切换是通过执行HA管理命令来改变NameNode的状态，从Standby到Active，或从Active到Standby。自动切换则在Active NameNode挂掉的时候，Standby NameNode自动切换成Active状态。</p>
+<p>主备NameNode的自动切换需要配置Zookeeper。Active NameNode和Standby NameNode把他们的状态实时记录到Zookeeper中，Zookeeper监视他们的状态变化。当Zookeeper发现Active NameNode挂掉后，会自动把Standby NameNode切换成Active NameNode。</p>
+<h3 id="HDFS-HA-原理"><a href="#HDFS-HA-原理" class="headerlink" title="HDFS HA 原理"></a>HDFS HA 原理</h3><p>单NameNode的缺陷存在单点故障的问题，如果NameNode不可用，则会导致整个HDFS文件系统不可用。所以需要设计高可用的HDFS（Hadoop HA）来解决NameNode单点故障的问题。解决的方法是在HDFS集群中设置多个NameNode节点。但是一旦引入多个NameNode，就有一些问题需要解决。</p>
+<p>HDFS HA需要保证的四个问题：</p>
+<ol>
+<li>保证NameNode内存中元数据数据一致，并保证编辑日志文件的安全性；</li>
+<li>多个NameNode如何协作；</li>
+<li>客户端如何能正确地访问到可用的那个NameNode；</li>
+<li>怎么保证任意时刻只能有一个NameNode处于对外服务状态。</li>
+</ol>
+<p><strong>解决方法</strong></p>
+<p>对于保证NameNode元数据的一致性和编辑日志的安全性，采用Zookeeper来存储编辑日志文件。</p>
+<p>两个NameNode一个是Active状态的，一个是Standby状态的，一个时间点只能有一个Active状态的。</p>
+<p>NameNode提供服务,两个NameNode上存储的元数据是实时同步的，当Active的NameNode出现问题时，通过Zookeeper实时切换到Standby的NameNode上，并将Standby改为Active状态。</p>
+<p>客户端通过连接一个Zookeeper的代理来确定当时哪个NameNode处于服务状态。</p>
+<h3 id="HDFS-HA架构"><a href="#HDFS-HA架构" class="headerlink" title="HDFS HA架构"></a>HDFS HA架构</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-04.png" alt="HDFS-NameNode-High-Availbility-2-01"></p>
+<p>HDFS HA架构中有两台NameNode节点，一台是处于活动状态（Active）为客户端提供服务，另外一台处于热备份状态（Standby）。</p>
+<p>元数据文件有两个文件：fsimage和edits，备份元数据就是备份这两个文件。</p>
+<p>JournalNode用来实时从Active NameNode上拷贝edits文件，JournalNode有三台也是为了实现高可用。</p>
+<p>Standby NameNode不对外提供元数据的访问，它从Active NameNode上拷贝fsimage文件，从JournalNode上拷贝edits文件，然后负责合并fsimage和edits文件，相当于SecondaryNameNode的作用。最终目的是保证Standby NameNode上的元数据信息和Active NameNode上的元数据信息一致，以实现热备份。</p>
+<p>Zookeeper来保证在Active NameNode失效时及时将Standby NameNode修改为Active状态。</p>
+<p>ZKFC（失效检测控制）是Hadoop里的一个Zookeeper客户端，在每一个NameNode节点上都启动一个ZKFC进程，来监控NameNode的状态，并把NameNode的状态信息汇报给Zookeeper集群，其实就是在Zookeeper上创建了一个Znode节点，节点里保存了NameNode状态信息。当NameNode失效后，ZKFC检测到报告给Zookeeper，Zookeeper把对应的Znode删除掉，Standby ZKFC发现没有Active状态的NameNode时，就会用shell命令将自己监控的NameNode改为Active状态，并修改Znode上的数据。</p>
+<p>Znode是个临时的节点，临时节点特征是客户端的连接断了后就会把znode删除，所以当ZKFC失效时，也会导致切换NameNode。</p>
+<p>DataNode会将心跳信息和Block汇报信息同时发给两台NameNode，DataNode只接受Active NameNode发来的文件读写操作指令。</p>
+<h2 id="YARN-HA-ResourceManager-HA"><a href="#YARN-HA-ResourceManager-HA" class="headerlink" title="YARN HA(ResourceManager HA)"></a>YARN HA(ResourceManager HA)</h2><p>Hadoop2.4版本之前，ResourceManager也存在单点故障的问题，也需要实现HA来保证ResourceManger的高可也用性。</p>
+<p>ResouceManager从记录着当前集群的资源分配情况和JOB的运行状态，YRAN HA 利用Zookeeper等共享存储介质来存储这些信息来达到高可用。另外利用Zookeeper来实现ResourceManager自动故障转移。</p>
+<p><img src="/2022/01/26/Hadoop-HA/YARNHA.png" alt="img"></p>
+<p>如果大家理解HDFS的HA，那么ResourceManager的HA与之是相同道理的：也是Active/Standby架构，任意时刻，都一个是Active，其余处于Standby状态的ResourceManager可以随时转换成Active状态。状态转换可以手工完成，也可以自动完成。手工完成时通过命令行的管理命令(命令是“yarn rmadmin”)。自动完成是通过配置自动故障转移(automatic-failover)，使用集成的failover-controller完成状态的自动切换。</p>
+<p>自动故障转移是依赖于ZooKeeper集群，依赖ZooKeeper的ActiveStandbyElector会嵌入到ResourceManager中，当Active状态的ResourceManager失效时，处于 Standby状态的ResourceManager就会被选举为Active状态的，实现切换。注意：这里没有ZooKeeperFailoverController进程，这点和HDFS的HA不同。</p>
+<p>对于客户端而言，必须知道所有的ResourceManager中。因此，需要在yarn-site.xml中配置所有的ResourceManager。那么，当一个Active状态的ResourceManager失效时，客户端怎么办哪？客户端会采用轮询机制，轮询配置在yarn-site.xml中的ResourceManager，直到找到一个active状态的ResourceManager。如果我们想修改这种寻找ResourceManager的机制，可以继承类<code>org.apache.hadoop.yarn.client.RMFailoverProxyProvider，实现</code>自己的逻辑。然后把类的名字配置到yarn-site.xml的配置项<code>yarn.client.failover-proxy-provider</code>中。</p>
+<p><strong>配置</strong></p>
+<p>在yarn-site.xml中配置如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.ha.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.cluster-id&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;cluster1&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.ha.rm-ids&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;rm1,rm2&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.hostname.rm1&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master1&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.hostname.rm2&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master2&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.webapp.address.rm1&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master1:8088&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.webapp.address.rm2&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master2:8088&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.zk.address&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;zk1:2181,zk2:2181,zk3:2181&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>命令</strong></p>
+<p>查看状态的命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn rmadmin –getServiceState rm1</span><br></pre></td></tr></table></figure>
+
+<p>状态切换的命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn rmadmin –transitionToStandby rm1</span><br></pre></td></tr></table></figure>
+
+
+
+<p>原文链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/andyguan01_2/article/details/88696239">https://blog.csdn.net/andyguan01_2/article/details/88696239</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/mlj5288/p/4449848.html">https://www.cnblogs.com/mlj5288/p/4449848.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1229,90 +1357,6 @@
 
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 rh]# python get-pip.py</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting pip&lt;21.0</span><br><span class="line">  Using cached pip-20.3.4-py2.py3-none-any.whl (1.5 MB)</span><br><span class="line">Installing collected packages: pip</span><br><span class="line">  Attempting uninstall: pip</span><br><span class="line">    Found existing installation: pip 20.3.4</span><br><span class="line">    Uninstalling pip-20.3.4:</span><br><span class="line">      Successfully uninstalled pip-20.3.4</span><br><span class="line">Successfully installed pip-20.3.4</span><br><span class="line">[root@hadoop001 rh]# pip install mysqlclient</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting mysqlclient</span><br><span class="line">  Downloading mysqlclient-1.4.6.tar.gz (85 kB)</span><br><span class="line">     |████████████████████████████████| 85 kB 879 kB/s </span><br><span class="line">Building wheels for collected packages: mysqlclient</span><br><span class="line">  Building wheel for mysqlclient (setup.py) ... done</span><br><span class="line">  Created wheel for mysqlclient: filename=mysqlclient-1.4.6-cp27-cp27m-linux_x86_64.whl size=93309 sha256=e8a53d4de8684dfdda60179f73cfb2f8083b3e3051412cdd6d5263782befd504</span><br><span class="line">  Stored in directory: /root/.cache/pip/wheels/04/5f/2b/e542c27913779611971f196081df58f969c742c01d93af1197</span><br><span class="line">Successfully built mysqlclient</span><br><span class="line">Installing collected packages: mysqlclient</span><br><span class="line">Successfully installed mysqlclient-1.4.6</span><br></pre></td></tr></table></figure></li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/" class="post-title-link" itemprop="url">CentOS 6.5下安装python3.7</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-15 17:23:33 / 修改时间：22:55:23" itemprop="dateCreated datePublished" datetime="2022-01-15T17:23:33+08:00">2022-01-15</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
-
-<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
-<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
-
-<p>把最上面的一行配置回python2.6.6就行了</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
-
-<p>有打印出相应信息就是成功了。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
 
       
     </div>
