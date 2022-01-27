@@ -26,6 +26,32 @@
 ]]></content>
   </entry>
   <entry>
+    <title>CentOS6.5安装NodeJS14.18.3</title>
+    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
+    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
+<li><p>tar包下载</p>
+<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
+<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
+</li>
+<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
+<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
+<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
+<li><p>下载并解压</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
+<li><p>修改环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
+<li><p>刷新配置，查看版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
     <title>HDFS API</title>
     <url>/2021/12/13/HDFS-API/</url>
     <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
@@ -115,32 +141,6 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
 </ul>
 <p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>CentOS6.5安装NodeJS14.18.3</title>
-    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
-    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
-<li><p>tar包下载</p>
-<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
-<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
-</li>
-<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
-<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
-<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
-<li><p>下载并解压</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
-<li><p>修改环境变量</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
-<li><p>刷新配置，查看版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
-</ol>
 ]]></content>
   </entry>
   <entry>
@@ -267,6 +267,49 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>HDFS文件读写流程与副本放置策略</title>
     <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
@@ -324,49 +367,6 @@
 <p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
 <p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
 <p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
-</li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
-</li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
-</li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1182,31 +1182,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MR作业的迭代：JobControl设计及用法</title>
-    <url>/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/</url>
-    <content><![CDATA[<h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
-<p><img src="/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo\k12blog\source_posts\MR作业的迭代：JobControl设计及用法\JobControl.jpg" alt="img"></p>
-<p>​    JobControl 封装了一系列 MapReduce 作业及其对应的依赖关系。 它将处于不同状态的作业放入不同的哈希表中，并按照图所示的状态转移作业，直到所有作业运行完成。在实现的时候，JobControl 包含一个线程用于周期性地监控和更新各个作业的运行状态，调度依赖作业运行完成的作业，提交处于 READY 状态的作业等。同时，它还提供了一些API 用于挂起、恢复和暂停该线程。</p>
-<h2 id="JobControl代码实现"><a href="#JobControl代码实现" class="headerlink" title="JobControl代码实现"></a>JobControl代码实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.HashSet;</span><br><span class="line"> </span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;</span><br><span class="line">import org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"> </span><br><span class="line">import mapreduce.SegmentUtil;</span><br><span class="line"> </span><br><span class="line">public class JobControlDemo &#123;</span><br><span class="line">	public static int main(String[] args) throws IOException, ClassNotFoundException, InterruptedException &#123;</span><br><span class="line">		Configuration conf = new Configuration();</span><br><span class="line">		String[] otherargs = new GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">		if (otherargs.length != 3) &#123;</span><br><span class="line">			System.err.println(&quot;Usage JobControlDemo &lt;InputPath1&gt; &lt;InputPath1&gt; &lt;OutPath&gt;&quot;);</span><br><span class="line">			System.exit(2);</span><br><span class="line">		&#125;</span><br><span class="line"> </span><br><span class="line">		// 创建基础作业</span><br><span class="line">		Job job1 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;1&quot;);</span><br><span class="line">		Job job2 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;2&quot;);</span><br><span class="line">		Job job3 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;3&quot;);</span><br><span class="line"> </span><br><span class="line">		// Job1作业参数配置</span><br><span class="line">		job1.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job1.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job1.setMapOutputValueClass(Text.class);</span><br><span class="line">		job1.setOutputKeyClass(Text.class);</span><br><span class="line">		job1.setOutputValueClass(Text.class);</span><br><span class="line">		job1.setMapperClass(MyMapper1.class);</span><br><span class="line">		job1.setReducerClass(MyReducer1.class);</span><br><span class="line">		job1.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job1.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job1, new Path(otherargs[0]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job1, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job2作业参数配置</span><br><span class="line">		job2.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job2.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job2.setMapOutputValueClass(Text.class);</span><br><span class="line">		job2.setOutputKeyClass(Text.class);</span><br><span class="line">		job2.setOutputValueClass(Text.class);</span><br><span class="line">		job2.setMapperClass(MyMapper2.class);</span><br><span class="line">		job2.setReducerClass(MyReducer2.class);</span><br><span class="line">		job2.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job2.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job2, new Path(otherargs[1]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job2, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job3作业参数配置</span><br><span class="line">		job3.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job3.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job3.setMapOutputValueClass(Text.class);</span><br><span class="line">		job3.setOutputKeyClass(Text.class);</span><br><span class="line">		job3.setOutputValueClass(Text.class);</span><br><span class="line">		job3.setMapperClass(MyMapper3.class);</span><br><span class="line">		job3.setReducerClass(MyReducer3.class);</span><br><span class="line">		job3.setInputFormatClass(KeyValueTextInputFormat.class);</span><br><span class="line">		job3.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line">		FileOutputFormat.setOutputPath(job3, new Path(otherargs[2]+File.separator+&quot;result&quot;));</span><br><span class="line"> </span><br><span class="line">		// 创建受控作业</span><br><span class="line">		ControlledJob cjob1 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob2 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob3 = new ControlledJob(conf);</span><br><span class="line"> </span><br><span class="line">		// 将普通作业包装成受控作业</span><br><span class="line">		cjob1.setJob(job1);</span><br><span class="line">		cjob2.setJob(job2);</span><br><span class="line">		cjob3.setJob(job3);</span><br><span class="line"> </span><br><span class="line">		// 设置依赖关系</span><br><span class="line">		//cjob2.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob2);</span><br><span class="line"> </span><br><span class="line">		// 新建作业控制器</span><br><span class="line">		JobControl jc = new JobControl(&quot;My control job&quot;);</span><br><span class="line"> </span><br><span class="line">		// 将受控作业添加到控制器中</span><br><span class="line">		jc.addJob(cjob1);</span><br><span class="line">		jc.addJob(cjob2);</span><br><span class="line">		jc.addJob(cjob3);</span><br><span class="line"> </span><br><span class="line">		/**</span><br><span class="line">		 * hadoop的JobControl类实现了线程Runnable接口。我们需要实例化一个线程来让它启动。直接调用JobControl的run()方法，线程将无法结束。</span><br><span class="line">		 */</span><br><span class="line">		//jc.run();</span><br><span class="line">		</span><br><span class="line">        Thread jcThread = new Thread(jc);  </span><br><span class="line">        jcThread.start();  </span><br><span class="line">        while(true)&#123;  </span><br><span class="line">            if(jc.allFinished())&#123;  </span><br><span class="line">                System.out.println(jc.getSuccessfulJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 0;  </span><br><span class="line">            &#125;  </span><br><span class="line">            if(jc.getFailedJobList().size() &gt; 0)&#123;  </span><br><span class="line">                System.out.println(jc.getFailedJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 1;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125; </span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第一个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper1 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl1=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl1.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl1[0].trim()), new Text(spl1[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer1 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k2, Iterable&lt;Text&gt; v2s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v2 : v2s) &#123;</span><br><span class="line">				context.write(k2, v2);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第二个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper2 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl2=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl2.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl2[0].trim()), new Text(spl2[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer2 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k3, Iterable&lt;Text&gt; v3s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v3 : v3s) &#123;</span><br><span class="line">				context.write(k3, v3);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第三个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper3 extends Mapper&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(Text key, Text value, Mapper&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			context.write(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer3 extends Reducer&lt;Text,Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k4, Iterable&lt;Text&gt; v4s,Reducer&lt;Text, Text, Text, Text&gt;.Context context) </span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			HashSet&lt;String&gt; hashSet=new HashSet&lt;String&gt;();</span><br><span class="line">			for (Text v4 : v4s) &#123;</span><br><span class="line">				hashSet.add(v4.toString().trim());</span><br><span class="line">			&#125;</span><br><span class="line">			if(hashSet.size()&gt;=2)&#123;</span><br><span class="line">				context.write(k4, new Text(&quot;OK&quot;));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试输入数据：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath1.txt</span><br><span class="line">hadoop  a</span><br><span class="line">spark   a</span><br><span class="line">hive    a</span><br><span class="line">hbase   a</span><br><span class="line">tachyon a</span><br><span class="line">storm   a</span><br><span class="line">redis   a</span><br><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath2.txt</span><br><span class="line">hadoop  b</span><br><span class="line">spark   b</span><br><span class="line">kafka   b</span><br><span class="line">tachyon b</span><br><span class="line">oozie   b</span><br><span class="line">flume   b</span><br><span class="line">sqoop   b</span><br><span class="line">solr    b</span><br></pre></td></tr></table></figure>
-
-<p>测试输出数据：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpathmerge2.txt/result/*</span><br><span class="line">hadoop  OK</span><br><span class="line">spark   OK</span><br><span class="line">tachyon OK</span><br></pre></td></tr></table></figure>
-
-<p>运行输出信息：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[sshexec] cmd : bash -c &#x27;source  /home/jiuqian/.bashrc; /home/hduser/hadoop/bin/hadoop jar  /home/jiuqian/blb/JobControlDemo.jar -D mapreduce.map.java.opts=-Xmx2048m -D mapreduce.input.fileinputformat.split.minsize=1 -Dmapreduce.input.fileinputformat.split.maxsize=512000000 -D mapred.linerecordreader.maxlength=32768 /user/jiuqian/libin/input/inputpath1.txt /user/jiuqian/libin/input/inputpath2.txt /user/jiuqian/libin/input/inputpathmerge2.txt&#x27;</span><br><span class="line">16/02/27 12:37:45 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/192.168.1.2:8032</span><br><span class="line">16/02/27 12:37:46 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:46 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:46 INFO Configuration.deprecation: mapred.linerecordreader.maxlength is deprecated. Instead, use mapreduce.input.linerecordreader.line.maxlength</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17037/</span><br><span class="line">16/02/27 12:37:47 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:37:47 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17038/</span><br><span class="line">16/02/27 12:38:13 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:38:13 INFO input.FileInputFormat: Total input paths to process : 2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17039/</span><br><span class="line">[job name:	JobControlDemo1</span><br><span class="line">job id:	My control job0</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17037</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo2</span><br><span class="line">job id:	My control job1</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17038</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo3</span><br><span class="line">job id:	My control job2</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17039</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has 2 dependeng jobs:</span><br><span class="line">	 depending job 0:	JobControlDemo1</span><br><span class="line">	 depending job 1:	JobControlDemo2</span><br><span class="line">]</span><br><span class="line">[INFO] Executed tasks</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br><span class="line">[INFO] BUILD SUCCESS</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html</a></p>
-<p><a href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
-<p><a href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>MR设置输出压缩算法Lzop，LzoCodec vs LzopCodec</title>
     <url>/2022/01/13/MR%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%87%BA%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95Lzop%EF%BC%8CLzoCodec%20vs%20LzopCodec/</url>
     <content><![CDATA[<h1 id="hadoop-MapReduce的输出压缩算法的设置（四种方法）"><a href="#hadoop-MapReduce的输出压缩算法的设置（四种方法）" class="headerlink" title="hadoop MapReduce的输出压缩算法的设置（四种方法）"></a>hadoop MapReduce的输出压缩算法的设置（四种方法）</h1><h2 id="1、FileOutputFormat设置"><a href="#1、FileOutputFormat设置" class="headerlink" title="1、FileOutputFormat设置"></a>1、FileOutputFormat设置</h2><pre><code>    // 优化措施一：压缩MapReduce的输出结果--&gt;使用Lzop压缩--&gt;输出空间占比小
@@ -1238,6 +1213,31 @@
 <p>参考链接：</p>
 <p><a href="https://blog.csdn.net/zhu_xun/article/details/21874293">https://blog.csdn.net/zhu_xun/article/details/21874293</a></p>
 <p><a href="https://blog.csdn.net/leys123/article/details/51982592/">https://blog.csdn.net/leys123/article/details/51982592/</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>MR作业的迭代：JobControl设计及用法</title>
+    <url>/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/</url>
+    <content><![CDATA[<h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
+<p><img src="/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo\k12blog\source_posts\MR作业的迭代：JobControl设计及用法\JobControl.jpg" alt="img"></p>
+<p>​    JobControl 封装了一系列 MapReduce 作业及其对应的依赖关系。 它将处于不同状态的作业放入不同的哈希表中，并按照图所示的状态转移作业，直到所有作业运行完成。在实现的时候，JobControl 包含一个线程用于周期性地监控和更新各个作业的运行状态，调度依赖作业运行完成的作业，提交处于 READY 状态的作业等。同时，它还提供了一些API 用于挂起、恢复和暂停该线程。</p>
+<h2 id="JobControl代码实现"><a href="#JobControl代码实现" class="headerlink" title="JobControl代码实现"></a>JobControl代码实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.HashSet;</span><br><span class="line"> </span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;</span><br><span class="line">import org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"> </span><br><span class="line">import mapreduce.SegmentUtil;</span><br><span class="line"> </span><br><span class="line">public class JobControlDemo &#123;</span><br><span class="line">	public static int main(String[] args) throws IOException, ClassNotFoundException, InterruptedException &#123;</span><br><span class="line">		Configuration conf = new Configuration();</span><br><span class="line">		String[] otherargs = new GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">		if (otherargs.length != 3) &#123;</span><br><span class="line">			System.err.println(&quot;Usage JobControlDemo &lt;InputPath1&gt; &lt;InputPath1&gt; &lt;OutPath&gt;&quot;);</span><br><span class="line">			System.exit(2);</span><br><span class="line">		&#125;</span><br><span class="line"> </span><br><span class="line">		// 创建基础作业</span><br><span class="line">		Job job1 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;1&quot;);</span><br><span class="line">		Job job2 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;2&quot;);</span><br><span class="line">		Job job3 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;3&quot;);</span><br><span class="line"> </span><br><span class="line">		// Job1作业参数配置</span><br><span class="line">		job1.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job1.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job1.setMapOutputValueClass(Text.class);</span><br><span class="line">		job1.setOutputKeyClass(Text.class);</span><br><span class="line">		job1.setOutputValueClass(Text.class);</span><br><span class="line">		job1.setMapperClass(MyMapper1.class);</span><br><span class="line">		job1.setReducerClass(MyReducer1.class);</span><br><span class="line">		job1.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job1.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job1, new Path(otherargs[0]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job1, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job2作业参数配置</span><br><span class="line">		job2.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job2.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job2.setMapOutputValueClass(Text.class);</span><br><span class="line">		job2.setOutputKeyClass(Text.class);</span><br><span class="line">		job2.setOutputValueClass(Text.class);</span><br><span class="line">		job2.setMapperClass(MyMapper2.class);</span><br><span class="line">		job2.setReducerClass(MyReducer2.class);</span><br><span class="line">		job2.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job2.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job2, new Path(otherargs[1]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job2, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job3作业参数配置</span><br><span class="line">		job3.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job3.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job3.setMapOutputValueClass(Text.class);</span><br><span class="line">		job3.setOutputKeyClass(Text.class);</span><br><span class="line">		job3.setOutputValueClass(Text.class);</span><br><span class="line">		job3.setMapperClass(MyMapper3.class);</span><br><span class="line">		job3.setReducerClass(MyReducer3.class);</span><br><span class="line">		job3.setInputFormatClass(KeyValueTextInputFormat.class);</span><br><span class="line">		job3.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line">		FileOutputFormat.setOutputPath(job3, new Path(otherargs[2]+File.separator+&quot;result&quot;));</span><br><span class="line"> </span><br><span class="line">		// 创建受控作业</span><br><span class="line">		ControlledJob cjob1 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob2 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob3 = new ControlledJob(conf);</span><br><span class="line"> </span><br><span class="line">		// 将普通作业包装成受控作业</span><br><span class="line">		cjob1.setJob(job1);</span><br><span class="line">		cjob2.setJob(job2);</span><br><span class="line">		cjob3.setJob(job3);</span><br><span class="line"> </span><br><span class="line">		// 设置依赖关系</span><br><span class="line">		//cjob2.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob2);</span><br><span class="line"> </span><br><span class="line">		// 新建作业控制器</span><br><span class="line">		JobControl jc = new JobControl(&quot;My control job&quot;);</span><br><span class="line"> </span><br><span class="line">		// 将受控作业添加到控制器中</span><br><span class="line">		jc.addJob(cjob1);</span><br><span class="line">		jc.addJob(cjob2);</span><br><span class="line">		jc.addJob(cjob3);</span><br><span class="line"> </span><br><span class="line">		/**</span><br><span class="line">		 * hadoop的JobControl类实现了线程Runnable接口。我们需要实例化一个线程来让它启动。直接调用JobControl的run()方法，线程将无法结束。</span><br><span class="line">		 */</span><br><span class="line">		//jc.run();</span><br><span class="line">		</span><br><span class="line">        Thread jcThread = new Thread(jc);  </span><br><span class="line">        jcThread.start();  </span><br><span class="line">        while(true)&#123;  </span><br><span class="line">            if(jc.allFinished())&#123;  </span><br><span class="line">                System.out.println(jc.getSuccessfulJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 0;  </span><br><span class="line">            &#125;  </span><br><span class="line">            if(jc.getFailedJobList().size() &gt; 0)&#123;  </span><br><span class="line">                System.out.println(jc.getFailedJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 1;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125; </span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第一个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper1 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl1=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl1.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl1[0].trim()), new Text(spl1[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer1 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k2, Iterable&lt;Text&gt; v2s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v2 : v2s) &#123;</span><br><span class="line">				context.write(k2, v2);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第二个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper2 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl2=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl2.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl2[0].trim()), new Text(spl2[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer2 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k3, Iterable&lt;Text&gt; v3s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v3 : v3s) &#123;</span><br><span class="line">				context.write(k3, v3);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第三个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper3 extends Mapper&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(Text key, Text value, Mapper&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			context.write(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer3 extends Reducer&lt;Text,Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k4, Iterable&lt;Text&gt; v4s,Reducer&lt;Text, Text, Text, Text&gt;.Context context) </span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			HashSet&lt;String&gt; hashSet=new HashSet&lt;String&gt;();</span><br><span class="line">			for (Text v4 : v4s) &#123;</span><br><span class="line">				hashSet.add(v4.toString().trim());</span><br><span class="line">			&#125;</span><br><span class="line">			if(hashSet.size()&gt;=2)&#123;</span><br><span class="line">				context.write(k4, new Text(&quot;OK&quot;));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试输入数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath1.txt</span><br><span class="line">hadoop  a</span><br><span class="line">spark   a</span><br><span class="line">hive    a</span><br><span class="line">hbase   a</span><br><span class="line">tachyon a</span><br><span class="line">storm   a</span><br><span class="line">redis   a</span><br><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath2.txt</span><br><span class="line">hadoop  b</span><br><span class="line">spark   b</span><br><span class="line">kafka   b</span><br><span class="line">tachyon b</span><br><span class="line">oozie   b</span><br><span class="line">flume   b</span><br><span class="line">sqoop   b</span><br><span class="line">solr    b</span><br></pre></td></tr></table></figure>
+
+<p>测试输出数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpathmerge2.txt/result/*</span><br><span class="line">hadoop  OK</span><br><span class="line">spark   OK</span><br><span class="line">tachyon OK</span><br></pre></td></tr></table></figure>
+
+<p>运行输出信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[sshexec] cmd : bash -c &#x27;source  /home/jiuqian/.bashrc; /home/hduser/hadoop/bin/hadoop jar  /home/jiuqian/blb/JobControlDemo.jar -D mapreduce.map.java.opts=-Xmx2048m -D mapreduce.input.fileinputformat.split.minsize=1 -Dmapreduce.input.fileinputformat.split.maxsize=512000000 -D mapred.linerecordreader.maxlength=32768 /user/jiuqian/libin/input/inputpath1.txt /user/jiuqian/libin/input/inputpath2.txt /user/jiuqian/libin/input/inputpathmerge2.txt&#x27;</span><br><span class="line">16/02/27 12:37:45 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/192.168.1.2:8032</span><br><span class="line">16/02/27 12:37:46 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:46 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:46 INFO Configuration.deprecation: mapred.linerecordreader.maxlength is deprecated. Instead, use mapreduce.input.linerecordreader.line.maxlength</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17037/</span><br><span class="line">16/02/27 12:37:47 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:37:47 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17038/</span><br><span class="line">16/02/27 12:38:13 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:38:13 INFO input.FileInputFormat: Total input paths to process : 2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17039/</span><br><span class="line">[job name:	JobControlDemo1</span><br><span class="line">job id:	My control job0</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17037</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo2</span><br><span class="line">job id:	My control job1</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17038</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo3</span><br><span class="line">job id:	My control job2</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17039</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has 2 dependeng jobs:</span><br><span class="line">	 depending job 0:	JobControlDemo1</span><br><span class="line">	 depending job 1:	JobControlDemo2</span><br><span class="line">]</span><br><span class="line">[INFO] Executed tasks</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br><span class="line">[INFO] BUILD SUCCESS</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html</a></p>
+<p><a href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
+<p><a href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1487,28 +1487,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MapReduceClass extends Configured implements Tool代码</title>
-    <url>/2021/12/18/hadoop-Interface-Tool/</url>
-    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
-<ol>
-<li>extends Configured implements Tool</li>
-<li>run()放置任务代码.以下为mapreduce代码</li>
-<li>main方法中调用run()方法</li>
-</ol>
-<span id="more"></span>
-
-<p>代码如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<ol start="4">
-<li><p>补充：自定义序列化类</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>参考链接：</p>
-<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>dependencies与dependencyManagement的区别</title>
     <url>/2022/01/10/dependencies%E4%B8%8EdependencyManagement%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
     <content><![CDATA[<h2 id="个人小结"><a href="#个人小结" class="headerlink" title="个人小结"></a>个人小结</h2><ul>
@@ -1563,39 +1541,25 @@
 ]]></content>
   </entry>
   <entry>
-    <title>mapreduce执行速度慢的原因</title>
-    <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
-    <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
-<li>CPU、内存小、网络不好都有可能导致运行速度慢</li>
-<li>出现数据倾斜</li>
-<li>map和reduce数设置不合理</li>
-<li>小文件过多</li>
-<li>大量的不可分块的超大文件</li>
-<li>spilt次数过多</li>
-</ol>
-<p>优化方案：</p>
+    <title>MapReduceClass extends Configured implements Tool代码</title>
+    <url>/2021/12/18/hadoop-Interface-Tool/</url>
+    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
 <ol>
-<li>解决数据倾斜：数据倾斜可能是partition不合理，导致部分partition中的数据过多，部分过少。可通过分析数据，自定义分区器解决。</li>
-<li>合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、 reduce 任务间竞争资源，造成处理超时等错误。</li>
-<li>设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少 reduce 的等待时间。</li>
-<li>合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致 mr 运行较慢。</li>
-<li>减少spill次数（环形缓冲区，调大环形缓冲区的内存，从而接收更多数据）：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill 次数，从而减少磁盘 IO。</li>
-<li>减少merge次数（mapreduce两端的合并文件的数目）：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。</li>
+<li>extends Configured implements Tool</li>
+<li>run()放置任务代码.以下为mapreduce代码</li>
+<li>main方法中调用run()方法</li>
 </ol>
-<h2 id="相比Spark执行速度慢的原因"><a href="#相比Spark执行速度慢的原因" class="headerlink" title="相比Spark执行速度慢的原因"></a>相比Spark执行速度慢的原因</h2><h3 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h3><p>其实Spark和MapReduce的计算都发生在内存中，区别在于：</p>
-<ul>
-<li>MapReduce通常需要将计算的中间结果写入磁盘，然后还要读取磁盘，从而导致了频繁的磁盘IO。</li>
-<li>Spark则不需要将计算的中间结果写入磁盘，这得益于Spark的RDD（弹性分布式数据集，很强大）和DAG（有向无环图），其中DAG记录了job的stage以及在job执行过程中父RDD和子RDD之间的依赖关系。中间结果能够以RDD的形式存放在内存中，且能够从DAG中恢复，大大减少了磁盘IO。</li>
-</ul>
-<h3 id="Shuffle的不同"><a href="#Shuffle的不同" class="headerlink" title="Shuffle的不同"></a>Shuffle的不同</h3><p>Spark和MapReduce在计算过程中通常都不可避免的会进行Shuffle，两者至少有一点不同：</p>
-<ul>
-<li>MapReduce在Shuffle时需要花费大量时间进行排序，排序在MapReduce的Shuffle中似乎是不可避免的；</li>
-<li>Spark在Shuffle时则只有部分场景才需要排序，支持基于Hash的分布式聚合，更加省时；</li>
-</ul>
-<h3 id="多进程模型-vs-多线程模型的区别"><a href="#多进程模型-vs-多线程模型的区别" class="headerlink" title="多进程模型 vs 多线程模型的区别"></a>多进程模型 vs 多线程模型的区别</h3><p>MapReduce采用了多进程模型，而Spark采用了多线程模型。多进程模型的好处是便于细粒度控制每个任务占用的资源，但每次任务的启动都会消耗一定的启动时间。就是说MapReduce的Map Task和Reduce Task是进程级别的，而Spark Task则是基于线程模型的，就是说mapreduce 中的 map 和 reduce 都是 jvm 进程，每次启动都需要重新申请资源，消耗了不必要的时间（假设容器启动时间大概1s，如果有1200个block，那么单独启动<a href="https://www.zhihu.com/search?q=map%E8%BF%9B%E7%A8%8B%E4%BA%8B%E4%BB%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22:%22answer%22,%22sourceId%22:1247877997%7D">map进程事件</a>就需要20分钟）</p>
-<p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
+<span id="more"></span>
+
+<p>代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li><p>补充：自定义序列化类</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
+</ol>
 <p>参考链接：</p>
-<p><a href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
+<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1655,6 +1619,42 @@
 </ol>
 <p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
 <p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>mapreduce执行速度慢的原因</title>
+    <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
+    <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
+<li>CPU、内存小、网络不好都有可能导致运行速度慢</li>
+<li>出现数据倾斜</li>
+<li>map和reduce数设置不合理</li>
+<li>小文件过多</li>
+<li>大量的不可分块的超大文件</li>
+<li>spilt次数过多</li>
+</ol>
+<p>优化方案：</p>
+<ol>
+<li>解决数据倾斜：数据倾斜可能是partition不合理，导致部分partition中的数据过多，部分过少。可通过分析数据，自定义分区器解决。</li>
+<li>合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、 reduce 任务间竞争资源，造成处理超时等错误。</li>
+<li>设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少 reduce 的等待时间。</li>
+<li>合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致 mr 运行较慢。</li>
+<li>减少spill次数（环形缓冲区，调大环形缓冲区的内存，从而接收更多数据）：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill 次数，从而减少磁盘 IO。</li>
+<li>减少merge次数（mapreduce两端的合并文件的数目）：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。</li>
+</ol>
+<h2 id="相比Spark执行速度慢的原因"><a href="#相比Spark执行速度慢的原因" class="headerlink" title="相比Spark执行速度慢的原因"></a>相比Spark执行速度慢的原因</h2><h3 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h3><p>其实Spark和MapReduce的计算都发生在内存中，区别在于：</p>
+<ul>
+<li>MapReduce通常需要将计算的中间结果写入磁盘，然后还要读取磁盘，从而导致了频繁的磁盘IO。</li>
+<li>Spark则不需要将计算的中间结果写入磁盘，这得益于Spark的RDD（弹性分布式数据集，很强大）和DAG（有向无环图），其中DAG记录了job的stage以及在job执行过程中父RDD和子RDD之间的依赖关系。中间结果能够以RDD的形式存放在内存中，且能够从DAG中恢复，大大减少了磁盘IO。</li>
+</ul>
+<h3 id="Shuffle的不同"><a href="#Shuffle的不同" class="headerlink" title="Shuffle的不同"></a>Shuffle的不同</h3><p>Spark和MapReduce在计算过程中通常都不可避免的会进行Shuffle，两者至少有一点不同：</p>
+<ul>
+<li>MapReduce在Shuffle时需要花费大量时间进行排序，排序在MapReduce的Shuffle中似乎是不可避免的；</li>
+<li>Spark在Shuffle时则只有部分场景才需要排序，支持基于Hash的分布式聚合，更加省时；</li>
+</ul>
+<h3 id="多进程模型-vs-多线程模型的区别"><a href="#多进程模型-vs-多线程模型的区别" class="headerlink" title="多进程模型 vs 多线程模型的区别"></a>多进程模型 vs 多线程模型的区别</h3><p>MapReduce采用了多进程模型，而Spark采用了多线程模型。多进程模型的好处是便于细粒度控制每个任务占用的资源，但每次任务的启动都会消耗一定的启动时间。就是说MapReduce的Map Task和Reduce Task是进程级别的，而Spark Task则是基于线程模型的，就是说mapreduce 中的 map 和 reduce 都是 jvm 进程，每次启动都需要重新申请资源，消耗了不必要的时间（假设容器启动时间大概1s，如果有1200个block，那么单独启动<a href="https://www.zhihu.com/search?q=map%E8%BF%9B%E7%A8%8B%E4%BA%8B%E4%BB%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22:%22answer%22,%22sourceId%22:1247877997%7D">map进程事件</a>就需要20分钟）</p>
+<p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
+<p>参考链接：</p>
+<p><a href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2448,6 +2448,394 @@
 <p><a href="http://matt33.com/2018/07/15/hdfs-architecture-learn/">http://matt33.com/2018/07/15/hdfs-architecture-learn/</a></p>
 <p><a href="https://blog.csdn.net/andyguan01_2/article/details/88696239">https://blog.csdn.net/andyguan01_2/article/details/88696239</a></p>
 <p><a href="https://www.cnblogs.com/mlj5288/p/4449848.html">https://www.cnblogs.com/mlj5288/p/4449848.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Linux命令：sed与awk</title>
+    <url>/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/</url>
+    <content><![CDATA[<p>本文内容转自菜鸟教程(<a href="http://www.runoob.com/">www.runoob.com</a>)</p>
+<p>其他相关教程：</p>
+<p><a href="https://coolshell.cn/articles/9104.html">SED 简明教程</a></p>
+<p><a href="http://www.ruanyifeng.com/blog/2018/11/awk.html">awk 入门教程</a></p>
+<p><a href="https://www.cnblogs.com/along21/p/10366886.html">Linux文本三剑客超详细教程—grep、sed、awk </a></p>
+<p>awk、grep、sed是linux操作文本的三大利器，合称文本三剑客，也是必须掌握的linux命令之一。三者的功能都是处理文本，但侧重点各不相同，其中属awk功能最强大，但也最复杂。grep更适合单纯的查找或匹配文本，sed更适合编辑匹配到的文本，awk更适合格式化文本，对文本进行较复杂格式处理。</p>
+<h2 id="Linux-sed-命令"><a href="#Linux-sed-命令" class="headerlink" title="Linux sed 命令"></a>Linux sed 命令</h2><p>Linux sed 命令是利用脚本来处理文本文件。</p>
+<p>sed 可依照脚本的指令来处理、编辑文本文件。</p>
+<p>Sed 主要用来自动编辑一个或多个文件、简化对文件的反复操作、编写转换程序等。</p>
+<h3 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sed [-hnV][-e&lt;script&gt;][-f&lt;script文件&gt;][文本文件]</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong>：</p>
+<ul>
+<li>-e&lt;script&gt;或–expression=&lt;script&gt; 以选项中指定的script来处理输入的文本文件。</li>
+<li>-f&lt;script文件&gt;或–file=&lt;script文件&gt; 以选项中指定的script文件来处理输入的文本文件。</li>
+<li>-h或–help 显示帮助。</li>
+<li>-n或–quiet或–silent 仅显示script处理后的结果。</li>
+<li>-V或–version 显示版本信息。</li>
+</ul>
+<p><strong>动作说明</strong>：</p>
+<ul>
+<li>a ：新增， a 的后面可以接字串，而这些字串会在新的一行出现(目前的下一行)～</li>
+<li>c ：取代， c 的后面可以接字串，这些字串可以取代 n1,n2 之间的行！</li>
+<li>d ：删除，因为是删除啊，所以 d 后面通常不接任何东东；</li>
+<li>i ：插入， i 的后面可以接字串，而这些字串会在新的一行出现(目前的上一行)；</li>
+<li>p ：打印，亦即将某个选择的数据印出。通常 p 会与参数 sed -n 一起运行～</li>
+<li>s ：取代，可以直接进行取代的工作哩！通常这个 s 的动作可以搭配正规表示法！例如 1,20s/old/new/g 就是啦！</li>
+</ul>
+<h3 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h3><p>在testfile文件的第四行后添加一行，并将结果输出到标准输出，在命令行提示符下输入如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sed -e 4a\newLine testfile </span><br></pre></td></tr></table></figure>
+
+<p>首先查看testfile中的内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ cat testfile #查看testfile 中的内容  </span><br><span class="line">HELLO LINUX!  </span><br><span class="line">Linux is a free unix-type opterating system.  </span><br><span class="line">This is a linux testfile!  </span><br><span class="line">Linux test </span><br></pre></td></tr></table></figure>
+
+<p>使用sed命令后，输出结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ sed -e 4a\newline testfile #使用sed 在第四行后添加新字符串  </span><br><span class="line">HELLO LINUX! #testfile文件原有的内容  </span><br><span class="line">Linux is a free unix-type opterating system.  </span><br><span class="line">This is a linux testfile!  </span><br><span class="line">Linux test  </span><br><span class="line">newline </span><br></pre></td></tr></table></figure>
+
+<h3 id="以行为单位的新增-删除"><a href="#以行为单位的新增-删除" class="headerlink" title="以行为单位的新增/删除"></a>以行为单位的新增/删除</h3><p>将 /etc/passwd 的内容列出并且列印行号，同时，请将第 2~5 行删除！</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2,5d&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">6 sync:x:5:0:sync:/sbin:/bin/sync</span><br><span class="line">7 shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>sed 的动作为 ‘2,5d’ ，那个 d 就是删除！因为 2-5 行给他删除了，所以显示的数据就没有 2-5 行罗～ 另外，注意一下，原本应该是要下达 sed -e 才对，没有 -e 也行啦！同时也要注意的是， sed 后面接的动作，请务必以 ‘’ 两个单引号括住喔！</p>
+<p>只要删除第 2 行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;2d&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>要删除第 3 到最后一行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;3,$d&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>在第二行后(亦即是加在第三行)加上『drink tea?』字样！</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2a drink tea&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">2 bin:x:1:1:bin:/bin:/sbin/nologin</span><br><span class="line">drink tea</span><br><span class="line">3 daemon:x:2:2:daemon:/sbin:/sbin/nologin</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>那如果是要在第二行前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;2i drink tea&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>如果是要增加两行以上，在第二行后面加入两行字，例如 <strong>Drink tea or …..</strong> 与 <strong>drink beer?</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2a Drink tea or ......\</span><br><span class="line">&gt; drink beer ?&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">2 bin:x:1:1:bin:/bin:/sbin/nologin</span><br><span class="line">Drink tea or ......</span><br><span class="line">drink beer ?</span><br><span class="line">3 daemon:x:2:2:daemon:/sbin:/sbin/nologin</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>每一行之间都必须要以反斜杠『 \ 』来进行新行的添加喔！所以，上面的例子中，我们可以发现在第一行的最后面就有 \ 存在。</p>
+<h3 id="以行为单位的替换与显示"><a href="#以行为单位的替换与显示" class="headerlink" title="以行为单位的替换与显示"></a>以行为单位的替换与显示</h3><p>将第2-5行的内容取代成为『No 2-5 number』呢？</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2,5c No 2-5 number&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">No 2-5 number</span><br><span class="line">6 sync:x:5:0:sync:/sbin:/bin/sync</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>透过这个方法我们就能够将数据整行取代了！</p>
+<p>仅列出 /etc/passwd 文件内的第 5-7 行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed -n &#x27;5,7p&#x27;</span><br><span class="line">5 lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin</span><br><span class="line">6 sync:x:5:0:sync:/sbin:/bin/sync</span><br><span class="line">7 shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown</span><br></pre></td></tr></table></figure>
+
+<p>可以透过这个 sed 的以行为单位的显示功能， 就能够将某一个文件内的某些行号选择出来显示。</p>
+<h3 id="数据的搜寻并显示"><a href="#数据的搜寻并显示" class="headerlink" title="数据的搜寻并显示"></a>数据的搜寻并显示</h3><p>搜索 /etc/passwd有root关键字的行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;/root/p&#x27;</span><br><span class="line">1  root:x:0:0:root:/root:/bin/bash</span><br><span class="line">1  root:x:0:0:root:/root:/bin/bash</span><br><span class="line">2  daemon:x:1:1:daemon:/usr/sbin:/bin/sh</span><br><span class="line">3  bin:x:2:2:bin:/bin:/bin/sh</span><br><span class="line">4  sys:x:3:3:sys:/dev:/bin/sh</span><br><span class="line">5  sync:x:4:65534:sync:/bin:/bin/sync</span><br><span class="line">....下面忽略 </span><br></pre></td></tr></table></figure>
+
+<p>如果root找到，除了输出所有行，还会输出匹配行。</p>
+<p>使用-n的时候将只打印包含模板的行。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed -n &#x27;/root/p&#x27;</span><br><span class="line">1  root:x:0:0:root:/root:/bin/bash</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据的搜寻并删除"><a href="#数据的搜寻并删除" class="headerlink" title="数据的搜寻并删除"></a>数据的搜寻并删除</h3><p>删除/etc/passwd所有包含root的行，其他行输出</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed  &#x27;/root/d&#x27;</span><br><span class="line">2  daemon:x:1:1:daemon:/usr/sbin:/bin/sh</span><br><span class="line">3  bin:x:2:2:bin:/bin:/bin/sh</span><br><span class="line">....下面忽略</span><br><span class="line">#第一行的匹配root已经删除了</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据的搜寻并执行命令"><a href="#数据的搜寻并执行命令" class="headerlink" title="数据的搜寻并执行命令"></a>数据的搜寻并执行命令</h3><p>搜索/etc/passwd,找到root对应的行，执行后面花括号中的一组命令，每个命令之间用分号分隔，这里把bash替换为blueshell，再输出这行：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed -n &#x27;/root/&#123;s/bash/blueshell/;p;q&#125;&#x27;    </span><br><span class="line">1  root:x:0:0:root:/root:/bin/blueshell</span><br></pre></td></tr></table></figure>
+
+<p>最后的q是退出。</p>
+<h3 id="数据的搜寻并替换"><a href="#数据的搜寻并替换" class="headerlink" title="数据的搜寻并替换"></a>数据的搜寻并替换</h3><p>除了整行的处理模式之外， sed 还可以用行为单位进行部分数据的搜寻并取代。基本上 sed 的搜寻与替代的与 vi 相当的类似！他有点像这样：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sed &#x27;s/要被取代的字串/新的字串/g&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>先观察原始信息，利用 /sbin/ifconfig 查询 IP</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# /sbin/ifconfig eth0</span><br><span class="line">eth0 Link encap:Ethernet HWaddr 00:90:CC:A6:34:84</span><br><span class="line">inet addr:192.168.1.100 Bcast:192.168.1.255 Mask:255.255.255.0</span><br><span class="line">inet6 addr: fe80::290:ccff:fea6:3484/64 Scope:Link</span><br><span class="line">UP BROADCAST RUNNING MULTICAST MTU:1500 Metric:1</span><br><span class="line">.....(以下省略).....</span><br></pre></td></tr></table></figure>
+
+<p>本机的ip是192.168.1.100。</p>
+<p>将 IP 前面的部分予以删除</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# /sbin/ifconfig eth0 | grep &#x27;inet addr&#x27; | sed &#x27;s/^.*addr://g&#x27;</span><br><span class="line">192.168.1.100 Bcast:192.168.1.255 Mask:255.255.255.0</span><br></pre></td></tr></table></figure>
+
+<p>接下来则是删除后续的部分，亦即： 192.168.1.100 Bcast:192.168.1.255 Mask:255.255.255.0</p>
+<p>将 IP 后面的部分予以删除</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# /sbin/ifconfig eth0 | grep &#x27;inet addr&#x27; | sed &#x27;s/^.*addr://g&#x27; | sed &#x27;s/Bcast.*$//g&#x27;</span><br><span class="line">192.168.1.100</span><br></pre></td></tr></table></figure>
+
+<h3 id="多点编辑"><a href="#多点编辑" class="headerlink" title="多点编辑"></a>多点编辑</h3><p>一条sed命令，删除/etc/passwd第三行到末尾的数据，并把bash替换为blueshell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nl /etc/passwd | sed -e &#x27;3,$d&#x27; -e &#x27;s/bash/blueshell/&#x27;</span><br><span class="line">1  root:x:0:0:root:/root:/bin/blueshell</span><br><span class="line">2  daemon:x:1:1:daemon:/usr/sbin:/bin/sh</span><br></pre></td></tr></table></figure>
+
+<p>-e表示多点编辑，第一个编辑命令删除/etc/passwd第三行到末尾的数据，第二条命令搜索bash替换为blueshell。</p>
+<h3 id="直接修改文件内容-危险动作"><a href="#直接修改文件内容-危险动作" class="headerlink" title="直接修改文件内容(危险动作)"></a>直接修改文件内容(危险动作)</h3><p>sed 可以直接修改文件的内容，不必使用管道命令或数据流重导向！ 不过，由於这个动作会直接修改到原始的文件，所以请你千万不要随便拿系统配置来测试！ 我们还是使用文件 regular_express.txt 文件来测试看看吧！</p>
+<p>regular_express.txt 文件内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# cat regular_express.txt </span><br><span class="line">runoob.</span><br><span class="line">google.</span><br><span class="line">taobao.</span><br><span class="line">facebook.</span><br><span class="line">zhihu-</span><br><span class="line">weibo-</span><br></pre></td></tr></table></figure>
+
+<p>利用 sed 将 regular_express.txt 内每一行结尾若为 . 则换成 !</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# sed -i &#x27;s/\.$/\!/g&#x27; regular_express.txt</span><br><span class="line">[root@www ~]# cat regular_express.txt </span><br><span class="line">runoob!</span><br><span class="line">google!</span><br><span class="line">taobao!</span><br><span class="line">facebook!</span><br><span class="line">zhihu-</span><br><span class="line">weibo-</span><br></pre></td></tr></table></figure>
+
+<p>:q:q</p>
+<p>利用 sed 直接在 regular_express.txt 最后一行加入 <strong># This is a test</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@www ~]# sed -i &#x27;$a # This is a test&#x27; regular_express.txt</span><br><span class="line">[root@www ~]# cat regular_express.txt </span><br><span class="line">runoob!</span><br><span class="line">google!</span><br><span class="line">taobao!</span><br><span class="line">facebook!</span><br><span class="line">zhihu-</span><br><span class="line">weibo-</span><br><span class="line"># This is a test</span><br></pre></td></tr></table></figure>
+
+<p>由於 $ 代表的是最后一行，而 a 的动作是新增，因此该文件最后新增 <strong># This is a test</strong>！</p>
+<p>sed 的 <strong>-i</strong> 选项可以直接修改文件内容，这功能非常有帮助！举例来说，如果你有一个 100 万行的文件，你要在第 100 行加某些文字，此时使用 vim 可能会疯掉！因为文件太大了！那怎办？就利用 sed 啊！透过 sed 直接修改/取代的功能，你甚至不需要使用 vim 去修订！</p>
+<h2 id="Linux-awk-命令"><a href="#Linux-awk-命令" class="headerlink" title="Linux awk 命令"></a>Linux awk 命令</h2><p>AWK 是一种处理文本文件的语言，是一个强大的文本分析工具。</p>
+<p>之所以叫 AWK 是因为其取了三位创始人 Alfred Aho，Peter Weinberger, 和 Brian Kernighan 的 Family Name 的首字符。</p>
+<h3 id="语法-1"><a href="#语法-1" class="headerlink" title="语法"></a>语法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">awk [选项参数] &#x27;script&#x27; var=value file(s)</span><br><span class="line">或</span><br><span class="line">awk [选项参数] -f scriptfile var=value file(s)</span><br></pre></td></tr></table></figure>
+
+<p><strong>选项参数说明：</strong></p>
+<ul>
+<li>-F fs or –field-separator fs<br>指定输入文件折分隔符，fs是一个字符串或者是一个正则表达式，如-F:。</li>
+<li>-v var=value or –asign var=value<br>赋值一个用户定义变量。</li>
+<li>-f scripfile or –file scriptfile<br>从脚本文件中读取awk命令。</li>
+<li>-mf nnn and -mr nnn<br>对nnn值设置内在限制，-mf选项限制分配给nnn的最大块数目；-mr选项限制记录的最大数目。这两个功能是Bell实验室版awk的扩展功能，在标准awk中不适用。</li>
+<li>-W compact or –compat, -W traditional or –traditional<br>在兼容模式下运行awk。所以gawk的行为和标准的awk完全一样，所有的awk扩展都被忽略。</li>
+<li>-W copyleft or –copyleft, -W copyright or –copyright<br>打印简短的版权信息。</li>
+<li>-W help or –help, -W usage or –usage<br>打印全部awk选项和每个选项的简短说明。</li>
+<li>-W lint or –lint<br>打印不能向传统unix平台移植的结构的警告。</li>
+<li>-W lint-old or –lint-old<br>打印关于不能向传统unix平台移植的结构的警告。</li>
+<li>-W posix<br>打开兼容模式。但有以下限制，不识别：/x、函数关键字、func、换码序列以及当fs是一个空格时，将新行作为一个域分隔符；操作符<strong>和</strong>=不能代替^和^=；fflush无效。</li>
+<li>-W re-interval or –re-inerval<br>允许间隔正则表达式的使用，参考(grep中的Posix字符类)，如括号表达式[[:alpha:]]。</li>
+<li>-W source program-text or –source program-text<br>使用program-text作为源代码，可与-f命令混用。</li>
+<li>-W version or –version<br>打印bug报告信息的版本。</li>
+</ul>
+<hr>
+<h3 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h3><p>log.txt文本内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2 this is a test</span><br><span class="line">3 Are you like awk</span><br><span class="line">This&#x27;s a test</span><br><span class="line">10 There are orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<p>用法一：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">awk &#x27;&#123;[pattern] action&#125;&#x27; &#123;filenames&#125;   # 行匹配语句 awk &#x27;&#x27; 只能用单引号</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 每行按空格或TAB分割，输出文本中的1、4项</span><br><span class="line"> $ awk &#x27;&#123;print $1,$4&#125;&#x27; log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 a</span><br><span class="line"> 3 like</span><br><span class="line"> This&#x27;s</span><br><span class="line"> 10 orange,apple,mongo</span><br><span class="line"> # 格式化输出</span><br><span class="line"> $ awk &#x27;&#123;printf &quot;%-8s %-10s\n&quot;,$1,$4&#125;&#x27; log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2        a</span><br><span class="line"> 3        like</span><br><span class="line"> This&#x27;s</span><br><span class="line"> 10       orange,apple,mongo</span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+
+<p>用法二：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">awk -F  #-F相当于内置变量FS, 指定分割字符</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 使用&quot;,&quot;分割</span><br><span class="line"> $  awk -F, &#x27;&#123;print $1,$2&#125;&#x27;   log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 this is a test</span><br><span class="line"> 3 Are you like awk</span><br><span class="line"> This&#x27;s a test</span><br><span class="line"> 10 There are orange apple</span><br><span class="line"> # 或者使用内建变量</span><br><span class="line"> $ awk &#x27;BEGIN&#123;FS=&quot;,&quot;&#125; &#123;print $1,$2&#125;&#x27;     log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 this is a test</span><br><span class="line"> 3 Are you like awk</span><br><span class="line"> This&#x27;s a test</span><br><span class="line"> 10 There are orange apple</span><br><span class="line"> # 使用多个分隔符.先使用空格分割，然后对分割结果再使用&quot;,&quot;分割</span><br><span class="line"> $ awk -F &#x27;[ ,]&#x27;  &#x27;&#123;print $1,$2,$5&#125;&#x27;   log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 this test</span><br><span class="line"> 3 Are awk</span><br><span class="line"> This&#x27;s a</span><br><span class="line"> 10 There apple</span><br></pre></td></tr></table></figure>
+
+<p>用法三：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">awk -v  # 设置变量</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk -va=1 &#x27;&#123;print $1,$1+a&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 3</span><br><span class="line">3 4</span><br><span class="line">This&#x27;s 1</span><br><span class="line">10 11</span><br><span class="line">$ awk -va=1 -vb=s &#x27;&#123;print $1,$1+a,$1b&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 3 2s</span><br><span class="line">3 4 3s</span><br><span class="line">This&#x27;s 1 This&#x27;ss</span><br><span class="line">10 11 10s</span><br></pre></td></tr></table></figure>
+
+<p>用法四：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">awk -f &#123;awk脚本&#125; &#123;文件名&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk -f cal.awk log.txt</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="运算符"><a href="#运算符" class="headerlink" title="运算符"></a>运算符</h3><table>
+<thead>
+<tr>
+<th align="left">运算符</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">= += -= *= /= %= ^= **=</td>
+<td align="left">赋值</td>
+</tr>
+<tr>
+<td align="left">?:</td>
+<td align="left">C条件表达式</td>
+</tr>
+<tr>
+<td align="left">||</td>
+<td align="left">逻辑或</td>
+</tr>
+<tr>
+<td align="left">&amp;&amp;</td>
+<td align="left">逻辑与</td>
+</tr>
+<tr>
+<td align="left">~ 和 !~</td>
+<td align="left">匹配正则表达式和不匹配正则表达式</td>
+</tr>
+<tr>
+<td align="left">&lt; &lt;= &gt; &gt;= != ==</td>
+<td align="left">关系运算符</td>
+</tr>
+<tr>
+<td align="left">空格</td>
+<td align="left">连接</td>
+</tr>
+<tr>
+<td align="left">+ -</td>
+<td align="left">加，减</td>
+</tr>
+<tr>
+<td align="left">* / %</td>
+<td align="left">乘，除与求余</td>
+</tr>
+<tr>
+<td align="left">+ - !</td>
+<td align="left">一元加，减和逻辑非</td>
+</tr>
+<tr>
+<td align="left">^ ***</td>
+<td align="left">求幂</td>
+</tr>
+<tr>
+<td align="left">++ –</td>
+<td align="left">增加或减少，作为前缀或后缀</td>
+</tr>
+<tr>
+<td align="left">$</td>
+<td align="left">字段引用</td>
+</tr>
+<tr>
+<td align="left">in</td>
+<td align="left">数组成员</td>
+</tr>
+</tbody></table>
+<p>过滤第一列大于2的行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk &#x27;$1&gt;2&#x27; log.txt    #命令</span><br><span class="line">#输出</span><br><span class="line">3 Are you like awk</span><br><span class="line">This&#x27;s a test</span><br><span class="line">10 There are orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<p>过滤第一列等于2的行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk &#x27;$1==2 &#123;print $1,$3&#125;&#x27; log.txt    #命令</span><br><span class="line">#输出</span><br><span class="line">2 is</span><br></pre></td></tr></table></figure>
+
+<p>过滤第一列大于2并且第二列等于’Are’的行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk &#x27;$1&gt;2 &amp;&amp; $2==&quot;Are&quot; &#123;print $1,$2,$3&#125;&#x27; log.txt    #命令</span><br><span class="line">#输出</span><br><span class="line">3 Are you</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="内建变量"><a href="#内建变量" class="headerlink" title="内建变量"></a>内建变量</h3><table>
+<thead>
+<tr>
+<th align="left">变量</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">$n</td>
+<td align="left">当前记录的第n个字段，字段间由FS分隔</td>
+</tr>
+<tr>
+<td align="left">$0</td>
+<td align="left">完整的输入记录</td>
+</tr>
+<tr>
+<td align="left">ARGC</td>
+<td align="left">命令行参数的数目</td>
+</tr>
+<tr>
+<td align="left">ARGIND</td>
+<td align="left">命令行中当前文件的位置(从0开始算)</td>
+</tr>
+<tr>
+<td align="left">ARGV</td>
+<td align="left">包含命令行参数的数组</td>
+</tr>
+<tr>
+<td align="left">CONVFMT</td>
+<td align="left">数字转换格式(默认值为%.6g)ENVIRON环境变量关联数组</td>
+</tr>
+<tr>
+<td align="left">ERRNO</td>
+<td align="left">最后一个系统错误的描述</td>
+</tr>
+<tr>
+<td align="left">FIELDWIDTHS</td>
+<td align="left">字段宽度列表(用空格键分隔)</td>
+</tr>
+<tr>
+<td align="left">FILENAME</td>
+<td align="left">当前文件名</td>
+</tr>
+<tr>
+<td align="left">FNR</td>
+<td align="left">各文件分别计数的行号</td>
+</tr>
+<tr>
+<td align="left">FS</td>
+<td align="left">字段分隔符(默认是任何空格)</td>
+</tr>
+<tr>
+<td align="left">IGNORECASE</td>
+<td align="left">如果为真，则进行忽略大小写的匹配</td>
+</tr>
+<tr>
+<td align="left">NF</td>
+<td align="left">一条记录的字段的数目</td>
+</tr>
+<tr>
+<td align="left">NR</td>
+<td align="left">已经读出的记录数，就是行号，从1开始</td>
+</tr>
+<tr>
+<td align="left">OFMT</td>
+<td align="left">数字的输出格式(默认值是%.6g)</td>
+</tr>
+<tr>
+<td align="left">OFS</td>
+<td align="left">输出字段分隔符，默认值与输入字段分隔符一致。</td>
+</tr>
+<tr>
+<td align="left">ORS</td>
+<td align="left">输出记录分隔符(默认值是一个换行符)</td>
+</tr>
+<tr>
+<td align="left">RLENGTH</td>
+<td align="left">由match函数所匹配的字符串的长度</td>
+</tr>
+<tr>
+<td align="left">RS</td>
+<td align="left">记录分隔符(默认是一个换行符)</td>
+</tr>
+<tr>
+<td align="left">RSTART</td>
+<td align="left">由match函数所匹配的字符串的第一个位置</td>
+</tr>
+<tr>
+<td align="left">SUBSEP</td>
+<td align="left">数组下标分隔符(默认值是/034)</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk &#x27;BEGIN&#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,&quot;FILENAME&quot;,&quot;ARGC&quot;,&quot;FNR&quot;,&quot;FS&quot;,&quot;NF&quot;,&quot;NR&quot;,&quot;OFS&quot;,&quot;ORS&quot;,&quot;RS&quot;;printf &quot;---------------------------------------------\n&quot;&#125; &#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,FILENAME,ARGC,FNR,FS,NF,NR,OFS,ORS,RS&#125;&#x27;  log.txt</span><br><span class="line">FILENAME ARGC  FNR   FS   NF   NR  OFS  ORS   RS</span><br><span class="line">---------------------------------------------</span><br><span class="line">log.txt    2    1         5    1</span><br><span class="line">log.txt    2    2         5    2</span><br><span class="line">log.txt    2    3         3    3</span><br><span class="line">log.txt    2    4         4    4</span><br><span class="line">$ awk -F\&#x27; &#x27;BEGIN&#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,&quot;FILENAME&quot;,&quot;ARGC&quot;,&quot;FNR&quot;,&quot;FS&quot;,&quot;NF&quot;,&quot;NR&quot;,&quot;OFS&quot;,&quot;ORS&quot;,&quot;RS&quot;;printf &quot;---------------------------------------------\n&quot;&#125; &#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,FILENAME,ARGC,FNR,FS,NF,NR,OFS,ORS,RS&#125;&#x27;  log.txt</span><br><span class="line">FILENAME ARGC  FNR   FS   NF   NR  OFS  ORS   RS</span><br><span class="line">---------------------------------------------</span><br><span class="line">log.txt    2    1    &#x27;    1    1</span><br><span class="line">log.txt    2    2    &#x27;    1    2</span><br><span class="line">log.txt    2    3    &#x27;    2    3</span><br><span class="line">log.txt    2    4    &#x27;    1    4</span><br><span class="line"># 输出顺序号 NR, 匹配文本行号</span><br><span class="line">$ awk &#x27;&#123;print NR,FNR,$1,$2,$3&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">1 1 2 this is</span><br><span class="line">2 2 3 Are you</span><br><span class="line">3 3 This&#x27;s a test</span><br><span class="line">4 4 10 There are</span><br><span class="line"># 指定输出分割符</span><br><span class="line">$  awk &#x27;&#123;print $1,$2,$5&#125;&#x27; OFS=&quot; $ &quot;  log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 $ this $ test</span><br><span class="line">3 $ Are $ awk</span><br><span class="line">This&#x27;s $ a $</span><br><span class="line">10 $ There $</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="使用正则，字符串匹配"><a href="#使用正则，字符串匹配" class="headerlink" title="使用正则，字符串匹配"></a>使用正则，字符串匹配</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 输出第二列包含 &quot;th&quot;，并打印第二列与第四列</span><br><span class="line">$ awk &#x27;$2 ~ /th/ &#123;print $2,$4&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">this a</span><br></pre></td></tr></table></figure>
+
+<p><strong>~ 表示模式开始。// 中是模式。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 输出包含 &quot;re&quot; 的行</span><br><span class="line">$ awk &#x27;/re/ &#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">3 Are you like awk</span><br><span class="line">10 There are orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="忽略大小写"><a href="#忽略大小写" class="headerlink" title="忽略大小写"></a>忽略大小写</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk &#x27;BEGIN&#123;IGNORECASE=1&#125; /this/&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 this is a test</span><br><span class="line">This&#x27;s a test</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="模式取反"><a href="#模式取反" class="headerlink" title="模式取反"></a>模式取反</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk &#x27;$2 !~ /th/ &#123;print $2,$4&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">Are like</span><br><span class="line">a</span><br><span class="line">There orange,apple,mongo</span><br><span class="line">$ awk &#x27;!/th/ &#123;print $2,$4&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">Are like</span><br><span class="line">a</span><br><span class="line">There orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="awk脚本"><a href="#awk脚本" class="headerlink" title="awk脚本"></a>awk脚本</h3><p>关于 awk 脚本，我们需要注意两个关键词 BEGIN 和 END。</p>
+<ul>
+<li>BEGIN{ 这里面放的是执行前的语句 }</li>
+<li>END {这里面放的是处理完所有的行后要执行的语句 }</li>
+<li>{这里面放的是处理每一行时要执行的语句}</li>
+</ul>
+<p>假设有这么一个文件（学生成绩表）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ cat score.txt</span><br><span class="line">Marry   2143 78 84 77</span><br><span class="line">Jack    2321 66 78 45</span><br><span class="line">Tom     2122 48 77 71</span><br><span class="line">Mike    2537 87 97 95</span><br><span class="line">Bob     2415 40 57 62</span><br></pre></td></tr></table></figure>
+
+<p>我们的 awk 脚本如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ cat cal.awk</span><br><span class="line">#!/bin/awk -f</span><br><span class="line">#运行前</span><br><span class="line">BEGIN &#123;</span><br><span class="line">    math = 0</span><br><span class="line">    english = 0</span><br><span class="line">    computer = 0</span><br><span class="line"> </span><br><span class="line">    printf &quot;NAME    NO.   MATH  ENGLISH  COMPUTER   TOTAL\n&quot;</span><br><span class="line">    printf &quot;---------------------------------------------\n&quot;</span><br><span class="line">&#125;</span><br><span class="line">#运行中</span><br><span class="line">&#123;</span><br><span class="line">    math+=$3</span><br><span class="line">    english+=$4</span><br><span class="line">    computer+=$5</span><br><span class="line">    printf &quot;%-6s %-6s %4d %8d %8d %8d\n&quot;, $1, $2, $3,$4,$5, $3+$4+$5</span><br><span class="line">&#125;</span><br><span class="line">#运行后</span><br><span class="line">END &#123;</span><br><span class="line">    printf &quot;---------------------------------------------\n&quot;</span><br><span class="line">    printf &quot;  TOTAL:%10d %8d %8d \n&quot;, math, english, computer</span><br><span class="line">    printf &quot;AVERAGE:%10.2f %8.2f %8.2f\n&quot;, math/NR, english/NR, computer/NR</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们来看一下执行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ awk -f cal.awk score.txt</span><br><span class="line">NAME    NO.   MATH  ENGLISH  COMPUTER   TOTAL</span><br><span class="line">---------------------------------------------</span><br><span class="line">Marry  2143     78       84       77      239</span><br><span class="line">Jack   2321     66       78       45      189</span><br><span class="line">Tom    2122     48       77       71      196</span><br><span class="line">Mike   2537     87       97       95      279</span><br><span class="line">Bob    2415     40       57       62      159</span><br><span class="line">---------------------------------------------</span><br><span class="line">  TOTAL:       319      393      350</span><br><span class="line">AVERAGE:     63.80    78.60    70.00</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="另外一些实例"><a href="#另外一些实例" class="headerlink" title="另外一些实例"></a>另外一些实例</h3><p>AWK 的 hello world 程序为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BEGIN &#123; print &quot;Hello, world!&quot; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>计算文件大小</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ls -l *.txt | awk &#x27;&#123;sum+=$5&#125; END &#123;print sum&#125;&#x27;</span><br><span class="line">--------------------------------------------------</span><br><span class="line">666581</span><br></pre></td></tr></table></figure>
+
+<p>从文件中找出长度大于 80 的行：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">awk &#x27;length&gt;80&#x27; log.txt</span><br></pre></td></tr></table></figure>
+
+<p>打印九九乘法表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">seq 9 | sed &#x27;H;g&#x27; | awk -v RS=&#x27;&#x27; &#x27;&#123;for(i=1;i&lt;=NF;i++)printf(&quot;%dx%d=%d%s&quot;, i, NR, i*NR, i==NR?&quot;\n&quot;:&quot;\t&quot;)&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多内容：</p>
+<ul>
+<li><a href="https://www.runoob.com/w3cnote/awk-work-principle.html">AWK 工作原理</a></li>
+<li><a href="https://www.runoob.com/w3cnote/awk-arrays.html">AWK 数组</a></li>
+<li><a href="https://www.runoob.com/w3cnote/awk-if-loop.html">AWK 条件语句与循环</a></li>
+<li><a href="https://www.runoob.com/w3cnote/awk-user-defined-functions.html">AWK 用户自定义函数</a></li>
+<li><a href="https://www.runoob.com/w3cnote/awk-built-in-functions.html">AWK 内置函数</a></li>
+<li><a href="https://www.runoob.com/w3cnote/8-awesome-awk-built-in-variables.html">8 个有力的 Awk 内建变量</a></li>
+<li><a href="http://www.gnu.org/software/gawk/manual/gawk.html">AWK 官方手册</a></li>
+</ul>
+</blockquote>
+<p>参考链接：</p>
+<p><a href="https://www.runoob.com/linux/linux-comm-sed.html">https://www.runoob.com/linux/linux-comm-sed.html</a></p>
+<p><a href="https://www.runoob.com/linux/linux-comm-awk.html">https://www.runoob.com/linux/linux-comm-awk.html</a></p>
 ]]></content>
   </entry>
   <entry>
