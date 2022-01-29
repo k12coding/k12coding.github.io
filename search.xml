@@ -1,32 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>CentOS6.5安装NodeJS14.18.3</title>
-    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
-    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
-<li><p>tar包下载</p>
-<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
-<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
-</li>
-<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
-<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
-<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
-<li><p>下载并解压</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
-<li><p>修改环境变量</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
-<li><p>刷新配置，查看版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>CentOS 6.5下安装python3.7</title>
     <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
     <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
@@ -52,95 +26,29 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS API</title>
-    <url>/2021/12/13/HDFS-API/</url>
-    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
-<span id="more"></span>
+    <title>CentOS6.5安装NodeJS14.18.3</title>
+    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
+    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
+<li><p>tar包下载</p>
+<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
+<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
+</li>
+<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
+<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
 
-<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>导入需要的package</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
-
-<p>类中具体方法可参考：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
-<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
-<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><p>获取Configuration对象</p>
-<p>我们需要先new一个Configuration对象</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
-
-<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>获取FileSystem对象</p>
-<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
-<li><p>进行文件操作</p>
-<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>释放资源</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
+<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
 </ol>
-<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
-
-<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
-
-<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p><strong>Deprecated.</strong> </p>
-<p>Renames Path src to Path dst</p>
-<ul>
-<li>Fails if src is a file and dst is a directory.</li>
-<li>Fails if src is a directory and dst is a file.</li>
-<li>Fails if the parent of dst does not exist or is a file.</li>
-</ul>
-<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
-<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
-<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
-<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
-<ul>
-<li><strong>Parameters:</strong></li>
-</ul>
-<p> <code>src</code> - path to be renamed</p>
-<p> <code>dst</code> - new path after rename</p>
-<ul>
-<li><strong>Throws:</strong></li>
-</ul>
-<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
-<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
-<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
-<p> <code>IOException</code> - on failure</p>
-</blockquote>
-<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
-
-<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
-
-<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
-
-<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
-</ul>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
+<li><p>下载并解压</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
+<li><p>修改环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
+<li><p>刷新配置，查看版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -264,6 +172,98 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS API</title>
+    <url>/2021/12/13/HDFS-API/</url>
+    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
+<span id="more"></span>
+
+<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>导入需要的package</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
+
+<p>类中具体方法可参考：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
+<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
+<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p>获取Configuration对象</p>
+<p>我们需要先new一个Configuration对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
+
+<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>获取FileSystem对象</p>
+<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
+<li><p>进行文件操作</p>
+<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>释放资源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
+
+<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
+
+<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Deprecated.</strong> </p>
+<p>Renames Path src to Path dst</p>
+<ul>
+<li>Fails if src is a file and dst is a directory.</li>
+<li>Fails if src is a directory and dst is a file.</li>
+<li>Fails if the parent of dst does not exist or is a file.</li>
+</ul>
+<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
+<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
+<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
+<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
+<ul>
+<li><strong>Parameters:</strong></li>
+</ul>
+<p> <code>src</code> - path to be renamed</p>
+<p> <code>dst</code> - new path after rename</p>
+<ul>
+<li><strong>Throws:</strong></li>
+</ul>
+<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
+<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
+<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
+<p> <code>IOException</code> - on failure</p>
+</blockquote>
+<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
+
+<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
+
+<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
+
+<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
+</ul>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -475,46 +475,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HIVE的部署</title>
-    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
-    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
-<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
-<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
-<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
-
-<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
-
-<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
-<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
-
-<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
-
-<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
-<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
-<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
-<p>解决办法：</p>
-<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
-<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
-<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
-<p>再次启动问题得到解决！</p>
-</li>
-<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
-<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
-<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
-</li>
-</ul>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop Shell命令</title>
     <url>/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<h1 id="Hadoop-Shell命令"><a href="#Hadoop-Shell命令" class="headerlink" title="Hadoop Shell命令"></a>Hadoop Shell命令</h1><h2 id="FS-Shell"><a href="#FS-Shell" class="headerlink" title="FS Shell"></a>FS Shell</h2><p>调用文件系统(FS)Shell命令应使用 bin/hadoop fs &lt;args&gt;的形式。 所有的的FS shell命令使用URI路径作为参数。URI格式是<em>scheme://authority/path</em>。对HDFS文件系统，scheme是<em>hdfs</em>，对本地文件系统，scheme是<em>file</em>。其中scheme和authority参数都是可选的，如果未加指定，就会使用配置中指定的默认scheme。一个HDFS文件或目录比如*/parent/child<em>可以表示成</em>hdfs://namenode:namenodeport/parent/child<em>，或者更简单的</em>/parent/child<em>（假设你配置文件中的默认值是</em>namenode:namenodeport<em>）。大多数FS Shell命令的行为和对应的Unix Shell命令类似，不同之处会在下面介绍各命令使用详情时指出。出错信息会输出到</em>stderr<em>，其他信息输出到</em>stdout*。</p>
@@ -698,6 +658,46 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HIVE的部署</title>
+    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
+<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
+<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
+<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
+
+<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
+<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
+
+<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
+<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
+<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
+<p>解决办法：</p>
+<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
+<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
+<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
+<p>再次启动问题得到解决！</p>
+</li>
+<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
+<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
+<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
+</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
     <title>Hadoop Archives</title>
     <url>/2021/12/20/Hadoop-Archives/</url>
     <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
@@ -873,125 +873,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive四种排序方式:order by,sort by,distribute by,cluster by</title>
-    <url>/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/</url>
-    <content><![CDATA[<h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
-
-<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
-<ul>
-<li>效率较低。</li>
-<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
-<li>ORDER BY 子句在SELECT 语句的结尾</li>
-</ul>
-<p>例：</p>
-<p>select * from emp order by sal desc;</p>
-<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
-
-<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
-<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
-<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
-<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
-<p>例：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
-
-<p>查询有2个reducer,它们的输出分别是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
-
-<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
-<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 1 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 2 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
-
-<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
-<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
-<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
-<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
-<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
-<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
-<p>Reducer 1 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 2 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
-
-<p>和Distribute By的例子相比，具有排序功能。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
-
-<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
-<p><a href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hive：内部表与外部表</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
-    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
-<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
-<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
-</li>
-<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
-<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
-</li>
-<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
-</li>
-<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
-</li>
-</ul>
-<p>补充说明：</p>
-<ul>
-<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
-<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
-<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
-</ul>
-<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
-<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
-</blockquote>
-<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
-<p>修改内部表为外部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>修改外部表为内部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
-<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
-<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
-<p>对于外部表，Hive 假定它不管理数据。</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
-<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
-<ul>
-<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
-<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
-<li>ACID /事务处理仅适用于托管表</li>
-<li>查询结果缓存仅适用于托管表</li>
-<li>外部表仅允许 RELY 约束</li>
-<li>某些物化视图功能仅适用于托管表</li>
-</ul>
-<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
-<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
-<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
-<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
-<p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
-<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop支持LZO压缩</title>
     <url>/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/</url>
     <content><![CDATA[<h2 id="一、Hadoop支持LZO压缩"><a href="#一、Hadoop支持LZO压缩" class="headerlink" title="一、Hadoop支持LZO压缩"></a>一、Hadoop支持LZO压缩</h2><h3 id="1-lzop"><a href="#1-lzop" class="headerlink" title="1.lzop"></a>1.lzop</h3><p>lzo格式文件压缩解压需要用到服务器的lzop工具，hadoop 的<a href="https://so.csdn.net/so/search?q=native&spm=1001.2101.3001.7020">native</a>库（hadoop checknative是没有的lzo,zip相关信息）并不支持</p>
@@ -1124,6 +1005,63 @@
 <li><p>统计查询</p>
 </li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hive：内部表与外部表</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
+    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
+</ul>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>参考链接：</p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1265,39 +1203,65 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MR Chain（ChainMapper与ChainReducer）</title>
-    <url>/2021/12/21/MR-Chain/</url>
-    <content><![CDATA[<h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
-<p>​    在Map阶段，数据依次经过Mapper1和Mapper2处理；在Reducer阶段，数据经过shuffle和sort排序后，交给对应的Reduce处理，但Reducer处理之后还可以交给其它的Mapper进行处理，最终产生的结果写入到hdfs输出目录上。</p>
-<p><strong>注意</strong>：对于任意一个MapReduce作业，Map和Reduce阶段可以有无限多个Mapper，但是<strong>Reducer只能有一个</strong>。</p>
-<p>​    通过链式MapReducer模式可以有效的减少网络间传输数据的带宽，因为大量的计算基本都是在本地进行的。如果通过迭代作业的方式实现多个MapReduce作业组合的话就会在网络间传输大量的数据，这样会非常的耗时。(所以这里只是一个MR作业，MR作业的迭代实现用JobControl：)</p>
-<p><img src="/2021/12/21/MR-Chain/hexo\k12blog\source_posts\MR-Chain\Chain.jpg" alt="Chain"></p>
-<span id="more"></span>
+    <title>Hive四种排序方式:order by,sort by,distribute by,cluster by</title>
+    <url>/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/</url>
+    <content><![CDATA[<h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
 
-<h2 id="ChainMapper"><a href="#ChainMapper" class="headerlink" title="ChainMapper"></a>ChainMapper</h2><h3 id="官方说明"><a href="#官方说明" class="headerlink" title="官方说明"></a>官方说明</h3><p>​    ChainMapper类允许使用多个Map子类作为一个Map任务。</p>
-<p>​    这些map子类的执行与liunx的管道命令十分相似，第一个map的输出会成为第二个map的输入，第二个map的输出也会变成第三个map的输入，以此类推，直到最后一个map的输出会变成整个mapTask的输出。</p>
-<p>​    该特性的关键功能是链中的Mappers不需要知道它们是在链中执行的。这使具有可重用的专门的映射器可以组合起来，在单个任务中执行组合操作。</p>
-<p><strong>注意</strong>：在创建链式是每个Mapper的键/值的输出是链中下一个Mapper或Reducer的输入。它假定所有的映射器和链中的Reduce都使用匹配输出和输入键和值类，因为没有对链接代码进行转换。</p>
-<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = Job.getInstance(conf);</span><br><span class="line"></span><br><span class="line">Configuration mapAConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, AMap.class, LongWritable.class, Text.class,</span><br><span class="line"> Text.class, Text.class, true, mapAConf);</span><br><span class="line"></span><br><span class="line">Configuration mapBConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, BMap.class, Text.class, Text.class,</span><br><span class="line"> LongWritable.class, Text.class, false, mapBConf);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForComplettion(true);</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
+<ul>
+<li>效率较低。</li>
+<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
+<li>ORDER BY 子句在SELECT 语句的结尾</li>
+</ul>
+<p>例：</p>
+<p>select * from emp order by sal desc;</p>
+<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
 
-<h3 id="addMapper函数的参数说明"><a href="#addMapper函数的参数说明" class="headerlink" title="addMapper函数的参数说明"></a>addMapper函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void addMapper(Job job, Class&lt;? extends Mapper&gt; klass,</span><br><span class="line">  Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">  Configuration mapperConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此map的class</span><br><span class="line"># 3. 此map的输入的key类型</span><br><span class="line"># 4. 此map的输入的value类型</span><br><span class="line"># 5. 此map的输出的key类型</span><br><span class="line"># 6. 此map的输出的value类型</span><br><span class="line"># 7. 此map的配置文件类conf</span><br></pre></td></tr></table></figure>
+<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
+<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
+<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
+<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
+
+<p>查询有2个reducer,它们的输出分别是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
+
+<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
+<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
+
+<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
+<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
+<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
+<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
+<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
+<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
+
+<p>和Distribute By的例子相比，具有排序功能。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
+
+<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
 
 
 
-<h2 id="ChainReducer"><a href="#ChainReducer" class="headerlink" title="ChainReducer"></a>ChainReducer</h2><h3 id="官方说明-1"><a href="#官方说明-1" class="headerlink" title="官方说明"></a>官方说明</h3><p>ChainReducer类允许多个map在reduce执行完之后执行在一个reducerTask中，<br>reducer的每一条输出，都被作为输入给ChainReducer类设置的第一个map，然后第一个map的输出作为第二个map的输入，以此类推，最后一个map的输出会作为整个reducerTask的输出，写到磁盘上。</p>
-<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = new Job(conf);</span><br><span class="line">....</span><br><span class="line"></span><br><span class="line">Configuration reduceConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainReducer.setReducer(job, XReduce.class, LongWritable.class, Text.class,</span><br><span class="line">  Text.class, Text.class, true, reduceConf);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, CMap.class, Text.class, Text.class,</span><br><span class="line">  LongWritable.class, Text.class, false, null);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, DMap.class, LongWritable.class, Text.class,</span><br><span class="line">  LongWritable.class, LongWritable.class, true, null);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForCompletion(true);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-<h3 id="setReducer函数的参数说明"><a href="#setReducer函数的参数说明" class="headerlink" title="setReducer函数的参数说明"></a>setReducer函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void setReducer(Job job, Class&lt;? extends Reducer&gt; klass,</span><br><span class="line"> Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">   Configuration reducerConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此reducer的class</span><br><span class="line"># 3. 此reducer的输入的key类型</span><br><span class="line"># 4. 此reducer的输入的value类型</span><br><span class="line"># 5. 此reducer的输出的key类型</span><br><span class="line"># 6. 此reducer的输出的value类型</span><br><span class="line"># 7. 此reducer的配置文件类conf</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><h3 id="案例描述"><a href="#案例描述" class="headerlink" title="案例描述"></a>案例描述</h3><p>统计出一篇文章的高频词汇（只收集出现次数大于3的单词），去除谓词，并且过滤掉敏感词汇。</p>
-<h3 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h3><p>在MapTask中有三个子Mapper，分别命名为M1,M2,M3，在ReduceTask阶段有一个Reduce命名为R1和一个Mpaaer命名为RM1。</p>
-<h4 id="MapTask阶段"><a href="#MapTask阶段" class="headerlink" title="MapTask阶段"></a>MapTask阶段</h4><p>M1负责将文本内容按行切分每个单词，M2负责将M1输出的单词进行谓词过滤，M3将M2输出的内容进行敏感词过滤。</p>
-<h4 id="ReduceTask阶段"><a href="#ReduceTask阶段" class="headerlink" title="ReduceTask阶段"></a>ReduceTask阶段</h4><p>Reduce过程中R1负责将shuffle阶段中的单词进行统计，统计好之后将结果交给RM1处理，RM1主要是将单词数量大于5的单词进行输出。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by yanzhe on 2017/8/18.</span><br><span class="line"> */</span><br><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        args = new String[]&#123;&quot;d:/java/mr/data/data.txt&quot;, &quot;d:/java/mr/out&quot;&#125; ;</span><br><span class="line"></span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line"></span><br><span class="line">        FileSystem fs = FileSystem.get(conf) ;</span><br><span class="line"></span><br><span class="line">        Path outPath = new Path(args[1]) ;</span><br><span class="line">        if (fs.exists(outPath))&#123;</span><br><span class="line">            fs.delete(outPath,true) ;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Job job = Job.getInstance(conf) ;</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper1.class, LongWritable.class, Text.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper2.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper3.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.setReducer(job, Reducer1.class, Text.class, IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.addMapper(job, ReducerMapper1.class, Text.class,</span><br><span class="line">                IntWritable.class, Text.class, IntWritable.class, job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        FileInputFormat.addInputPath(job,new Path(args[0]));</span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job,outPath);</span><br><span class="line"></span><br><span class="line">        job.setNumReduceTasks(2);</span><br><span class="line">        job.setCombinerClass(Combiner1.class);</span><br><span class="line">        job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line"></span><br><span class="line">        job.waitForCompletion(true) ;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public class Mapper1 extends Mapper&lt;LongWritable, Text, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map1===========&quot; + value.toString());</span><br><span class="line">            String line = value.toString() ;</span><br><span class="line">            String[] strArr = line.split(&quot; &quot;) ;</span><br><span class="line"></span><br><span class="line">            for (String w: strArr) &#123;</span><br><span class="line">                context.write(new Text(w), new IntWritable(1));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Mapper2 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map2==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;of&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;of&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class Mapper3 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map3==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;google&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;xxx&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Reducer1 extends Reducer&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(Text key, Iterable&lt;IntWritable&gt; values, Context context) </span><br><span class="line">        throws IOException, InterruptedException &#123;</span><br><span class="line">            int count = 0 ;</span><br><span class="line">            for (IntWritable iw: values) &#123;</span><br><span class="line">                count += iw.get();</span><br><span class="line">            &#125;</span><br><span class="line">            context.write(key, new IntWritable(count));</span><br><span class="line">            System.out.println(&quot;reduce=========&quot; + key.toString() + &quot;:&quot; + count);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class ReducerMapper1 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            if (value.get() &gt; 5)</span><br><span class="line">                context.write(key, value);</span><br><span class="line"></span><br><span class="line">            System.out.println(&quot;reduceMap======&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>原文链接：<a href="https://blog.csdn.net/u010521842/article/details/77413104">https://blog.csdn.net/u010521842/article/details/77413104</a></p>
+<p>参考链接：</p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
+<p><a href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1357,6 +1321,42 @@
 <p>参考链接：</p>
 <p><a href="https://blog.csdn.net/zhu_xun/article/details/21874293">https://blog.csdn.net/zhu_xun/article/details/21874293</a></p>
 <p><a href="https://blog.csdn.net/leys123/article/details/51982592/">https://blog.csdn.net/leys123/article/details/51982592/</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>MR Chain（ChainMapper与ChainReducer）</title>
+    <url>/2021/12/21/MR-Chain/</url>
+    <content><![CDATA[<h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
+<p>​    在Map阶段，数据依次经过Mapper1和Mapper2处理；在Reducer阶段，数据经过shuffle和sort排序后，交给对应的Reduce处理，但Reducer处理之后还可以交给其它的Mapper进行处理，最终产生的结果写入到hdfs输出目录上。</p>
+<p><strong>注意</strong>：对于任意一个MapReduce作业，Map和Reduce阶段可以有无限多个Mapper，但是<strong>Reducer只能有一个</strong>。</p>
+<p>​    通过链式MapReducer模式可以有效的减少网络间传输数据的带宽，因为大量的计算基本都是在本地进行的。如果通过迭代作业的方式实现多个MapReduce作业组合的话就会在网络间传输大量的数据，这样会非常的耗时。(所以这里只是一个MR作业，MR作业的迭代实现用JobControl：)</p>
+<p><img src="/2021/12/21/MR-Chain/hexo\k12blog\source_posts\MR-Chain\Chain.jpg" alt="Chain"></p>
+<span id="more"></span>
+
+<h2 id="ChainMapper"><a href="#ChainMapper" class="headerlink" title="ChainMapper"></a>ChainMapper</h2><h3 id="官方说明"><a href="#官方说明" class="headerlink" title="官方说明"></a>官方说明</h3><p>​    ChainMapper类允许使用多个Map子类作为一个Map任务。</p>
+<p>​    这些map子类的执行与liunx的管道命令十分相似，第一个map的输出会成为第二个map的输入，第二个map的输出也会变成第三个map的输入，以此类推，直到最后一个map的输出会变成整个mapTask的输出。</p>
+<p>​    该特性的关键功能是链中的Mappers不需要知道它们是在链中执行的。这使具有可重用的专门的映射器可以组合起来，在单个任务中执行组合操作。</p>
+<p><strong>注意</strong>：在创建链式是每个Mapper的键/值的输出是链中下一个Mapper或Reducer的输入。它假定所有的映射器和链中的Reduce都使用匹配输出和输入键和值类，因为没有对链接代码进行转换。</p>
+<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = Job.getInstance(conf);</span><br><span class="line"></span><br><span class="line">Configuration mapAConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, AMap.class, LongWritable.class, Text.class,</span><br><span class="line"> Text.class, Text.class, true, mapAConf);</span><br><span class="line"></span><br><span class="line">Configuration mapBConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, BMap.class, Text.class, Text.class,</span><br><span class="line"> LongWritable.class, Text.class, false, mapBConf);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForComplettion(true);</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+
+<h3 id="addMapper函数的参数说明"><a href="#addMapper函数的参数说明" class="headerlink" title="addMapper函数的参数说明"></a>addMapper函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void addMapper(Job job, Class&lt;? extends Mapper&gt; klass,</span><br><span class="line">  Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">  Configuration mapperConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此map的class</span><br><span class="line"># 3. 此map的输入的key类型</span><br><span class="line"># 4. 此map的输入的value类型</span><br><span class="line"># 5. 此map的输出的key类型</span><br><span class="line"># 6. 此map的输出的value类型</span><br><span class="line"># 7. 此map的配置文件类conf</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="ChainReducer"><a href="#ChainReducer" class="headerlink" title="ChainReducer"></a>ChainReducer</h2><h3 id="官方说明-1"><a href="#官方说明-1" class="headerlink" title="官方说明"></a>官方说明</h3><p>ChainReducer类允许多个map在reduce执行完之后执行在一个reducerTask中，<br>reducer的每一条输出，都被作为输入给ChainReducer类设置的第一个map，然后第一个map的输出作为第二个map的输入，以此类推，最后一个map的输出会作为整个reducerTask的输出，写到磁盘上。</p>
+<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = new Job(conf);</span><br><span class="line">....</span><br><span class="line"></span><br><span class="line">Configuration reduceConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainReducer.setReducer(job, XReduce.class, LongWritable.class, Text.class,</span><br><span class="line">  Text.class, Text.class, true, reduceConf);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, CMap.class, Text.class, Text.class,</span><br><span class="line">  LongWritable.class, Text.class, false, null);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, DMap.class, LongWritable.class, Text.class,</span><br><span class="line">  LongWritable.class, LongWritable.class, true, null);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForCompletion(true);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h3 id="setReducer函数的参数说明"><a href="#setReducer函数的参数说明" class="headerlink" title="setReducer函数的参数说明"></a>setReducer函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void setReducer(Job job, Class&lt;? extends Reducer&gt; klass,</span><br><span class="line"> Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">   Configuration reducerConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此reducer的class</span><br><span class="line"># 3. 此reducer的输入的key类型</span><br><span class="line"># 4. 此reducer的输入的value类型</span><br><span class="line"># 5. 此reducer的输出的key类型</span><br><span class="line"># 6. 此reducer的输出的value类型</span><br><span class="line"># 7. 此reducer的配置文件类conf</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><h3 id="案例描述"><a href="#案例描述" class="headerlink" title="案例描述"></a>案例描述</h3><p>统计出一篇文章的高频词汇（只收集出现次数大于3的单词），去除谓词，并且过滤掉敏感词汇。</p>
+<h3 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h3><p>在MapTask中有三个子Mapper，分别命名为M1,M2,M3，在ReduceTask阶段有一个Reduce命名为R1和一个Mpaaer命名为RM1。</p>
+<h4 id="MapTask阶段"><a href="#MapTask阶段" class="headerlink" title="MapTask阶段"></a>MapTask阶段</h4><p>M1负责将文本内容按行切分每个单词，M2负责将M1输出的单词进行谓词过滤，M3将M2输出的内容进行敏感词过滤。</p>
+<h4 id="ReduceTask阶段"><a href="#ReduceTask阶段" class="headerlink" title="ReduceTask阶段"></a>ReduceTask阶段</h4><p>Reduce过程中R1负责将shuffle阶段中的单词进行统计，统计好之后将结果交给RM1处理，RM1主要是将单词数量大于5的单词进行输出。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by yanzhe on 2017/8/18.</span><br><span class="line"> */</span><br><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        args = new String[]&#123;&quot;d:/java/mr/data/data.txt&quot;, &quot;d:/java/mr/out&quot;&#125; ;</span><br><span class="line"></span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line"></span><br><span class="line">        FileSystem fs = FileSystem.get(conf) ;</span><br><span class="line"></span><br><span class="line">        Path outPath = new Path(args[1]) ;</span><br><span class="line">        if (fs.exists(outPath))&#123;</span><br><span class="line">            fs.delete(outPath,true) ;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Job job = Job.getInstance(conf) ;</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper1.class, LongWritable.class, Text.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper2.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper3.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.setReducer(job, Reducer1.class, Text.class, IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.addMapper(job, ReducerMapper1.class, Text.class,</span><br><span class="line">                IntWritable.class, Text.class, IntWritable.class, job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        FileInputFormat.addInputPath(job,new Path(args[0]));</span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job,outPath);</span><br><span class="line"></span><br><span class="line">        job.setNumReduceTasks(2);</span><br><span class="line">        job.setCombinerClass(Combiner1.class);</span><br><span class="line">        job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line"></span><br><span class="line">        job.waitForCompletion(true) ;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public class Mapper1 extends Mapper&lt;LongWritable, Text, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map1===========&quot; + value.toString());</span><br><span class="line">            String line = value.toString() ;</span><br><span class="line">            String[] strArr = line.split(&quot; &quot;) ;</span><br><span class="line"></span><br><span class="line">            for (String w: strArr) &#123;</span><br><span class="line">                context.write(new Text(w), new IntWritable(1));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Mapper2 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map2==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;of&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;of&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class Mapper3 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map3==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;google&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;xxx&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Reducer1 extends Reducer&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(Text key, Iterable&lt;IntWritable&gt; values, Context context) </span><br><span class="line">        throws IOException, InterruptedException &#123;</span><br><span class="line">            int count = 0 ;</span><br><span class="line">            for (IntWritable iw: values) &#123;</span><br><span class="line">                count += iw.get();</span><br><span class="line">            &#125;</span><br><span class="line">            context.write(key, new IntWritable(count));</span><br><span class="line">            System.out.println(&quot;reduce=========&quot; + key.toString() + &quot;:&quot; + count);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class ReducerMapper1 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            if (value.get() &gt; 5)</span><br><span class="line">                context.write(key, value);</span><br><span class="line"></span><br><span class="line">            System.out.println(&quot;reduceMap======&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>原文链接：<a href="https://blog.csdn.net/u010521842/article/details/77413104">https://blog.csdn.net/u010521842/article/details/77413104</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1682,6 +1682,24 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>mapreduce执行速度慢的原因</title>
     <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
     <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
@@ -1718,21 +1736,14 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+    <title>spark-sql启动参数</title>
+    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
+    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>带参数启动成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
 
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1763,17 +1774,6 @@
 </ol>
 <p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
 <p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>spark-sql启动参数</title>
-    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
-    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
-
-<p>带参数启动成功：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -1824,41 +1824,6 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>关于服务器上测试自定义编译的spark没反应问题</title>
-    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
-<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
-
-<p>S2的位置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
-
-<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
-<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
-<p>尝试以绝对路径的方式启动S2：</p>
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
-<p>结果一样，启动的是S1。</p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
-<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
-<p>删除环境变量：</p>
-<ul>
-<li>unset VAL：暂时的，只会在当前环境有效</li>
-<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
-<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
-</ul>
-<p>再次测试：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -1965,23 +1930,6 @@
 <li><p><a href="https://www.cnblogs.com/cc11001100/p/10301716.html">Spark笔记之数据本地性（data locality）</a></p>
 </li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2095,6 +2043,58 @@
 ]]></content>
   </entry>
   <entry>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
+]]></content>
+  </entry>
+  <entry>
+    <title>关于服务器上测试自定义编译的spark没反应问题</title>
+    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
+<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>S2的位置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
+
+<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
+<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
+<p>尝试以绝对路径的方式启动S2：</p>
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
+<p>结果一样，启动的是S1。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
+<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
+<p>删除环境变量：</p>
+<ul>
+<li>unset VAL：暂时的，只会在当前环境有效</li>
+<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
+<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
+</ul>
+<p>再次测试：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>画图详解yarn的资源调度流程</title>
     <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
@@ -2124,37 +2124,6 @@
 <h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
 <h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
 <p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
-    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
-
-<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
-
-<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
-
-<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
-<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
-<ul>
-<li><p><strong>log4j-1.2.xx.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
-</li>
-</ul>
-<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
@@ -2450,6 +2419,37 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
+    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
+
+<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
+
+<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
+<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
+<ul>
+<li><p><strong>log4j-1.2.xx.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
+</li>
+</ul>
+<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
