@@ -454,10 +454,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2022-01-29 02:50:45 / 修改时间：05:11:08" itemprop="dateCreated datePublished" datetime="2022-01-29T02:50:45+08:00">2022-01-29</time>
+      <time title="创建时间：2022-01-29 02:50:45" itemprop="dateCreated datePublished" datetime="2022-01-29T02:50:45+08:00">2022-01-29</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-01-30 03:31:31" itemprop="dateModified" datetime="2022-01-30T03:31:31+08:00">2022-01-30</time>
+      </span>
 
   
 </div>
@@ -472,10 +478,8 @@
           <img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive01.png" alt="img" style="zoom:33%;">
 
 <p>Hive起源于Facebook（一个美国的社交服务网络）。Facebook有着大量的数据，而Hadoop是一个开源的MapReduce实现，可以轻松处理大量的数据。但是MapReduce程序对于Java程序员来说比较容易写，但是对于其他语言使用者来说不太方便。此时Facebook最早地开始研发Hive，它让对Hadoop使用SQL查询（实际上SQL后台转化为了MapReduce）成为可能，那些非Java程序员也可以更方便地使用。hive最早的目的也就是为了分析处理海量的日志。</p>
-<h2 id="什么是-Hive？"><a href="#什么是-Hive？" class="headerlink" title="什么是 Hive？"></a>什么是 Hive？</h2><p>Hive 是可实现大规模分析的分布式容错数据仓库系统。</p>
-<p>Hive 让用户可以利用 SQL 读取、写入和管理 PB 级数据。</p>
-<p>Hive 建立在 Apache Hadoop 基础之上，可以利用 Apache Tez 或 MapReduce 通过类似于 SQL 的界面查询大型数据集。</p>
-<p>hive数据仓库工具能将结构化的数据文件映射为一张数据库表，并提供SQL查询功能，能将SQL语句转变成MapReduce任务来执行。</p>
+<h2 id="什么是-Hive？"><a href="#什么是-Hive？" class="headerlink" title="什么是 Hive？"></a>什么是 Hive？</h2><p>Hive是基于Hadoop的一个<strong>数据仓库工具</strong>。可以将结构化的数据文件映射为一张表，并提供完整的sql查询功能，<strong>可以将sql语句转换为MapReduce任务进行运行</strong>。其优点是学习成本低，可以通过<strong>类SQL</strong>语句快速实现MapReduce统计，不必开发专门的MapReduce应用，十分适合数据仓库的统计分析。</p>
+<p>Hive是建立在 Hadoop 上的数据仓库基础构架。它提供了一系列的工具，可以用来进行<strong>数据提取、转化、加载（ETL Extract-Transform-Load）</strong>,也可以叫做<strong>数据清洗</strong>，这是一种可以存储、查询和分析存储在 Hadoop 中的大规模数据的机制。Hive 定义了简单的类 SQL 查询语言，称为 <strong>HiveQL</strong>，它允许熟悉 SQL 的用户查询数据。</p>
 <h3 id="Hive-不是"><a href="#Hive-不是" class="headerlink" title="Hive 不是"></a>Hive 不是</h3><ul>
 <li>一个关系数据库</li>
 <li>一个设计用于联机事务处理（OLTP）</li>
@@ -487,7 +491,8 @@
 <li>它提供SQL类型语言查询叫HiveQL或HQL。</li>
 <li>它是低学习成本，快速和可扩展的。</li>
 </ul>
-<h2 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h2><p>hive适用于<strong>离线数据的分析</strong>，操作的是通用格式的（如通用的日志文件）、被hadoop管理的数据文件，它支持类sql，比编写MapReduce的java代码来的更加方便，它的定位是数据仓库，存储和分析历史数据。</p>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><p>Hive在Hadoop中扮演数据仓库的角色，主要用于静态的结构以及需要经常分析的工作。</p>
+<p>Hive 构建在基于静态（离线）批处理的Hadoop 之上，Hadoop 通常都有较高的延迟并且在作业提交和调度的时候需要大量的开销。<strong>因此，****Hive</strong> <strong>并不能够在大规模数据集上实现低延迟快速的查询</strong>，例如，Hive 在几百MB 的数据集上执行查询一般有分钟级的时间延迟。因此，Hive 并不适合那些需要低延迟的应用，例如，联机事务处理(OLTP)。Hive 查询操作过程严格遵守Hadoop MapReduce 的作业执行模型，Hive 将用户的HiveQL 语句通过解释器转换为MapReduce 作业提交到Hadoop 集群上，Hadoop 监控作业执行过程，然后返回作业执行结果给用户。Hive 并非为联机事务处理而设计，Hive 并不提供实时的查询和基于行级的数据更新操作。<strong>Hive</strong> <strong>的最佳使用场合是大数据集的离线批处理作业，例如，网络日志分析</strong>。</p>
 <h2 id="Hive架构"><a href="#Hive架构" class="headerlink" title="Hive架构"></a>Hive架构</h2><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive09.png" alt="img"></p>
 <p>由上图可知，hadoop和mapreduce是hive架构的根基。Hive架构包括如下组件：CLI（command line interface）、JDBC/ODBC、Thrift Server、WEB GUI、metastore和Driver(Complier、Optimizer和Executor)，这些组件我可以分为两大类：服务端组件和客户端组件。</p>
 <h3 id="2-1服务端组件："><a href="#2-1服务端组件：" class="headerlink" title="2.1服务端组件："></a>2.1服务端组件：</h3><p>　　<strong>Driver组件</strong>：该组件包括Complier、Optimizer和Executor，它的作用是将我们写的HiveQL（类SQL）语句进行解析、编译优化，生成执行计划，然后调用底层的mapreduce计算框架。</p>
