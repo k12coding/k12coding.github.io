@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,134 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/" class="post-title-link" itemprop="url">Hive四种排序方式:order by,sort by,distribute by,cluster by</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-01-29 21:21:41" itemprop="dateCreated datePublished" datetime="2022-01-29T21:21:41+08:00">2022-01-29</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-01-30 01:29:50" itemprop="dateModified" datetime="2022-01-30T01:29:50+08:00">2022-01-30</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
+
+<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
+<ul>
+<li>效率较低。</li>
+<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
+<li>ORDER BY 子句在SELECT 语句的结尾</li>
+</ul>
+<p>例：</p>
+<p>select * from emp order by sal desc;</p>
+<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
+
+<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
+<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
+<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
+<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
+
+<p>查询有2个reducer,它们的输出分别是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
+
+<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
+<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
+
+<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
+<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
+<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
+<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
+<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
+<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
+
+<p>和Distribute By的例子相比，具有排序功能。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
+
+<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/jthink_/article/details/38903775">https://blog.csdn.net/jthink_/article/details/38903775</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1707,150 +1835,6 @@
 <p>带参数启动成功：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
 
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/" class="post-title-link" itemprop="url">IDEA编译Spark3.2.0测试SparkSQL</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-21 04:26:18 / 修改时间：04:39:26" itemprop="dateCreated datePublished" datetime="2022-01-21T04:26:18+08:00">2022-01-21</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p><a target="_blank" rel="noopener" href="https://spark.apache.org/docs/latest/building-spark.html">https://spark.apache.org/docs/latest/building-spark.html</a></p>
-<p>本机环境：</p>
-<p>hadoop:3.2.2</p>
-<p>jdk:1.8+</p>
-<p>scala:2.12.14</p>
-<p>hive:2.3.9（spark中默认版本）</p>
-<h2 id="一、下载"><a href="#一、下载" class="headerlink" title="一、下载"></a>一、下载</h2><p><a target="_blank" rel="noopener" href="https://spark.apache.org/downloads.html">https://spark.apache.org/downloads.html</a></p>
-<p><a target="_blank" rel="noopener" href="https://dlcdn.apache.org/spark/spark-3.2.0/spark-3.2.0.tgz"><strong>spark-3.2.0.tgz</strong></a></p>
-<h2 id="二、解压并导入IDEA"><a href="#二、解压并导入IDEA" class="headerlink" title="二、解压并导入IDEA"></a>二、解压并导入IDEA</h2><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-01.png" alt="image-20220119102329144" style="zoom: 50%;">
-
-<h2 id="三、编译"><a href="#三、编译" class="headerlink" title="三、编译"></a>三、编译</h2><ol>
-<li><h3 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h3><ul>
-<li><p>通过Add Frameworks Support添加Scala2.12支持。</p>
-</li>
-<li><p>执行命令配置Maven：<code>export MAVEN_OPTS=&quot;-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g&quot;</code></p>
-</li>
-<li><p>修改pom.xml</p>
-<p>版本参数</p>
-<p>scala:2.12.14【2处】</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;scala.version&gt;2.12.14&lt;/scala.version&gt;</span><br></pre></td></tr></table></figure>
-
-<p>hadoop : 3.2.2【1处】</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;hadoop.version&gt;3.2.2&lt;/hadoop.version&gt;</span><br></pre></td></tr></table></figure>
-
-<p>hive:默认，不指定hive版本</p>
-<p>其他（否则报错）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;net.alchim31.maven&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;scala-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;3.2.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></li>
-<li><p>修改make-distribution.sh</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">#VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SCALA_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=scala.binary.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HADOOP_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=hadoop.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HIVE=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | fgrep --count &quot;&lt;id&gt;hive&lt;/id&gt;&quot;;\</span><br><span class="line">#    # Reset exit status to 0, otherwise the script stops here if the last grep finds nothing\</span><br><span class="line">#    # because we use &quot;set -o pipefail&quot;</span><br><span class="line">#    echo -n)</span><br><span class="line">VERSION=3.2.0 # spark 版本</span><br><span class="line">SCALA_VERSION=2.12 # scala 版本</span><br><span class="line">SPARK_HADOOP_VERSION=3.2.2 #对应的hadoop 版本</span><br><span class="line">SPARK_HIVE=1 # 支持的hive</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dev/make-distribution.sh --name custom-spark --pip --r --tgz  -Psparkr -Pyarn -Phadoop-3.2.2 -Phive -Phive-thriftserver -Pmesos -Dhadoop.version=3.2.2 </span><br></pre></td></tr></table></figure>
-
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-02.png" alt="image-20220120032650715" style="zoom:50%;"></li>
-<li><h3 id="添加jar包和Scala-SDK依赖，导入模块"><a href="#添加jar包和Scala-SDK依赖，导入模块" class="headerlink" title="添加jar包和Scala SDK依赖，导入模块"></a>添加jar包和Scala SDK依赖，导入模块</h3><p>jar包位置:<code>./assembly/target/scala-2.12</code>（这个包包含了Spark编译得到的jar包，以及编译过程中所依赖的包。）</p>
-<p>添加依赖：</p>
-<ul>
-<li><p>使用MAVEN的Generate Sources and Update Folders For All Projects</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-08.png" alt="image-20220121043339679" style="zoom:50%;"></li>
-<li><p>Project Structure–&gt;Libraries–&gt; 添加Scala SDK</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-03.png" alt="image-20220121041816355" style="zoom:50%;"></li>
-<li><p>Project Structure–&gt;Libraries–&gt; 添加jar包</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-04.png" alt="image-20220121041654274" style="zoom:50%;"></li>
-</ul>
-</li>
-<li><h3 id="SparkSQL和Hive集成"><a href="#SparkSQL和Hive集成" class="headerlink" title="SparkSQL和Hive集成"></a>SparkSQL和Hive集成</h3><p>SparkSQL需要的是Hive表的元数据，将hive的hive-site.xml文件复制到spark的conf文件夹中。hadoop的配置文件也一并放到conf文件夹中</p>
-</li>
-<li><h3 id="启动hadoop和hive的metastore服务"><a href="#启动hadoop和hive的metastore服务" class="headerlink" title="启动hadoop和hive的metastore服务"></a>启动hadoop和hive的metastore服务</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start-all.sh</span><br><span class="line">hive --service metastore &amp;</span><br></pre></td></tr></table></figure></li>
-<li><h3 id="找到spark-sql的入口程序："><a href="#找到spark-sql的入口程序：" class="headerlink" title="找到spark-sql的入口程序："></a>找到spark-sql的入口程序：</h3><p><code>org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver</code></p>
-</li>
-<li><h3 id="配置VM-options"><a href="#配置VM-options" class="headerlink" title="配置VM options"></a>配置VM options</h3><p>VM options:</p>
-<p>-Dscala.usejavacp=true </p>
-<p>-Dspark.master=local[2] </p>
-<p>-Djline.WindowsTerminal.directConsole=false</p>
-<p>启动程序：</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-05.png" alt="image-20220120054854489" style="zoom:50%;"></li>
-<li><h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>执行查询</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">use hive;</span><br><span class="line">select e.empno,e.ename,e.deptno,d.dname from emp e join dept d on e.deptno=d.deptno;</span><br></pre></td></tr></table></figure>
-
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-06.png" alt="image-20220121004018782" style="zoom:50%;"></li>
-</ol>
-<h2 id="四、期间遇到的问题"><a href="#四、期间遇到的问题" class="headerlink" title="四、期间遇到的问题"></a>四、期间遇到的问题</h2><ul>
-<li><p>Classnotfound</p>
-<p>解决方法：导入jar包</p>
-</li>
-<li><p>运行，报错：</p>
-<p><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-09.png" alt="image-20220119230542973"></p>
-<p>解决方法：配置VM options：<code>-Dscala.usejavacp=true</code></p>
-</li>
-<li><p>运行，报错：</p>
-<p><code>org.apache.spark.SparkException: A master URL must be set in your configuration</code></p>
-<p>解决方法：配置VM options：<code>-Dspark.master=local[2]</code></p>
-</li>
-<li><p>spark-sql启动成功，但输入命令后没反应</p>
-<p>以下提示信息可忽略，主要是程序阻塞了导致没反应。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.</span><br></pre></td></tr></table></figure>
-
-<p>解决方法：配置VM options：<code>-Djline.WindowsTerminal.directConsole=false</code></p>
-</li>
-</ul>
 
       
     </div>
