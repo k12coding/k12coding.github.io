@@ -26,6 +26,32 @@
 ]]></content>
   </entry>
   <entry>
+    <title>CentOS6.5安装NodeJS14.18.3</title>
+    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
+    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
+<li><p>tar包下载</p>
+<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
+<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
+</li>
+<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
+<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
+<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
+<li><p>下载并解压</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
+<li><p>修改环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
+<li><p>刷新配置，查看版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
     <title>HDFS API</title>
     <url>/2021/12/13/HDFS-API/</url>
     <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
@@ -115,75 +141,6 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
 </ul>
 <p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>CentOS6.5安装NodeJS14.18.3</title>
-    <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
-    <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
-<li><p>tar包下载</p>
-<p><a href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
-<p>点击下载：<a href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
-</li>
-<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
-<p>点击下载：<a href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
-<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
-<li><p>下载并解压</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
-<li><p>修改环境变量</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
-<li><p>刷新配置，查看版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
-</li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
-</li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
-</li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -307,6 +264,49 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2295,23 +2295,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
-]]></content>
-  </entry>
-  <entry>
     <title>画图详解yarn的资源调度流程</title>
     <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
@@ -2341,6 +2324,54 @@
 <h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
 <h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
 <p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
+    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
+
+<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
+
+<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
+<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
+<ul>
+<li><p><strong>log4j-1.2.xx.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
+</li>
+</ul>
+<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2636,37 +2667,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
-    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
-
-<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
-
-<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
-
-<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
-<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
-<ul>
-<li><p><strong>log4j-1.2.xx.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
-</li>
-</ul>
-<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
