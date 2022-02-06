@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>CentOS 6.5下安装python3.7</title>
+    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
+    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+
+<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
+<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+
+<p>把最上面的一行配置回python2.6.6就行了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+
+<p>有打印出相应信息就是成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>CentOS6.5安装NodeJS14.18.3</title>
     <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
     <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
@@ -27,28 +52,95 @@
 ]]></content>
   </entry>
   <entry>
-    <title>CentOS 6.5下安装python3.7</title>
-    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
-    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+    <title>HDFS API</title>
+    <url>/2021/12/13/HDFS-API/</url>
+    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
+<span id="more"></span>
 
-<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
-<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+<p>导入需要的package</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
 
-<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+<p>类中具体方法可参考：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
+<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
+<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>把最上面的一行配置回python2.6.6就行了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>获取Configuration对象</p>
+<p>我们需要先new一个Configuration对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
 
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>获取FileSystem对象</p>
+<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
+<li><p>进行文件操作</p>
+<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>释放资源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
 
-<p>有打印出相应信息就是成功了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
 
+<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
+
+<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Deprecated.</strong> </p>
+<p>Renames Path src to Path dst</p>
+<ul>
+<li>Fails if src is a file and dst is a directory.</li>
+<li>Fails if src is a directory and dst is a file.</li>
+<li>Fails if the parent of dst does not exist or is a file.</li>
+</ul>
+<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
+<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
+<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
+<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
+<ul>
+<li><strong>Parameters:</strong></li>
+</ul>
+<p> <code>src</code> - path to be renamed</p>
+<p> <code>dst</code> - new path after rename</p>
+<ul>
+<li><strong>Throws:</strong></li>
+</ul>
+<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
+<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
+<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
+<p> <code>IOException</code> - on failure</p>
+</blockquote>
+<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
+
+<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
+
+<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
+
+<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
+</ul>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -172,98 +264,6 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS API</title>
-    <url>/2021/12/13/HDFS-API/</url>
-    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
-<span id="more"></span>
-
-<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>导入需要的package</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
-
-<p>类中具体方法可参考：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
-<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
-<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><p>获取Configuration对象</p>
-<p>我们需要先new一个Configuration对象</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
-
-<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>获取FileSystem对象</p>
-<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
-<li><p>进行文件操作</p>
-<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>释放资源</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
-
-<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
-
-<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p><strong>Deprecated.</strong> </p>
-<p>Renames Path src to Path dst</p>
-<ul>
-<li>Fails if src is a file and dst is a directory.</li>
-<li>Fails if src is a directory and dst is a file.</li>
-<li>Fails if the parent of dst does not exist or is a file.</li>
-</ul>
-<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
-<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
-<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
-<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
-<ul>
-<li><strong>Parameters:</strong></li>
-</ul>
-<p> <code>src</code> - path to be renamed</p>
-<p> <code>dst</code> - new path after rename</p>
-<ul>
-<li><strong>Throws:</strong></li>
-</ul>
-<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
-<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
-<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
-<p> <code>IOException</code> - on failure</p>
-</blockquote>
-<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
-
-<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
-
-<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
-
-<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
-</ul>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1131,8 +1131,7 @@
   <entry>
     <title>Hive：分区</title>
     <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
-    <content><![CDATA[<p>静态分区 vs 动态分区： 创建、使用、查看/添加/删除分区</p>
-<blockquote>
+    <content><![CDATA[<blockquote>
 <p>Hive分区的概念与传统关系型数据库分区不同。</p>
 <p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
 <p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
@@ -2222,20 +2221,35 @@
 ]]></content>
   </entry>
   <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2534,35 +2548,20 @@
 ]]></content>
   </entry>
   <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
