@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-count">53</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,146 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/" class="post-title-link" itemprop="url">Secondary NameNode:它究竟有什么作用？</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 11:02:11 / 修改时间：11:32:06" itemprop="dateCreated datePublished" datetime="2022-01-26T11:02:11+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>英文原文：<a target="_blank" rel="noopener" href="http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/">http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/</a></p>
+<h2 id="Secondary-NameNode-它究竟有什么作用？"><a href="#Secondary-NameNode-它究竟有什么作用？" class="headerlink" title="Secondary NameNode:它究竟有什么作用？"></a>Secondary NameNode:它究竟有什么作用？</h2><p>在Hadoop中，有一些命名不好的模块，Secondary NameNode是其中之一。从它的名字上看，它给人的感觉就像是NameNode的备份。但它实际上却不是。很多Hadoop的初学者都很疑惑，Secondary NameNode究竟是做什么的，而且它为什么会出现在HDFS中。因此，在这篇文章中，我想要解释下Secondary NameNode在HDFS中所扮演的角色。</p>
+<p>从它的名字来看，你可能认为它跟NameNode有点关系。没错，你猜对了。因此在我们深入了解Secondary NameNode之前，我们先来看看NameNode是做什么的。</p>
+<h3 id="NameNode"><a href="#NameNode" class="headerlink" title="NameNode"></a>NameNode</h3><p>NameNode主要是用来保存HDFS的元数据信息，比如命名空间信息，块信息等。当它运行的时候，这些信息是存在内存中的。但是这些信息也可以持久化到磁盘上。</p>
+<p><img src="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/snn-01.png" alt="img"></p>
+<p>上面的这张图片展示了NameNode怎么把元数据保存到磁盘上的。这里有两个不同的文件：</p>
+<ol>
+<li>fsimage - 它是在NameNode启动时对整个文件系统的快照</li>
+<li>edit logs - 它是在NameNode启动后，对文件系统的改动序列</li>
+</ol>
+<p>只有在NameNode重启时，edit logs才会合并到fsimage文件中，从而得到一个文件系统的最新快照。但是在产品集群中NameNode是很少重启的，这也意味着当NameNode运行了很长时间后，edit logs文件会变得很大。在这种情况下就会出现下面一些问题：</p>
+<ol>
+<li>edit logs文件会变的很大，怎么去管理这个文件是一个挑战。</li>
+<li>NameNode的重启会花费很长时间，因为有很多改动[笔者注:在edit logs中]要合并到fsimage文件上。</li>
+<li>如果NameNode挂掉了，那我们就丢失了很多改动因为此时的fsimage文件非常旧。[笔者注: 笔者认为在这个情况下丢失的改动不会很多, 因为丢失的改动应该是还在内存中但是没有写到edit logs的这部分。]</li>
+</ol>
+<p>因此为了克服这个问题，我们需要一个易于管理的机制来帮助我们减小edit logs文件的大小和得到一个最新的fsimage文件，这样也会减小在NameNode上的压力。这跟Windows的恢复点是非常像的，Windows的恢复点机制允许我们对OS进行快照，这样当系统发生问题时，我们能够回滚到最新的一次恢复点上。</p>
+<p>现在我们明白了NameNode的功能和所面临的挑战 - 保持文件系统最新的元数据。那么，这些跟Secondary NameNode又有什么关系呢？</p>
+<h3 id="Secondary-NameNode"><a href="#Secondary-NameNode" class="headerlink" title="Secondary NameNode"></a>Secondary NameNode</h3><p>SecondaryNameNode就是来帮助解决上述问题的，它的职责是合并NameNode的edit logs到fsimage文件中。</p>
+<p><img src="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/snn-02.png" alt="img"></p>
+<p>上面的图片展示了Secondary NameNode是怎么工作的。</p>
+<ol>
+<li>首先，它定时到NameNode去获取edit logs，并更新到fsimage上。[笔者注：Secondary NameNode自己的fsimage]</li>
+<li>一旦它有了新的fsimage文件，它将其拷贝回NameNode中。</li>
+<li>NameNode在下次重启时会使用这个新的fsimage文件，从而减少重启的时间。</li>
+</ol>
+<p>Secondary NameNode的整个目的是在HDFS中提供一个检查点。它只是NameNode的一个助手节点。这也是它在社区内被认为是检查点节点的原因。</p>
+<p>现在，我们明白了Secondary NameNode所做的不过是在文件系统中设置一个检查点来帮助NameNode更好的工作。它不是要取代掉NameNode也不是NameNode的备份。所以从现在起，让我们养成一个习惯，称呼它为检查点节点吧。</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><h3 id="NameNode是什么时候将改动写到edit-logs中的？"><a href="#NameNode是什么时候将改动写到edit-logs中的？" class="headerlink" title="NameNode是什么时候将改动写到edit logs中的？"></a>NameNode是什么时候将改动写到edit logs中的？</h3><p>这个操作实际上是由DataNode的写操作触发的，当我们往DataNode写文件时，DataNode会跟NameNode通信，告诉NameNode什么文件的第几个block放在它那里，NameNode这个时候会将这些元数据信息写到edit logs文件中。</p>
+<h3 id="Secondarynamenode作用"><a href="#Secondarynamenode作用" class="headerlink" title="Secondarynamenode作用"></a>Secondarynamenode作用</h3><p>SecondaryNameNode有两个作用，一是镜像备份，二是日志与镜像的定期合并。两个过程同时进行，称为checkpoint. 镜像备份的作用:备份fsimage(fsimage是元数据发送检查点时写入文件);日志与镜像的定期合并的作用:将Namenode中edits日志和fsimage合并,防止(如果Namenode节点故障，namenode下次启动的时候，会把fsimage加载到内存中，应用edit log,edit log往往很大，导致操作往往很耗时。)</p>
+<h3 id="Secondarynamenode工作原理"><a href="#Secondarynamenode工作原理" class="headerlink" title="Secondarynamenode工作原理"></a>Secondarynamenode工作原理</h3><p><img src="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/snn-03.png" alt="img"></p>
+<p>日志与镜像的定期合并总共分五步：</p>
+<ol>
+<li><p>SecondaryNameNode通知NameNode准备提交edits文件，此时主节点产生edits.new</p>
+</li>
+<li><p>SecondaryNameNode通过http get方式获取NameNode的fsimage与edits文件（在SecondaryNameNode的current同级目录下可见到 temp.check-point或者previous-checkpoint目录，这些目录中存储着从namenode拷贝来的镜像文件）</p>
+</li>
+<li><p>SecondaryNameNode开始合并获取的上述两个文件，产生一个新的fsimage文件fsimage.ckpt</p>
+</li>
+<li><p>SecondaryNameNode用http post方式发送fsimage.ckpt至NameNode</p>
+</li>
+<li><p>NameNode将fsimage.ckpt与edits.new文件分别重命名为fsimage与edits，然后更新fstime，整个checkpoint过程到此结束。</p>
+<p>在新版本的hadoop中（hadoop0.21.0）,SecondaryNameNode两个作用被两个节点替换， checkpoint node与backup node. </p>
+<p>SecondaryNameNode备份由三个参数控制fs.checkpoint.period控制周期，fs.checkpoint.size控制日志文件超过多少大小时合并， dfs.http.address表示http地址，这个参数在SecondaryNameNode为单独节点时需要设置。</p>
+</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop     219 Nov 26 22:01 VERSION</span><br><span class="line">[hadoop@hadoop001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/hadoop-hadoop/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="相关配置文件"><a href="#相关配置文件" class="headerlink" title="相关配置文件"></a>相关配置文件</h3><p>core-site.xml：这里有2个参数可配置，但一般来说我们不做修改。fs.checkpoint.period表示多长时间记录一次hdfs的镜像。默认是1小时。fs.checkpoint.size表示一次记录多大的size，默认64M。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;fs.checkpoint.period&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;3600&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;The number of seconds between two periodic checkpoints.&lt;/description&gt;</span><br><span class="line">&lt;/property&gt; </span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;fs.checkpoint.size&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;67108864&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;The size of the current edit log (in bytes) that triggersa periodic checkpoint even if the fs.checkpoint.period hasn’t expired.&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">　　　　&lt;name&gt;fs.checkpoint.dir&lt;/name&gt;</span><br><span class="line">　　　　&lt;value&gt;/app/user/hdfs/namesecondary&lt;/value&gt;</span><br><span class="line">　　　　&lt;description&gt;Determines where on the local filesystem the DFS secondary namenode should store the temporary images to merge.If this is a comma-delimited list of directories then the image is replicated in all of the directories for redundancy.&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>镜像备份的周期时间是可以修改的，如果不想一个小时备份一次，可以改的时间短点。core-site.xml中的fs.checkpoint.period值</p>
+<h3 id="Import-Checkpoint（恢复数据）"><a href="#Import-Checkpoint（恢复数据）" class="headerlink" title="Import Checkpoint（恢复数据）"></a>Import Checkpoint（恢复数据）</h3><p>如果主节点namenode挂掉了，硬盘数据需要时间恢复或者不能恢复了，现在又想立刻恢复HDFS，这个时候就可以import checkpoint。步骤如下：</p>
+<ol>
+<li>准备原来机器一样的机器，包括配置和文件</li>
+<li>创建一个空的文件夹，该文件夹就是配置文件中dfs.name.dir所指向的文件夹。</li>
+<li>拷贝你的secondary NameNode checkpoint出来的文件，到某个文件夹，该文件夹为fs.checkpoint.dir指向的文件夹（例如：/home/hadadm/clusterdir/tmp/dfs/namesecondary）</li>
+<li>执行命令bin/hadoop namenode –importCheckpoint</li>
+<li>这样NameNode会读取checkpoint文件，保存到dfs.name.dir。但是如果你的dfs.name.dir包含合法的 fsimage，是会执行失败的。因为NameNode会检查fs.checkpoint.dir目录下镜像的一致性，但是不会去改动它。</li>
+</ol>
+<p>一般建议给maste配置多台机器，让namesecondary与namenode不在同一台机器上值得推荐的是，你要注意备份你的dfs.name.dir和 ${hadoop.tmp.dir}/dfs/namesecondary。</p>
+<h3 id="后续版本中的backupnode"><a href="#后续版本中的backupnode" class="headerlink" title="后续版本中的backupnode"></a>后续版本中的backupnode</h3><p>Checkpoint Node和 Backup Node在后续版本中hadoop-0.21.0，还提供了另外的方法来做checkpoint：Checkpoint Node 和 Backup Node。这两种方式要比secondary NameNode好很多。所以 The Secondary NameNode has been deprecated. Instead, consider using the Checkpoint Node or Backup Node. Checkpoint Node像是secondary NameNode的改进替代版，Backup Node提供更大的便利，这里就不再介绍了。</p>
+<p>BackupNode ： 备份结点。这个结点的模式有点像 mysql 中的主从结点复制功能， NN 可以实时的将日志传送给 BN ，而 SNN 是每隔一段时间去 NN 下载 fsimage 和 edits 文件，而 BN 是实时的得到操作日志，然后将操作合并到 fsimage 里。在 NN 里提供了二个日志流接口： EditLogOutputStream 和 EditLogInputStream 。即当 NN 有日志时，不仅会写一份到本地 edits 的日志文件，同时会向 BN 的网络流中写一份，当流缓冲达到阀值时，将会写入到 BN 结点上， BN 收到后就会进行合并操作，这样来完成低延迟的日志复制功能。总结：当前的备份结点都是冷备份，所以还需要实现热备份，使得 NN 挂了后，从结点自动的升为主结点来提供服务。主 NN 的效率问题： NN 的文件过多导致内存消耗问题， NN 中文件锁问题， NN 的启动时间。</p>
+<p>因为Secondarynamenaode不是实施备份和同步,所以SNN会丢掉当前namenode的edit log数据,应该来说Backup Node可以解决这个问题</p>
+<h3 id="关于NN的补充"><a href="#关于NN的补充" class="headerlink" title="关于NN的补充"></a>关于NN的补充</h3><p>在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</p>
+<p>中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</p>
+<p>后期就取消SNN，新建一个实时NN，作为高可靠 HA。</p>
+<ul>
+<li>NN Active</li>
+<li>NN Standby:实时的等待active </li>
+</ul>
+<p>NN挂了，瞬间启动Standby–&gt;Active，对外提供读写服务。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xh16319/article/details/31375197">https://blog.csdn.net/xh16319/article/details/31375197</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1173,99 +1313,6 @@
 <p>有打印出相应信息就是成功了。</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/13/MR%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%87%BA%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95Lzop%EF%BC%8CLzoCodec%20vs%20LzopCodec/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/13/MR%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%87%BA%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95Lzop%EF%BC%8CLzoCodec%20vs%20LzopCodec/" class="post-title-link" itemprop="url">MR设置输出压缩算法Lzop，LzoCodec vs LzopCodec</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-13 21:04:44 / 修改时间：21:34:36" itemprop="dateCreated datePublished" datetime="2022-01-13T21:04:44+08:00">2022-01-13</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="hadoop-MapReduce的输出压缩算法的设置（四种方法）"><a href="#hadoop-MapReduce的输出压缩算法的设置（四种方法）" class="headerlink" title="hadoop MapReduce的输出压缩算法的设置（四种方法）"></a>hadoop MapReduce的输出压缩算法的设置（四种方法）</h1><h2 id="1、FileOutputFormat设置"><a href="#1、FileOutputFormat设置" class="headerlink" title="1、FileOutputFormat设置"></a>1、FileOutputFormat设置</h2><pre><code>    // 优化措施一：压缩MapReduce的输出结果--&gt;使用Lzop压缩--&gt;输出空间占比小
-    FileOutputFormat.setCompressOutput(job, true);    //setOutputCompressorClass
-    // 使用输出文件压缩，设置reduce输出的压缩算法：Lzop压缩
-    FileOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
-</code></pre>
-<h2 id="2、Configuration对象设置"><a href="#2、Configuration对象设置" class="headerlink" title="2、Configuration对象设置"></a>2、Configuration对象设置</h2><pre><code>    // 获取job的实例
-    Job job = Job.getInstance();
-    // 1、配置文件获取
-    Configuration conf = this.getConf();
-    // 优化手段：：压缩输出文件
-    conf.set(FileOutputFormat.COMPRESS, &quot;true&quot;);
-    conf.set(&quot;mapreduce.output.fileoutputformat.compress.codec&quot;, LzopCodec.class.getName());
-</code></pre>
-<h2 id="3、mapred-site-xml文件配置"><a href="#3、mapred-site-xml文件配置" class="headerlink" title="3、mapred-site.xml文件配置"></a>3、mapred-site.xml文件配置</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	#中间阶段的压缩</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.map.output.compress&lt;/name&gt; </span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Map是否开启输出压缩&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.map.output.compress.codec&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Map输出压缩算法：lzo&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;	</span><br><span class="line">	#最终阶段的压缩</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.output.fileoutputformat.compress&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Reduce是否启用输出压缩&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.output.fileoutputformat.compress.codec&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.hadoop.compression.lzo.LzopCodec&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Reduce输出压缩算法:lzop&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<h2 id="4、通过配置参数进行传值"><a href="#4、通过配置参数进行传值" class="headerlink" title="4、通过配置参数进行传值"></a>4、通过配置参数进行传值</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-Dmapreduce.output.fileoutputformat.compress=true </span><br><span class="line">-Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec </span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="LzoCodec-与-LzopCodec-的区别"><a href="#LzoCodec-与-LzopCodec-的区别" class="headerlink" title="LzoCodec 与 LzopCodec 的区别"></a>LzoCodec 与 LzopCodec 的区别</h1><ol>
-<li>LzoCodec比LzopCodec更快， LzopCodec为了兼容LZOP程序添加了如 bytes signature, header等信息</li>
-<li>如果使用 LzoCodec作为Reduce输出，则输出文件扩展名为”.lzo_deflate”，它无法被lzop读取；如果使用LzopCodec作为Reduce输出，则扩展名为”.lzo”，它可以被lzop读取</li>
-<li>生成lzo index job的”DistributedLzoIndexer“无法为 LzoCodec，即 “.lzo_deflate”扩展名的文件创建index</li>
-<li>”.lzo_deflate“文件无法作为MapReduce输入，”.LZO”文件则可以。</li>
-<li>综上所述得出最佳实践：map输出的中间数据使用 LzoCodec，reduce输出使用 LzopCodec</li>
-</ol>
-<p>参考链接：</p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/zhu_xun/article/details/21874293">https://blog.csdn.net/zhu_xun/article/details/21874293</a></p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/leys123/article/details/51982592/">https://blog.csdn.net/leys123/article/details/51982592/</a></p>
 
       
     </div>

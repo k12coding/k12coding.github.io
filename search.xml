@@ -370,6 +370,46 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HIVE的部署</title>
+    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
+<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
+<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
+<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
+
+<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
+<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
+
+<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
+<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
+<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
+<p>解决办法：</p>
+<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
+<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
+<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
+<p>再次启动问题得到解决！</p>
+</li>
+<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
+<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
+<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
+</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
     <title>HIVE UDF 与 HIVE源码编译</title>
     <url>/2021/12/29/HIVE-UDF/</url>
     <content><![CDATA[<h2 id="一、实现UDF"><a href="#一、实现UDF" class="headerlink" title="一、实现UDF"></a>一、实现UDF</h2><p>需求：添加随机数<code>add_random</code>、去除随机数<code>remove_random</code></p>
@@ -475,43 +515,70 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HIVE的部署</title>
-    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
-    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
-<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
-<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
-<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
-
-<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
-
-<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
-<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
-
-<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
-
-<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
-<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
-<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
-<p>解决办法：</p>
-<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
-<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
-<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
-<p>再次启动问题得到解决！</p>
+    <title>Hadoop Archives</title>
+    <url>/2021/12/20/Hadoop-Archives/</url>
+    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
+<p>Hadoop存档(har文件)目录包含</p>
+<ul>
+<li><p>元数据（采用_index和_masterindex形式）</p>
 </li>
-<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
-<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
-<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
+<li><p>数据部分data（part- *）文件。</p>
 </li>
 </ul>
+<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
+<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
+<span id="more"></span>
+
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
+<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<ul>
+<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
+<li>-p 父目录:指定归档文件基于的相对路径</li>
+<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
+<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
+<li>&lt;dest&gt;:har文件保存到的目标路径</li>
+</ul>
+<p><strong>Example:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
+<p>如果想归档目录 /foo/bar，可以省略src：</p>
+<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
+<p><strong>补充说明</strong></p>
+<ol>
+<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
+<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
+<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
+</ol>
+<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
+<p>Hadoop Archives的URI是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
+<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
+<p>依次取消存档：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<p>要并行解压缩，请使用DistCp：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
+<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
+<li><p>准备文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>创建har文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
+<li><p>查看文件组成结构</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
+<li><p>使用hdfs文件系统查看har文件目录内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -695,73 +762,6 @@
 <p>打印类的路径</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>Hadoop Archives</title>
-    <url>/2021/12/20/Hadoop-Archives/</url>
-    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
-<p>Hadoop存档(har文件)目录包含</p>
-<ul>
-<li><p>元数据（采用_index和_masterindex形式）</p>
-</li>
-<li><p>数据部分data（part- *）文件。</p>
-</li>
-</ul>
-<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
-<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
-<span id="more"></span>
-
-<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
-<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数说明</strong></p>
-<ul>
-<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
-<li>-p 父目录:指定归档文件基于的相对路径</li>
-<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
-<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
-<li>&lt;dest&gt;:har文件保存到的目标路径</li>
-</ul>
-<p><strong>Example:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
-<p>如果想归档目录 /foo/bar，可以省略src：</p>
-<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
-<p><strong>补充说明</strong></p>
-<ol>
-<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
-<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
-<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
-</ol>
-<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
-<p>Hadoop Archives的URI是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
-<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
-<p>依次取消存档：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<p>要并行解压缩，请使用DistCp：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
-<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
-<li><p>准备文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>创建har文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
-<li><p>查看文件组成结构</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
-<li><p>使用hdfs文件系统查看har文件目录内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
-</ol>
 ]]></content>
   </entry>
   <entry>
@@ -1216,6 +1216,59 @@
 ]]></content>
   </entry>
   <entry>
+    <title>IDEA中测试Hive源码</title>
+    <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
+    <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
+<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFAddRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFRemoveRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>修改ql/src/java/org/apache/hadoop/hive/ql/exec/FunctionRegistry.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在WINDOWS上部署maven，编译hive</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220106155419571.png" alt="image-20220106155419571"></p>
+<p>编译好的整个文件夹导入到idea中</p>
+<p>使用快捷键Ctrl+Alt+shift+S打开项目的jdk配置，把内存改大点再rebuild</p>
+<p>rebuild，期间如有报错，按提示修改，最终Build completed successfully</p>
+<ul>
+<li><p>设置hive-site.xml与服务器上的一样，CliDriver目录下的resources文件夹（需要自己手动创建）</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143625518.png" alt="image-20220107143625518"></p>
+<p>简单做法：只有一个hive-site.xml也可以了</p>
+<p>hive-site.xml：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;ruozedata001&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.bind.host&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;hadoop001&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.port&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;10000&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<p>复杂做法：5个都放进去</p>
+</li>
+<li><p>metastore</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107162612716.png" alt="metastore"></p>
+<p>在hive-site.xml中添加<code>hive.metastore.uris：thrift://hadoop001:9083</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>在服务器上执行<code>hive --service metastore</code>启动服务端metastore </p>
+</li>
+<li><p>修改运行环境，IDEA 的 VM 添加 ：</p>
+<p>设置系统属性jline.WindowsTerminal.directConsole为false，控制台才能接受输入，否则输入命令后回车没有反应：</p>
+<p><code>-Djline.WindowsTerminal.directConsole=false</code> </p>
+<p>修改系统用户名称，否则无权限访问hdfs：</p>
+<p><code>-DHADOOP_USER_NAME=hadoop</code></p>
+</li>
+</ul>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107164818544.png" alt="image-20220107164818544"></p>
+<p>运行入口文件CliDriver.java</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143910446.png" alt="image-20220107143910446"></p>
+<p>验证函数是否存在；</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143958077.png" alt="image-20220107143958077"></p>
+<p>测试使用：</p>
+<p><strong>add_ramdom</strong>:</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
+<p><strong>remove_random</strong>:</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hive：加载数据到表的方式</title>
     <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
     <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
@@ -1267,59 +1320,6 @@
 <p>参考链接：</p>
 <p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
 <p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>IDEA中测试Hive源码</title>
-    <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
-    <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
-<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFAddRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFRemoveRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>修改ql/src/java/org/apache/hadoop/hive/ql/exec/FunctionRegistry.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在WINDOWS上部署maven，编译hive</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220106155419571.png" alt="image-20220106155419571"></p>
-<p>编译好的整个文件夹导入到idea中</p>
-<p>使用快捷键Ctrl+Alt+shift+S打开项目的jdk配置，把内存改大点再rebuild</p>
-<p>rebuild，期间如有报错，按提示修改，最终Build completed successfully</p>
-<ul>
-<li><p>设置hive-site.xml与服务器上的一样，CliDriver目录下的resources文件夹（需要自己手动创建）</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143625518.png" alt="image-20220107143625518"></p>
-<p>简单做法：只有一个hive-site.xml也可以了</p>
-<p>hive-site.xml：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;ruozedata001&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.bind.host&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;hadoop001&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.port&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;10000&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<p>复杂做法：5个都放进去</p>
-</li>
-<li><p>metastore</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107162612716.png" alt="metastore"></p>
-<p>在hive-site.xml中添加<code>hive.metastore.uris：thrift://hadoop001:9083</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>在服务器上执行<code>hive --service metastore</code>启动服务端metastore </p>
-</li>
-<li><p>修改运行环境，IDEA 的 VM 添加 ：</p>
-<p>设置系统属性jline.WindowsTerminal.directConsole为false，控制台才能接受输入，否则输入命令后回车没有反应：</p>
-<p><code>-Djline.WindowsTerminal.directConsole=false</code> </p>
-<p>修改系统用户名称，否则无权限访问hdfs：</p>
-<p><code>-DHADOOP_USER_NAME=hadoop</code></p>
-</li>
-</ul>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107164818544.png" alt="image-20220107164818544"></p>
-<p>运行入口文件CliDriver.java</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143910446.png" alt="image-20220107143910446"></p>
-<p>验证函数是否存在；</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143958077.png" alt="image-20220107143958077"></p>
-<p>测试使用：</p>
-<p><strong>add_ramdom</strong>:</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
-<p><strong>remove_random</strong>:</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
 ]]></content>
   </entry>
   <entry>
@@ -1694,6 +1694,28 @@
 ]]></content>
   </entry>
   <entry>
+    <title>MapReduceClass extends Configured implements Tool代码</title>
+    <url>/2021/12/18/hadoop-Interface-Tool/</url>
+    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
+<ol>
+<li>extends Configured implements Tool</li>
+<li>run()放置任务代码.以下为mapreduce代码</li>
+<li>main方法中调用run()方法</li>
+</ol>
+<span id="more"></span>
+
+<p>代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li><p>补充：自定义序列化类</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>参考链接：</p>
+<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Windows环境下JDK1.8.0安装与环境变量配置</title>
     <url>/2021/11/17/Windows%E7%8E%AF%E5%A2%83%E4%B8%8BJDK%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<h3 id="一、准备工具"><a href="#一、准备工具" class="headerlink" title="一、准备工具"></a>一、准备工具</h3><h4 id="1-JDK"><a href="#1-JDK" class="headerlink" title="1.JDK"></a>1.JDK</h4><p>JDK安装包：jdk-8u202-windows-x64.exe<br><a href="https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html">https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html</a><br>链接：<a href="https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg">https://pan.baidu.com/s/1_xEszoPjFIyic61FbFo2cg</a><br>提取码：x6v8</p>
@@ -1800,28 +1822,6 @@
 <p>参考链接：</p>
 <p><a href="https://blog.csdn.net/liutengteng130/article/details/46991829">https://blog.csdn.net/liutengteng130/article/details/46991829</a></p>
 <p><a href="https://www.cnblogs.com/clover-forever/p/15548681.html">https://www.cnblogs.com/clover-forever/p/15548681.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>MapReduceClass extends Configured implements Tool代码</title>
-    <url>/2021/12/18/hadoop-Interface-Tool/</url>
-    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
-<ol>
-<li>extends Configured implements Tool</li>
-<li>run()放置任务代码.以下为mapreduce代码</li>
-<li>main方法中调用run()方法</li>
-</ol>
-<span id="more"></span>
-
-<p>代码如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<ol start="4">
-<li><p>补充：自定义序列化类</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>参考链接：</p>
-<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2077,6 +2077,302 @@
 ]]></content>
   </entry>
   <entry>
+    <title>拉链表（原理、设计以及在Hive中的实现）</title>
+    <url>/2022/02/07/%E6%8B%89%E9%93%BE%E8%A1%A8%EF%BC%88%E5%8E%9F%E7%90%86%E3%80%81%E8%AE%BE%E8%AE%A1%E4%BB%A5%E5%8F%8A%E5%9C%A8Hive%E4%B8%AD%E7%9A%84%E5%AE%9E%E7%8E%B0%EF%BC%89/</url>
+    <content><![CDATA[<h2 id="什么是拉链表"><a href="#什么是拉链表" class="headerlink" title="什么是拉链表"></a>什么是拉链表</h2><p>拉链表是针对数据仓库设计中表存储数据的方式而定义的，顾名思义，所谓拉链，就是记录历史。记录一个事物从开始，一直到当前状态的所有变化的信息。</p>
+<ul>
+<li>记录一个事物<strong>从开始，一直到当前状态</strong>的所有变化的信息。</li>
+<li>我们可以使用这张表拿到最新的当天的<strong>最新数据</strong>以及<strong>之前的历史数据</strong>。</li>
+<li>既能满足反应数据的历史状态，又可以最大限度地节省存储空间</li>
+</ul>
+<h2 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h2><ol>
+<li>数据量比较大;</li>
+<li>表中的部分字段会被update,如用户的地址，产品的描述信息，订单的状态等等;</li>
+<li>需要查看某一个时间点或者时间段的历史快照信息，比如，查看某一个订单在历史某一个时间点的状态，<br>比如，查看某一个用户在过去某一段时间内，更新过几次等等;</li>
+<li>变化的比例和频率不是很大，比如，总共有1000万的会员，每天新增和发生变化的有10万左右;</li>
+<li>如果对这边表每天都保留一份全量，那么每次全量中会保存很多不变的信息，对存储是极大的浪费;</li>
+</ol>
+<p>这些场景下使用拉链历史表，既可以反映数据的历史状态，又可以最大程度的节省存储。</p>
+<blockquote>
+<p>拉链表：记录一个事物从开始，一直到当前状态的所有变化的信息。</p>
+<p>全量表：保存用户所有的数据（包括新增与历史数据）</p>
+<p>增量表：只保留当前新增的数据</p>
+<p>快照表：按日分区，记录截止数据日期的全量数据</p>
+<p>切片表：切片表根据基础表，往往只反映某一个维度的相应数据。其表结构与基础表结构相同，但数据往往只有某一维度，或者某一个事实条件的数据</p>
+</blockquote>
+<h2 id="设计和实现"><a href="#设计和实现" class="headerlink" title="设计和实现"></a>设计和实现</h2><p>举例说明，用用户的拉链表来说明。</p>
+<p>在2017-01-01这一天表中的数据是：</p>
+<table>
+<thead>
+<tr>
+<th align="left">注册日期</th>
+<th align="left">用户编号</th>
+<th align="left">手机号码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">2017-01-01</td>
+<td align="left">001</td>
+<td align="left">111111</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">002</td>
+<td align="left">222222</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">003</td>
+<td align="left">333333</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">004</td>
+<td align="left">444444</td>
+</tr>
+</tbody></table>
+<p>在2017-01-02这一天表中的数据是， 用户002和004资料进行了修改，005是新增用户：</p>
+<table>
+<thead>
+<tr>
+<th align="left">注册日期</th>
+<th align="left">用户编号</th>
+<th align="left">手机号码</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">2017-01-01</td>
+<td align="left">001</td>
+<td align="left">111111</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">002</td>
+<td align="left">233333</td>
+<td align="left">（由222222变成233333）</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">003</td>
+<td align="left">333333</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">004</td>
+<td align="left">432432</td>
+<td align="left">（由444444变成432432）</td>
+</tr>
+<tr>
+<td align="left">2017-01-02</td>
+<td align="left">005</td>
+<td align="left">555555</td>
+<td align="left">（2017-01-02新增）</td>
+</tr>
+</tbody></table>
+<p>在2017-01-03这一天表中的数据是， 用户004和005资料进行了修改，006是新增用户：</p>
+<table>
+<thead>
+<tr>
+<th align="left">注册日期</th>
+<th align="left">用户编号</th>
+<th align="left">手机号码</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">2017-01-01</td>
+<td align="left">001</td>
+<td align="left">111111</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">002</td>
+<td align="left">233333</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">003</td>
+<td align="left">333333</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">004</td>
+<td align="left">654321</td>
+<td align="left">（由432432变成654321）</td>
+</tr>
+<tr>
+<td align="left">2017-01-02</td>
+<td align="left">005</td>
+<td align="left">115115</td>
+<td align="left">（由555555变成115115）</td>
+</tr>
+<tr>
+<td align="left">2017-01-03</td>
+<td align="left">006</td>
+<td align="left">666666</td>
+<td align="left">（2017-01-03新增）</td>
+</tr>
+</tbody></table>
+<p>如果在数据仓库中设计成历史拉链表保存该表，则会有下面这样一张表，这是最新一天（即2017-01-03）的数据：</p>
+<table>
+<thead>
+<tr>
+<th align="left">注册日期</th>
+<th align="left">用户编号</th>
+<th align="left">手机号码</th>
+<th align="left">t_start_date</th>
+<th align="left">t_end_date</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">2017-01-01</td>
+<td align="left">001</td>
+<td align="left">111111</td>
+<td align="left">2017-01-01</td>
+<td align="left">9999-12-31</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">002</td>
+<td align="left">222222</td>
+<td align="left">2017-01-01</td>
+<td align="left">2017-01-01</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">002</td>
+<td align="left">233333</td>
+<td align="left">2017-01-02</td>
+<td align="left">9999-12-31</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">003</td>
+<td align="left">333333</td>
+<td align="left">2017-01-01</td>
+<td align="left">9999-12-31</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">004</td>
+<td align="left">444444</td>
+<td align="left">2017-01-01</td>
+<td align="left">2017-01-01</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">004</td>
+<td align="left">432432</td>
+<td align="left">2017-01-02</td>
+<td align="left">2017-01-02</td>
+</tr>
+<tr>
+<td align="left">2017-01-01</td>
+<td align="left">004</td>
+<td align="left">654321</td>
+<td align="left">2017-01-03</td>
+<td align="left">9999-12-31</td>
+</tr>
+<tr>
+<td align="left">2017-01-02</td>
+<td align="left">005</td>
+<td align="left">555555</td>
+<td align="left">2017-01-02</td>
+<td align="left">2017-01-02</td>
+</tr>
+<tr>
+<td align="left">2017-01-02</td>
+<td align="left">005</td>
+<td align="left">115115</td>
+<td align="left">2017-01-03</td>
+<td align="left">9999-12-31</td>
+</tr>
+<tr>
+<td align="left">2017-01-03</td>
+<td align="left">006</td>
+<td align="left">666666</td>
+<td align="left">2017-01-03</td>
+<td align="left">9999-12-31</td>
+</tr>
+</tbody></table>
+<p>说明：</p>
+<ul>
+<li>t_start_date表示该条记录的生命周期开始时间，t_end_date表示该条记录的生命周期结束时间。</li>
+<li>t_end_date = ‘9999-12-31’表示该条记录目前处于有效状态。</li>
+<li>如果查询当前所有有效的记录，则<code>select * from user where t_end_date = &#39;9999-12-31&#39;</code>。</li>
+<li>如果查询2017-01-02的历史快照，则<code>select * from user where t_start_date &lt;= &#39;2017-01-02&#39; and t_end_date &gt;= &#39;2017-01-02&#39;</code>。（此处要好好理解，是拉链表比较重要的一块。）</li>
+</ul>
+<h2 id="在Hive中实现拉链表"><a href="#在Hive中实现拉链表" class="headerlink" title="在Hive中实现拉链表"></a>在Hive中实现拉链表</h2><p>在现在的大数据场景下，大部分的公司都会选择以Hdfs和Hive为主的数据仓库架构。目前的Hdfs版本来讲，其文件系统中的文件是不能做改变的，也就是说Hive的表智能进行删除和添加操作，而不能进行update。基于这个前提，我们来实现拉链表。</p>
+<p>还是以上面的用户表为例，我们要实现用户的拉链表。在实现它之前，我们需要先确定一下我们有哪些数据源可以用。</p>
+<ol>
+<li>我们需要一张ODS层的用户全量表。至少需要用它来初始化。</li>
+<li>每日的用户更新表。</li>
+</ol>
+<p>而且我们要确定拉链表的时间粒度，比如说拉链表每天只取一个状态，也就是说如果一天有3个状态变更，我们只取最后一个状态，这种天粒度的表其实已经能解决大部分的问题了。<br>另外，补充一下每日的用户更新表该怎么获取，据笔者的经验，有3种方式拿到或者间接拿到每日的用户增量，因为它比较重要，所以详细说明：</p>
+<ol>
+<li>我们可以监听Mysql数据的变化，比如说用Canal，最后合并每日的变化，获取到最后的一个状态。</li>
+<li>假设我们每天都会获得一份切片数据，我们可以通过取两天切片数据的不同来作为每日更新表，这种情况下我们可以对所有的字段先进行concat，再取md5，这样就ok了。</li>
+<li>流水表！有每日的变更流水表。</li>
+</ol>
+<h3 id="ods层的user表"><a href="#ods层的user表" class="headerlink" title="ods层的user表"></a>ods层的user表</h3><p>现在我们来看一下我们ods层的用户资料切片表的结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE EXTERNAL TABLE ods.user (</span><br><span class="line">  user_num STRING COMMENT &#x27;用户编号&#x27;,</span><br><span class="line">  mobile STRING COMMENT &#x27;手机号码&#x27;,</span><br><span class="line">  reg_date STRING COMMENT &#x27;注册日期&#x27;</span><br><span class="line">COMMENT &#x27;用户资料表&#x27;</span><br><span class="line">PARTITIONED BY (dt string)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27; LINES TERMINATED BY &#x27;\n&#x27;</span><br><span class="line">STORED AS ORC</span><br><span class="line">LOCATION &#x27;/ods/user&#x27;;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="ods层的user-update表"><a href="#ods层的user-update表" class="headerlink" title="ods层的user_update表"></a>ods层的user_update表</h3><p>然后我们还需要一张用户每日更新表，前面已经分析过该如果得到这张表，现在我们假设它已经存在。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE EXTERNAL TABLE ods.user_update (</span><br><span class="line">  user_num STRING COMMENT &#x27;用户编号&#x27;,</span><br><span class="line">  mobile STRING COMMENT &#x27;手机号码&#x27;,</span><br><span class="line">  reg_date STRING COMMENT &#x27;注册日期&#x27;</span><br><span class="line">COMMENT &#x27;每日用户资料更新表&#x27;</span><br><span class="line">PARTITIONED BY (dt string)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27; LINES TERMINATED BY &#x27;\n&#x27;</span><br><span class="line">STORED AS ORC</span><br><span class="line">LOCATION &#x27;/ods/user_update&#x27;;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="拉链表"><a href="#拉链表" class="headerlink" title="拉链表"></a>拉链表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE EXTERNAL TABLE dws.user_his (</span><br><span class="line">  user_num STRING COMMENT &#x27;用户编号&#x27;,</span><br><span class="line">  mobile STRING COMMENT &#x27;手机号码&#x27;,</span><br><span class="line">  reg_date STRING COMMENT &#x27;用户编号&#x27;,</span><br><span class="line">  t_start_date ,</span><br><span class="line">  t_end_date</span><br><span class="line">COMMENT &#x27;用户资料拉链表&#x27;</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27; LINES TERMINATED BY &#x27;\n&#x27;</span><br><span class="line">STORED AS ORC</span><br><span class="line">LOCATION &#x27;/dws/user_his&#x27;;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="实现sql语句"><a href="#实现sql语句" class="headerlink" title="实现sql语句"></a>实现sql语句</h3><ul>
+<li>然后初始化的sql就不写了，其实就相当于是拿一天的ods层用户表过来就行，我们写一下每日的更新语句。</li>
+<li>现在我们假设我们已经已经初始化了2017-01-01的日期，然后需要更新2017-01-02那一天的数据，我们有了下面的Sql。</li>
+<li>然后把两个日期设置为变量就可以了。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">INSERT OVERWRITE TABLE dws.user_his</span><br><span class="line">SELECT * FROM</span><br><span class="line">(</span><br><span class="line">    SELECT A.user_num,</span><br><span class="line">           A.mobile,</span><br><span class="line">           A.reg_date,</span><br><span class="line">           A.t_start_time,</span><br><span class="line">           CASE</span><br><span class="line">                WHEN A.t_end_time = &#x27;9999-12-31&#x27; AND B.user_num IS NOT NULL THEN &#x27;2017-01-01&#x27;</span><br><span class="line">                ELSE A.t_end_time</span><br><span class="line">           END AS t_end_time</span><br><span class="line">    FROM dws.user_his AS A</span><br><span class="line">    LEFT JOIN ods.user_update AS B</span><br><span class="line">    ON A.user_num = B.user_num</span><br><span class="line">UNION</span><br><span class="line">    SELECT C.user_num,</span><br><span class="line">           C.mobile,</span><br><span class="line">           C.reg_date,</span><br><span class="line">           &#x27;2017-01-02&#x27; AS t_start_time,</span><br><span class="line">           &#x27;9999-12-31&#x27; AS t_end_time</span><br><span class="line">    FROM ods.user_update AS C</span><br><span class="line">) AS T</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>如感兴趣可以参考<a href="https://blog.csdn.net/qq_46893497/article/details/113965328">https://blog.csdn.net/qq_46893497/article/details/113965328</a></li>
+</ul>
+<h2 id="拉链表和流水表"><a href="#拉链表和流水表" class="headerlink" title="拉链表和流水表"></a>拉链表和流水表</h2><ul>
+<li>流水表存放的是一个用户的变更记录，比如在一张流水表中，一天的数据中，会存放一个用户的每条修改记录，但是在拉链表中只有一条记录。</li>
+<li>这是拉链表设计时需要注意的一个粒度问题。我们当然也可以设置的粒度更小一些，一般按天就足够。</li>
+</ul>
+<h2 id="查询性能"><a href="#查询性能" class="headerlink" title="查询性能"></a>查询性能</h2><p>拉链表当然也会遇到查询性能的问题，比如说我们存放了5年的拉链数据，那么这张表势必会比较大，当查询的时候性能就比较低了，个人认为两个思路来解决：</p>
+<ul>
+<li>在一些查询引擎中，我们对start_date和end_date做索引，这样能提高不少性能。</li>
+<li>保留部分历史数据，比如说我们一张表里面存放全量的拉链表数据，然后再对外暴露一张只提供近3个月数据的拉链表。</li>
+</ul>
+<h2 id="拉链表回滚"><a href="#拉链表回滚" class="headerlink" title="拉链表回滚"></a>拉链表回滚</h2><ul>
+<li>修正拉链表回滚问题本质就是：<ul>
+<li>就是找到历史的快照。</li>
+</ul>
+</li>
+<li>历史的快照可以根据起始更新时间，那你就找endtime小于你出错的数据就行了，出错日期的数据就行了。</li>
+<li>重新导入数据，将原始拉链表数据过滤到指定日期之前即可。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">举例：</span><br><span class="line">拉链表dwd_userinfo_db,目前时间是2020-12-15，想回滚到2020-11-27,那么拉链表的状态得是2020-11-26</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">userid		starttime		endtime</span><br><span class="line">1			2020-11-12		2020-11-26</span><br><span class="line">1			2020-11-27		9999-12-31</span><br><span class="line">2			2020-11-16		2020-12-13</span><br><span class="line">2			2020-12-14		9999-12-31</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">拉链表回滚：过滤starttime&lt;=2020-11-26的数据，将endtime&gt;=2020-11-26的修改为9999-12-31</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">insert overwrite table dwd_userinfo_db</span><br><span class="line">select</span><br><span class="line">	userid,</span><br><span class="line">	starttime,</span><br><span class="line">	if(endtime&gt;=2020-11-26,&#x27;9999-12-31&#x27;,endtime)</span><br><span class="line">from dwd_userinfo_db</span><br><span class="line">where starttime&lt;=2020-11-26</span><br></pre></td></tr></table></figure>
+
+
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>拉链表不存储冗余的数据，只有某行的数据发生变化，才需要保存下来，相比每次全量同步会节省存储空间</li>
+<li>能够查询到历史快照</li>
+<li>额外的增加了两列（dw_start_date dw_end_date），为数据行的生命周期</li>
+<li>使用拉链表的时候可以不加t_end_date，即失效日期，但是加上之后，能优化很多查询。</li>
+<li>可以加上当前行状态标识，能快速定位到当前状态。</li>
+<li>在拉链表的设计中可以加一些内容，因为我们每天保存一个状态，如果我们在这个状态里面加一个字段，比如如当天修改次数，那么拉链表的作用就会更大。</li>
+</ul>
+<p>参考链接：</p>
+<p><a href="https://blog.csdn.net/qq_46893497/article/details/110787881">https://blog.csdn.net/qq_46893497/article/details/110787881</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>搭建HUE，集成hdfs,Hive,MySQL</title>
     <url>/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/</url>
     <content><![CDATA[<p>本机环境：</p>
@@ -2250,6 +2546,23 @@
 <h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
 <h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
 <p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2545,23 +2858,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2986,6 +3282,338 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Linux快速整理</title>
+    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<p>环境搭建:</p>
+<p>vmware虚拟机+XShell登录虚拟机</p>
+<p>Linux快速整理：</p>
+<ol>
+<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
+</li>
+<li><p><code>pwd</code>查看当前所在目录路径地址</p>
+<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
+<span id="more"></span></li>
+<li><p>切换目录 <code>cd</code></p>
+<p>root用户的家目录：/root</p>
+<p>xxx用户的家目录：/home/xxx 默认</p>
+<p>家目录的修改：vi /etc/passwd 默认不修改</p>
+<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
+<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
+<p><code>cd -</code>回到上一次访问的目录</p>
+<p><code>cd ../</code> 回退上一层目录</p>
+<p><code>cd ../../</code> 回退上两层目录</p>
+</li>
+<li><p>目录 文件夹</p>
+<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
+<p>​                    写shell脚本时，路径要用绝对路径。</p>
+<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
+<p>查看当前文件夹下的内容 <code>ls</code></p>
+</li>
+<li><p>清空屏幕 <code>clear</code></p>
+</li>
+<li><p>ls查看当前光标所在的目录 文件有哪些</p>
+<p><code>ls -l</code>  等价于`ll``</p>
+<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
+<p><code>ll -h</code> 显示文件的大小</p>
+<p><code>ll -rt</code> 按时间排序</p>
+</li>
+<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
+</li>
+<li><p>创建文件夹 <code>mkdir</code> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
+
+<p>选项与参数：</p>
+<ul>
+<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
+<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
+</ul>
+<p>例如 </p>
+<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
+<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
+<p>删除空的目录：<code>rmdir</code></p>
+<p>选项与参数：</p>
+<ul>
+<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
+</ul>
+</li>
+<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
+<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
+<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
+<p><strong>思考：mv和cp哪个执行快？</strong></p>
+<ul>
+<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
+<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
+<li>都可修改名称。</li>
+</ul>
+</li>
+<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
+<ul>
+<li><p>touch rz.log 如何创建一个空文件</p>
+<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
+</li>
+<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
+</li>
+<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
+</li>
+</ul>
+</li>
+<li><p>查看文件内容</p>
+<ul>
+<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
+<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
+</li>
+<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
+<p>空白键（space）- 往下一页显示</p>
+<p>b  - 往回（back）一页显示</p>
+<p>q  - 退出more</p>
+</li>
+<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
+<p>/字符串：向下搜索”字符串”的功能</p>
+<p>?字符串：向上搜索”字符串”的功能</p>
+<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
+<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
+<p>G ：移动到最后一行</p>
+<p>g：移动到第一行</p>
+<p>q / ZZ ：-退出 less 命令</p>
+</li>
+</ul>
+<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
+<p><strong>log日志，内容较多，用tail命令</strong></p>
+<ul>
+<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
+<p>实时查看</p>
+<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
+<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
+<p>补充：flume exec source 切记使用 -F</p>
+<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
+<p>-c&lt;数目&gt; 显示的字节数</p>
+<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
+<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
+</li>
+</ul>
+</li>
+<li><p>文件上传下载工具</p>
+<p>安装： <code>yum install -y lrzsz</code></p>
+<p>文件下载到windows：<code>sz</code></p>
+<p>windows上传到linux: <code>rz</code></p>
+</li>
+<li><p>如何定位ERROR</p>
+<ul>
+<li><p>文件内容很小，几十兆</p>
+<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
+</li>
+<li><p>文件内容很大，几百兆 2G</p>
+<p>cat xxx.log | grep ERROR</p>
+<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
+</li>
+</ul>
+</li>
+<li><p>grep命令</p>
+<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
+<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
+<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
+<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
+<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
+<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
+</li>
+<li><p>环境变量$PATH</p>
+<p>打印环境变量：<code>echo $PATH</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
+
+<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
+
+<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
+<pre><code>                      ~/.bashrc       个人 不给其他人
+</code></pre>
+<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+<p>生效文件: <code>source xxxx</code></p>
+<pre><code>              `. ~/.bashrc`
+</code></pre>
+<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
+<p>配置环境变量:<code>vi /etc/profile</code></p>
+<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
+<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
+<p>export PATH=$JAVA_HOME/bin:$PATH</p>
+<p>新配置的变量在前面追加</p>
+<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
+
+<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
+</li>
+<li><p>别名alias</p>
+<p><code>alias</code> 命令用于设置指令的别名。</p>
+<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+</li>
+<li><p>查看历史命令history</p>
+<p>当前命令输入状态下：</p>
+<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
+
+*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
+</code></pre>
+<ul>
+<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
+<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
+</li>
+</ul>
+<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
+<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
+<p>使用! 执行历史命令。</p>
+<pre><code>* `!  [n]`  n为数字 执行第n条命令
+</code></pre>
+<ul>
+<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
+<li><code>!!</code> 执行上一条</li>
+</ul>
+<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
+<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
+</li>
+<li><p>删除<br>生成新文件:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
+
+<p>创建文件夹: <code>mkdir</code> </p>
+<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
+<ul>
+<li><p>-i 删除前逐一询问确认。</p>
+</li>
+<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
+</li>
+<li><p>-r 将目录及以下之档案亦逐一删除。</p>
+<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
+<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
+<p>K=’/home/jepson’</p>
+<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
+<li><p>用户 用户组</p>
+<p>创建用户：<code>useradd username</code></p>
+<p>查看用户信息：<code>id username</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
+
+<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
+<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
+<p>删除用户:<code>userdel username</code></p>
+<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
+<p>模拟切换用户丢失样式</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
+
+<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>创建用户组：<code>groupadd groupname</code></p>
+<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
+
+<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
+<p>切换用户：<code>su</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
+
+<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
+<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
+<p>用户权限问题：connection连接拒绝、Permission denied</p>
+<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
+
+<p>/etc/passwd:</p>
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
+</li>
+<li><p>权限：chown chmod</p>
+<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
+
+<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
+<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
+<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
+</li>
+<li><p>查看大小</p>
+<p>文件：</p>
+<ul>
+<li>ll</li>
+<li>du -sh </li>
+</ul>
+<p>文件夹：</p>
+<ul>
+<li>du -sh</li>
+<li>用ll看到的并不是文件夹大小</li>
+</ul>
+</li>
+<li><p>删除执行中的程序或工作:<code>kill</code></p>
+<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
+<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
+<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
+<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
+<ul>
+<li>1 (HUP)：重新加载进程。</li>
+<li>2（INT）：中断（同 Ctrl + C）</li>
+<li>3（QUIT）：退出（同 Ctrl + \）</li>
+<li>9 (KILL)：强制杀死一个进程。</li>
+<li>15 (TERM)：正常停止一个进程。</li>
+</ul>
+<p>杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
+
+<p>强制杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
+
+<p>发送SIGHUP信号，可以使用一下信号</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
+
+<p>杀死指定用户所有进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
+
+<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
+<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
+<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
+<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
+</li>
+<li><p>其他命令</p>
+<ul>
+<li><p>搜索 <code>find</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录中的所有文件列出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
+<li><p>查看进程：<code>ps -ef</code> </p>
+</li>
+<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
+</li>
+<li><p>查看ip通不通：ping ip地址</p>
+</li>
+<li><p>测试端口号连通性：telnet ip地址 端口号</p>
+</li>
+</ul>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
     <title>Linux命令：sed与awk</title>
     <url>/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/</url>
     <content><![CDATA[<p>本文内容转自菜鸟教程(<a href="http://www.runoob.com/">www.runoob.com</a>)</p>
@@ -3371,338 +3999,6 @@
 <p>参考链接：</p>
 <p><a href="https://www.runoob.com/linux/linux-comm-sed.html">https://www.runoob.com/linux/linux-comm-sed.html</a></p>
 <p><a href="https://www.runoob.com/linux/linux-comm-awk.html">https://www.runoob.com/linux/linux-comm-awk.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Linux快速整理</title>
-    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<p>环境搭建:</p>
-<p>vmware虚拟机+XShell登录虚拟机</p>
-<p>Linux快速整理：</p>
-<ol>
-<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
-</li>
-<li><p><code>pwd</code>查看当前所在目录路径地址</p>
-<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
-<span id="more"></span></li>
-<li><p>切换目录 <code>cd</code></p>
-<p>root用户的家目录：/root</p>
-<p>xxx用户的家目录：/home/xxx 默认</p>
-<p>家目录的修改：vi /etc/passwd 默认不修改</p>
-<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
-<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
-<p><code>cd -</code>回到上一次访问的目录</p>
-<p><code>cd ../</code> 回退上一层目录</p>
-<p><code>cd ../../</code> 回退上两层目录</p>
-</li>
-<li><p>目录 文件夹</p>
-<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
-<p>​                    写shell脚本时，路径要用绝对路径。</p>
-<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
-<p>查看当前文件夹下的内容 <code>ls</code></p>
-</li>
-<li><p>清空屏幕 <code>clear</code></p>
-</li>
-<li><p>ls查看当前光标所在的目录 文件有哪些</p>
-<p><code>ls -l</code>  等价于`ll``</p>
-<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
-<p><code>ll -h</code> 显示文件的大小</p>
-<p><code>ll -rt</code> 按时间排序</p>
-</li>
-<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
-</li>
-<li><p>创建文件夹 <code>mkdir</code> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
-
-<p>选项与参数：</p>
-<ul>
-<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
-<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
-</ul>
-<p>例如 </p>
-<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
-<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
-<p>删除空的目录：<code>rmdir</code></p>
-<p>选项与参数：</p>
-<ul>
-<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
-</ul>
-</li>
-<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
-<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
-<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
-<p><strong>思考：mv和cp哪个执行快？</strong></p>
-<ul>
-<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
-<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
-<li>都可修改名称。</li>
-</ul>
-</li>
-<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
-<ul>
-<li><p>touch rz.log 如何创建一个空文件</p>
-<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
-</li>
-<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
-</li>
-<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
-</li>
-</ul>
-</li>
-<li><p>查看文件内容</p>
-<ul>
-<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
-<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
-</li>
-<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
-<p>空白键（space）- 往下一页显示</p>
-<p>b  - 往回（back）一页显示</p>
-<p>q  - 退出more</p>
-</li>
-<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
-<p>/字符串：向下搜索”字符串”的功能</p>
-<p>?字符串：向上搜索”字符串”的功能</p>
-<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
-<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
-<p>G ：移动到最后一行</p>
-<p>g：移动到第一行</p>
-<p>q / ZZ ：-退出 less 命令</p>
-</li>
-</ul>
-<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
-<p><strong>log日志，内容较多，用tail命令</strong></p>
-<ul>
-<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
-<p>实时查看</p>
-<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
-<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
-<p>补充：flume exec source 切记使用 -F</p>
-<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
-<p>-c&lt;数目&gt; 显示的字节数</p>
-<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
-<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
-</li>
-</ul>
-</li>
-<li><p>文件上传下载工具</p>
-<p>安装： <code>yum install -y lrzsz</code></p>
-<p>文件下载到windows：<code>sz</code></p>
-<p>windows上传到linux: <code>rz</code></p>
-</li>
-<li><p>如何定位ERROR</p>
-<ul>
-<li><p>文件内容很小，几十兆</p>
-<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
-</li>
-<li><p>文件内容很大，几百兆 2G</p>
-<p>cat xxx.log | grep ERROR</p>
-<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
-</li>
-</ul>
-</li>
-<li><p>grep命令</p>
-<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
-<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
-<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
-<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
-<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
-<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
-</li>
-<li><p>环境变量$PATH</p>
-<p>打印环境变量：<code>echo $PATH</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
-
-<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
-
-<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
-<pre><code>                      ~/.bashrc       个人 不给其他人
-</code></pre>
-<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-<p>生效文件: <code>source xxxx</code></p>
-<pre><code>              `. ~/.bashrc`
-</code></pre>
-<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
-<p>配置环境变量:<code>vi /etc/profile</code></p>
-<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
-<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
-<p>export PATH=$JAVA_HOME/bin:$PATH</p>
-<p>新配置的变量在前面追加</p>
-<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
-
-<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
-</li>
-<li><p>别名alias</p>
-<p><code>alias</code> 命令用于设置指令的别名。</p>
-<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
-
-<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-</li>
-<li><p>查看历史命令history</p>
-<p>当前命令输入状态下：</p>
-<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
-
-*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
-</code></pre>
-<ul>
-<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
-<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
-</li>
-</ul>
-<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
-<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
-<p>使用! 执行历史命令。</p>
-<pre><code>* `!  [n]`  n为数字 执行第n条命令
-</code></pre>
-<ul>
-<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
-<li><code>!!</code> 执行上一条</li>
-</ul>
-<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
-<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
-
-<p>拓展：</p>
-<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
-</li>
-<li><p>删除<br>生成新文件:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
-
-<p>创建文件夹: <code>mkdir</code> </p>
-<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
-<ul>
-<li><p>-i 删除前逐一询问确认。</p>
-</li>
-<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
-</li>
-<li><p>-r 将目录及以下之档案亦逐一删除。</p>
-<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
-<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
-<p>K=’/home/jepson’</p>
-<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
-<li><p>用户 用户组</p>
-<p>创建用户：<code>useradd username</code></p>
-<p>查看用户信息：<code>id username</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
-
-<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
-<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
-<p>删除用户:<code>userdel username</code></p>
-<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
-<p>模拟切换用户丢失样式</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
-
-<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p>创建用户组：<code>groupadd groupname</code></p>
-<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
-
-<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
-<p>切换用户：<code>su</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
-
-<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
-<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
-<p>用户权限问题：connection连接拒绝、Permission denied</p>
-<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
-
-<p>/etc/passwd:</p>
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
-</li>
-<li><p>权限：chown chmod</p>
-<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
-
-<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
-<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
-<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
-</li>
-<li><p>查看大小</p>
-<p>文件：</p>
-<ul>
-<li>ll</li>
-<li>du -sh </li>
-</ul>
-<p>文件夹：</p>
-<ul>
-<li>du -sh</li>
-<li>用ll看到的并不是文件夹大小</li>
-</ul>
-</li>
-<li><p>删除执行中的程序或工作:<code>kill</code></p>
-<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
-<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
-<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
-<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
-<ul>
-<li>1 (HUP)：重新加载进程。</li>
-<li>2（INT）：中断（同 Ctrl + C）</li>
-<li>3（QUIT）：退出（同 Ctrl + \）</li>
-<li>9 (KILL)：强制杀死一个进程。</li>
-<li>15 (TERM)：正常停止一个进程。</li>
-</ul>
-<p>杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
-
-<p>强制杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
-
-<p>发送SIGHUP信号，可以使用一下信号</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
-
-<p>杀死指定用户所有进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
-
-<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
-<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
-<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
-<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
-</li>
-<li><p>其他命令</p>
-<ul>
-<li><p>搜索 <code>find</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录中的所有文件列出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
-<li><p>查看进程：<code>ps -ef</code> </p>
-</li>
-<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
-</li>
-<li><p>查看ip通不通：ping ip地址</p>
-</li>
-<li><p>测试端口号连通性：telnet ip地址 端口号</p>
-</li>
-</ul>
-</li>
-</ol>
 ]]></content>
   </entry>
   <entry>
