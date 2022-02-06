@@ -26,98 +26,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS API</title>
-    <url>/2021/12/13/HDFS-API/</url>
-    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
-<span id="more"></span>
-
-<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>导入需要的package</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
-
-<p>类中具体方法可参考：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
-<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
-<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><p>获取Configuration对象</p>
-<p>我们需要先new一个Configuration对象</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
-
-<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>获取FileSystem对象</p>
-<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
-<li><p>进行文件操作</p>
-<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>释放资源</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
-
-<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
-
-<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p><strong>Deprecated.</strong> </p>
-<p>Renames Path src to Path dst</p>
-<ul>
-<li>Fails if src is a file and dst is a directory.</li>
-<li>Fails if src is a directory and dst is a file.</li>
-<li>Fails if the parent of dst does not exist or is a file.</li>
-</ul>
-<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
-<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
-<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
-<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
-<ul>
-<li><strong>Parameters:</strong></li>
-</ul>
-<p> <code>src</code> - path to be renamed</p>
-<p> <code>dst</code> - new path after rename</p>
-<ul>
-<li><strong>Throws:</strong></li>
-</ul>
-<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
-<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
-<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
-<p> <code>IOException</code> - on failure</p>
-</blockquote>
-<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
-
-<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
-
-<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
-
-<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
-</ul>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>CentOS6.5安装NodeJS14.18.3</title>
     <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
     <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
@@ -141,109 +49,6 @@
 <li><p>刷新配置，查看版本</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS文件读写流程与副本放置策略</title>
-    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
-<ol>
-<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
-</li>
-<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
-<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
-<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
-</li>
-<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
-<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
-</li>
-<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
-</li>
-<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
-</li>
-<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
-</li>
-<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
-</li>
-</ol>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
-<ol>
-<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
-</li>
-<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
-</li>
-<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
-</li>
-<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
-</li>
-<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
-<ul>
-<li>假如ok就关闭与DN通信。</li>
-<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
-</ul>
-<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
-<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
-<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
-</li>
-<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
-</li>
-</ol>
-<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
-<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
-<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
-<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
-</blockquote>
-<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
-<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
-<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
-<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
-<p>假如还有更多副本：随机放。</p>
-<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
-<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
-<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
-</li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
-</li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
-</li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -367,6 +172,201 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS API</title>
+    <url>/2021/12/13/HDFS-API/</url>
+    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
+<span id="more"></span>
+
+<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>导入需要的package</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
+
+<p>类中具体方法可参考：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
+<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
+<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p>获取Configuration对象</p>
+<p>我们需要先new一个Configuration对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
+
+<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>获取FileSystem对象</p>
+<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
+<li><p>进行文件操作</p>
+<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>释放资源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
+
+<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
+
+<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Deprecated.</strong> </p>
+<p>Renames Path src to Path dst</p>
+<ul>
+<li>Fails if src is a file and dst is a directory.</li>
+<li>Fails if src is a directory and dst is a file.</li>
+<li>Fails if the parent of dst does not exist or is a file.</li>
+</ul>
+<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
+<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
+<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
+<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
+<ul>
+<li><strong>Parameters:</strong></li>
+</ul>
+<p> <code>src</code> - path to be renamed</p>
+<p> <code>dst</code> - new path after rename</p>
+<ul>
+<li><strong>Throws:</strong></li>
+</ul>
+<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
+<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
+<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
+<p> <code>IOException</code> - on failure</p>
+</blockquote>
+<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
+
+<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
+
+<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
+
+<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
+</ul>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS文件读写流程与副本放置策略</title>
+    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
+<ol>
+<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
+</li>
+<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
+<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
+<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
+</li>
+<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
+<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
+</li>
+<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
+</li>
+<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
+</li>
+<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
+</li>
+<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
+</li>
+</ol>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
+<ol>
+<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
+</li>
+<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
+</li>
+<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
+</li>
+<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
+</li>
+<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
+<ul>
+<li>假如ok就关闭与DN通信。</li>
+<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
+</ul>
+<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
+<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
+<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
+</li>
+<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
+</li>
+</ol>
+<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
+<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
+<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
+<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
+</blockquote>
+<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
+<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
+<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
+<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
+<p>假如还有更多副本：随机放。</p>
+<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
+<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
+<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
 ]]></content>
   </entry>
   <entry>
@@ -1183,6 +1183,98 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hive：分区</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
+    <content><![CDATA[<p>静态分区 vs 动态分区： 创建、使用、查看/添加/删除分区</p>
+<blockquote>
+<p>Hive分区的概念与传统关系型数据库分区不同。</p>
+<p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
+<p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
+</blockquote>
+<h1 id="静态分区"><a href="#静态分区" class="headerlink" title="静态分区"></a>静态分区</h1><h2 id="一级分区"><a href="#一级分区" class="headerlink" title="一级分区"></a>一级分区</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p>Hive分区是在创建表的时候用Partitioned by 关键字定义的，但要注意，Partitioned by子句中定义的列是表中正式的列，但是Hive下的数据文件中并不包含这些列，因为它们是目录名。注意：分区字段不能和表中的字段重复。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]</span><br><span class="line">一级分区：一个目录</span><br><span class="line">多级分区：多个目录</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE `emp_partition`(</span><br><span class="line">`empno` int, </span><br><span class="line">`ename` string, </span><br><span class="line">`job` string, </span><br><span class="line">`mgr` int, </span><br><span class="line">`hiredate` string, </span><br><span class="line">`sal` double, </span><br><span class="line">`comm` double</span><br><span class="line">) partitioned by (deptno string)</span><br><span class="line">row format delimited fields terminated by &#x27;\t&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>通过desc查看的表结构如下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; desc emp_partition;</span><br><span class="line">OK</span><br><span class="line">col_name	data_type	comment</span><br><span class="line">empno               	int</span><br><span class="line">ename               	string</span><br><span class="line">job                 	string</span><br><span class="line">mgr                 	int</span><br><span class="line">hiredate            	string</span><br><span class="line">sal                 	double</span><br><span class="line">comm                	double</span><br><span class="line">deptno              	string</span><br><span class="line">	 	 </span><br><span class="line"># Partition Information	 	 </span><br><span class="line"># col_name            	data_type           	comment             </span><br><span class="line">deptno              	string              	                    </span><br><span class="line">Time taken: 0.546 seconds, Fetched: 12 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">格式1:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row …];</span><br><span class="line">格式2：</span><br><span class="line">load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<p>从其他表中插入数据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.269 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; insert into emp_partition partition(deptno=30) select empno,ename,job,mgr,hiredate,sal,comm from emp where deptno=10;</span><br></pre></td></tr></table></figure>
+
+<p>从文件加载数据到表中（不包含分区列字段）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ cat emp_10.txt </span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000	500</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看数据"><a href="#查看数据" class="headerlink" title="查看数据"></a>查看数据</h3><p>利用分区表查询：(一般分区表都是利用where语句查询的)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp_partition where deptno=10;</span><br><span class="line">OK</span><br><span class="line">emp_partition.empno	emp_partition.ename	emp_partition.job	emp_partition.mgr	emp_partition.hiredate	emp_partition.sal	emp_partition.comm	emp_partition.deptno</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000.0	500.0	10</span><br><span class="line">Time taken: 0.25 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<p>查看hdfs上emp_partition表目录结构，可以看到在以表名目录下，有以deptno=10（分区名）的子目录存放着真实的数据文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br></pre></td></tr></table></figure>
+
+<p>同理，插入deptno为20，30的数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10/emp_10.txt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        214 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20/000000_0</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30/000000_0</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看分区"><a href="#查看分区" class="headerlink" title="查看分区"></a>查看分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">Time taken: 0.152 seconds, Fetched: 3 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加分区"><a href="#添加分区" class="headerlink" title="添加分区"></a>添加分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; alter table emp_partition  add partition (deptno=40);</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.282 seconds</span><br><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">deptno=40</span><br><span class="line">Time taken: 0.127 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除分区-删除相应分区文件"><a href="#删除分区-删除相应分区文件" class="headerlink" title="删除分区(删除相应分区文件)"></a>删除分区(删除相应分区文件)</h3><p>注意，对于外表进行drop partition并不会删除hdfs上的文件，并且可以通过<code>msck repair table table_name</code>同步hdfs上的分区。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table emp_partition drop partition (deptno = 40);</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复分区"><a href="#修复分区" class="headerlink" title="修复分区"></a>修复分区</h3><p>修复分区就是重新同步hdfs上的分区信息。（外部表在hdfs目录上添加文件后使用）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msck repair table table_name  [ADD/DROP/SYNC PARTITIONS];</span><br></pre></td></tr></table></figure>
+
+<p>在hive3.0中msck命令支持删除partition信息。</p>
+<h2 id="多级分区"><a href="#多级分区" class="headerlink" title="多级分区"></a>多级分区</h2><p>多分区表装载数据时，分区字段必须都要加。如果只有一个，会报错。</p>
+<p>下面创建一张静态分区表par_tab_muilt，多个分区（性别+日期）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create table par_tab_muilt (name string, nation string) partitioned by (sex string,dt string) row format delimited fields terminated by &#x27;,&#x27; ;</span><br><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/files/par_tab.txt&#x27; into table par_tab_muilt partition (sex=&#x27;man&#x27;,dt=&#x27;2021-12-28&#x27;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 files]$ hadoop fs -ls -R /user/hive/warehouse/par_tab_muilt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28</span><br><span class="line">-rwxr-xr-x   1 hadoop supergroup         71 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28/par_tab.txt</span><br></pre></td></tr></table></figure>
+
+<p>可见，新建表的时候定义的分区顺序，决定了文件目录顺序（谁是父目录谁是子目录），正因为有了这个层级关系，当我们查询所有man的时候，man以下的所有日期下的数据都会被查出来。如果只查询日期分区，但父目录sex=man和sex=woman都有该日期的数据，那么Hive会对输入路径进行修剪，从而只扫描日期分区，性别分区不作过滤（即查询结果包含了所有性别）。</p>
+<h1 id="动态分区"><a href="#动态分区" class="headerlink" title="动态分区"></a>动态分区</h1><p>为什么要使用动态分区呢，我们举个例子，假如中国有50个省，每个省有50个市，每个市都有100个区，那我们都要使用静态分区要使用多久才能搞完。所有我们要使用动态分区。</p>
+<p>动态分区默认是没有开启。开启后默认是以严格模式执行的，在这种模式下需要至少一个分区字段是静态的。这有助于阻止因设计错误导致导致查询差生大量的分区。列如：用户可能错误使用时间戳作为分区表字段。然后导致每秒都对应一个分区！这样我们也可以采用相应的措施:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关闭严格分区模式		set hive.exec.dynamic.partition.mode=nonstrict	//分区模式，默认strict（至少有一个分区列是静态分区）</span><br><span class="line">开启支持动态分区		set hive.exec.dynamic.partition=true			//开启动态分区,默认true</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">其他相关参数 ：</span><br><span class="line">set hive.exec.max.dynamic.partitions.pernode; #每一个执行mr节点上，允许创建的动态分区的最大数量(100) </span><br><span class="line">set hive.exec.max.dynamic.partitions;         #所有执行mr节点上，允许创建的所有动态分区的最大数量(1000) </span><br><span class="line">set hive.exec.max.created.files;              #所有的mr job允许创建的文件的最大数量(100000)</span><br></pre></td></tr></table></figure>
+
+<p>利用动态分区，我们可以一次完成插入上面例子中deptno不同的数据的操作</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert overwrite table emp_partition partition(deptno) select empno,ename,job,mgr,hiredate,sal,comm,deptno from emp;</span><br></pre></td></tr></table></figure>
+
+<p><strong>补充</strong>：</p>
+<p>注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区。</p>
+<p>动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode ：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive&gt; set hive.exec.dynamic.partition.mode;</span><br><span class="line">hive.exec.dynamic.partition.mode=strict</span><br></pre></td></tr></table></figure>
+
+<p>它的默认值是strick，即不允许分区列全部是动态的，这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。<br>所以我们要设置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive&gt; set hive.exec.dynamic.partition.mode=nostrick;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>hive的分区使用的表外字段，分区字段是一个伪列但是可以查询过滤。</li>
+<li>分区字段不建议使用中文.</li>
+<li>不太建议使用动态分区。因为动态分区将会使用mapreduce来查询数据，如果分区数量过多将导致namenode和yarn的资源瓶颈。所以建议动态分区前也尽可能之前预知分区数量。</li>
+<li>分区属性的修改均可以使用手动元数据和hdfs的数据内容</li>
+</ol>
+<h2 id="外部分区表"><a href="#外部分区表" class="headerlink" title="外部分区表"></a>外部分区表</h2><p>外部表同样可以使用分区，事实上，用户会发现，只是管理大型生产数据集最常见的情况，这种结合给用户提供一个和其他工具共享数据的方式，同时也可以优化查询性能。这样我们就可以把数据路径改变而不影响数据的丢失，这是内部分区表远远不能做的事情:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1,(因为我们创建的是外部表)所有我们可以把表数据放到hdfs上的随便一个地方这里自动数据加载到/user/had/data/下(当然我们之前在外部表上指定了路径)</span><br><span class="line">load data local inpath &#x27;/home/had/data.txt&#x27; into table employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br><span class="line">2,如果我们加载的数据要分离一些旧数据的时候就可以hadoop的distcp命令来copy数据到某个路径</span><br><span class="line">hadoop distcp /user/had/data/country=china/state=Asia /user/had/data_old/country=china/state=Asia</span><br><span class="line">3,修改表，把移走的数据的路径在hive里修改</span><br><span class="line">alter table employees partition(country=&quot;china&quot;,state=&quot;Asia&quot;) set location &#x27;/user/had/data_old/country=china/state=Asia&#x27;</span><br><span class="line">4,使用hdfs的rm命令删除之前路径的数据</span><br><span class="line">hdfs dfs -rmr /user/had/data/country=china/state=Asia</span><br><span class="line">这样我们就完成一次数据迁移</span><br><span class="line"></span><br><span class="line">如果觉得突然忘记了数据的位置使用使用下面的方式查看</span><br><span class="line">describe extend employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="众多的修改语句"><a href="#众多的修改语句" class="headerlink" title="众多的修改语句"></a>众多的修改语句</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1，把一个分区打包成一个har包</span><br><span class="line">  alter table employees archive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">2, 把一个分区har包还原成原来的分区</span><br><span class="line">  alter table employees unarchive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">3, 保护分区防止被删除</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable no_drop</span><br><span class="line">4,保护分区防止被查询</span><br><span class="line">    alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable offline</span><br><span class="line">5，允许分区删除和查询</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable no_drop</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable offline</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
+<p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
+<p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>IDEA中测试Hive源码</title>
     <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
     <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
@@ -1321,6 +1413,42 @@
 ]]></content>
   </entry>
   <entry>
+    <title>MR Chain（ChainMapper与ChainReducer）</title>
+    <url>/2021/12/21/MR-Chain/</url>
+    <content><![CDATA[<h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
+<p>​    在Map阶段，数据依次经过Mapper1和Mapper2处理；在Reducer阶段，数据经过shuffle和sort排序后，交给对应的Reduce处理，但Reducer处理之后还可以交给其它的Mapper进行处理，最终产生的结果写入到hdfs输出目录上。</p>
+<p><strong>注意</strong>：对于任意一个MapReduce作业，Map和Reduce阶段可以有无限多个Mapper，但是<strong>Reducer只能有一个</strong>。</p>
+<p>​    通过链式MapReducer模式可以有效的减少网络间传输数据的带宽，因为大量的计算基本都是在本地进行的。如果通过迭代作业的方式实现多个MapReduce作业组合的话就会在网络间传输大量的数据，这样会非常的耗时。(所以这里只是一个MR作业，MR作业的迭代实现用JobControl：)</p>
+<p><img src="/2021/12/21/MR-Chain/hexo\k12blog\source_posts\MR-Chain\Chain.jpg" alt="Chain"></p>
+<span id="more"></span>
+
+<h2 id="ChainMapper"><a href="#ChainMapper" class="headerlink" title="ChainMapper"></a>ChainMapper</h2><h3 id="官方说明"><a href="#官方说明" class="headerlink" title="官方说明"></a>官方说明</h3><p>​    ChainMapper类允许使用多个Map子类作为一个Map任务。</p>
+<p>​    这些map子类的执行与liunx的管道命令十分相似，第一个map的输出会成为第二个map的输入，第二个map的输出也会变成第三个map的输入，以此类推，直到最后一个map的输出会变成整个mapTask的输出。</p>
+<p>​    该特性的关键功能是链中的Mappers不需要知道它们是在链中执行的。这使具有可重用的专门的映射器可以组合起来，在单个任务中执行组合操作。</p>
+<p><strong>注意</strong>：在创建链式是每个Mapper的键/值的输出是链中下一个Mapper或Reducer的输入。它假定所有的映射器和链中的Reduce都使用匹配输出和输入键和值类，因为没有对链接代码进行转换。</p>
+<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = Job.getInstance(conf);</span><br><span class="line"></span><br><span class="line">Configuration mapAConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, AMap.class, LongWritable.class, Text.class,</span><br><span class="line"> Text.class, Text.class, true, mapAConf);</span><br><span class="line"></span><br><span class="line">Configuration mapBConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, BMap.class, Text.class, Text.class,</span><br><span class="line"> LongWritable.class, Text.class, false, mapBConf);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForComplettion(true);</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+
+<h3 id="addMapper函数的参数说明"><a href="#addMapper函数的参数说明" class="headerlink" title="addMapper函数的参数说明"></a>addMapper函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void addMapper(Job job, Class&lt;? extends Mapper&gt; klass,</span><br><span class="line">  Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">  Configuration mapperConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此map的class</span><br><span class="line"># 3. 此map的输入的key类型</span><br><span class="line"># 4. 此map的输入的value类型</span><br><span class="line"># 5. 此map的输出的key类型</span><br><span class="line"># 6. 此map的输出的value类型</span><br><span class="line"># 7. 此map的配置文件类conf</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="ChainReducer"><a href="#ChainReducer" class="headerlink" title="ChainReducer"></a>ChainReducer</h2><h3 id="官方说明-1"><a href="#官方说明-1" class="headerlink" title="官方说明"></a>官方说明</h3><p>ChainReducer类允许多个map在reduce执行完之后执行在一个reducerTask中，<br>reducer的每一条输出，都被作为输入给ChainReducer类设置的第一个map，然后第一个map的输出作为第二个map的输入，以此类推，最后一个map的输出会作为整个reducerTask的输出，写到磁盘上。</p>
+<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = new Job(conf);</span><br><span class="line">....</span><br><span class="line"></span><br><span class="line">Configuration reduceConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainReducer.setReducer(job, XReduce.class, LongWritable.class, Text.class,</span><br><span class="line">  Text.class, Text.class, true, reduceConf);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, CMap.class, Text.class, Text.class,</span><br><span class="line">  LongWritable.class, Text.class, false, null);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, DMap.class, LongWritable.class, Text.class,</span><br><span class="line">  LongWritable.class, LongWritable.class, true, null);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForCompletion(true);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h3 id="setReducer函数的参数说明"><a href="#setReducer函数的参数说明" class="headerlink" title="setReducer函数的参数说明"></a>setReducer函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void setReducer(Job job, Class&lt;? extends Reducer&gt; klass,</span><br><span class="line"> Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">   Configuration reducerConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此reducer的class</span><br><span class="line"># 3. 此reducer的输入的key类型</span><br><span class="line"># 4. 此reducer的输入的value类型</span><br><span class="line"># 5. 此reducer的输出的key类型</span><br><span class="line"># 6. 此reducer的输出的value类型</span><br><span class="line"># 7. 此reducer的配置文件类conf</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><h3 id="案例描述"><a href="#案例描述" class="headerlink" title="案例描述"></a>案例描述</h3><p>统计出一篇文章的高频词汇（只收集出现次数大于3的单词），去除谓词，并且过滤掉敏感词汇。</p>
+<h3 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h3><p>在MapTask中有三个子Mapper，分别命名为M1,M2,M3，在ReduceTask阶段有一个Reduce命名为R1和一个Mpaaer命名为RM1。</p>
+<h4 id="MapTask阶段"><a href="#MapTask阶段" class="headerlink" title="MapTask阶段"></a>MapTask阶段</h4><p>M1负责将文本内容按行切分每个单词，M2负责将M1输出的单词进行谓词过滤，M3将M2输出的内容进行敏感词过滤。</p>
+<h4 id="ReduceTask阶段"><a href="#ReduceTask阶段" class="headerlink" title="ReduceTask阶段"></a>ReduceTask阶段</h4><p>Reduce过程中R1负责将shuffle阶段中的单词进行统计，统计好之后将结果交给RM1处理，RM1主要是将单词数量大于5的单词进行输出。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by yanzhe on 2017/8/18.</span><br><span class="line"> */</span><br><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        args = new String[]&#123;&quot;d:/java/mr/data/data.txt&quot;, &quot;d:/java/mr/out&quot;&#125; ;</span><br><span class="line"></span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line"></span><br><span class="line">        FileSystem fs = FileSystem.get(conf) ;</span><br><span class="line"></span><br><span class="line">        Path outPath = new Path(args[1]) ;</span><br><span class="line">        if (fs.exists(outPath))&#123;</span><br><span class="line">            fs.delete(outPath,true) ;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Job job = Job.getInstance(conf) ;</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper1.class, LongWritable.class, Text.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper2.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper3.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.setReducer(job, Reducer1.class, Text.class, IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.addMapper(job, ReducerMapper1.class, Text.class,</span><br><span class="line">                IntWritable.class, Text.class, IntWritable.class, job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        FileInputFormat.addInputPath(job,new Path(args[0]));</span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job,outPath);</span><br><span class="line"></span><br><span class="line">        job.setNumReduceTasks(2);</span><br><span class="line">        job.setCombinerClass(Combiner1.class);</span><br><span class="line">        job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line"></span><br><span class="line">        job.waitForCompletion(true) ;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public class Mapper1 extends Mapper&lt;LongWritable, Text, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map1===========&quot; + value.toString());</span><br><span class="line">            String line = value.toString() ;</span><br><span class="line">            String[] strArr = line.split(&quot; &quot;) ;</span><br><span class="line"></span><br><span class="line">            for (String w: strArr) &#123;</span><br><span class="line">                context.write(new Text(w), new IntWritable(1));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Mapper2 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map2==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;of&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;of&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class Mapper3 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map3==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;google&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;xxx&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Reducer1 extends Reducer&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(Text key, Iterable&lt;IntWritable&gt; values, Context context) </span><br><span class="line">        throws IOException, InterruptedException &#123;</span><br><span class="line">            int count = 0 ;</span><br><span class="line">            for (IntWritable iw: values) &#123;</span><br><span class="line">                count += iw.get();</span><br><span class="line">            &#125;</span><br><span class="line">            context.write(key, new IntWritable(count));</span><br><span class="line">            System.out.println(&quot;reduce=========&quot; + key.toString() + &quot;:&quot; + count);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class ReducerMapper1 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            if (value.get() &gt; 5)</span><br><span class="line">                context.write(key, value);</span><br><span class="line"></span><br><span class="line">            System.out.println(&quot;reduceMap======&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>原文链接：<a href="https://blog.csdn.net/u010521842/article/details/77413104">https://blog.csdn.net/u010521842/article/details/77413104</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>MR作业的迭代：JobControl设计及用法</title>
     <url>/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/</url>
     <content><![CDATA[<h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
@@ -1397,39 +1525,96 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MR Chain（ChainMapper与ChainReducer）</title>
-    <url>/2021/12/21/MR-Chain/</url>
-    <content><![CDATA[<h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
-<p>​    在Map阶段，数据依次经过Mapper1和Mapper2处理；在Reducer阶段，数据经过shuffle和sort排序后，交给对应的Reduce处理，但Reducer处理之后还可以交给其它的Mapper进行处理，最终产生的结果写入到hdfs输出目录上。</p>
-<p><strong>注意</strong>：对于任意一个MapReduce作业，Map和Reduce阶段可以有无限多个Mapper，但是<strong>Reducer只能有一个</strong>。</p>
-<p>​    通过链式MapReducer模式可以有效的减少网络间传输数据的带宽，因为大量的计算基本都是在本地进行的。如果通过迭代作业的方式实现多个MapReduce作业组合的话就会在网络间传输大量的数据，这样会非常的耗时。(所以这里只是一个MR作业，MR作业的迭代实现用JobControl：)</p>
-<p><img src="/2021/12/21/MR-Chain/hexo\k12blog\source_posts\MR-Chain\Chain.jpg" alt="Chain"></p>
-<span id="more"></span>
+    <title>SQL:WHERE、ON、HAVING的区别</title>
+    <url>/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
+    <content><![CDATA[<h2 id="WHERE-与-HAVING"><a href="#WHERE-与-HAVING" class="headerlink" title="WHERE 与 HAVING"></a>WHERE 与 HAVING</h2><p><code>WHERE</code>与<code>HAVING</code>的根本区别在于：</p>
+<ul>
+<li><code>WHERE</code>子句在<code>GROUP BY</code>分组和聚合函数<strong>之前</strong>对数据行进行过滤；</li>
+<li><code>HAVING</code>子句对<code>GROUP BY</code>分组和聚合函数<strong>之后</strong>的数据行进行过滤。</li>
+</ul>
+<p>因此，<code>WHERE</code>子句中不能使用聚合函数。例如，以下语句将会返回错误：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">where <span class="title">count</span><span class="params">(*)</span> &gt; 5</span></span><br><span class="line"><span class="function">group by dept_id</span>;</span><br></pre></td></tr></table></figure>
 
-<h2 id="ChainMapper"><a href="#ChainMapper" class="headerlink" title="ChainMapper"></a>ChainMapper</h2><h3 id="官方说明"><a href="#官方说明" class="headerlink" title="官方说明"></a>官方说明</h3><p>​    ChainMapper类允许使用多个Map子类作为一个Map任务。</p>
-<p>​    这些map子类的执行与liunx的管道命令十分相似，第一个map的输出会成为第二个map的输入，第二个map的输出也会变成第三个map的输入，以此类推，直到最后一个map的输出会变成整个mapTask的输出。</p>
-<p>​    该特性的关键功能是链中的Mappers不需要知道它们是在链中执行的。这使具有可重用的专门的映射器可以组合起来，在单个任务中执行组合操作。</p>
-<p><strong>注意</strong>：在创建链式是每个Mapper的键/值的输出是链中下一个Mapper或Reducer的输入。它假定所有的映射器和链中的Reduce都使用匹配输出和输入键和值类，因为没有对链接代码进行转换。</p>
-<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = Job.getInstance(conf);</span><br><span class="line"></span><br><span class="line">Configuration mapAConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, AMap.class, LongWritable.class, Text.class,</span><br><span class="line"> Text.class, Text.class, true, mapAConf);</span><br><span class="line"></span><br><span class="line">Configuration mapBConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainMapper.addMapper(job, BMap.class, Text.class, Text.class,</span><br><span class="line"> LongWritable.class, Text.class, false, mapBConf);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForComplettion(true);</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+<p>由于在执行<code>WHERE</code>子句时，还没有计算聚合函数 count(*)，所以无法使用。正确的方法是使用HAVING对聚合之后的结果进行过滤：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 5</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">4</span>|       <span class="number">9</span>|</span><br><span class="line">      <span class="number">5</span>|       <span class="number">8</span>|</span><br></pre></td></tr></table></figure>
 
-<h3 id="addMapper函数的参数说明"><a href="#addMapper函数的参数说明" class="headerlink" title="addMapper函数的参数说明"></a>addMapper函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void addMapper(Job job, Class&lt;? extends Mapper&gt; klass,</span><br><span class="line">  Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">  Configuration mapperConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此map的class</span><br><span class="line"># 3. 此map的输入的key类型</span><br><span class="line"># 4. 此map的输入的value类型</span><br><span class="line"># 5. 此map的输出的key类型</span><br><span class="line"># 6. 此map的输出的value类型</span><br><span class="line"># 7. 此map的配置文件类conf</span><br></pre></td></tr></table></figure>
+<p>另一方面，<code>HAVING</code>子句中不能使用除了分组字段和聚合函数之外的其他字段。例如，以下语句将会返回错误：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 统计每个部门月薪大于等于 <span class="number">30000</span> 的员工人数</span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having salary &gt;= <span class="number">30000</span>;</span><br></pre></td></tr></table></figure>
 
+<p>因为经过<code>GROUP BY</code>分组和聚合函数之后，不再存在 salary 字段，<code>HAVING</code>子句中只能使用分组字段或者聚合函数。</p>
+<blockquote>
+<p>SQLite 虽然允许<code>HAVING</code>子句中出现其他字段，但是得到的结果不正确。</p>
+</blockquote>
+<p>从性能的角度来说，<code>HAVING</code>子句中如果使用了分组字段作为过滤条件，应该替换成<code>WHERE</code>子句；因为<code>WHERE</code>可以在执行分组操作和计算聚合函数之前过滤掉不需要的数据，性能会更好。下面示例中的语句 1 应该替换成语句 2：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having dept_id = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where dept_id = <span class="number">1</span></span><br><span class="line">group by dept_id;</span><br></pre></td></tr></table></figure>
 
+<p>当然，<code>WHERE</code>和<code>HAVING</code>可以组合在一起使用。例如：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where salary &gt; <span class="number">10000</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 1</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">1</span>|       <span class="number">3</span>|</span><br></pre></td></tr></table></figure>
 
-<h2 id="ChainReducer"><a href="#ChainReducer" class="headerlink" title="ChainReducer"></a>ChainReducer</h2><h3 id="官方说明-1"><a href="#官方说明-1" class="headerlink" title="官方说明"></a>官方说明</h3><p>ChainReducer类允许多个map在reduce执行完之后执行在一个reducerTask中，<br>reducer的每一条输出，都被作为输入给ChainReducer类设置的第一个map，然后第一个map的输出作为第二个map的输入，以此类推，最后一个map的输出会作为整个reducerTask的输出，写到磁盘上。</p>
-<h3 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">...</span><br><span class="line">Job = new Job(conf);</span><br><span class="line">....</span><br><span class="line"></span><br><span class="line">Configuration reduceConf = new Configuration(false);</span><br><span class="line">...</span><br><span class="line">ChainReducer.setReducer(job, XReduce.class, LongWritable.class, Text.class,</span><br><span class="line">  Text.class, Text.class, true, reduceConf);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, CMap.class, Text.class, Text.class,</span><br><span class="line">  LongWritable.class, Text.class, false, null);</span><br><span class="line"></span><br><span class="line">ChainReducer.addMapper(job, DMap.class, LongWritable.class, Text.class,</span><br><span class="line">  LongWritable.class, LongWritable.class, true, null);</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">job.waitForCompletion(true);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>该语句返回了月薪大于 10000 的员工人数大于 1 的部门；<code>WHERE</code>用于过滤月薪大于 10000 的员工；<code>HAVING</code>用于过滤员工数量大于 1 的部门。</p>
+<h2 id="WHERE-与-ON"><a href="#WHERE-与-ON" class="headerlink" title="WHERE 与 ON"></a>WHERE 与 ON</h2><p>当查询涉及多个表的关联时，我们既可以使用<code>WHERE</code>子句也可以使用<code>ON</code>子句指定连接条件和过滤条件。这两者之间的主要区别在于：</p>
+<ul>
+<li>对于内连接（inner join）查询，<code>WHERE</code>和<code>ON</code>中的过滤条件等效；</li>
+<li>对于外连接（outer join）查询，<code>ON</code>中的过滤条件在连接操作之前执行，<code>WHERE</code>中的过滤条件（逻辑上）在连接操作之后执行。</li>
+</ul>
+<p>对于内连接查询而言，以下三个语句的结果相同：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.salary </span><br><span class="line">from employee e, department d</span><br><span class="line">where e.dept_id = d.dept_id</span><br><span class="line">and e.emp_id = <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id and e.emp_id = <span class="number">10</span>)</span></span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">3</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id)</span></span></span><br><span class="line"><span class="function">where e.emp_id </span>= <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br></pre></td></tr></table></figure>
 
-<h3 id="setReducer函数的参数说明"><a href="#setReducer函数的参数说明" class="headerlink" title="setReducer函数的参数说明"></a>setReducer函数的参数说明</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">static void setReducer(Job job, Class&lt;? extends Reducer&gt; klass,</span><br><span class="line"> Class&lt;?&gt; inputKeyClass, Class&lt;?&gt; inputValueClass,</span><br><span class="line">  Class&lt;?&gt; outputKeyClass, Class&lt;?&gt; outputValueClass,</span><br><span class="line">   Configuration reducerConf)</span><br><span class="line">## 参数的含义如下</span><br><span class="line"># 1. job</span><br><span class="line"># 2. 此reducer的class</span><br><span class="line"># 3. 此reducer的输入的key类型</span><br><span class="line"># 4. 此reducer的输入的value类型</span><br><span class="line"># 5. 此reducer的输出的key类型</span><br><span class="line"># 6. 此reducer的输出的value类型</span><br><span class="line"># 7. 此reducer的配置文件类conf</span><br></pre></td></tr></table></figure>
+<p>语句 1 在<code>WHERE</code>中指定连接条件和过滤条件；语句 2 在<code>ON</code>中指定连接条件和过滤条件；语句 3 在<code>ON</code>中指定连接条件，在<code>WHERE</code>中指定其他过滤条件。上面语句不但结果相同，数据库的执行计划也相同。以 MySQL 为例，以上语句的执行计划如下：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">id|select_type|table|partitions|type |possible_keys       |key    |key_len|ref  |rows|filtered|Extra|</span><br><span class="line">--|-----------|-----|----------|-----|--------------------|-------|-------|-----|----|--------|-----|</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |e    |          |<span class="keyword">const</span>|PRIMARY,idx_emp_dept|PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |d    |          |<span class="keyword">const</span>|PRIMARY             |PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br></pre></td></tr></table></figure>
 
+<p>尽管如此，仍然建议将两个表的连接条件放在<code>ON</code>子句中，将其他过滤条件放在<code>WHERE</code>子句中；这样语义更加明确，更容易阅读和理解。对于上面的示例而言，推荐使用语句 3 的写法。</p>
+<p>数据库在通过连接两张或多张表来返回记录时，都会生成一张中间的临时表，然后再将这张临时表返回给用户。</p>
+<p>在使用 <strong>left join</strong> 时，<strong>on</strong> 和 <strong>where</strong> 条件的区别如下：</p>
+<p>1、<strong>on</strong> 条件是在生成临时表时使用的条件，它不管 <strong>on</strong> 中的条件是否为真，都会返回左边表中的记录。</p>
+<p>2、where 条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有 <strong>left join</strong> 的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。</p>
+<p>假设有两张表：</p>
+<p>表1：tab1</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">id size</span><br><span class="line">1  10</span><br><span class="line">2  20</span><br><span class="line">3  30</span><br></pre></td></tr></table></figure>
 
+<p>表2：tab2</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">size name</span><br><span class="line">10   AAA</span><br><span class="line">20   BBB</span><br><span class="line">20   CCC</span><br></pre></td></tr></table></figure>
 
-<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><h3 id="案例描述"><a href="#案例描述" class="headerlink" title="案例描述"></a>案例描述</h3><p>统计出一篇文章的高频词汇（只收集出现次数大于3的单词），去除谓词，并且过滤掉敏感词汇。</p>
-<h3 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h3><p>在MapTask中有三个子Mapper，分别命名为M1,M2,M3，在ReduceTask阶段有一个Reduce命名为R1和一个Mpaaer命名为RM1。</p>
-<h4 id="MapTask阶段"><a href="#MapTask阶段" class="headerlink" title="MapTask阶段"></a>MapTask阶段</h4><p>M1负责将文本内容按行切分每个单词，M2负责将M1输出的单词进行谓词过滤，M3将M2输出的内容进行敏感词过滤。</p>
-<h4 id="ReduceTask阶段"><a href="#ReduceTask阶段" class="headerlink" title="ReduceTask阶段"></a>ReduceTask阶段</h4><p>Reduce过程中R1负责将shuffle阶段中的单词进行统计，统计好之后将结果交给RM1处理，RM1主要是将单词数量大于5的单词进行输出。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by yanzhe on 2017/8/18.</span><br><span class="line"> */</span><br><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        args = new String[]&#123;&quot;d:/java/mr/data/data.txt&quot;, &quot;d:/java/mr/out&quot;&#125; ;</span><br><span class="line"></span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line"></span><br><span class="line">        FileSystem fs = FileSystem.get(conf) ;</span><br><span class="line"></span><br><span class="line">        Path outPath = new Path(args[1]) ;</span><br><span class="line">        if (fs.exists(outPath))&#123;</span><br><span class="line">            fs.delete(outPath,true) ;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Job job = Job.getInstance(conf) ;</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper1.class, LongWritable.class, Text.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper2.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper3.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.setReducer(job, Reducer1.class, Text.class, IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.addMapper(job, ReducerMapper1.class, Text.class,</span><br><span class="line">                IntWritable.class, Text.class, IntWritable.class, job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        FileInputFormat.addInputPath(job,new Path(args[0]));</span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job,outPath);</span><br><span class="line"></span><br><span class="line">        job.setNumReduceTasks(2);</span><br><span class="line">        job.setCombinerClass(Combiner1.class);</span><br><span class="line">        job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line"></span><br><span class="line">        job.waitForCompletion(true) ;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public class Mapper1 extends Mapper&lt;LongWritable, Text, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map1===========&quot; + value.toString());</span><br><span class="line">            String line = value.toString() ;</span><br><span class="line">            String[] strArr = line.split(&quot; &quot;) ;</span><br><span class="line"></span><br><span class="line">            for (String w: strArr) &#123;</span><br><span class="line">                context.write(new Text(w), new IntWritable(1));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Mapper2 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map2==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;of&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;of&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class Mapper3 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map3==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;google&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;xxx&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Reducer1 extends Reducer&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(Text key, Iterable&lt;IntWritable&gt; values, Context context) </span><br><span class="line">        throws IOException, InterruptedException &#123;</span><br><span class="line">            int count = 0 ;</span><br><span class="line">            for (IntWritable iw: values) &#123;</span><br><span class="line">                count += iw.get();</span><br><span class="line">            &#125;</span><br><span class="line">            context.write(key, new IntWritable(count));</span><br><span class="line">            System.out.println(&quot;reduce=========&quot; + key.toString() + &quot;:&quot; + count);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class ReducerMapper1 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            if (value.get() &gt; 5)</span><br><span class="line">                context.write(key, value);</span><br><span class="line"></span><br><span class="line">            System.out.println(&quot;reduceMap======&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>两条SQL:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1、select * from tab1 left join tab2 on tab1.size = tab2.size where tab2.name=&#x27;AAA&#x27;</span><br><span class="line">2、select * from tab1 left join tab2 on tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br></pre></td></tr></table></figure>
 
-<p>原文链接：<a href="https://blog.csdn.net/u010521842/article/details/77413104">https://blog.csdn.net/u010521842/article/details/77413104</a></p>
+<p><strong>第一条SQL的过程：</strong></p>
+<p>1、中间表</p>
+<p>on 条件:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tab1.size = tab2.size</span><br><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 20 BBB</span><br><span class="line">2 20 20 CCC</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
+
+<p>2、再对中间表过滤</p>
+<p>where 条件：</p>
+<p>tab2.name=’AAA’</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br></pre></td></tr></table></figure>
+
+<p><strong>第二条SQL的过程：</strong></p>
+<p>1、中间表</p>
+<p>on 条件:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br><span class="line">(条件不为真也会返回左表中的记录) tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 (null) (null)</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
+
+<p>其实以上结果的关键原因就是 <strong>left join,right join,full join</strong> 的特殊性。</p>
+<p>不管 on 上的条件是否为真都会返回 left 或 right 表中的记录，full 则具有 left 和 right 的特性的并集。</p>
+<p>而 inner jion 没这个特殊性，则条件放在 on 中和 where 中，返回的结果集是相同的。</p>
+<h2 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h2><ul>
+<li><p>SQL标准要求HAVING必须仅引用GROUP BY子句中的列或聚合函数中使用的列。 但是，MySQL支持对此行为的扩展，并允许HAVING引用SELECT列表中的列和外部子查询中的列。</p>
+<p>如果HAVING子句引用了不明确的列，则会出现警告。在下面的语句中，col2不明确，因为它同时用作别名和列名:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(col1) <span class="keyword">AS</span> col2 <span class="keyword">FROM</span> t <span class="keyword">GROUP</span> <span class="keyword">BY</span> col2 <span class="keyword">HAVING</span> col2 <span class="operator">=</span> <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+
+<p>优先考虑标准SQL行为，因此如果HAVING使用的列名同时出现在GROUP BY和输出列列表使用的别名中，则会优先选择GROUP BY列中的列名。</p>
+</li>
+<li><p>不要对应该出现在WHERE子句中的项使用HAVING。例如，不要写下面的内容</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">HAVING</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p>改为写这个:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">WHERE</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure></li>
+<li><p>HAVING子句可以引用聚合函数，而WHERE子句不能</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">user</span>, <span class="built_in">MAX</span>(salary) <span class="keyword">FROM</span> users <span class="keyword">GROUP</span> <span class="keyword">BY</span> <span class="keyword">user</span> <span class="keyword">HAVING</span> <span class="built_in">MAX</span>(salary) <span class="operator">&gt;</span> <span class="number">10</span>;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>参考链接：</p>
+<p><a href="https://blog.csdn.net/horses/article/details/105380420">https://blog.csdn.net/horses/article/details/105380420</a></p>
+<p><a href="https://www.runoob.com/w3cnote/sql-different-on-and-where.html">https://www.runoob.com/w3cnote/sql-different-on-and-where.html</a></p>
+<p><a href="https://www.cnblogs.com/BxScope/p/10859260.html">https://www.cnblogs.com/BxScope/p/10859260.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1645,96 +1830,21 @@
 ]]></content>
   </entry>
   <entry>
-    <title>SQL:WHERE、ON、HAVING的区别</title>
-    <url>/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
-    <content><![CDATA[<h2 id="WHERE-与-HAVING"><a href="#WHERE-与-HAVING" class="headerlink" title="WHERE 与 HAVING"></a>WHERE 与 HAVING</h2><p><code>WHERE</code>与<code>HAVING</code>的根本区别在于：</p>
-<ul>
-<li><code>WHERE</code>子句在<code>GROUP BY</code>分组和聚合函数<strong>之前</strong>对数据行进行过滤；</li>
-<li><code>HAVING</code>子句对<code>GROUP BY</code>分组和聚合函数<strong>之后</strong>的数据行进行过滤。</li>
-</ul>
-<p>因此，<code>WHERE</code>子句中不能使用聚合函数。例如，以下语句将会返回错误：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">where <span class="title">count</span><span class="params">(*)</span> &gt; 5</span></span><br><span class="line"><span class="function">group by dept_id</span>;</span><br></pre></td></tr></table></figure>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
 
-<p>由于在执行<code>WHERE</code>子句时，还没有计算聚合函数 count(*)，所以无法使用。正确的方法是使用HAVING对聚合之后的结果进行过滤：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 查找人数大于 <span class="number">5</span> 的部门</span><br><span class="line">select dept_id, count(*)</span><br><span class="line"><span class="function">from employee</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 5</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">4</span>|       <span class="number">9</span>|</span><br><span class="line">      <span class="number">5</span>|       <span class="number">8</span>|</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
 
-<p>另一方面，<code>HAVING</code>子句中不能使用除了分组字段和聚合函数之外的其他字段。例如，以下语句将会返回错误：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 统计每个部门月薪大于等于 <span class="number">30000</span> 的员工人数</span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having salary &gt;= <span class="number">30000</span>;</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
 
-<p>因为经过<code>GROUP BY</code>分组和聚合函数之后，不再存在 salary 字段，<code>HAVING</code>子句中只能使用分组字段或者聚合函数。</p>
-<blockquote>
-<p>SQLite 虽然允许<code>HAVING</code>子句中出现其他字段，但是得到的结果不正确。</p>
-</blockquote>
-<p>从性能的角度来说，<code>HAVING</code>子句中如果使用了分组字段作为过滤条件，应该替换成<code>WHERE</code>子句；因为<code>WHERE</code>可以在执行分组操作和计算聚合函数之前过滤掉不需要的数据，性能会更好。下面示例中的语句 1 应该替换成语句 2：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">group by dept_id</span><br><span class="line">having dept_id = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where dept_id = <span class="number">1</span></span><br><span class="line">group by dept_id;</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
-<p>当然，<code>WHERE</code>和<code>HAVING</code>可以组合在一起使用。例如：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">select dept_id, count(*)</span><br><span class="line">from employee</span><br><span class="line">where salary &gt; <span class="number">10000</span></span><br><span class="line"><span class="function">group by dept_id</span></span><br><span class="line"><span class="function">having <span class="title">count</span><span class="params">(*)</span> &gt; 1</span>;</span><br><span class="line">dept_id|count(*)|</span><br><span class="line">-------|--------|</span><br><span class="line">      <span class="number">1</span>|       <span class="number">3</span>|</span><br></pre></td></tr></table></figure>
-
-<p>该语句返回了月薪大于 10000 的员工人数大于 1 的部门；<code>WHERE</code>用于过滤月薪大于 10000 的员工；<code>HAVING</code>用于过滤员工数量大于 1 的部门。</p>
-<h2 id="WHERE-与-ON"><a href="#WHERE-与-ON" class="headerlink" title="WHERE 与 ON"></a>WHERE 与 ON</h2><p>当查询涉及多个表的关联时，我们既可以使用<code>WHERE</code>子句也可以使用<code>ON</code>子句指定连接条件和过滤条件。这两者之间的主要区别在于：</p>
-<ul>
-<li>对于内连接（inner join）查询，<code>WHERE</code>和<code>ON</code>中的过滤条件等效；</li>
-<li>对于外连接（outer join）查询，<code>ON</code>中的过滤条件在连接操作之前执行，<code>WHERE</code>中的过滤条件（逻辑上）在连接操作之后执行。</li>
-</ul>
-<p>对于内连接查询而言，以下三个语句的结果相同：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">-- 语句 <span class="number">1</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.salary </span><br><span class="line">from employee e, department d</span><br><span class="line">where e.dept_id = d.dept_id</span><br><span class="line">and e.emp_id = <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">2</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id and e.emp_id = <span class="number">10</span>)</span></span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br><span class="line"></span><br><span class="line">-- 语句 <span class="number">3</span></span><br><span class="line">select d.dept_name, e.emp_name, e.sex, e.<span class="function">salary </span></span><br><span class="line"><span class="function">from employee e</span></span><br><span class="line"><span class="function">join department d <span class="title">on</span> <span class="params">(e.dept_id = d.dept_id)</span></span></span><br><span class="line"><span class="function">where e.emp_id </span>= <span class="number">10</span>;</span><br><span class="line">dept_name|emp_name|sex|salary |</span><br><span class="line">---------|--------|---|-------|</span><br><span class="line">研发部   |廖化    |男  |<span class="number">6500.00</span>|</span><br></pre></td></tr></table></figure>
-
-<p>语句 1 在<code>WHERE</code>中指定连接条件和过滤条件；语句 2 在<code>ON</code>中指定连接条件和过滤条件；语句 3 在<code>ON</code>中指定连接条件，在<code>WHERE</code>中指定其他过滤条件。上面语句不但结果相同，数据库的执行计划也相同。以 MySQL 为例，以上语句的执行计划如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">id|select_type|table|partitions|type |possible_keys       |key    |key_len|ref  |rows|filtered|Extra|</span><br><span class="line">--|-----------|-----|----------|-----|--------------------|-------|-------|-----|----|--------|-----|</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |e    |          |<span class="keyword">const</span>|PRIMARY,idx_emp_dept|PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br><span class="line"> <span class="number">1</span>|SIMPLE     |d    |          |<span class="keyword">const</span>|PRIMARY             |PRIMARY|<span class="number">4</span>      |<span class="keyword">const</span>|   <span class="number">1</span>|     <span class="number">100</span>|     |</span><br></pre></td></tr></table></figure>
-
-<p>尽管如此，仍然建议将两个表的连接条件放在<code>ON</code>子句中，将其他过滤条件放在<code>WHERE</code>子句中；这样语义更加明确，更容易阅读和理解。对于上面的示例而言，推荐使用语句 3 的写法。</p>
-<p>数据库在通过连接两张或多张表来返回记录时，都会生成一张中间的临时表，然后再将这张临时表返回给用户。</p>
-<p>在使用 <strong>left join</strong> 时，<strong>on</strong> 和 <strong>where</strong> 条件的区别如下：</p>
-<p>1、<strong>on</strong> 条件是在生成临时表时使用的条件，它不管 <strong>on</strong> 中的条件是否为真，都会返回左边表中的记录。</p>
-<p>2、where 条件是在临时表生成好后，再对临时表进行过滤的条件。这时已经没有 <strong>left join</strong> 的含义（必须返回左边表的记录）了，条件不为真的就全部过滤掉。</p>
-<p>假设有两张表：</p>
-<p>表1：tab1</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">id size</span><br><span class="line">1  10</span><br><span class="line">2  20</span><br><span class="line">3  30</span><br></pre></td></tr></table></figure>
-
-<p>表2：tab2</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">size name</span><br><span class="line">10   AAA</span><br><span class="line">20   BBB</span><br><span class="line">20   CCC</span><br></pre></td></tr></table></figure>
-
-<p>两条SQL:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1、select * from tab1 left join tab2 on tab1.size = tab2.size where tab2.name=&#x27;AAA&#x27;</span><br><span class="line">2、select * from tab1 left join tab2 on tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br></pre></td></tr></table></figure>
-
-<p><strong>第一条SQL的过程：</strong></p>
-<p>1、中间表</p>
-<p>on 条件:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tab1.size = tab2.size</span><br><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 20 BBB</span><br><span class="line">2 20 20 CCC</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
-
-<p>2、再对中间表过滤</p>
-<p>where 条件：</p>
-<p>tab2.name=’AAA’</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br></pre></td></tr></table></figure>
-
-<p><strong>第二条SQL的过程：</strong></p>
-<p>1、中间表</p>
-<p>on 条件:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tab1.size = tab2.size and tab2.name=&#x27;AAA&#x27;</span><br><span class="line">(条件不为真也会返回左表中的记录) tab1.id tab1.size tab2.size tab2.name</span><br><span class="line">1 10 10 AAA</span><br><span class="line">2 20 (null) (null)</span><br><span class="line">3 30 (null) (null)</span><br></pre></td></tr></table></figure>
-
-<p>其实以上结果的关键原因就是 <strong>left join,right join,full join</strong> 的特殊性。</p>
-<p>不管 on 上的条件是否为真都会返回 left 或 right 表中的记录，full 则具有 left 和 right 的特性的并集。</p>
-<p>而 inner jion 没这个特殊性，则条件放在 on 中和 where 中，返回的结果集是相同的。</p>
-<h2 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h2><ul>
-<li><p>SQL标准要求HAVING必须仅引用GROUP BY子句中的列或聚合函数中使用的列。 但是，MySQL支持对此行为的扩展，并允许HAVING引用SELECT列表中的列和外部子查询中的列。</p>
-<p>如果HAVING子句引用了不明确的列，则会出现警告。在下面的语句中，col2不明确，因为它同时用作别名和列名:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(col1) <span class="keyword">AS</span> col2 <span class="keyword">FROM</span> t <span class="keyword">GROUP</span> <span class="keyword">BY</span> col2 <span class="keyword">HAVING</span> col2 <span class="operator">=</span> <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
-
-<p>优先考虑标准SQL行为，因此如果HAVING使用的列名同时出现在GROUP BY和输出列列表使用的别名中，则会优先选择GROUP BY列中的列名。</p>
-</li>
-<li><p>不要对应该出现在WHERE子句中的项使用HAVING。例如，不要写下面的内容</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">HAVING</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
-
-<p>改为写这个:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> col_name <span class="keyword">FROM</span> tbl_name <span class="keyword">WHERE</span> col_name <span class="operator">&gt;</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure></li>
-<li><p>HAVING子句可以引用聚合函数，而WHERE子句不能</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">user</span>, <span class="built_in">MAX</span>(salary) <span class="keyword">FROM</span> users <span class="keyword">GROUP</span> <span class="keyword">BY</span> <span class="keyword">user</span> <span class="keyword">HAVING</span> <span class="built_in">MAX</span>(salary) <span class="operator">&gt;</span> <span class="number">10</span>;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>参考链接：</p>
-<p><a href="https://blog.csdn.net/horses/article/details/105380420">https://blog.csdn.net/horses/article/details/105380420</a></p>
-<p><a href="https://www.runoob.com/w3cnote/sql-different-on-and-where.html">https://www.runoob.com/w3cnote/sql-different-on-and-where.html</a></p>
-<p><a href="https://www.cnblogs.com/BxScope/p/10859260.html">https://www.cnblogs.com/BxScope/p/10859260.html</a></p>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1771,24 +1881,6 @@
 <p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
 <p>参考链接：</p>
 <p><a href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1853,6 +1945,36 @@
 ]]></content>
   </entry>
   <entry>
+    <title>什么是尾递归</title>
+    <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
+    <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
+<span id="more"></span>
+
+<h4 id="二、实例"><a href="#二、实例" class="headerlink" title="二、实例"></a>二、实例</h4><p>以递归的形式计算阶乘：</p>
+<p>线性递归:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">Rescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? <span class="number">1</span> : n * Rescuvie(n - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>尾递归:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n, <span class="keyword">long</span> a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? a : TailRescuvie(n - <span class="number">1</span>, a * n); </span><br><span class="line">&#125; </span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;<span class="comment">//封装用的</span></span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">0</span>) ? <span class="number">1</span> : TailRescuvie(n, <span class="number">1</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当n = 5时<br>对于传统线性递归, 他的递归过程如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rescuvie(5)</span><br><span class="line"></span><br><span class="line">&#123;5 * Rescuvie(4)&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * Rescuvie(3)&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * Rescuvie(2)&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * Rescuvie(1)&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * 1&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * 2&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * 6&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * 24&#125;</span><br><span class="line"></span><br><span class="line">120</span><br></pre></td></tr></table></figure>
+
+<p>对于尾递归, 他的递归过程如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TailRescuvie(5)                  // 所以在运算上和内存占用上节省了很多,直接传回结果</span><br><span class="line"></span><br><span class="line">TailRescuvie(5, 1)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(4, 5)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(3, 20)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(2, 60)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(1, 120)                       return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">120                                //当运行到最后时,return a =&gt; return 120 ,将120返回上一级</span><br></pre></td></tr></table></figure>
+
+<p>说明：其实尾递归也需要下层往上层返回结果，但在返回的过程中不用再做计算，依次返回结果即可。从上可以看到尾递归把返回结果放到了调用的参数里。这个细小的变化导致，TailRescuvie(n)不必像以前一样，非要等到拿到了TailRescuvie(n-1)的返回值，才能计算它自己的返回结果,它完全就等于TailRescuvie(n-1)的返回值。因此理论上：TailRescuvie(n)在调用tailTailRescuvie(n-1)前，完全就可以先销毁自己放在栈上的东西。</p>
+<h4 id="三、优势"><a href="#三、优势" class="headerlink" title="三、优势"></a>三、优势</h4><p>​    与普通递归相比，由于尾递归的调用处于方法的最后，因此方法之前所积累下的各种状态对于递归调用结果已经没有任何意义，因此每一个函数在调用下一个函数之前，都能做到先把当前自己占用的栈给先释放了，尾递归的调用链上可以做到只有一个函数在使用栈，因此可以无限地调用！</p>
+<p>​    但是，上述的优化是在<strong>某些语言</strong>编译器的优化支持上实现的，尾递归本身并不能消除函数调用栈过长的问题。在一般递归函数func()中，func(n)是依赖于 func(n-1) 的，func(n) 只有在得到 func(n-1) 的结果之后，才能计算它自己的返回值，因此理论上，在 func(n-1) 返回之前，func(n)，不能结束返回。因此func(n)就必须保留它在栈上的数据，直到func(n-1)先返回，而尾递归的实现则可以在编译器的帮助下，消除这个限制。</p>
+<h4 id="四、尾递归的调用栈优化特性"><a href="#四、尾递归的调用栈优化特性" class="headerlink" title="四、尾递归的调用栈优化特性"></a>四、尾递归的调用栈优化特性</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">int tail_func(int n, int res)&#123;</span><br><span class="line">     if (n &lt;= 1) return res;</span><br><span class="line">     return tail_func(n - 1, n * res);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main()&#123;</span><br><span class="line">    int dummy[1024*1024]; // 尽可能占用栈。</span><br><span class="line">    tail_func(2048*2048, 1);</span><br><span class="line">    return 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>​    上面这个程序在开了编译优化和没开编译优化的情况下编出来的结果是<strong>不一样</strong>的，如果不开启优化，直接 <code>gcc -o tr func_tail.c</code> 编译然后运行的话，程序会爆栈崩溃，但如果开优化的话：<code>gcc -o tr -O2 func_tail.c</code>，上面的程序最后就能正常运行。 这里面的原因就在于，尾递归的写法只是具备了使当前函数在调用下一个函数前把当前占有的栈销毁，但是会不会真的这样做，是要具体看编译器是否最终这样做，如果在语言层面上，没有规定要优化这种尾调用，那编译器就可以有自己的选择来做不同的实现，在这种情况下，尾递归就不一定能解决一般递归的问题。</p>
+<p>参考链接:</p>
+<p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
+<p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>关于服务器上测试自定义编译的spark没反应问题</title>
     <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
     <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
@@ -1885,36 +2007,6 @@
 <p>再次测试：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>什么是尾递归</title>
-    <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
-    <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
-<span id="more"></span>
-
-<h4 id="二、实例"><a href="#二、实例" class="headerlink" title="二、实例"></a>二、实例</h4><p>以递归的形式计算阶乘：</p>
-<p>线性递归:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">Rescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? <span class="number">1</span> : n * Rescuvie(n - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>尾递归:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n, <span class="keyword">long</span> a)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">1</span>) ? a : TailRescuvie(n - <span class="number">1</span>, a * n); </span><br><span class="line">&#125; </span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">TailRescuvie</span><span class="params">( <span class="keyword">long</span> n)</span> </span>&#123;<span class="comment">//封装用的</span></span><br><span class="line">    <span class="keyword">return</span> (n == <span class="number">0</span>) ? <span class="number">1</span> : TailRescuvie(n, <span class="number">1</span>); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>当n = 5时<br>对于传统线性递归, 他的递归过程如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Rescuvie(5)</span><br><span class="line"></span><br><span class="line">&#123;5 * Rescuvie(4)&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * Rescuvie(3)&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * Rescuvie(2)&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * Rescuvie(1)&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * &#123;2 * 1&#125;&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * &#123;3 * 2&#125;&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * &#123;4 * 6&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;5 * 24&#125;</span><br><span class="line"></span><br><span class="line">120</span><br></pre></td></tr></table></figure>
-
-<p>对于尾递归, 他的递归过程如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TailRescuvie(5)                  // 所以在运算上和内存占用上节省了很多,直接传回结果</span><br><span class="line"></span><br><span class="line">TailRescuvie(5, 1)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(4, 5)                         return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(3, 20)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(2, 60)                        return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">TailRescuvie(1, 120)                       return 120</span><br><span class="line">                                                 ↑</span><br><span class="line">120                                //当运行到最后时,return a =&gt; return 120 ,将120返回上一级</span><br></pre></td></tr></table></figure>
-
-<p>说明：其实尾递归也需要下层往上层返回结果，但在返回的过程中不用再做计算，依次返回结果即可。从上可以看到尾递归把返回结果放到了调用的参数里。这个细小的变化导致，TailRescuvie(n)不必像以前一样，非要等到拿到了TailRescuvie(n-1)的返回值，才能计算它自己的返回结果,它完全就等于TailRescuvie(n-1)的返回值。因此理论上：TailRescuvie(n)在调用tailTailRescuvie(n-1)前，完全就可以先销毁自己放在栈上的东西。</p>
-<h4 id="三、优势"><a href="#三、优势" class="headerlink" title="三、优势"></a>三、优势</h4><p>​    与普通递归相比，由于尾递归的调用处于方法的最后，因此方法之前所积累下的各种状态对于递归调用结果已经没有任何意义，因此每一个函数在调用下一个函数之前，都能做到先把当前自己占用的栈给先释放了，尾递归的调用链上可以做到只有一个函数在使用栈，因此可以无限地调用！</p>
-<p>​    但是，上述的优化是在<strong>某些语言</strong>编译器的优化支持上实现的，尾递归本身并不能消除函数调用栈过长的问题。在一般递归函数func()中，func(n)是依赖于 func(n-1) 的，func(n) 只有在得到 func(n-1) 的结果之后，才能计算它自己的返回值，因此理论上，在 func(n-1) 返回之前，func(n)，不能结束返回。因此func(n)就必须保留它在栈上的数据，直到func(n-1)先返回，而尾递归的实现则可以在编译器的帮助下，消除这个限制。</p>
-<h4 id="四、尾递归的调用栈优化特性"><a href="#四、尾递归的调用栈优化特性" class="headerlink" title="四、尾递归的调用栈优化特性"></a>四、尾递归的调用栈优化特性</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line"></span><br><span class="line">int tail_func(int n, int res)&#123;</span><br><span class="line">     if (n &lt;= 1) return res;</span><br><span class="line">     return tail_func(n - 1, n * res);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main()&#123;</span><br><span class="line">    int dummy[1024*1024]; // 尽可能占用栈。</span><br><span class="line">    tail_func(2048*2048, 1);</span><br><span class="line">    return 1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>​    上面这个程序在开了编译优化和没开编译优化的情况下编出来的结果是<strong>不一样</strong>的，如果不开启优化，直接 <code>gcc -o tr func_tail.c</code> 编译然后运行的话，程序会爆栈崩溃，但如果开优化的话：<code>gcc -o tr -O2 func_tail.c</code>，上面的程序最后就能正常运行。 这里面的原因就在于，尾递归的写法只是具备了使当前函数在调用下一个函数前把当前占有的栈销毁，但是会不会真的这样做，是要具体看编译器是否最终这样做，如果在语言层面上，没有规定要优化这种尾调用，那编译器就可以有自己的选择来做不同的实现，在这种情况下，尾递归就不一定能解决一般递归的问题。</p>
-<p>参考链接:</p>
-<p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
-<p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2131,6 +2223,23 @@
 <li><p><a href="https://www.cnblogs.com/cc11001100/p/10301716.html">Spark笔记之数据本地性（data locality）</a></p>
 </li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2458,23 +2567,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2899,6 +2991,338 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Linux快速整理</title>
+    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<p>环境搭建:</p>
+<p>vmware虚拟机+XShell登录虚拟机</p>
+<p>Linux快速整理：</p>
+<ol>
+<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
+</li>
+<li><p><code>pwd</code>查看当前所在目录路径地址</p>
+<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
+<span id="more"></span></li>
+<li><p>切换目录 <code>cd</code></p>
+<p>root用户的家目录：/root</p>
+<p>xxx用户的家目录：/home/xxx 默认</p>
+<p>家目录的修改：vi /etc/passwd 默认不修改</p>
+<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
+<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
+<p><code>cd -</code>回到上一次访问的目录</p>
+<p><code>cd ../</code> 回退上一层目录</p>
+<p><code>cd ../../</code> 回退上两层目录</p>
+</li>
+<li><p>目录 文件夹</p>
+<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
+<p>​                    写shell脚本时，路径要用绝对路径。</p>
+<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
+<p>查看当前文件夹下的内容 <code>ls</code></p>
+</li>
+<li><p>清空屏幕 <code>clear</code></p>
+</li>
+<li><p>ls查看当前光标所在的目录 文件有哪些</p>
+<p><code>ls -l</code>  等价于`ll``</p>
+<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
+<p><code>ll -h</code> 显示文件的大小</p>
+<p><code>ll -rt</code> 按时间排序</p>
+</li>
+<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
+</li>
+<li><p>创建文件夹 <code>mkdir</code> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
+
+<p>选项与参数：</p>
+<ul>
+<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
+<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
+</ul>
+<p>例如 </p>
+<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
+<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
+<p>删除空的目录：<code>rmdir</code></p>
+<p>选项与参数：</p>
+<ul>
+<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
+</ul>
+</li>
+<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
+<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
+<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
+<p><strong>思考：mv和cp哪个执行快？</strong></p>
+<ul>
+<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
+<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
+<li>都可修改名称。</li>
+</ul>
+</li>
+<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
+<ul>
+<li><p>touch rz.log 如何创建一个空文件</p>
+<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
+</li>
+<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
+</li>
+<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
+</li>
+</ul>
+</li>
+<li><p>查看文件内容</p>
+<ul>
+<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
+<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
+</li>
+<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
+<p>空白键（space）- 往下一页显示</p>
+<p>b  - 往回（back）一页显示</p>
+<p>q  - 退出more</p>
+</li>
+<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
+<p>/字符串：向下搜索”字符串”的功能</p>
+<p>?字符串：向上搜索”字符串”的功能</p>
+<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
+<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
+<p>G ：移动到最后一行</p>
+<p>g：移动到第一行</p>
+<p>q / ZZ ：-退出 less 命令</p>
+</li>
+</ul>
+<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
+<p><strong>log日志，内容较多，用tail命令</strong></p>
+<ul>
+<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
+<p>实时查看</p>
+<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
+<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
+<p>补充：flume exec source 切记使用 -F</p>
+<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
+<p>-c&lt;数目&gt; 显示的字节数</p>
+<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
+<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
+</li>
+</ul>
+</li>
+<li><p>文件上传下载工具</p>
+<p>安装： <code>yum install -y lrzsz</code></p>
+<p>文件下载到windows：<code>sz</code></p>
+<p>windows上传到linux: <code>rz</code></p>
+</li>
+<li><p>如何定位ERROR</p>
+<ul>
+<li><p>文件内容很小，几十兆</p>
+<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
+</li>
+<li><p>文件内容很大，几百兆 2G</p>
+<p>cat xxx.log | grep ERROR</p>
+<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
+</li>
+</ul>
+</li>
+<li><p>grep命令</p>
+<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
+<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
+<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
+<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
+<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
+<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
+</li>
+<li><p>环境变量$PATH</p>
+<p>打印环境变量：<code>echo $PATH</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
+
+<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
+
+<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
+<pre><code>                      ~/.bashrc       个人 不给其他人
+</code></pre>
+<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+<p>生效文件: <code>source xxxx</code></p>
+<pre><code>              `. ~/.bashrc`
+</code></pre>
+<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
+<p>配置环境变量:<code>vi /etc/profile</code></p>
+<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
+<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
+<p>export PATH=$JAVA_HOME/bin:$PATH</p>
+<p>新配置的变量在前面追加</p>
+<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
+
+<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
+</li>
+<li><p>别名alias</p>
+<p><code>alias</code> 命令用于设置指令的别名。</p>
+<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+</li>
+<li><p>查看历史命令history</p>
+<p>当前命令输入状态下：</p>
+<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
+
+*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
+</code></pre>
+<ul>
+<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
+<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
+</li>
+</ul>
+<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
+<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
+<p>使用! 执行历史命令。</p>
+<pre><code>* `!  [n]`  n为数字 执行第n条命令
+</code></pre>
+<ul>
+<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
+<li><code>!!</code> 执行上一条</li>
+</ul>
+<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
+<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
+</li>
+<li><p>删除<br>生成新文件:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
+
+<p>创建文件夹: <code>mkdir</code> </p>
+<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
+<ul>
+<li><p>-i 删除前逐一询问确认。</p>
+</li>
+<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
+</li>
+<li><p>-r 将目录及以下之档案亦逐一删除。</p>
+<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
+<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
+<p>K=’/home/jepson’</p>
+<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
+<li><p>用户 用户组</p>
+<p>创建用户：<code>useradd username</code></p>
+<p>查看用户信息：<code>id username</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
+
+<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
+<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
+<p>删除用户:<code>userdel username</code></p>
+<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
+<p>模拟切换用户丢失样式</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
+
+<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>创建用户组：<code>groupadd groupname</code></p>
+<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
+
+<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
+<p>切换用户：<code>su</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
+
+<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
+<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
+<p>用户权限问题：connection连接拒绝、Permission denied</p>
+<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
+
+<p>/etc/passwd:</p>
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
+</li>
+<li><p>权限：chown chmod</p>
+<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
+
+<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
+<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
+<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
+</li>
+<li><p>查看大小</p>
+<p>文件：</p>
+<ul>
+<li>ll</li>
+<li>du -sh </li>
+</ul>
+<p>文件夹：</p>
+<ul>
+<li>du -sh</li>
+<li>用ll看到的并不是文件夹大小</li>
+</ul>
+</li>
+<li><p>删除执行中的程序或工作:<code>kill</code></p>
+<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
+<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
+<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
+<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
+<ul>
+<li>1 (HUP)：重新加载进程。</li>
+<li>2（INT）：中断（同 Ctrl + C）</li>
+<li>3（QUIT）：退出（同 Ctrl + \）</li>
+<li>9 (KILL)：强制杀死一个进程。</li>
+<li>15 (TERM)：正常停止一个进程。</li>
+</ul>
+<p>杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
+
+<p>强制杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
+
+<p>发送SIGHUP信号，可以使用一下信号</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
+
+<p>杀死指定用户所有进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
+
+<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
+<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
+<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
+<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
+</li>
+<li><p>其他命令</p>
+<ul>
+<li><p>搜索 <code>find</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录中的所有文件列出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
+<li><p>查看进程：<code>ps -ef</code> </p>
+</li>
+<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
+</li>
+<li><p>查看ip通不通：ping ip地址</p>
+</li>
+<li><p>测试端口号连通性：telnet ip地址 端口号</p>
+</li>
+</ul>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
     <title>Linux命令：sed与awk</title>
     <url>/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/</url>
     <content><![CDATA[<p>本文内容转自菜鸟教程(<a href="http://www.runoob.com/">www.runoob.com</a>)</p>
@@ -3284,338 +3708,6 @@
 <p>参考链接：</p>
 <p><a href="https://www.runoob.com/linux/linux-comm-sed.html">https://www.runoob.com/linux/linux-comm-sed.html</a></p>
 <p><a href="https://www.runoob.com/linux/linux-comm-awk.html">https://www.runoob.com/linux/linux-comm-awk.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Linux快速整理</title>
-    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<p>环境搭建:</p>
-<p>vmware虚拟机+XShell登录虚拟机</p>
-<p>Linux快速整理：</p>
-<ol>
-<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
-</li>
-<li><p><code>pwd</code>查看当前所在目录路径地址</p>
-<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
-<span id="more"></span></li>
-<li><p>切换目录 <code>cd</code></p>
-<p>root用户的家目录：/root</p>
-<p>xxx用户的家目录：/home/xxx 默认</p>
-<p>家目录的修改：vi /etc/passwd 默认不修改</p>
-<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
-<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
-<p><code>cd -</code>回到上一次访问的目录</p>
-<p><code>cd ../</code> 回退上一层目录</p>
-<p><code>cd ../../</code> 回退上两层目录</p>
-</li>
-<li><p>目录 文件夹</p>
-<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
-<p>​                    写shell脚本时，路径要用绝对路径。</p>
-<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
-<p>查看当前文件夹下的内容 <code>ls</code></p>
-</li>
-<li><p>清空屏幕 <code>clear</code></p>
-</li>
-<li><p>ls查看当前光标所在的目录 文件有哪些</p>
-<p><code>ls -l</code>  等价于`ll``</p>
-<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
-<p><code>ll -h</code> 显示文件的大小</p>
-<p><code>ll -rt</code> 按时间排序</p>
-</li>
-<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
-</li>
-<li><p>创建文件夹 <code>mkdir</code> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
-
-<p>选项与参数：</p>
-<ul>
-<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
-<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
-</ul>
-<p>例如 </p>
-<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
-<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
-<p>删除空的目录：<code>rmdir</code></p>
-<p>选项与参数：</p>
-<ul>
-<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
-</ul>
-</li>
-<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
-<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
-<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
-<p><strong>思考：mv和cp哪个执行快？</strong></p>
-<ul>
-<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
-<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
-<li>都可修改名称。</li>
-</ul>
-</li>
-<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
-<ul>
-<li><p>touch rz.log 如何创建一个空文件</p>
-<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
-</li>
-<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
-</li>
-<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
-</li>
-</ul>
-</li>
-<li><p>查看文件内容</p>
-<ul>
-<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
-<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
-</li>
-<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
-<p>空白键（space）- 往下一页显示</p>
-<p>b  - 往回（back）一页显示</p>
-<p>q  - 退出more</p>
-</li>
-<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
-<p>/字符串：向下搜索”字符串”的功能</p>
-<p>?字符串：向上搜索”字符串”的功能</p>
-<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
-<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
-<p>G ：移动到最后一行</p>
-<p>g：移动到第一行</p>
-<p>q / ZZ ：-退出 less 命令</p>
-</li>
-</ul>
-<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
-<p><strong>log日志，内容较多，用tail命令</strong></p>
-<ul>
-<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
-<p>实时查看</p>
-<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
-<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
-<p>补充：flume exec source 切记使用 -F</p>
-<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
-<p>-c&lt;数目&gt; 显示的字节数</p>
-<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
-<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
-</li>
-</ul>
-</li>
-<li><p>文件上传下载工具</p>
-<p>安装： <code>yum install -y lrzsz</code></p>
-<p>文件下载到windows：<code>sz</code></p>
-<p>windows上传到linux: <code>rz</code></p>
-</li>
-<li><p>如何定位ERROR</p>
-<ul>
-<li><p>文件内容很小，几十兆</p>
-<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
-</li>
-<li><p>文件内容很大，几百兆 2G</p>
-<p>cat xxx.log | grep ERROR</p>
-<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
-</li>
-</ul>
-</li>
-<li><p>grep命令</p>
-<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
-<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
-<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
-<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
-<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
-<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
-</li>
-<li><p>环境变量$PATH</p>
-<p>打印环境变量：<code>echo $PATH</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
-
-<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
-
-<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
-<pre><code>                      ~/.bashrc       个人 不给其他人
-</code></pre>
-<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-<p>生效文件: <code>source xxxx</code></p>
-<pre><code>              `. ~/.bashrc`
-</code></pre>
-<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
-<p>配置环境变量:<code>vi /etc/profile</code></p>
-<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
-<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
-<p>export PATH=$JAVA_HOME/bin:$PATH</p>
-<p>新配置的变量在前面追加</p>
-<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
-
-<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
-</li>
-<li><p>别名alias</p>
-<p><code>alias</code> 命令用于设置指令的别名。</p>
-<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
-
-<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-</li>
-<li><p>查看历史命令history</p>
-<p>当前命令输入状态下：</p>
-<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
-
-*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
-</code></pre>
-<ul>
-<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
-<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
-</li>
-</ul>
-<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
-<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
-<p>使用! 执行历史命令。</p>
-<pre><code>* `!  [n]`  n为数字 执行第n条命令
-</code></pre>
-<ul>
-<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
-<li><code>!!</code> 执行上一条</li>
-</ul>
-<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
-<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
-
-<p>拓展：</p>
-<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
-</li>
-<li><p>删除<br>生成新文件:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
-
-<p>创建文件夹: <code>mkdir</code> </p>
-<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
-<ul>
-<li><p>-i 删除前逐一询问确认。</p>
-</li>
-<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
-</li>
-<li><p>-r 将目录及以下之档案亦逐一删除。</p>
-<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
-<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
-<p>K=’/home/jepson’</p>
-<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
-<li><p>用户 用户组</p>
-<p>创建用户：<code>useradd username</code></p>
-<p>查看用户信息：<code>id username</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
-
-<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
-<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
-<p>删除用户:<code>userdel username</code></p>
-<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
-<p>模拟切换用户丢失样式</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
-
-<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p>创建用户组：<code>groupadd groupname</code></p>
-<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
-
-<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
-<p>切换用户：<code>su</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
-
-<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
-<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
-<p>用户权限问题：connection连接拒绝、Permission denied</p>
-<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
-
-<p>/etc/passwd:</p>
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
-</li>
-<li><p>权限：chown chmod</p>
-<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
-
-<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
-<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
-<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
-</li>
-<li><p>查看大小</p>
-<p>文件：</p>
-<ul>
-<li>ll</li>
-<li>du -sh </li>
-</ul>
-<p>文件夹：</p>
-<ul>
-<li>du -sh</li>
-<li>用ll看到的并不是文件夹大小</li>
-</ul>
-</li>
-<li><p>删除执行中的程序或工作:<code>kill</code></p>
-<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
-<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
-<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
-<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
-<ul>
-<li>1 (HUP)：重新加载进程。</li>
-<li>2（INT）：中断（同 Ctrl + C）</li>
-<li>3（QUIT）：退出（同 Ctrl + \）</li>
-<li>9 (KILL)：强制杀死一个进程。</li>
-<li>15 (TERM)：正常停止一个进程。</li>
-</ul>
-<p>杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
-
-<p>强制杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
-
-<p>发送SIGHUP信号，可以使用一下信号</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
-
-<p>杀死指定用户所有进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
-
-<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
-<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
-<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
-<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
-</li>
-<li><p>其他命令</p>
-<ul>
-<li><p>搜索 <code>find</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录中的所有文件列出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
-<li><p>查看进程：<code>ps -ef</code> </p>
-</li>
-<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
-</li>
-<li><p>查看ip通不通：ping ip地址</p>
-</li>
-<li><p>测试端口号连通性：telnet ip地址 端口号</p>
-</li>
-</ul>
-</li>
-</ol>
 ]]></content>
   </entry>
   <entry>
