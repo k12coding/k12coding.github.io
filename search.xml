@@ -1288,19 +1288,16 @@
 <p>现在要将其转化为：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1,2,3</span><br><span class="line">c       d       4,5,6</span><br></pre></td></tr></table></figure>
 
-<p>此时需要用到两个内置的UDF：</p>
+<p>此时需要用到内置的UDF：</p>
 <ol>
-<li>cocat_ws(参数1，参数2)，用于进行字符的拼接<br>参数1—指定分隔符<br>参数2—拼接的内容</li>
-<li>collect_set()，它的主要作用是将某字段的值进行去重汇总，产生array类型字段。</li>
+<li>concat_ws(separator, str1, str2, …)：把多个字符串用分隔符进行拼接</li>
+<li>collect_set()：把列聚合成为数据，去重</li>
+<li>collect_list()：把列聚合成为数组，不去重</li>
 </ol>
 <p>HQL语句为：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, col2, concat_ws(&#x27;,&#x27;, collect_set(col3)) as col3</span><br><span class="line">from row2col</span><br><span class="line">group by col1, col2;</span><br></pre></td></tr></table></figure>
 
 <p>注意：由于使用concat_ws()函数，collect_set()中的字段必须为string类型，如果是其他类型可使用cast(col3 as string)将其转换为string类型。</p>
-<ul>
-<li>collect_list 不去重</li>
-<li>collect_set 去重</li>
-</ul>
 <h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><p>假设有数据表col2row：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   c      d      e</span><br><span class="line">a      1      2      3</span><br><span class="line">b      4      5      6</span><br></pre></td></tr></table></figure>
 
@@ -1320,6 +1317,21 @@
 <p>这里需要使用UDTF（表生成函数）explode()，该函数接受array类型的参数，其作用恰好与collect_set相反，实现将array类型数据行转列。explode配合lateral view实现将某列数据拆分成多行。</p>
 <p>HQL语句为：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, col2, lv.col3 as col3</span><br><span class="line">from col2row </span><br><span class="line">lateral view explode(split(col3, &#x27;,&#x27;)) lv as col3;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>下面看下行转列使用的函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">lateral view explode(split表达式) tableName as columnName</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>tableName 表示虚拟表的名称。</li>
+<li>columnName 表示虚拟表的虚拟字段名称，如果分裂之后有一个列，则写一个即可；如果分裂之后有多个列，按照列的顺序在括号中声明所有虚拟列名，以逗号隔开。</li>
+</ul>
+<p><strong>explode 函数</strong>：处理数组结构的字段，将数组转换成多行。</p>
+<p><strong>Lateral View</strong>：其实explode是一个UDTF函数（一行输入多行输出），这个时候如果要select除了explode得到的字段以外的多个字段，需要创建虚拟表</p>
+<blockquote>
+<p>Lateral View 用于<strong>和UDTF函数【explode,split】结合来使用</strong>。<br>首先通过 UDTF 函数将数据拆分成多行，再将多行结果组合成一个支持别名的虚拟表。<br>主要解决在 select 使用UDTF做查询的过程中查询只能包含单个UDTF，不能包含其它字段以及多个UDTF的情况。<br>语法：LATERAL VIEW udtf(expression) tableAlias AS columnAlias (‘,’ columnAlias)</p>
+</blockquote>
 ]]></content>
   </entry>
   <entry>
@@ -1973,26 +1985,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>spark部署时修改spark-env.sh</title>
-    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
-    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
-
-<p>可以运行Spark</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
-
-<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
-<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
-]]></content>
-  </entry>
-  <entry>
     <title>什么是尾递归</title>
     <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
     <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
@@ -2020,41 +2012,6 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>关于服务器上测试自定义编译的spark没反应问题</title>
-    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
-<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
-
-<p>S2的位置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
-
-<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
-<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
-<p>尝试以绝对路径的方式启动S2：</p>
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
-<p>结果一样，启动的是S1。</p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
-<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
-<p>删除环境变量：</p>
-<ul>
-<li>unset VAL：暂时的，只会在当前环境有效</li>
-<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
-<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
-</ul>
-<p>再次测试：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -2127,6 +2084,41 @@
 <li><p>然后用编辑器修改好文本，发布</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>关于服务器上测试自定义编译的spark没反应问题</title>
+    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
+<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>S2的位置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
+
+<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
+<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
+<p>尝试以绝对路径的方式启动S2：</p>
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
+<p>结果一样，启动的是S1。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
+<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
+<p>删除环境变量：</p>
+<ul>
+<li>unset VAL：暂时的，只会在当前环境有效</li>
+<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
+<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
+</ul>
+<p>再次测试：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
@@ -2426,116 +2418,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>搭建HUE，集成hdfs,Hive,MySQL</title>
-    <url>/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/</url>
-    <content><![CDATA[<p>本机环境：</p>
-<ul>
-<li>hdfs伪分布式部署</li>
-<li>用户名：hadoop</li>
-<li>hostname:hadoop001</li>
-</ul>
-<h2 id="一、环境准备"><a href="#一、环境准备" class="headerlink" title="一、环境准备"></a>一、环境准备</h2><ol>
-<li><p>Python</p>
-<ul>
-<li>Python 2.7</li>
-<li>Python 3.6+</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# python -V</span><br><span class="line">Python 2.7.18</span><br></pre></td></tr></table></figure></li>
-<li><p>database</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mysql --version</span><br><span class="line">mysql  Ver 14.14 Distrib 5.7.11, for linux-glibc2.5 (x86_64) using  EditLine wrapper</span><br></pre></td></tr></table></figure></li>
-<li><p>OS Packages</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install ant asciidoc cyrus-sasl-devel cyrus-sasl-gssapi cyrus-sasl-plain gcc gcc-c++ krb5-devel libffi-devel libxml2-devel libxslt-devel make mysql mysql-devel openldap-devel python-devel sqlite-devel gmp-devel openssl-devel -y</span><br></pre></td></tr></table></figure></li>
-<li><p>mvn</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mvn -v</span><br><span class="line">Apache Maven 3.8.3 (ff8e977a158738155dc465c6a97ffaf31982d739)</span><br><span class="line">Maven home: /home/hadoop/app/maven</span><br></pre></td></tr></table></figure></li>
-<li><p>NodeJs</p>
-<p>NodeJs版本须为14.X版本</p>
-<p><a href="https://nodejs.org/download/release/v14.18.3/">https://nodejs.org/download/release/v14.18.3/</a></p>
-<p><a href="https://www.cnblogs.com/dch0/p/14485924.html">https://www.cnblogs.com/dch0/p/14485924.html</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 glibc]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 glibc]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
-<li><p>java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ java -version</span><br><span class="line">java version &quot;1.8.0_45&quot;</span><br><span class="line">Java(TM) SE Runtime Environment (build 1.8.0_45-b14)</span><br><span class="line">Java HotSpot(TM) 64-Bit Server VM (build 25.45-b02, mixed mode)</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装"><a href="#二、安装" class="headerlink" title="二、安装"></a>二、安装</h2><ol>
-<li><h3 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h3><p>下载地址：<a href="https://github.com/cloudera/hue">https://github.com/cloudera/hue</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ tar -zvxf hue-release-4.10.0.tar.gz </span><br></pre></td></tr></table></figure></li>
-<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ cd hue-release-4.10.0</span><br><span class="line">[hadoop@hadoop001 hue-release-4.10.0]$ PREFIX=/home/hadoop/software make install</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_01.png" alt="image-20220116020513926"></p>
-</li>
-<li><h3 id="初始化配置"><a href="#初始化配置" class="headerlink" title="初始化配置"></a>初始化配置</h3><p>hue.ini：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[desktop]</span><br><span class="line">  # This is used for secure hashing in the session store.</span><br><span class="line">  secret_key=jFE93j;2[290-eiw.KEiwN2s3[&#x27;d;/.q[eIW^y#e=+Iei*@Mn&lt;qW5o</span><br><span class="line"></span><br><span class="line">  # Webserver listens on this address and port</span><br><span class="line">  http_host=hadoop001</span><br><span class="line">  http_port=8000</span><br><span class="line">  </span><br><span class="line">  # Time zone name</span><br><span class="line">  time_zone=Asia/Shanghai</span><br><span class="line"></span><br><span class="line">  #以下4项不设置，默认adminuser为hue，会在hue目录下创建hue:hue权限的文件，无权限操作</span><br><span class="line">  # Webserver runs as this user</span><br><span class="line">  server_user=hadoop</span><br><span class="line">  server_group=hadoop</span><br><span class="line"></span><br><span class="line">  # This should be the Hue admin and proxy user</span><br><span class="line">  default_user=hadoop</span><br><span class="line"></span><br><span class="line">  # This should be the hadoop cluster admin</span><br><span class="line">  ## default_hdfs_superuser=hadoop</span><br><span class="line"></span><br><span class="line">   </span><br><span class="line">[[database]]</span><br><span class="line">  # Note for MariaDB use the &#x27;mysql&#x27; engine.</span><br><span class="line">  engine=mysql</span><br><span class="line">  host=hadoop001</span><br><span class="line">  port=3306</span><br><span class="line">  user=root</span><br><span class="line">  password=123456</span><br><span class="line">  #保存hue信息的数据库名</span><br><span class="line">  name=hue</span><br></pre></td></tr></table></figure>
-
-<p>配置database这几个属性后，先在mysql中创建数据库hue</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; CREATE DATABASE `hue` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<p>然后执行命令生成元数据，</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ ./build/env/bin/hue migrate</span><br></pre></td></tr></table></figure>
-
-<p>创建成功：</p>
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_02.png" alt="image-20220117205609227"></p>
-<p>此时数据库hue下多了大量与hue信息相关的表。</p>
-</li>
-<li><h3 id="启动hue，第一次访问"><a href="#启动hue，第一次访问" class="headerlink" title="启动hue，第一次访问"></a>启动hue，第一次访问</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">build/env/bin/supervisor</span><br></pre></td></tr></table></figure>
-
-<p>浏览器访问<code>http://hadoop001:8000/</code></p>
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_03.png" alt="image-20220118010237926"></p>
-<p>第一次访问，提示创建超级管理员帐号。</p>
-<p>我们这里创建：用户：hadoop(与hdfs用户同名)；密码：123456；</p>
-<p>成功访问hue页面：</p>
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_04.png" alt="image-20220118010553020"></p>
-</li>
-</ol>
-<h2 id="三、集成hdfs"><a href="#三、集成hdfs" class="headerlink" title="三、集成hdfs"></a>三、集成hdfs</h2><p>hue运行用户为hadoop</p>
-<ul>
-<li><p>hue.ini</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 211 行。 没有安装 Solr，禁用，否则一直报错</span><br><span class="line">app_blacklist=search</span><br><span class="line"></span><br><span class="line">##集成HDFS、YARN</span><br><span class="line">[[hdfs_clusters]]</span><br><span class="line">    # HA support by using HttpFs</span><br><span class="line"> </span><br><span class="line">    [[[default]]]</span><br><span class="line">	  # 211 行。 没有安装 Solr，禁用，否则一直报错</span><br><span class="line">	  app_blacklist=search</span><br><span class="line">	  </span><br><span class="line">      # Enter the filesystem uri</span><br><span class="line">      fs_defaultfs=hdfs://hadoop001:9000</span><br><span class="line">      </span><br><span class="line">      # Use WebHdfs/HttpFs as the communication mechanism.</span><br><span class="line">      # Domain should be the NameNode or HttpFs host.</span><br><span class="line">      # Default port is 14000 for HttpFs.</span><br><span class="line">      webhdfs_url=http://hadoop001:9870/webhdfs/v1</span><br><span class="line">      </span><br><span class="line">      # Directory of the Hadoop configuration</span><br><span class="line">      ## hadoop_conf_dir=$HADOOP_CONF_DIR when set or &#x27;/etc/hadoop/conf&#x27;</span><br><span class="line">      hadoop_conf_dir=$HADOOP_HOME/etc/hadoop</span><br><span class="line"></span><br><span class="line">[[yarn_clusters]]</span><br><span class="line"></span><br><span class="line">  [[[default]]]</span><br><span class="line">    # Enter the host on which you are running the ResourceManager</span><br><span class="line">    resourcemanager_host=hadoop001</span><br><span class="line"></span><br><span class="line">    # The port where the ResourceManager IPC listens on</span><br><span class="line">    resourcemanager_port=8032</span><br><span class="line">    </span><br><span class="line">    # Whether to submit jobs to this cluster</span><br><span class="line">    submit_to=True</span><br><span class="line">    </span><br><span class="line">    # URL of the ResourceManager API</span><br><span class="line">    resourcemanager_api_url=http://hadoop001:8088</span><br><span class="line"></span><br><span class="line">    # URL of the ProxyServer API</span><br><span class="line">    ## proxy_api_url=http://hadoop001:8088</span><br><span class="line"></span><br><span class="line">    # URL of the HistoryServer API</span><br><span class="line">    history_server_api_url=http://hadoop001:19888</span><br></pre></td></tr></table></figure></li>
-<li><p><strong>hdfs-site.xml</strong> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!-- HUE --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;dfs.webhdfs.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;dfs.permissions.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;false&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
-<li><p><strong>core-site.xml</strong> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!-- HUE --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.proxyuser.hadoop.hosts&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;*&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.proxyuser.hadoop.groups&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;*&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>重启hdfs集群，启动hdfs，historyserver</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ start-all.sh </span><br><span class="line">WARNING: Attempting to start all Apache Hadoop daemons as hadoop in 10 seconds.</span><br><span class="line">WARNING: This is not a recommended production deployment configuration.</span><br><span class="line">WARNING: Use CTRL-C to abort.</span><br><span class="line">Starting namenodes on [hadoop001]</span><br><span class="line">Starting datanodes</span><br><span class="line">Starting secondary namenodes [hadoop001]</span><br><span class="line">2022-01-17 17:32:37,771 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Starting resourcemanager</span><br><span class="line">Starting nodemanagers</span><br><span class="line">[hadoop@hadoop001 ~]$ mr-jobhistory-daemon.sh start historyserver</span><br><span class="line">WARNING: Use of this script to start the MR JobHistory daemon is deprecated.</span><br><span class="line">WARNING: Attempting to execute replacement &quot;mapred --daemon start&quot; instead.</span><br><span class="line">[hadoop@hadoop001 ~]$ jps</span><br><span class="line">12770 Jps</span><br><span class="line">12537 JobHistoryServer</span><br><span class="line">11706 SecondaryNameNode</span><br><span class="line">11547 DataNode</span><br><span class="line">11437 NameNode</span><br><span class="line">11934 ResourceManager</span><br><span class="line">12063 NodeManager</span><br></pre></td></tr></table></figure>
-
-<p>CART + C中止前端运行HUE，重启HUE。</p>
-<p>在HUE上浏览hdfs，并对hdfs上的文件进行操作：</p>
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_05.png" alt="image-20220118015137535"></p>
-<h2 id="四、集成Hive"><a href="#四、集成Hive" class="headerlink" title="四、集成Hive"></a>四、集成Hive</h2><p>如果需要配置hue与hive的集成，启动hue前需要启动hiveserver2和metastore服务。</p>
-<p>hue.ini</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[beeswax]</span><br><span class="line"></span><br><span class="line">  # Host where HiveServer2 is running.</span><br><span class="line">  # If Kerberos security is enabled, use fully-qualified domain name (FQDN).</span><br><span class="line">  hive_server_host=hadoop001</span><br><span class="line"></span><br><span class="line">  # Port where HiveServer2 Thrift server runs on.</span><br><span class="line">  hive_server_port=10000</span><br><span class="line">  </span><br><span class="line">  # Hive configuration directory, where hive-site.xml is located</span><br><span class="line">  hive_conf_dir=$HIVE_HOME/conf</span><br><span class="line"></span><br><span class="line">  # Timeout in seconds for thrift calls to Hive service</span><br><span class="line">  server_conn_timeout=120</span><br><span class="line">  </span><br><span class="line">  # Override the default desktop username and password of the hue user used for authentications with other services.</span><br><span class="line">  # e.g. Used for LDAP/PAM pass-through authentication.</span><br><span class="line">  auth_username=root</span><br><span class="line">  auth_password=123456</span><br><span class="line">  </span><br><span class="line">[metastore]</span><br><span class="line">  # Flag to turn on the new version of the create table wizard.</span><br><span class="line">  enable_new_create_table=true</span><br></pre></td></tr></table></figure>
-
-<p>启动hiveserver2和metastore服务。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ nohup hive --service metastore &amp;</span><br><span class="line">[1] 21686</span><br><span class="line">[hadoop@hadoop001 hue]$ nohup: ignoring input and appending output to `nohup.out&#x27;</span><br><span class="line"></span><br><span class="line">[hadoop@hadoop001 hue]$ nohup hive --service hiveserver2 &amp;</span><br><span class="line">[2] 21808</span><br><span class="line">[hadoop@hadoop001 hue]$ nohup: ignoring input and appending output to `nohup.out&#x27;</span><br><span class="line">[hadoop@hadoop001 hue]$ jps</span><br><span class="line">21808 RunJar</span><br><span class="line">16241 NameNode</span><br><span class="line">17333 JobHistoryServer</span><br><span class="line">21686 RunJar</span><br><span class="line">16855 NodeManager</span><br><span class="line">16504 SecondaryNameNode</span><br><span class="line">21913 Jps</span><br><span class="line">16729 ResourceManager</span><br><span class="line">16348 DataNode</span><br><span class="line">[hadoop@hadoop001 hue]$ </span><br></pre></td></tr></table></figure>
-
-<p>启动hue</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ build/env/bin/supervisor</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_06.png" alt="image-20220118133116380"></p>
-<h2 id="五、集成MySQL"><a href="#五、集成MySQL" class="headerlink" title="五、集成MySQL"></a>五、集成MySQL</h2><p>hue.ini:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[[[mysql]]]</span><br><span class="line">   name = MySQL</span><br><span class="line">   interface=sqlalchemy</span><br><span class="line">#   ## https://docs.sqlalchemy.org/en/latest/dialects/mysql.html</span><br><span class="line">   options=&#x27;&#123;&quot;url&quot;: &quot;mysql://root:ruozedata001@hadoop001:3306/hue&quot;&#125;&#x27;</span><br><span class="line">#   ## options=&#x27;&#123;&quot;url&quot;: &quot;mysql://$&#123;USER&#125;:$&#123;PASSWORD&#125;@localhost:3306/hue&quot;&#125;&#x27;</span><br><span class="line"></span><br><span class="line">##以下不添加，则只显示mysql，不显示hive</span><br><span class="line">[[[hive]]]</span><br><span class="line">  name=Hive</span><br><span class="line">  interface=hiveserver2</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_07.png" alt="image-20220118175343069"></p>
-<h2 id="六、安装过程遇到问题"><a href="#六、安装过程遇到问题" class="headerlink" title="六、安装过程遇到问题"></a>六、安装过程遇到问题</h2><ol>
-<li><h3 id="编译过程中，npm超时"><a href="#编译过程中，npm超时" class="headerlink" title="编译过程中，npm超时"></a>编译过程中，npm超时</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_08.png" alt="image-20220116012941045"></p>
-<p>切换镜像源：<code>npm config set registry http://registry.npm.taobao.org</code>后解决。</p>
-</li>
-<li><h3 id="gcc版本过低报错"><a href="#gcc版本过低报错" class="headerlink" title="gcc版本过低报错"></a>gcc版本过低报错</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_09.png" alt="image-20220116032916057"></p>
-<p>升级了GCC版本</p>
-<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_10.png" alt="image-20220116053308177"><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_11.png" alt="image-20220116053335715"></p>
-</li>
-<li><h3 id="mysqlclient-or-MySQL-python"><a href="#mysqlclient-or-MySQL-python" class="headerlink" title="mysqlclient or MySQL-python"></a>mysqlclient or MySQL-python</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_12.png" alt="image-20220116071838895"></p>
-<p>解决：</p>
-<p><a href="https://pypi.org/project/mysqlclient/">https://pypi.org/project/mysqlclient/</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum install python3-devel mysql-devel</span><br></pre></td></tr></table></figure>
-
-<p>install mysqlclient via pip now:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install mysqlclient</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 rh]# python get-pip.py</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting pip&lt;21.0</span><br><span class="line">  Using cached pip-20.3.4-py2.py3-none-any.whl (1.5 MB)</span><br><span class="line">Installing collected packages: pip</span><br><span class="line">  Attempting uninstall: pip</span><br><span class="line">    Found existing installation: pip 20.3.4</span><br><span class="line">    Uninstalling pip-20.3.4:</span><br><span class="line">      Successfully uninstalled pip-20.3.4</span><br><span class="line">Successfully installed pip-20.3.4</span><br><span class="line">[root@hadoop001 rh]# pip install mysqlclient</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting mysqlclient</span><br><span class="line">  Downloading mysqlclient-1.4.6.tar.gz (85 kB)</span><br><span class="line">     |████████████████████████████████| 85 kB 879 kB/s </span><br><span class="line">Building wheels for collected packages: mysqlclient</span><br><span class="line">  Building wheel for mysqlclient (setup.py) ... done</span><br><span class="line">  Created wheel for mysqlclient: filename=mysqlclient-1.4.6-cp27-cp27m-linux_x86_64.whl size=93309 sha256=e8a53d4de8684dfdda60179f73cfb2f8083b3e3051412cdd6d5263782befd504</span><br><span class="line">  Stored in directory: /root/.cache/pip/wheels/04/5f/2b/e542c27913779611971f196081df58f969c742c01d93af1197</span><br><span class="line">Successfully built mysqlclient</span><br><span class="line">Installing collected packages: mysqlclient</span><br><span class="line">Successfully installed mysqlclient-1.4.6</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>数据本地性（data locality）</title>
     <url>/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/</url>
     <content><![CDATA[<h1 id="一、什么是数据本地性（data-locality）"><a href="#一、什么是数据本地性（data-locality）" class="headerlink" title="一、什么是数据本地性（data locality）"></a>一、什么是数据本地性（data locality）</h1><p>大数据中有一个很有名的概念就是“移动数据不如移动计算”，之所以有数据本地性就是因为数据在网络中传输会有不小的I/O消耗，如果能够想办法尽量减少这个I/O消耗就能够提升效率。那么如何减少I/O消耗呢，当然是尽量不让数据在网络上传输，即使无法避免数据在网络上传输，也要尽量缩短传输距离，这个数据需要传输多远的距离（实际意味着数据传输的代价）就是数据本地性，数据本地性根据传输距离分为几个级别，不在网络上传输肯定是最好的级别，其它级别划分依据传输距离越远级别越低，Spark在分配任务的时候会考虑到数据本地性，优先将任务分配给数据本地性最好的Executor执行。</p>
@@ -2584,38 +2466,6 @@
 <p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
 <p>最后，更新软件包缓存</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
-]]></content>
-  </entry>
-  <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2942,6 +2792,168 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
 
 <p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>搭建HUE，集成hdfs,Hive,MySQL</title>
+    <url>/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/</url>
+    <content><![CDATA[<p>本机环境：</p>
+<ul>
+<li>hdfs伪分布式部署</li>
+<li>用户名：hadoop</li>
+<li>hostname:hadoop001</li>
+</ul>
+<h2 id="一、环境准备"><a href="#一、环境准备" class="headerlink" title="一、环境准备"></a>一、环境准备</h2><ol>
+<li><p>Python</p>
+<ul>
+<li>Python 2.7</li>
+<li>Python 3.6+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# python -V</span><br><span class="line">Python 2.7.18</span><br></pre></td></tr></table></figure></li>
+<li><p>database</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mysql --version</span><br><span class="line">mysql  Ver 14.14 Distrib 5.7.11, for linux-glibc2.5 (x86_64) using  EditLine wrapper</span><br></pre></td></tr></table></figure></li>
+<li><p>OS Packages</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install ant asciidoc cyrus-sasl-devel cyrus-sasl-gssapi cyrus-sasl-plain gcc gcc-c++ krb5-devel libffi-devel libxml2-devel libxslt-devel make mysql mysql-devel openldap-devel python-devel sqlite-devel gmp-devel openssl-devel -y</span><br></pre></td></tr></table></figure></li>
+<li><p>mvn</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mvn -v</span><br><span class="line">Apache Maven 3.8.3 (ff8e977a158738155dc465c6a97ffaf31982d739)</span><br><span class="line">Maven home: /home/hadoop/app/maven</span><br></pre></td></tr></table></figure></li>
+<li><p>NodeJs</p>
+<p>NodeJs版本须为14.X版本</p>
+<p><a href="https://nodejs.org/download/release/v14.18.3/">https://nodejs.org/download/release/v14.18.3/</a></p>
+<p><a href="https://www.cnblogs.com/dch0/p/14485924.html">https://www.cnblogs.com/dch0/p/14485924.html</a></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 glibc]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 glibc]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+<li><p>java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ java -version</span><br><span class="line">java version &quot;1.8.0_45&quot;</span><br><span class="line">Java(TM) SE Runtime Environment (build 1.8.0_45-b14)</span><br><span class="line">Java HotSpot(TM) 64-Bit Server VM (build 25.45-b02, mixed mode)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装"><a href="#二、安装" class="headerlink" title="二、安装"></a>二、安装</h2><ol>
+<li><h3 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h3><p>下载地址：<a href="https://github.com/cloudera/hue">https://github.com/cloudera/hue</a></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ tar -zvxf hue-release-4.10.0.tar.gz </span><br></pre></td></tr></table></figure></li>
+<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ cd hue-release-4.10.0</span><br><span class="line">[hadoop@hadoop001 hue-release-4.10.0]$ PREFIX=/home/hadoop/software make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_01.png" alt="image-20220116020513926"></p>
+</li>
+<li><h3 id="初始化配置"><a href="#初始化配置" class="headerlink" title="初始化配置"></a>初始化配置</h3><p>hue.ini：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[desktop]</span><br><span class="line">  # This is used for secure hashing in the session store.</span><br><span class="line">  secret_key=jFE93j;2[290-eiw.KEiwN2s3[&#x27;d;/.q[eIW^y#e=+Iei*@Mn&lt;qW5o</span><br><span class="line"></span><br><span class="line">  # Webserver listens on this address and port</span><br><span class="line">  http_host=hadoop001</span><br><span class="line">  http_port=8000</span><br><span class="line">  </span><br><span class="line">  # Time zone name</span><br><span class="line">  time_zone=Asia/Shanghai</span><br><span class="line"></span><br><span class="line">  #以下4项不设置，默认adminuser为hue，会在hue目录下创建hue:hue权限的文件，无权限操作</span><br><span class="line">  # Webserver runs as this user</span><br><span class="line">  server_user=hadoop</span><br><span class="line">  server_group=hadoop</span><br><span class="line"></span><br><span class="line">  # This should be the Hue admin and proxy user</span><br><span class="line">  default_user=hadoop</span><br><span class="line"></span><br><span class="line">  # This should be the hadoop cluster admin</span><br><span class="line">  ## default_hdfs_superuser=hadoop</span><br><span class="line"></span><br><span class="line">   </span><br><span class="line">[[database]]</span><br><span class="line">  # Note for MariaDB use the &#x27;mysql&#x27; engine.</span><br><span class="line">  engine=mysql</span><br><span class="line">  host=hadoop001</span><br><span class="line">  port=3306</span><br><span class="line">  user=root</span><br><span class="line">  password=123456</span><br><span class="line">  #保存hue信息的数据库名</span><br><span class="line">  name=hue</span><br></pre></td></tr></table></figure>
+
+<p>配置database这几个属性后，先在mysql中创建数据库hue</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; CREATE DATABASE `hue` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>然后执行命令生成元数据，</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ ./build/env/bin/hue migrate</span><br></pre></td></tr></table></figure>
+
+<p>创建成功：</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_02.png" alt="image-20220117205609227"></p>
+<p>此时数据库hue下多了大量与hue信息相关的表。</p>
+</li>
+<li><h3 id="启动hue，第一次访问"><a href="#启动hue，第一次访问" class="headerlink" title="启动hue，第一次访问"></a>启动hue，第一次访问</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">build/env/bin/supervisor</span><br></pre></td></tr></table></figure>
+
+<p>浏览器访问<code>http://hadoop001:8000/</code></p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_03.png" alt="image-20220118010237926"></p>
+<p>第一次访问，提示创建超级管理员帐号。</p>
+<p>我们这里创建：用户：hadoop(与hdfs用户同名)；密码：123456；</p>
+<p>成功访问hue页面：</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_04.png" alt="image-20220118010553020"></p>
+</li>
+</ol>
+<h2 id="三、集成hdfs"><a href="#三、集成hdfs" class="headerlink" title="三、集成hdfs"></a>三、集成hdfs</h2><p>hue运行用户为hadoop</p>
+<ul>
+<li><p>hue.ini</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 211 行。 没有安装 Solr，禁用，否则一直报错</span><br><span class="line">app_blacklist=search</span><br><span class="line"></span><br><span class="line">##集成HDFS、YARN</span><br><span class="line">[[hdfs_clusters]]</span><br><span class="line">    # HA support by using HttpFs</span><br><span class="line"> </span><br><span class="line">    [[[default]]]</span><br><span class="line">	  # 211 行。 没有安装 Solr，禁用，否则一直报错</span><br><span class="line">	  app_blacklist=search</span><br><span class="line">	  </span><br><span class="line">      # Enter the filesystem uri</span><br><span class="line">      fs_defaultfs=hdfs://hadoop001:9000</span><br><span class="line">      </span><br><span class="line">      # Use WebHdfs/HttpFs as the communication mechanism.</span><br><span class="line">      # Domain should be the NameNode or HttpFs host.</span><br><span class="line">      # Default port is 14000 for HttpFs.</span><br><span class="line">      webhdfs_url=http://hadoop001:9870/webhdfs/v1</span><br><span class="line">      </span><br><span class="line">      # Directory of the Hadoop configuration</span><br><span class="line">      ## hadoop_conf_dir=$HADOOP_CONF_DIR when set or &#x27;/etc/hadoop/conf&#x27;</span><br><span class="line">      hadoop_conf_dir=$HADOOP_HOME/etc/hadoop</span><br><span class="line"></span><br><span class="line">[[yarn_clusters]]</span><br><span class="line"></span><br><span class="line">  [[[default]]]</span><br><span class="line">    # Enter the host on which you are running the ResourceManager</span><br><span class="line">    resourcemanager_host=hadoop001</span><br><span class="line"></span><br><span class="line">    # The port where the ResourceManager IPC listens on</span><br><span class="line">    resourcemanager_port=8032</span><br><span class="line">    </span><br><span class="line">    # Whether to submit jobs to this cluster</span><br><span class="line">    submit_to=True</span><br><span class="line">    </span><br><span class="line">    # URL of the ResourceManager API</span><br><span class="line">    resourcemanager_api_url=http://hadoop001:8088</span><br><span class="line"></span><br><span class="line">    # URL of the ProxyServer API</span><br><span class="line">    ## proxy_api_url=http://hadoop001:8088</span><br><span class="line"></span><br><span class="line">    # URL of the HistoryServer API</span><br><span class="line">    history_server_api_url=http://hadoop001:19888</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>hdfs-site.xml</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!-- HUE --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;dfs.webhdfs.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;dfs.permissions.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;false&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>core-site.xml</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!-- HUE --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.proxyuser.hadoop.hosts&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;*&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.proxyuser.hadoop.groups&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;*&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>重启hdfs集群，启动hdfs，historyserver</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ start-all.sh </span><br><span class="line">WARNING: Attempting to start all Apache Hadoop daemons as hadoop in 10 seconds.</span><br><span class="line">WARNING: This is not a recommended production deployment configuration.</span><br><span class="line">WARNING: Use CTRL-C to abort.</span><br><span class="line">Starting namenodes on [hadoop001]</span><br><span class="line">Starting datanodes</span><br><span class="line">Starting secondary namenodes [hadoop001]</span><br><span class="line">2022-01-17 17:32:37,771 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Starting resourcemanager</span><br><span class="line">Starting nodemanagers</span><br><span class="line">[hadoop@hadoop001 ~]$ mr-jobhistory-daemon.sh start historyserver</span><br><span class="line">WARNING: Use of this script to start the MR JobHistory daemon is deprecated.</span><br><span class="line">WARNING: Attempting to execute replacement &quot;mapred --daemon start&quot; instead.</span><br><span class="line">[hadoop@hadoop001 ~]$ jps</span><br><span class="line">12770 Jps</span><br><span class="line">12537 JobHistoryServer</span><br><span class="line">11706 SecondaryNameNode</span><br><span class="line">11547 DataNode</span><br><span class="line">11437 NameNode</span><br><span class="line">11934 ResourceManager</span><br><span class="line">12063 NodeManager</span><br></pre></td></tr></table></figure>
+
+<p>CART + C中止前端运行HUE，重启HUE。</p>
+<p>在HUE上浏览hdfs，并对hdfs上的文件进行操作：</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_05.png" alt="image-20220118015137535"></p>
+<h2 id="四、集成Hive"><a href="#四、集成Hive" class="headerlink" title="四、集成Hive"></a>四、集成Hive</h2><p>如果需要配置hue与hive的集成，启动hue前需要启动hiveserver2和metastore服务。</p>
+<p>hue.ini</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[beeswax]</span><br><span class="line"></span><br><span class="line">  # Host where HiveServer2 is running.</span><br><span class="line">  # If Kerberos security is enabled, use fully-qualified domain name (FQDN).</span><br><span class="line">  hive_server_host=hadoop001</span><br><span class="line"></span><br><span class="line">  # Port where HiveServer2 Thrift server runs on.</span><br><span class="line">  hive_server_port=10000</span><br><span class="line">  </span><br><span class="line">  # Hive configuration directory, where hive-site.xml is located</span><br><span class="line">  hive_conf_dir=$HIVE_HOME/conf</span><br><span class="line"></span><br><span class="line">  # Timeout in seconds for thrift calls to Hive service</span><br><span class="line">  server_conn_timeout=120</span><br><span class="line">  </span><br><span class="line">  # Override the default desktop username and password of the hue user used for authentications with other services.</span><br><span class="line">  # e.g. Used for LDAP/PAM pass-through authentication.</span><br><span class="line">  auth_username=root</span><br><span class="line">  auth_password=123456</span><br><span class="line">  </span><br><span class="line">[metastore]</span><br><span class="line">  # Flag to turn on the new version of the create table wizard.</span><br><span class="line">  enable_new_create_table=true</span><br></pre></td></tr></table></figure>
+
+<p>启动hiveserver2和metastore服务。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ nohup hive --service metastore &amp;</span><br><span class="line">[1] 21686</span><br><span class="line">[hadoop@hadoop001 hue]$ nohup: ignoring input and appending output to `nohup.out&#x27;</span><br><span class="line"></span><br><span class="line">[hadoop@hadoop001 hue]$ nohup hive --service hiveserver2 &amp;</span><br><span class="line">[2] 21808</span><br><span class="line">[hadoop@hadoop001 hue]$ nohup: ignoring input and appending output to `nohup.out&#x27;</span><br><span class="line">[hadoop@hadoop001 hue]$ jps</span><br><span class="line">21808 RunJar</span><br><span class="line">16241 NameNode</span><br><span class="line">17333 JobHistoryServer</span><br><span class="line">21686 RunJar</span><br><span class="line">16855 NodeManager</span><br><span class="line">16504 SecondaryNameNode</span><br><span class="line">21913 Jps</span><br><span class="line">16729 ResourceManager</span><br><span class="line">16348 DataNode</span><br><span class="line">[hadoop@hadoop001 hue]$ </span><br></pre></td></tr></table></figure>
+
+<p>启动hue</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ build/env/bin/supervisor</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_06.png" alt="image-20220118133116380"></p>
+<h2 id="五、集成MySQL"><a href="#五、集成MySQL" class="headerlink" title="五、集成MySQL"></a>五、集成MySQL</h2><p>hue.ini:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[[[mysql]]]</span><br><span class="line">   name = MySQL</span><br><span class="line">   interface=sqlalchemy</span><br><span class="line">#   ## https://docs.sqlalchemy.org/en/latest/dialects/mysql.html</span><br><span class="line">   options=&#x27;&#123;&quot;url&quot;: &quot;mysql://root:ruozedata001@hadoop001:3306/hue&quot;&#125;&#x27;</span><br><span class="line">#   ## options=&#x27;&#123;&quot;url&quot;: &quot;mysql://$&#123;USER&#125;:$&#123;PASSWORD&#125;@localhost:3306/hue&quot;&#125;&#x27;</span><br><span class="line"></span><br><span class="line">##以下不添加，则只显示mysql，不显示hive</span><br><span class="line">[[[hive]]]</span><br><span class="line">  name=Hive</span><br><span class="line">  interface=hiveserver2</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_07.png" alt="image-20220118175343069"></p>
+<h2 id="六、安装过程遇到问题"><a href="#六、安装过程遇到问题" class="headerlink" title="六、安装过程遇到问题"></a>六、安装过程遇到问题</h2><ol>
+<li><h3 id="编译过程中，npm超时"><a href="#编译过程中，npm超时" class="headerlink" title="编译过程中，npm超时"></a>编译过程中，npm超时</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_08.png" alt="image-20220116012941045"></p>
+<p>切换镜像源：<code>npm config set registry http://registry.npm.taobao.org</code>后解决。</p>
+</li>
+<li><h3 id="gcc版本过低报错"><a href="#gcc版本过低报错" class="headerlink" title="gcc版本过低报错"></a>gcc版本过低报错</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_09.png" alt="image-20220116032916057"></p>
+<p>升级了GCC版本</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_10.png" alt="image-20220116053308177"><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_11.png" alt="image-20220116053335715"></p>
+</li>
+<li><h3 id="mysqlclient-or-MySQL-python"><a href="#mysqlclient-or-MySQL-python" class="headerlink" title="mysqlclient or MySQL-python"></a>mysqlclient or MySQL-python</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_12.png" alt="image-20220116071838895"></p>
+<p>解决：</p>
+<p><a href="https://pypi.org/project/mysqlclient/">https://pypi.org/project/mysqlclient/</a></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum install python3-devel mysql-devel</span><br></pre></td></tr></table></figure>
+
+<p>install mysqlclient via pip now:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install mysqlclient</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 rh]# python get-pip.py</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting pip&lt;21.0</span><br><span class="line">  Using cached pip-20.3.4-py2.py3-none-any.whl (1.5 MB)</span><br><span class="line">Installing collected packages: pip</span><br><span class="line">  Attempting uninstall: pip</span><br><span class="line">    Found existing installation: pip 20.3.4</span><br><span class="line">    Uninstalling pip-20.3.4:</span><br><span class="line">      Successfully uninstalled pip-20.3.4</span><br><span class="line">Successfully installed pip-20.3.4</span><br><span class="line">[root@hadoop001 rh]# pip install mysqlclient</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting mysqlclient</span><br><span class="line">  Downloading mysqlclient-1.4.6.tar.gz (85 kB)</span><br><span class="line">     |████████████████████████████████| 85 kB 879 kB/s </span><br><span class="line">Building wheels for collected packages: mysqlclient</span><br><span class="line">  Building wheel for mysqlclient (setup.py) ... done</span><br><span class="line">  Created wheel for mysqlclient: filename=mysqlclient-1.4.6-cp27-cp27m-linux_x86_64.whl size=93309 sha256=e8a53d4de8684dfdda60179f73cfb2f8083b3e3051412cdd6d5263782befd504</span><br><span class="line">  Stored in directory: /root/.cache/pip/wheels/04/5f/2b/e542c27913779611971f196081df58f969c742c01d93af1197</span><br><span class="line">Successfully built mysqlclient</span><br><span class="line">Installing collected packages: mysqlclient</span><br><span class="line">Successfully installed mysqlclient-1.4.6</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>spark部署时修改spark-env.sh</title>
+    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
+    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>可以运行Spark</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
+
+<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
+<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
 ]]></content>
   </entry>
   <entry>
@@ -4055,6 +4067,102 @@
 ]]></content>
   </entry>
   <entry>
+    <title>MapReduce Join</title>
+    <url>/2022/01/01/MapReduce-Join/</url>
+    <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>   在传统数据库（如：MySql）中，JOIN操作常常是非常耗时的。而在HADOOP中进行JOIN操作，同样常见且耗时，由于Hadoop的独特设计思想，当进行JOIN操作时，有一些特殊的技巧。下面分别介绍MapReduce中的几种常见join，比如有最常见的 map side join，reduce side join，semi join（这些在Hive中都有） 等。Map side join在处理多个小表关联大表时非常有用，而 reduce join 在处理多表关联时是比较麻烦的，会造成大量的网络IO，效率低下，但在有些时候也是非常有用的。</p>
+<span id="more"></span>
+
+<h2 id="常见的join方法介绍"><a href="#常见的join方法介绍" class="headerlink" title="常见的join方法介绍"></a>常见的join方法介绍</h2><h3 id="map-side-join"><a href="#map-side-join" class="headerlink" title="map side join"></a>map side join</h3><p> Map side  join是针对以下场景进行的优化：两个待连接表中，有一个表非常大，而另一个表非常小，以至于小表可以直接存放到内存中。这样，我们可以将小表复制多份，让每个map task内存中存在一份（比如存放到hash table中），然后只扫描大表：对于大表中的每一条记录key/value，在hash  table中查找是否有相同的key的记录，如果有，则连接后输出即可。</p>
+<p> 为了支持文件的复制，Hadoop提供了一个类DistributedCache，使用该类的方法如下：</p>
+<p> （1）用户使用静态方法DistributedCache.addCacheFile()指定要复制的文件，它的参数是文件的URI（如果是HDFS上的文件，可以这样：hdfs://namenode:9000/home/XXX/file，其中9000是自己配置的NameNode端口号）。JobTracker在作业启动之前会获取这个URI列表，并将相应的文件拷贝到各个TaskTracker的本地磁盘上。</p>
+<p>（2）用户使用DistributedCache.getLocalCacheFiles()方法获取文件目录，并使用标准的文件读写API读取相应的文件。</p>
+<p><strong>补充:</strong></p>
+<p>旧版本的DistributedCache和getLocalCacheFiles已经被注解为过时，本人下面案例中是<code>job.addCacheFile(new URI(SmallTable))</code>指定要复制的文件，<code>context.getCacheFiles()</code>获取文件目录。和getLocalCacheFiles不同的是，getCacheFiles得到的路径是HDFS上的文件路径，如果使用这个方法，那么程序中读取的就不再试缓存在各个节点上的数据了，相当于共同访问HDFS上的同一个文件。</p>
+<p>main方法中设置缓存文件，而且Map Join不需要Reduce阶段，设置Reduce Task数量为0</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">job.addCacheFile(new URI(&quot;file:/你的文件路径));</span><br><span class="line">job.setNumReduceTasks(0);</span><br></pre></td></tr></table></figure>
+
+<p>或者是HDFS上的URI</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">job.addCacheFile(new URI(&quot;hdfs://url:port/filename&quot;));</span><br></pre></td></tr></table></figure>
+
+<p>在Mapper类的setup方法中加载缓存文件，setup方法，在maptask运行前只调用一次，可进行初始化工作。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">protected void setup(Context context)throws IOException, InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">    //获取缓存文件路径</span><br><span class="line">    URI[] cacheFiles = context.getCacheFiles();</span><br><span class="line">    //新的检索缓存文件的API是 context.getCacheFiles() ，而 context.getLocalCacheFiles() 被弃用</span><br><span class="line">    //然而 context.getCacheFiles() 返回的是 HDFS 路径； context.getLocalCacheFiles() 返回的才是本地路径</span><br><span class="line">    String path = cacheFiles[0].getPath();</span><br><span class="line">    </span><br><span class="line"> 	//读文件</span><br><span class="line">    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));</span><br><span class="line"></span><br><span class="line">	String line;</span><br><span class="line"> 	while(StringUtils.isNotEmpty(line = reader.readLine())) &#123;</span><br><span class="line"> 		String[] splits = line.split(&quot;\t&quot;);</span><br><span class="line"> 		cache.put(splits[0].trim(), splits[1].trim());</span><br><span class="line"> 	&#125;</span><br><span class="line"></span><br><span class="line"> 	IOUtils.closeStream(reader);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>特点：</p>
+<ul>
+<li>Join操作在map task中完成，因此无需启动reduce task</li>
+<li>适合一个大表，一个小表的连接操作</li>
+</ul>
+<p>局限性：</p>
+<ul>
+<li>有一份数据比较小，在map端，能够把它加载在内存，并进行join操作。</li>
+</ul>
+<h3 id="reduce-side-join"><a href="#reduce-side-join" class="headerlink" title="reduce side join"></a>reduce side join</h3><p> reduce side join是一种最简单的join方式， 之所以存在reduce side join，是因为在map阶段不能获取所有需要的join字段，即：同一个key对应的字段可能位于不同map中。Reduce  side join是非常低效的，因为shuffle阶段要进行大量的数据传输。</p>
+<p> 假设要进行join的数据分别来自File1和File2.</p>
+<p> 在map阶段，map函数同时读取两个文件File1和File2，为了区分两种来源的key/value数据对，对每条数据打一个标签（tag）,比如：tag=0表示来自文件File1，tag=2表示来自文件File2。即：map阶段的主要任务是对不同文件中的数据打标签。</p>
+<p> 在reduce阶段，reduce函数获取key相同的来自File1和File2文件的value list，  然后对于同一个key，对File1和File2中的数据进行join（笛卡尔乘积）。即：reduce阶段进行实际的连接操作。</p>
+<p>特点：</p>
+<ul>
+<li>Join操作在reduce task中完成</li>
+<li>适合两个大表的连接操作</li>
+</ul>
+<p>局限性：</p>
+<ul>
+<li>map阶段没有对数据瘦身，shuffle的网络传输和排序性能很低。</li>
+<li>reduce端对2个集合做乘积计算，很耗内存，容易导致OOM。</li>
+</ul>
+<h3 id="Semi-Join"><a href="#Semi-Join" class="headerlink" title="Semi Join"></a>Semi Join</h3><p> SemiJoin，也叫半连接，是从分布式数据库中借鉴过来的方法。它的产生动机是：对于reduce side  join，跨机器的数据传输量非常大，这成了join操作的一个瓶颈，如果能够在map端过滤掉不会参加join操作的数据，则可以大大节省网络IO。</p>
+<p> 实现方法很简单：选取一个小表，假设是File1，将其参与join的key抽取出来，保存到文件File3中，File3文件一般很小，可以放到内存中。在map阶段，使用DistributedCache将File3复制到各个TaskTracker上，然后将File2中不在File3中的key对应的记录过滤掉，剩下的reduce阶段的工作与reducee  side join相同。</p>
+<h3 id="reduce-side-join-BloomFilter"><a href="#reduce-side-join-BloomFilter" class="headerlink" title="reduce side join + BloomFilter"></a>reduce side join + BloomFilter</h3><p> 在某些情况下，Semi Join抽取出来的小表的key集合在内存中仍然存放不下，这时候可以使用BloomFiler以节省空间。</p>
+<p> BloomFilter最常见的作用是：判断某个元素是否在一个集合里面。它最重要的两个方法是：add()  和contains()。最大的特点是不会存在false  negative，即：如果contains()返回false，则该元素一定不在集合中，但会存在一定的true  negative，即：如果contains()返回true，则该元素可能在集合中。</p>
+<p> 因而可将小表中的key保存到BloomFilter中，在map阶段过滤大表，可能有一些不在小表中的记录没有过滤掉（但是在小表中的记录一定不会过滤掉），这没关系，只不过增加了少量的网络IO而已。</p>
+<p>Hadoop面试的时候也会问到 Hadoop上Join的实现，几乎是一道必问的问题，而极个别公司还会涉及到DistributedCache原理以及怎样利用DistributedCache进行Join操作。</p>
+<h1 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h1><h2 id="数据准备"><a href="#数据准备" class="headerlink" title="数据准备"></a>数据准备</h2><p>data/input/join/emp.txt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">7369    SMITH  CLERK  7902   1980-12-17 800.00    20</span><br><span class="line">7499   ALLEN  SALESMAN   7698   1981-2-20  1600.00    300.00 30</span><br><span class="line">7521   WARD   SALESMAN   7698   1981-2-22  1250.00    500.00 30</span><br><span class="line">7566   JONES  MANAGER    7839   1981-4-2   2975.00       20</span><br><span class="line">7654   MARTIN SALESMAN   7698   1981-9-28  1250.00    1400.00    30</span><br><span class="line">7698   BLAKE  MANAGER    7839   1981-5-1   2850.00       30</span><br><span class="line">7782   CLARK  MANAGER    7839   1981-6-9   2450.00       10</span><br><span class="line">7788   SCOTT  ANALYST    7566   1987-4-19  3000.00       20</span><br><span class="line">7839   KING   PRESIDENT     1981-11-17 5000.00       10</span><br><span class="line">7844   TURNER SALESMAN   7698   1981-9-8   1500.00    0.00   30</span><br><span class="line">7876   ADAMS  CLERK  7788   1987-5-23  1100.00       20</span><br><span class="line">7900   JAMES  CLERK  7698   1981-12-3  950.00    30</span><br><span class="line">7902   FORD   ANALYST    7566   1981-12-3  3000.00       20</span><br><span class="line">7934   MILLER CLERK  7782   1982-1-23  1300.00       10</span><br></pre></td></tr></table></figure>
+
+<p>data/input/join/dept.txt</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">10	ACCOUNTING	NEW YORK</span><br><span class="line">20	RESEARCH	DALLAS</span><br><span class="line">30	SALES	CHICAGO</span><br><span class="line">40	OPERATIONS	BOSTON</span><br></pre></td></tr></table></figure>
+
+<h2 id="自定义序列化类"><a href="#自定义序列化类" class="headerlink" title="自定义序列化类"></a>自定义序列化类</h2><p>info.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.io.Writable;</span><br><span class="line">import java.io.DataInput;</span><br><span class="line">import java.io.DataOutput;</span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * join结果最终需要的字段</span><br><span class="line"> */</span><br><span class="line">public class Info implements Writable &#123;</span><br><span class="line"></span><br><span class="line">    private int empno;</span><br><span class="line">    private String ename;</span><br><span class="line">    private int deptno;</span><br><span class="line">    private String dname;</span><br><span class="line">    private int flag;  // 标志位：用来区分数据来自于哪个表.mapjoin不需要flag，需要注释掉flag</span><br><span class="line"></span><br><span class="line">    public void write(DataOutput out) throws IOException &#123;</span><br><span class="line">        out.writeInt(empno);</span><br><span class="line">        out.writeUTF(ename);</span><br><span class="line">        out.writeInt(deptno);</span><br><span class="line">        out.writeUTF(dname);</span><br><span class="line">        out.writeInt(flag);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void readFields(DataInput in) throws IOException &#123;</span><br><span class="line">        this.empno = in.readInt();</span><br><span class="line">        this.ename = in.readUTF();</span><br><span class="line">        this.deptno = in.readInt();</span><br><span class="line">        this.dname = in.readUTF();</span><br><span class="line">        this.flag = in.readInt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname, int flag) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return empno + &quot;\t&quot; + ename + &quot;\t&quot; + deptno + &quot;\t&quot; + dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getEmpno() &#123;</span><br><span class="line">        return empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEmpno(int empno) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getEname() &#123;</span><br><span class="line">        return ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEname(String ename) &#123;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getDeptno() &#123;</span><br><span class="line">        return deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDeptno(int deptno) &#123;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getDname() &#123;</span><br><span class="line">        return dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDname(String dname) &#123;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getFlag() &#123;</span><br><span class="line">        return flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setFlag(int flag) &#123;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Map-Join"><a href="#Map-Join" class="headerlink" title="Map Join"></a>Map Join</h2><p>main()：</p>
+<ul>
+<li>加载缓存数据：<code>job.addCacheFile(new URI(&quot;file:/你的文件路径))</code>或者<code>job.addCacheFile(new URI(&quot;hdfs://url:port/filename&quot;));</code></li>
+<li>设置Reduce Task数量为0：<code>job.setNumReduceTasks(0);</code></li>
+</ul>
+<p>setup():</p>
+<ol>
+<li>获取缓存的文件</li>
+<li>循环读取缓存文件的每一行</li>
+<li>切割</li>
+<li>缓存数据到集合hashtable</li>
+<li>关闭资源</li>
+</ol>
+<p>map():</p>
+<ol>
+<li>获取一行数据</li>
+<li>截取</li>
+<li>根据公共字段获取数据</li>
+<li>拼接</li>
+<li>写出</li>
+</ol>
+<p>MapJoinDriver.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.lang3.StringUtils;</span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import java.io.BufferedReader;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.InputStreamReader;</span><br><span class="line">import java.net.URI;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public class MapJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String BigTable = &quot;data/input/join/emp.txt&quot;;</span><br><span class="line">        String SmallTable = &quot;data/input/join/dept.txt&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(MapJoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line"></span><br><span class="line">		//MapJoin需要把ReduceTasks数量设置为0</span><br><span class="line">        job.setNumReduceTasks(0);</span><br><span class="line"></span><br><span class="line">        // reduce的个数决定了最终文件输出的个数，如果没有reduce，那么就由map个数决定</span><br><span class="line">        job.setMapOutputKeyClass(Info.class);</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);</span><br><span class="line"></span><br><span class="line">        // 小表加入到缓存中</span><br><span class="line">        job.addCacheFile(new URI(SmallTable));</span><br><span class="line"></span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(BigTable));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        Map&lt;String,String&gt; cache = new HashMap&lt;String, String&gt;();</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">        </span><br><span class="line">        	//获取到缓存文件，是一个 URI 的数组</span><br><span class="line">            URI[] cacheFiles = context.getCacheFiles();</span><br><span class="line">            </span><br><span class="line">            //此处应该遍历cacheFiles获取缓存的文件，但此案例中只有一个文件，所以不影响。</span><br><span class="line">            //由于只有一个缓存文件dept.txt，我们这里只需要拿到第一个元素即可，获取到缓存文件的路径</span><br><span class="line">            String path = cacheFiles[0].getPath();</span><br><span class="line">            </span><br><span class="line">            //获取到bufferedReader对象（缓冲字符流）</span><br><span class="line">            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));</span><br><span class="line"></span><br><span class="line">            // 10	ACCOUNTING	NEW YORK</span><br><span class="line">            //对每行数据做迭代，进行切割，切割后的数据放入到map中</span><br><span class="line">            String line;</span><br><span class="line">            while(StringUtils.isNotEmpty(line = reader.readLine())) &#123;</span><br><span class="line">                String[] splits = line.split(&quot;\t&quot;);</span><br><span class="line">                cache.put(splits[0].trim(), splits[1].trim());</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            //关闭资源</span><br><span class="line">            IOUtils.closeStream(reader);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">        	</span><br><span class="line">        	//读取emp.txt 的每行数据，并进行切割</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            </span><br><span class="line">            //获取 deptno 公共字段</span><br><span class="line">            int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">            String ename = splits[1].trim();</span><br><span class="line">            int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">            Info info = new Info();</span><br><span class="line">            info.setEmpno(empno);</span><br><span class="line">            info.setEname(ename);</span><br><span class="line">            info.setDeptno(deptno);</span><br><span class="line"></span><br><span class="line">            //大的数据每读一条，就和内存中的小的数据做比对</span><br><span class="line">            //根据deptno从map中获取到pname</span><br><span class="line">            info.setDname(cache.get(deptno+&quot;&quot;));</span><br><span class="line"></span><br><span class="line">            context.write(info, NullWritable.get());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Reduce-Join"><a href="#Reduce-Join" class="headerlink" title="Reduce Join"></a>Reduce Join</h2><p>ReduceJoinDriver.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileSplit;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class ReduceJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String input = &quot;data/input/join/&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(JoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line">        job.setMapOutputKeyClass(IntWritable.class);</span><br><span class="line">        job.setMapOutputValueClass(Info.class);</span><br><span class="line">        job.setOutputKeyClass(Info.class);</span><br><span class="line">        job.setOutputValueClass(NullWritable.class);</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 我们join的条件是deptno，所以key的类型是IntWritable</span><br><span class="line">     *</span><br><span class="line">     * 我们是两个文件一起进来的</span><br><span class="line">     * 要区分出数据到底是emp的还是dept的</span><br><span class="line">     *</span><br><span class="line">     *在序列化类中没有的字段也要set</span><br><span class="line">     */</span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, IntWritable, Info&gt; &#123;</span><br><span class="line"></span><br><span class="line">        String name;//文件名称区别数据来源的</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            FileSplit fileSplit = (FileSplit) context.getInputSplit();</span><br><span class="line">            name = fileSplit.getPath().getName();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            if(name.contains(&quot;emp&quot;)) &#123; // 来自于emp</span><br><span class="line">                int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String ename = splits[1].trim();</span><br><span class="line">                int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(empno);</span><br><span class="line">                info.setEname(ename);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(&quot;&quot;);</span><br><span class="line">                info.setFlag(1); // 标志位</span><br><span class="line"></span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125; else &#123;  // 来自于dept</span><br><span class="line">                int deptno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String dname = splits[1].trim();</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(0);</span><br><span class="line">                info.setEname(&quot;&quot;);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(dname);</span><br><span class="line">                info.setFlag(2); // 标志位</span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyReducer extends Reducer&lt;IntWritable, Info,Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        // key = deptno</span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(IntWritable key, Iterable&lt;Info&gt; values, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">            String dname = &quot;&quot;;</span><br><span class="line">            </span><br><span class="line">            //提供一种思路：更规范的写法应该是新增一个depts，拼接时遍历两个List</span><br><span class="line">            //但这里一个deptno是dept表的唯一主键，只对应一个dname，所以也没有问题</span><br><span class="line">            List&lt;Info&gt; emps = new ArrayList&lt;Info&gt;();</span><br><span class="line"></span><br><span class="line">            for(Info info : values) &#123;</span><br><span class="line">                if(info.getFlag() == 1) &#123;  // emp</span><br><span class="line">                    Info tmp = new Info();</span><br><span class="line">                    tmp.setEmpno(info.getEmpno());</span><br><span class="line">                    tmp.setEname(info.getEname());</span><br><span class="line">                    tmp.setDeptno(info.getDeptno());</span><br><span class="line">                    emps.add(tmp);</span><br><span class="line">                &#125; else if(info.getFlag() == 2) &#123;  // dept</span><br><span class="line">                    dname = info.getDname();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            for(Info bean : emps) &#123;</span><br><span class="line">                bean.setDname(dname);</span><br><span class="line">                context.write(bean, NullWritable.get());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://www.cnblogs.com/shudonghe/p/3260201.html">hadoop 多表join：Map side join及Reduce side join范例</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>MapReduce Input Split与map task数量</title>
     <url>/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/</url>
     <content><![CDATA[<h2 id="Hadoop中的block-Size和split-Size是什么关系"><a href="#Hadoop中的block-Size和split-Size是什么关系" class="headerlink" title="Hadoop中的block Size和split Size是什么关系"></a>Hadoop中的block Size和split Size是什么关系</h2><p><strong>问题</strong></p>
@@ -4640,102 +4748,6 @@
 <p>因此splitsize取值为141.8MB，所以一共分配36个map。</p>
 <p>原文地址：</p>
 <p><a href="https://www.cnblogs.com/ibook360/p/4137592.html">https://www.cnblogs.com/ibook360/p/4137592.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>MapReduce Join</title>
-    <url>/2022/01/01/MapReduce-Join/</url>
-    <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>   在传统数据库（如：MySql）中，JOIN操作常常是非常耗时的。而在HADOOP中进行JOIN操作，同样常见且耗时，由于Hadoop的独特设计思想，当进行JOIN操作时，有一些特殊的技巧。下面分别介绍MapReduce中的几种常见join，比如有最常见的 map side join，reduce side join，semi join（这些在Hive中都有） 等。Map side join在处理多个小表关联大表时非常有用，而 reduce join 在处理多表关联时是比较麻烦的，会造成大量的网络IO，效率低下，但在有些时候也是非常有用的。</p>
-<span id="more"></span>
-
-<h2 id="常见的join方法介绍"><a href="#常见的join方法介绍" class="headerlink" title="常见的join方法介绍"></a>常见的join方法介绍</h2><h3 id="map-side-join"><a href="#map-side-join" class="headerlink" title="map side join"></a>map side join</h3><p> Map side  join是针对以下场景进行的优化：两个待连接表中，有一个表非常大，而另一个表非常小，以至于小表可以直接存放到内存中。这样，我们可以将小表复制多份，让每个map task内存中存在一份（比如存放到hash table中），然后只扫描大表：对于大表中的每一条记录key/value，在hash  table中查找是否有相同的key的记录，如果有，则连接后输出即可。</p>
-<p> 为了支持文件的复制，Hadoop提供了一个类DistributedCache，使用该类的方法如下：</p>
-<p> （1）用户使用静态方法DistributedCache.addCacheFile()指定要复制的文件，它的参数是文件的URI（如果是HDFS上的文件，可以这样：hdfs://namenode:9000/home/XXX/file，其中9000是自己配置的NameNode端口号）。JobTracker在作业启动之前会获取这个URI列表，并将相应的文件拷贝到各个TaskTracker的本地磁盘上。</p>
-<p>（2）用户使用DistributedCache.getLocalCacheFiles()方法获取文件目录，并使用标准的文件读写API读取相应的文件。</p>
-<p><strong>补充:</strong></p>
-<p>旧版本的DistributedCache和getLocalCacheFiles已经被注解为过时，本人下面案例中是<code>job.addCacheFile(new URI(SmallTable))</code>指定要复制的文件，<code>context.getCacheFiles()</code>获取文件目录。和getLocalCacheFiles不同的是，getCacheFiles得到的路径是HDFS上的文件路径，如果使用这个方法，那么程序中读取的就不再试缓存在各个节点上的数据了，相当于共同访问HDFS上的同一个文件。</p>
-<p>main方法中设置缓存文件，而且Map Join不需要Reduce阶段，设置Reduce Task数量为0</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">job.addCacheFile(new URI(&quot;file:/你的文件路径));</span><br><span class="line">job.setNumReduceTasks(0);</span><br></pre></td></tr></table></figure>
-
-<p>或者是HDFS上的URI</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">job.addCacheFile(new URI(&quot;hdfs://url:port/filename&quot;));</span><br></pre></td></tr></table></figure>
-
-<p>在Mapper类的setup方法中加载缓存文件，setup方法，在maptask运行前只调用一次，可进行初始化工作。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">protected void setup(Context context)throws IOException, InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">    //获取缓存文件路径</span><br><span class="line">    URI[] cacheFiles = context.getCacheFiles();</span><br><span class="line">    //新的检索缓存文件的API是 context.getCacheFiles() ，而 context.getLocalCacheFiles() 被弃用</span><br><span class="line">    //然而 context.getCacheFiles() 返回的是 HDFS 路径； context.getLocalCacheFiles() 返回的才是本地路径</span><br><span class="line">    String path = cacheFiles[0].getPath();</span><br><span class="line">    </span><br><span class="line"> 	//读文件</span><br><span class="line">    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));</span><br><span class="line"></span><br><span class="line">	String line;</span><br><span class="line"> 	while(StringUtils.isNotEmpty(line = reader.readLine())) &#123;</span><br><span class="line"> 		String[] splits = line.split(&quot;\t&quot;);</span><br><span class="line"> 		cache.put(splits[0].trim(), splits[1].trim());</span><br><span class="line"> 	&#125;</span><br><span class="line"></span><br><span class="line"> 	IOUtils.closeStream(reader);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>特点：</p>
-<ul>
-<li>Join操作在map task中完成，因此无需启动reduce task</li>
-<li>适合一个大表，一个小表的连接操作</li>
-</ul>
-<p>局限性：</p>
-<ul>
-<li>有一份数据比较小，在map端，能够把它加载在内存，并进行join操作。</li>
-</ul>
-<h3 id="reduce-side-join"><a href="#reduce-side-join" class="headerlink" title="reduce side join"></a>reduce side join</h3><p> reduce side join是一种最简单的join方式， 之所以存在reduce side join，是因为在map阶段不能获取所有需要的join字段，即：同一个key对应的字段可能位于不同map中。Reduce  side join是非常低效的，因为shuffle阶段要进行大量的数据传输。</p>
-<p> 假设要进行join的数据分别来自File1和File2.</p>
-<p> 在map阶段，map函数同时读取两个文件File1和File2，为了区分两种来源的key/value数据对，对每条数据打一个标签（tag）,比如：tag=0表示来自文件File1，tag=2表示来自文件File2。即：map阶段的主要任务是对不同文件中的数据打标签。</p>
-<p> 在reduce阶段，reduce函数获取key相同的来自File1和File2文件的value list，  然后对于同一个key，对File1和File2中的数据进行join（笛卡尔乘积）。即：reduce阶段进行实际的连接操作。</p>
-<p>特点：</p>
-<ul>
-<li>Join操作在reduce task中完成</li>
-<li>适合两个大表的连接操作</li>
-</ul>
-<p>局限性：</p>
-<ul>
-<li>map阶段没有对数据瘦身，shuffle的网络传输和排序性能很低。</li>
-<li>reduce端对2个集合做乘积计算，很耗内存，容易导致OOM。</li>
-</ul>
-<h3 id="Semi-Join"><a href="#Semi-Join" class="headerlink" title="Semi Join"></a>Semi Join</h3><p> SemiJoin，也叫半连接，是从分布式数据库中借鉴过来的方法。它的产生动机是：对于reduce side  join，跨机器的数据传输量非常大，这成了join操作的一个瓶颈，如果能够在map端过滤掉不会参加join操作的数据，则可以大大节省网络IO。</p>
-<p> 实现方法很简单：选取一个小表，假设是File1，将其参与join的key抽取出来，保存到文件File3中，File3文件一般很小，可以放到内存中。在map阶段，使用DistributedCache将File3复制到各个TaskTracker上，然后将File2中不在File3中的key对应的记录过滤掉，剩下的reduce阶段的工作与reducee  side join相同。</p>
-<h3 id="reduce-side-join-BloomFilter"><a href="#reduce-side-join-BloomFilter" class="headerlink" title="reduce side join + BloomFilter"></a>reduce side join + BloomFilter</h3><p> 在某些情况下，Semi Join抽取出来的小表的key集合在内存中仍然存放不下，这时候可以使用BloomFiler以节省空间。</p>
-<p> BloomFilter最常见的作用是：判断某个元素是否在一个集合里面。它最重要的两个方法是：add()  和contains()。最大的特点是不会存在false  negative，即：如果contains()返回false，则该元素一定不在集合中，但会存在一定的true  negative，即：如果contains()返回true，则该元素可能在集合中。</p>
-<p> 因而可将小表中的key保存到BloomFilter中，在map阶段过滤大表，可能有一些不在小表中的记录没有过滤掉（但是在小表中的记录一定不会过滤掉），这没关系，只不过增加了少量的网络IO而已。</p>
-<p>Hadoop面试的时候也会问到 Hadoop上Join的实现，几乎是一道必问的问题，而极个别公司还会涉及到DistributedCache原理以及怎样利用DistributedCache进行Join操作。</p>
-<h1 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h1><h2 id="数据准备"><a href="#数据准备" class="headerlink" title="数据准备"></a>数据准备</h2><p>data/input/join/emp.txt</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">7369    SMITH  CLERK  7902   1980-12-17 800.00    20</span><br><span class="line">7499   ALLEN  SALESMAN   7698   1981-2-20  1600.00    300.00 30</span><br><span class="line">7521   WARD   SALESMAN   7698   1981-2-22  1250.00    500.00 30</span><br><span class="line">7566   JONES  MANAGER    7839   1981-4-2   2975.00       20</span><br><span class="line">7654   MARTIN SALESMAN   7698   1981-9-28  1250.00    1400.00    30</span><br><span class="line">7698   BLAKE  MANAGER    7839   1981-5-1   2850.00       30</span><br><span class="line">7782   CLARK  MANAGER    7839   1981-6-9   2450.00       10</span><br><span class="line">7788   SCOTT  ANALYST    7566   1987-4-19  3000.00       20</span><br><span class="line">7839   KING   PRESIDENT     1981-11-17 5000.00       10</span><br><span class="line">7844   TURNER SALESMAN   7698   1981-9-8   1500.00    0.00   30</span><br><span class="line">7876   ADAMS  CLERK  7788   1987-5-23  1100.00       20</span><br><span class="line">7900   JAMES  CLERK  7698   1981-12-3  950.00    30</span><br><span class="line">7902   FORD   ANALYST    7566   1981-12-3  3000.00       20</span><br><span class="line">7934   MILLER CLERK  7782   1982-1-23  1300.00       10</span><br></pre></td></tr></table></figure>
-
-<p>data/input/join/dept.txt</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">10	ACCOUNTING	NEW YORK</span><br><span class="line">20	RESEARCH	DALLAS</span><br><span class="line">30	SALES	CHICAGO</span><br><span class="line">40	OPERATIONS	BOSTON</span><br></pre></td></tr></table></figure>
-
-<h2 id="自定义序列化类"><a href="#自定义序列化类" class="headerlink" title="自定义序列化类"></a>自定义序列化类</h2><p>info.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.io.Writable;</span><br><span class="line">import java.io.DataInput;</span><br><span class="line">import java.io.DataOutput;</span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * join结果最终需要的字段</span><br><span class="line"> */</span><br><span class="line">public class Info implements Writable &#123;</span><br><span class="line"></span><br><span class="line">    private int empno;</span><br><span class="line">    private String ename;</span><br><span class="line">    private int deptno;</span><br><span class="line">    private String dname;</span><br><span class="line">    private int flag;  // 标志位：用来区分数据来自于哪个表.mapjoin不需要flag，需要注释掉flag</span><br><span class="line"></span><br><span class="line">    public void write(DataOutput out) throws IOException &#123;</span><br><span class="line">        out.writeInt(empno);</span><br><span class="line">        out.writeUTF(ename);</span><br><span class="line">        out.writeInt(deptno);</span><br><span class="line">        out.writeUTF(dname);</span><br><span class="line">        out.writeInt(flag);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void readFields(DataInput in) throws IOException &#123;</span><br><span class="line">        this.empno = in.readInt();</span><br><span class="line">        this.ename = in.readUTF();</span><br><span class="line">        this.deptno = in.readInt();</span><br><span class="line">        this.dname = in.readUTF();</span><br><span class="line">        this.flag = in.readInt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info() &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Info(int empno, String ename, int deptno, String dname, int flag) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return empno + &quot;\t&quot; + ename + &quot;\t&quot; + deptno + &quot;\t&quot; + dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getEmpno() &#123;</span><br><span class="line">        return empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEmpno(int empno) &#123;</span><br><span class="line">        this.empno = empno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getEname() &#123;</span><br><span class="line">        return ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setEname(String ename) &#123;</span><br><span class="line">        this.ename = ename;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getDeptno() &#123;</span><br><span class="line">        return deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDeptno(int deptno) &#123;</span><br><span class="line">        this.deptno = deptno;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getDname() &#123;</span><br><span class="line">        return dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setDname(String dname) &#123;</span><br><span class="line">        this.dname = dname;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public int getFlag() &#123;</span><br><span class="line">        return flag;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setFlag(int flag) &#123;</span><br><span class="line">        this.flag = flag;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="Map-Join"><a href="#Map-Join" class="headerlink" title="Map Join"></a>Map Join</h2><p>main()：</p>
-<ul>
-<li>加载缓存数据：<code>job.addCacheFile(new URI(&quot;file:/你的文件路径))</code>或者<code>job.addCacheFile(new URI(&quot;hdfs://url:port/filename&quot;));</code></li>
-<li>设置Reduce Task数量为0：<code>job.setNumReduceTasks(0);</code></li>
-</ul>
-<p>setup():</p>
-<ol>
-<li>获取缓存的文件</li>
-<li>循环读取缓存文件的每一行</li>
-<li>切割</li>
-<li>缓存数据到集合hashtable</li>
-<li>关闭资源</li>
-</ol>
-<p>map():</p>
-<ol>
-<li>获取一行数据</li>
-<li>截取</li>
-<li>根据公共字段获取数据</li>
-<li>拼接</li>
-<li>写出</li>
-</ol>
-<p>MapJoinDriver.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.commons.lang3.StringUtils;</span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import java.io.BufferedReader;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.InputStreamReader;</span><br><span class="line">import java.net.URI;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">public class MapJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String BigTable = &quot;data/input/join/emp.txt&quot;;</span><br><span class="line">        String SmallTable = &quot;data/input/join/dept.txt&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(MapJoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line"></span><br><span class="line">		//MapJoin需要把ReduceTasks数量设置为0</span><br><span class="line">        job.setNumReduceTasks(0);</span><br><span class="line"></span><br><span class="line">        // reduce的个数决定了最终文件输出的个数，如果没有reduce，那么就由map个数决定</span><br><span class="line">        job.setMapOutputKeyClass(Info.class);</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);</span><br><span class="line"></span><br><span class="line">        // 小表加入到缓存中</span><br><span class="line">        job.addCacheFile(new URI(SmallTable));</span><br><span class="line"></span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(BigTable));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        Map&lt;String,String&gt; cache = new HashMap&lt;String, String&gt;();</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">        </span><br><span class="line">        	//获取到缓存文件，是一个 URI 的数组</span><br><span class="line">            URI[] cacheFiles = context.getCacheFiles();</span><br><span class="line">            </span><br><span class="line">            //此处应该遍历cacheFiles获取缓存的文件，但此案例中只有一个文件，所以不影响。</span><br><span class="line">            //由于只有一个缓存文件dept.txt，我们这里只需要拿到第一个元素即可，获取到缓存文件的路径</span><br><span class="line">            String path = cacheFiles[0].getPath();</span><br><span class="line">            </span><br><span class="line">            //获取到bufferedReader对象（缓冲字符流）</span><br><span class="line">            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));</span><br><span class="line"></span><br><span class="line">            // 10	ACCOUNTING	NEW YORK</span><br><span class="line">            //对每行数据做迭代，进行切割，切割后的数据放入到map中</span><br><span class="line">            String line;</span><br><span class="line">            while(StringUtils.isNotEmpty(line = reader.readLine())) &#123;</span><br><span class="line">                String[] splits = line.split(&quot;\t&quot;);</span><br><span class="line">                cache.put(splits[0].trim(), splits[1].trim());</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            //关闭资源</span><br><span class="line">            IOUtils.closeStream(reader);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">        	</span><br><span class="line">        	//读取emp.txt 的每行数据，并进行切割</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            </span><br><span class="line">            //获取 deptno 公共字段</span><br><span class="line">            int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">            String ename = splits[1].trim();</span><br><span class="line">            int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">            Info info = new Info();</span><br><span class="line">            info.setEmpno(empno);</span><br><span class="line">            info.setEname(ename);</span><br><span class="line">            info.setDeptno(deptno);</span><br><span class="line"></span><br><span class="line">            //大的数据每读一条，就和内存中的小的数据做比对</span><br><span class="line">            //根据deptno从map中获取到pname</span><br><span class="line">            info.setDname(cache.get(deptno+&quot;&quot;));</span><br><span class="line"></span><br><span class="line">            context.write(info, NullWritable.get());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="Reduce-Join"><a href="#Reduce-Join" class="headerlink" title="Reduce Join"></a>Reduce Join</h2><p>ReduceJoinDriver.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.NullWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileSplit;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.List;</span><br><span class="line"></span><br><span class="line">public class ReduceJoinDriver &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">        String input = &quot;data/input/join/&quot;;</span><br><span class="line">        String output = &quot;out&quot;;</span><br><span class="line"></span><br><span class="line">        Configuration configuration = new Configuration();</span><br><span class="line">        Job job = Job.getInstance(configuration);</span><br><span class="line">        job.setJarByClass(JoinDriver.class);</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line">        job.setMapOutputKeyClass(IntWritable.class);</span><br><span class="line">        job.setMapOutputValueClass(Info.class);</span><br><span class="line">        job.setOutputKeyClass(Info.class);</span><br><span class="line">        job.setOutputValueClass(NullWritable.class);</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        System.exit(result?0:1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 我们join的条件是deptno，所以key的类型是IntWritable</span><br><span class="line">     *</span><br><span class="line">     * 我们是两个文件一起进来的</span><br><span class="line">     * 要区分出数据到底是emp的还是dept的</span><br><span class="line">     *</span><br><span class="line">     *在序列化类中没有的字段也要set</span><br><span class="line">     */</span><br><span class="line">    public static class MyMapper extends Mapper&lt;LongWritable, Text, IntWritable, Info&gt; &#123;</span><br><span class="line"></span><br><span class="line">        String name;//文件名称区别数据来源的</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void setup(Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            FileSplit fileSplit = (FileSplit) context.getInputSplit();</span><br><span class="line">            name = fileSplit.getPath().getName();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            String[] splits = value.toString().split(&quot;\t&quot;);</span><br><span class="line">            if(name.contains(&quot;emp&quot;)) &#123; // 来自于emp</span><br><span class="line">                int empno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String ename = splits[1].trim();</span><br><span class="line">                int deptno = Integer.parseInt(splits[7].trim());</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(empno);</span><br><span class="line">                info.setEname(ename);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(&quot;&quot;);</span><br><span class="line">                info.setFlag(1); // 标志位</span><br><span class="line"></span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125; else &#123;  // 来自于dept</span><br><span class="line">                int deptno = Integer.parseInt(splits[0].trim());</span><br><span class="line">                String dname = splits[1].trim();</span><br><span class="line"></span><br><span class="line">                Info info = new Info();</span><br><span class="line">                info.setEmpno(0);</span><br><span class="line">                info.setEname(&quot;&quot;);</span><br><span class="line">                info.setDeptno(deptno);</span><br><span class="line">                info.setDname(dname);</span><br><span class="line">                info.setFlag(2); // 标志位</span><br><span class="line">                context.write(new IntWritable(deptno), info);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static class MyReducer extends Reducer&lt;IntWritable, Info,Info, NullWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        // key = deptno</span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(IntWritable key, Iterable&lt;Info&gt; values, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">            String dname = &quot;&quot;;</span><br><span class="line">            </span><br><span class="line">            //提供一种思路：更规范的写法应该是新增一个depts，拼接时遍历两个List</span><br><span class="line">            //但这里一个deptno是dept表的唯一主键，只对应一个dname，所以也没有问题</span><br><span class="line">            List&lt;Info&gt; emps = new ArrayList&lt;Info&gt;();</span><br><span class="line"></span><br><span class="line">            for(Info info : values) &#123;</span><br><span class="line">                if(info.getFlag() == 1) &#123;  // emp</span><br><span class="line">                    Info tmp = new Info();</span><br><span class="line">                    tmp.setEmpno(info.getEmpno());</span><br><span class="line">                    tmp.setEname(info.getEname());</span><br><span class="line">                    tmp.setDeptno(info.getDeptno());</span><br><span class="line">                    emps.add(tmp);</span><br><span class="line">                &#125; else if(info.getFlag() == 2) &#123;  // dept</span><br><span class="line">                    dname = info.getDname();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            for(Info bean : emps) &#123;</span><br><span class="line">                bean.setDname(dname);</span><br><span class="line">                context.write(bean, NullWritable.get());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://www.cnblogs.com/shudonghe/p/3260201.html">hadoop 多表join：Map side join及Reduce side join范例</a></p>
 ]]></content>
   </entry>
   <entry>
