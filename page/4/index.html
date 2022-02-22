@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-count">56</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,82 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/30/MapReduce%E6%94%AF%E6%8C%81%E9%80%92%E5%BD%92%E5%AD%90%E7%9B%AE%E5%BD%95%E4%BD%9C%E4%B8%BA%E8%BE%93%E5%85%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/12/30/MapReduce%E6%94%AF%E6%8C%81%E9%80%92%E5%BD%92%E5%AD%90%E7%9B%AE%E5%BD%95%E4%BD%9C%E4%B8%BA%E8%BE%93%E5%85%A5/" class="post-title-link" itemprop="url">MapReduce支持递归子目录作为输入</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2021-12-30 01:35:43 / 修改时间：01:43:04" itemprop="dateCreated datePublished" datetime="2021-12-30T01:35:43+08:00">2021-12-30</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h2><p>执行MapReduce程序时，input path中包含子目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Error: java.io.FileNotFoundException: Path is not a file: /data/hive/mulit_file/sub_dir</span><br></pre></td></tr></table></figure>
+
+<p>解决办法：mr中或者在mapred-site.xml中设置：mapreduce.input.fileinputformat.input.dir.recursive=true</p>
+<ul>
+<li><p>mr中设置configuration:<code>conf.set(&quot;mapreduce.input.fileinputformat.input.dir.recursive&quot;,true)</code></p>
+</li>
+<li><p>etc/hadoop/mapred-site.xml添加属性:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.input.fileinputformat.input.dir.recursive&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="Hive"><a href="#Hive" class="headerlink" title="Hive"></a>Hive</h2><p>在hive-cli中设置参数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set hive.mapred.supports.subdirectories=true;</span><br><span class="line">set mapred.input.dir.recursive=true;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -998,84 +1074,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/13/HDFS-API/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/12/13/HDFS-API/" class="post-title-link" itemprop="url">HDFS API</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2021-12-13 10:50:15" itemprop="dateCreated datePublished" datetime="2021-12-13T10:50:15+08:00">2021-12-13</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2021-12-14 15:03:39" itemprop="dateModified" datetime="2021-12-14T15:03:39+08:00">2021-12-14</time>
-      </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/13/HDFS-API/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
