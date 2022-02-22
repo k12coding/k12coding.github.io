@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">55</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,174 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/02/22/Azkaban-multiple-executor%E6%A8%A1%E5%BC%8F%E9%83%A8%E7%BD%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/02/22/Azkaban-multiple-executor%E6%A8%A1%E5%BC%8F%E9%83%A8%E7%BD%B2/" class="post-title-link" itemprop="url">Azkaban multiple-executor模式部署</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-02-22 10:32:00 / 修改时间：11:22:14" itemprop="dateCreated datePublished" datetime="2022-02-22T10:32:00+08:00">2022-02-22</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="以Multi-Executor-Server部署Azkaban"><a href="#以Multi-Executor-Server部署Azkaban" class="headerlink" title="以Multi Executor Server部署Azkaban"></a>以Multi Executor Server部署Azkaban</h2><h3 id="mysql准备"><a href="#mysql准备" class="headerlink" title="mysql准备"></a>mysql准备</h3><ol>
+<li><p>create database for Azkaban.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; CREATE DATABASE azkaban;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br></pre></td></tr></table></figure></li>
+<li><p>create a mysql user for Azkaban. </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; CREATE USER &#x27;azkaban&#x27;@&#x27;%&#x27; IDENTIFIED BY &#x27;azkaban123&#x27;;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; GRANT SELECT,INSERT,UPDATE,DELETE ON azkaban.* to &#x27;azkaban&#x27;@&#x27;%&#x27; WITH GRANT OPTION;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br></pre></td></tr></table></figure></li>
+<li><p>修改mysql配置my.cnf</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">...</span><br><span class="line">max_allowed_packet=1024M</span><br></pre></td></tr></table></figure></li>
+<li><p>重启mysql</p>
+</li>
+</ol>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><ol>
+<li><p>创建安装目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ mkdir azkaban</span><br></pre></td></tr></table></figure></li>
+<li><p>在编译成功的目录下获取以下三个需要的tar包</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 azkaban-master]$ cp azkaban-web-server/build/distributions/azkaban-web-server-0.1.0-SNAPSHOT.tar.gz ~/software/azkaban</span><br><span class="line">[hadoop@hadoop001 azkaban-master]$ cp azkaban-exec-server/build/distributions/azkaban-exec-server-0.1.0-SNAPSHOT.tar.gz ~/software/azkaban </span><br><span class="line">[hadoop@hadoop001 azkaban-master]$ cp azkaban-db/build/distributions/azkaban-db-0.1.0-SNAPSHOT.tar.gz ~/software/azkaban</span><br></pre></td></tr></table></figure></li>
+<li><p>解压并重命名</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 azkaban]$ ll</span><br><span class="line">total 119840</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop     8864 Feb 16 13:30 azkaban-db-0.1.0-SNAPSHOT.tar.gz</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 64787133 Feb 16 09:24 azkaban-exec-server-0.1.0-SNAPSHOT.tar.gz</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 57896671 Feb 16 09:25 azkaban-web-server-0.1.0-SNAPSHOT.tar.gz</span><br><span class="line">drwxr-xr-x.  2 hadoop hadoop     4096 Jan 25 17:53 db</span><br><span class="line">drwxr-xr-x. 10 hadoop hadoop     4096 Feb 16 17:28 exec</span><br><span class="line">drwxr-xr-x.  8 hadoop hadoop     4096 Feb 16 17:28 web</span><br><span class="line">[hadoop@hadoop001 azkaban]$ tar -xzvf azkaban-db-0.1.0-SNAPSHOT .tar.gz</span><br><span class="line">[hadoop@hadoop001 azkaban]$ mv azkaban-db-0.1.0-SNAPSHOT db</span><br><span class="line">[hadoop@hadoop001 azkaban]$ tar -xzvf azkaban-exec-server-0.1.0-SNAPSHOT.tar.gz</span><br><span class="line">[hadoop@hadoop001 azkaban]$ mv azkaban-exec-server-0.1.0-SNAPSHOT exec</span><br><span class="line">[hadoop@hadoop001 azkaban]$ tar -xzvf azkaban-web-server-0.1.0-SNAPSHOT.tar.gz</span><br><span class="line">[hadoop@hadoop001 azkaban]$ mv azkaban-web-server-0.1.0-SNAPSHOT web</span><br></pre></td></tr></table></figure></li>
+<li><p>创建软连接</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 azkaban]$ ln -s /home/hadoop/software/azkaban /home/hadoop/app/azkaban</span><br></pre></td></tr></table></figure></li>
+<li><p>mysql脚本导入</p>
+<p>导入sql脚本,批量创建表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; source /home/hadoop/software/azkaban/db/create-all-sql-0.1.0-SNAPSHOT.sql</span><br></pre></td></tr></table></figure></li>
+<li><p>Installing Azkaban Executor Server</p>
+<p>修改exec目录下<code>conf/azkaban.properties</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># Mysql Configs</span><br><span class="line">mysql.user=&lt;username&gt;</span><br><span class="line">mysql.password=&lt;password&gt;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/02/22/Azkaban-multiple-executor%E6%A8%A1%E5%BC%8F%E9%83%A8%E7%BD%B2/2638668-45e4ac37cec07e31.png" alt="img"></p>
+<p>在azkaban-web-server中的azkaban.properties添加：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#Multiple Executor</span><br><span class="line">azkaban.use.multiple.executors=true</span><br><span class="line">azkaban.executorselector.filters=StaticRemainingFlowSize,MinimumFreeMemory,CpuStatus</span><br><span class="line">azkaban.executorselector.comparator.NumberOfAssignedFlowComparator=1</span><br><span class="line">azkaban.executorselector.comparator.Memory=1</span><br><span class="line">azkaban.executorselector.comparator.LastDispatched=1</span><br><span class="line">azkaban.executorselector.comparator.CpuUsage=1</span><br></pre></td></tr></table></figure>
+
+<p>启动Executor Server：在下面的步骤统一启动。注意，在Multi Executor Server模式下启动了Executor Server后，需要手动激活其状态。</p>
+</li>
+<li><p>Installing Azkaban Web Server</p>
+<p>修改web目录下<code>conf/azkaban.properties</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># Mysql Configs</span><br><span class="line">mysql.user=&lt;username&gt;</span><br><span class="line">mysql.password=&lt;password&gt;</span><br></pre></td></tr></table></figure>
+
+<p>添加用户，修改<code>conf/azkaban-users.xml</code>,如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;user password=&quot;admin&quot; roles=&quot;admin&quot; username=&quot;admin&quot;/&gt;                 </span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><p>因为配置文件下的路径是使用相对路径，所以启动需要进入到其目录下调用命令，具体如下：。</p>
+<p>【注意】需要先启动并激活Executor,才能启动web成功。</p>
+<p>启动Executor Server，并激活。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 exec]$ pwd</span><br><span class="line">/home/hadoop/software/azkaban/exec</span><br><span class="line">[hadoop@hadoop001 exec]$ ./bin/start-exec.sh </span><br><span class="line">[hadoop@hadoop001 exec]$ curl -G &quot;localhost:$(&lt;./executor.port)/executor?action=activate&quot;</span><br><span class="line">&#123;&quot;status&quot;:&quot;success&quot;&#125;[hadoop@hadoop001 exec]$ </span><br></pre></td></tr></table></figure>
+
+<p>启动Web Server</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 web]$ pwd</span><br><span class="line">/home/hadoop/software/azkaban/web</span><br><span class="line">[hadoop@hadoop001 exec]$ ./bin/start-web.sh </span><br></pre></td></tr></table></figure>
+
+<p>查看进程，访问UI页面</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 web]$ jps</span><br><span class="line">9989 Jps</span><br><span class="line">9868 AzkabanExecutorServer</span><br><span class="line">9965 AzkabanWebServer</span><br></pre></td></tr></table></figure>
+
+<p>Web UI:<a target="_blank" rel="noopener" href="http://hadoop001:8081/">http://hadoop001:8081/</a></p>
+<h2 id="azkaban-project案例"><a href="#azkaban-project案例" class="headerlink" title="azkaban project案例"></a>azkaban project案例</h2><h3 id="文件准备"><a href="#文件准备" class="headerlink" title="文件准备"></a>文件准备</h3><ul>
+<li><p>flow20.project</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">azkaban-flow-version: 2.0</span><br></pre></td></tr></table></figure></li>
+<li><p>spring.flow</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nodes:</span><br><span class="line">  - name: hello</span><br><span class="line">    type: command</span><br><span class="line">    config:</span><br><span class="line">      command: echo &quot;hello world&quot;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>把以上两个文件夹放到同一个文件夹下，并压缩为zip文件，上传到project上执行即可。</p>
+<h2 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h2><ol>
+<li><p>更换日志文件目录</p>
+<p>修改 azkaban-web-server/conf/log4j.properties</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># 默认为INFO, Console 需要修改</span><br><span class="line">log4j.rootLogger=INFO, server</span><br><span class="line">log4j.logger.azkaban=INFO, server</span><br><span class="line">log4j.appender.server=org.apache.log4j.RollingFileAppender</span><br><span class="line">log4j.appender.server.layout=org.apache.log4j.PatternLayout</span><br><span class="line"># 修改为绝对路径</span><br><span class="line">log4j.appender.server.File=/home/hadoop/log/azkaban/azkaban-webserver.log</span><br><span class="line">log4j.appender.server.layout.ConversionPattern=%d&#123;yyyy/MM/dd HH:mm:ss.SSS Z&#125; %5p [%c&#123;1&#125;] [%t] [Azkaban] %m%n</span><br><span class="line"># 修改为1024MB，默认为102400MB，显然是不合理的</span><br><span class="line">log4j.appender.server.MaxFileSize=1024MB</span><br><span class="line">log4j.appender.server.MaxBackupIndex=2</span><br><span class="line">log4j.appender.Console=org.apache.log4j.ConsoleAppender</span><br><span class="line">log4j.appender.Console.layout=org.apache.log4j.PatternLayout</span><br><span class="line">log4j.appender.Console.layout.ConversionPattern=%d&#123;yyyy/MM/dd HH:mm:ss.SSS Z&#125; %5p [%c&#123;1&#125;] [%t] [Azkaban] %m%n</span><br></pre></td></tr></table></figure></li>
+<li><p>web-server和exec-server启停脚本的修改</p>
+<p>优化点：</p>
+<ul>
+<li><p>因为启动web-server和exec-server，在哪个目录下执行启动服务，就会生成一个<code>.out</code>日志文件。由于已经更改日志文件存储目录，于是修改azkaban-web-server的<code>bin/start-web.sh</code>和azkaban-exec-server的<code>bin/start-exec.sh</code></p>
+</li>
+<li><p>exec-server的临时文件</p>
+<p>启动exec-server，在哪个目录下执行启动服务，就会生成<code>executions</code>目录、<code>temp</code>目录和<code>executor.port</code>文件这些临时的目录或文件，然后停止服务后，也不会删除这些临时目录或文件，于是:</p>
+<p>在<code>azkaban/azkaban-exec-server</code>目录下新建<code>tmp</code>目录用于存放这些临时目录或文件；</p>
+</li>
+<li><p>激活executor（修改后启动后自动激活）</p>
+</li>
+</ul>
+<p>修改后脚本：</p>
+<p>start-web.sh：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line"></span><br><span class="line">script_dir=$(dirname $0)</span><br><span class="line"></span><br><span class="line">#$&#123;script_dir&#125;/internal/internal-start-web.sh &gt;webServerLog_`date +%F+%T`.out 2&gt;&amp;1 &amp;</span><br><span class="line">$&#123;script_dir&#125;/internal/internal-start-web.sh &gt;/dev/null 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
+
+<p>start-exec.sh</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">#!/bin/bash</span><br><span class="line"></span><br><span class="line">#script_dir=$(dirname $0)</span><br><span class="line">script_dir=/home/hadoop/app/azkaban/exec/tmp</span><br><span class="line">cd $&#123;script_dir&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># pass along command line arguments to the internal launch script.</span><br><span class="line">#$&#123;script_dir&#125;/internal/internal-start-executor.sh &quot;$@&quot; &gt;executorServerLog__`date +%F+%T`.out 2&gt;&amp;1 &amp;</span><br><span class="line">../bin/internal/internal-start-executor.sh &quot;$@&quot; &gt;/dev/null 2&gt;&amp;1 &amp;</span><br><span class="line"></span><br><span class="line"># 这里休眠5s是为了给exec-server启动后提供一些准备时间</span><br><span class="line">sleep 5s</span><br><span class="line"># 然后再激活executor</span><br><span class="line">curl -G &quot;hadoop001:$(&lt;$&#123;script_dir&#125;/executor.port)/executor?action=activate&quot;</span><br><span class="line">~       </span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="其他问题"><a href="#其他问题" class="headerlink" title="其他问题"></a>其他问题</h2><ol>
+<li><p>Azkaban 部署完成后 执行 job 一直处于 Preparing 状态</p>
+<p>主要原因：没有可运行的executor</p>
+<p>可能：</p>
+<p>1.没激活；</p>
+<p>2.激活了但被过滤掉不可用</p>
+<p>azkaban默认情况下在开始运行job时会检测系统的内存，其最低要求的内存是3G，若系统内存不足3G，便会出现运行的job一直卡在那不动。</p>
+<p>修改 <code>azkaban-web-server/conf/azkaban.properties</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#MinimumFreeMemory 过滤器会检查 executor 主机空余内存是否会大于 3G，如果不足 3G，则 web-server 不会将任务交由该主机执行</span><br><span class="line">azkaban.executorselector.filters=StaticRemainingFlowSize,CpuStatus</span><br></pre></td></tr></table></figure></li>
+<li><p>Azkaban异常：Cannot request memory (Xms 0 kb, Xmx 0 kb) from system for job XX, sleep for 60 secs and retry, attempt 1 of 72</p>
+<p>azkaban默认情况下在开始运行job时会检测系统的内存，其最低要求的内存是3G，若系统内存不足3G，便会出现运行的job一直卡在那不动。</p>
+<p>解决方法：</p>
+<ol>
+<li><p>增加系统内存</p>
+</li>
+<li><p>关闭检测内存的选项。<br>具体办法为，在azkaban/azkaban-exec-server/plugins/jobtypes/目录下的commonprivate.properties的文件中添加一下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">memCheck.enabled=false</span><br></pre></td></tr></table></figure></li>
+</ol>
+</li>
+<li><p>jobtypes错误解决</p>
+<p>在executor的根目录下创建plugins\jobtypes\commonprivate.properties</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># set execute-as-user</span><br><span class="line">execute.as.user=false</span><br><span class="line">azkaban.native.lib=false</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -2038,101 +2206,6 @@
 <p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
 <p>参考链接：</p>
 <p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/" class="post-title-link" itemprop="url">mapreduce执行速度慢的原因</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-26 19:26:36 / 修改时间：20:08:06" itemprop="dateCreated datePublished" datetime="2022-01-26T19:26:36+08:00">2022-01-26</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
-<li>CPU、内存小、网络不好都有可能导致运行速度慢</li>
-<li>出现数据倾斜</li>
-<li>map和reduce数设置不合理</li>
-<li>小文件过多</li>
-<li>大量的不可分块的超大文件</li>
-<li>spilt次数过多</li>
-</ol>
-<p>优化方案：</p>
-<ol>
-<li>解决数据倾斜：数据倾斜可能是partition不合理，导致部分partition中的数据过多，部分过少。可通过分析数据，自定义分区器解决。</li>
-<li>合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、 reduce 任务间竞争资源，造成处理超时等错误。</li>
-<li>设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少 reduce 的等待时间。</li>
-<li>合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致 mr 运行较慢。</li>
-<li>减少spill次数（环形缓冲区，调大环形缓冲区的内存，从而接收更多数据）：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill 次数，从而减少磁盘 IO。</li>
-<li>减少merge次数（mapreduce两端的合并文件的数目）：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。</li>
-</ol>
-<h2 id="相比Spark执行速度慢的原因"><a href="#相比Spark执行速度慢的原因" class="headerlink" title="相比Spark执行速度慢的原因"></a>相比Spark执行速度慢的原因</h2><h3 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h3><p>其实Spark和MapReduce的计算都发生在内存中，区别在于：</p>
-<ul>
-<li>MapReduce通常需要将计算的中间结果写入磁盘，然后还要读取磁盘，从而导致了频繁的磁盘IO。</li>
-<li>Spark则不需要将计算的中间结果写入磁盘，这得益于Spark的RDD（弹性分布式数据集，很强大）和DAG（有向无环图），其中DAG记录了job的stage以及在job执行过程中父RDD和子RDD之间的依赖关系。中间结果能够以RDD的形式存放在内存中，且能够从DAG中恢复，大大减少了磁盘IO。</li>
-</ul>
-<h3 id="Shuffle的不同"><a href="#Shuffle的不同" class="headerlink" title="Shuffle的不同"></a>Shuffle的不同</h3><p>Spark和MapReduce在计算过程中通常都不可避免的会进行Shuffle，两者至少有一点不同：</p>
-<ul>
-<li>MapReduce在Shuffle时需要花费大量时间进行排序，排序在MapReduce的Shuffle中似乎是不可避免的；</li>
-<li>Spark在Shuffle时则只有部分场景才需要排序，支持基于Hash的分布式聚合，更加省时；</li>
-</ul>
-<h3 id="多进程模型-vs-多线程模型的区别"><a href="#多进程模型-vs-多线程模型的区别" class="headerlink" title="多进程模型 vs 多线程模型的区别"></a>多进程模型 vs 多线程模型的区别</h3><p>MapReduce采用了多进程模型，而Spark采用了多线程模型。多进程模型的好处是便于细粒度控制每个任务占用的资源，但每次任务的启动都会消耗一定的启动时间。就是说MapReduce的Map Task和Reduce Task是进程级别的，而Spark Task则是基于线程模型的，就是说mapreduce 中的 map 和 reduce 都是 jvm 进程，每次启动都需要重新申请资源，消耗了不必要的时间（假设容器启动时间大概1s，如果有1200个block，那么单独启动<a target="_blank" rel="noopener" href="https://www.zhihu.com/search?q=map%E8%BF%9B%E7%A8%8B%E4%BA%8B%E4%BB%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22:%22answer%22,%22sourceId%22:1247877997%7D">map进程事件</a>就需要20分钟）</p>
-<p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
-<p>参考链接：</p>
-<p><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
 
       
     </div>
