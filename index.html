@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-count">58</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,87 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/" class="post-title-link" itemprop="url">Spark DF/DS API：行列转换</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-02-23 01:36:53 / 修改时间：01:46:05" itemprop="dateCreated datePublished" datetime="2022-02-23T01:36:53+08:00">2022-02-23</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>前文回顾：<a href="https://k12coding.github.io/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">Hive：行列转换</a></p>
+<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">val rows1 = new util.ArrayList[Row]()</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;c&quot;, 1))</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;d&quot;, 2))</span><br><span class="line"></span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;e&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema1 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df1 = spark.createDataFrame(rows1, schema1)</span><br><span class="line"></span><br><span class="line">println(&quot;多行转多列&quot;)</span><br><span class="line">df1.show()</span><br><span class="line"></span><br><span class="line">df1.groupBy(&#x27;col1)</span><br><span class="line">.pivot(&#x27;col2)</span><br><span class="line">.max(&quot;col3&quot;).na.fill(0)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">多行转多列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   b|  0|  5|  6|</span><br><span class="line">|   a|  1|  2|  0|</span><br><span class="line">+----+---+---+---+</span><br></pre></td></tr></table></figure>
+
+<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><h4 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">val rows2 = new util.ArrayList[Row]()</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 1))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 2))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 3))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 4))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema2 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df2 = spark.createDataFrame(rows2, schema2)</span><br><span class="line">println(&quot;多行转单列&quot;)</span><br><span class="line">df2.show()</span><br><span class="line">df2.groupBy(&#x27;col1,&#x27;col2)</span><br><span class="line">.agg(concat_ws(&quot;,&quot;,collect_set(&#x27;col3)).as(&quot;col3&quot;))</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">多行转单列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   b|   d|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   d|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   b|   d|5,6,4|</span><br><span class="line">+----+----+-----+</span><br></pre></td></tr></table></figure>
+
+<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><h4 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">val rows3 = new util.ArrayList[Row]()</span><br><span class="line">rows3.add(Row(&quot;a&quot;, 1, 2, 3))</span><br><span class="line">rows3.add(Row(&quot;b&quot;, 4, 5, 6))</span><br><span class="line"></span><br><span class="line">val schema3 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;c&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;d&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;e&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df3 = spark.createDataFrame(rows3, schema3)</span><br><span class="line"></span><br><span class="line">println(&quot;多列转多行&quot;)</span><br><span class="line">df3.show()</span><br><span class="line">df3.selectExpr(&quot;col1&quot;,&quot;stack(3, &#x27;c&#x27;, c, &#x27;d&#x27;, d, &#x27;e&#x27;, e) as (`col2`,`col3`)&quot;)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">多列转多行</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   a|  1|  2|  3|</span><br><span class="line">|   b|  4|  5|  6|</span><br><span class="line">+----+---+---+---+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   a|   e|   3|</span><br><span class="line">|   b|   c|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
+
+<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><h4 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">val rows4 = new util.ArrayList[Row]()</span><br><span class="line">rows4.add(Row(&quot;a&quot;, &quot;b&quot;, &quot;1,2,3&quot;))</span><br><span class="line">rows4.add(Row(&quot;c&quot;, &quot;d&quot;, &quot;4,5,6&quot;))</span><br><span class="line"></span><br><span class="line">val schema4 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, StringType):: Nil</span><br><span class="line">)</span><br><span class="line">val df4 = spark.createDataFrame(rows4, schema4)</span><br><span class="line"></span><br><span class="line">println(&quot;单列转多行&quot;)</span><br><span class="line">df4.show()</span><br><span class="line">df4.select(&#x27;col1,&#x27;col2,explode(split(&#x27;col3,&quot;,&quot;)).as(&quot;col3&quot;)).show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1493,344 +1574,6 @@
 <p>参考链接：</p>
 <p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/" class="post-title-link" itemprop="url">Hive介绍</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2022-01-29 02:50:45" itemprop="dateCreated datePublished" datetime="2022-01-29T02:50:45+08:00">2022-01-29</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-01-30 03:33:02" itemprop="dateModified" datetime="2022-01-30T03:33:02+08:00">2022-01-30</time>
-      </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive01.png" alt="img" style="zoom:33%;">
-
-<p>Hive起源于Facebook（一个美国的社交服务网络）。Facebook有着大量的数据，而Hadoop是一个开源的MapReduce实现，可以轻松处理大量的数据。但是MapReduce程序对于Java程序员来说比较容易写，但是对于其他语言使用者来说不太方便。此时Facebook最早地开始研发Hive，它让对Hadoop使用SQL查询（实际上SQL后台转化为了MapReduce）成为可能，那些非Java程序员也可以更方便地使用。hive最早的目的也就是为了分析处理海量的日志。</p>
-<h2 id="什么是-Hive？"><a href="#什么是-Hive？" class="headerlink" title="什么是 Hive？"></a>什么是 Hive？</h2><p>Hive是基于Hadoop的一个<strong>数据仓库工具</strong>。可以将结构化的数据文件映射为一张表，并提供完整的sql查询功能，<strong>可以将sql语句转换为MapReduce任务进行运行</strong>。其优点是学习成本低，可以通过<strong>类SQL</strong>语句快速实现MapReduce统计，不必开发专门的MapReduce应用，十分适合数据仓库的统计分析。</p>
-<p>Hive是建立在 Hadoop 上的数据仓库基础构架。它提供了一系列的工具，可以用来进行<strong>数据提取、转化、加载（ETL Extract-Transform-Load）</strong>,也可以叫做<strong>数据清洗</strong>，这是一种可以存储、查询和分析存储在 Hadoop 中的大规模数据的机制。Hive 定义了简单的类 SQL 查询语言，称为 <strong>HiveQL</strong>，它允许熟悉 SQL 的用户查询数据。</p>
-<h3 id="Hive-不是"><a href="#Hive-不是" class="headerlink" title="Hive 不是"></a>Hive 不是</h3><ul>
-<li>一个关系数据库</li>
-<li>一个设计用于联机事务处理（OLTP）</li>
-<li>实时查询和行级更新的语言</li>
-</ul>
-<h3 id="Hive特点"><a href="#Hive特点" class="headerlink" title="Hive特点"></a>Hive特点</h3><ul>
-<li>它存储架构在一个数据库中并处理数据到HDFS。</li>
-<li>它是专为联机分析处理（OLAP）设计。</li>
-<li>它提供SQL类型语言查询叫HiveQL或HQL。</li>
-<li>它是低学习成本，快速和可扩展的。</li>
-</ul>
-<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><p>Hive在Hadoop中扮演数据仓库的角色，主要用于静态的结构以及需要经常分析的工作。</p>
-<p>​    Hive 构建在基于静态（离线）批处理的Hadoop 之上，Hadoop 通常都有较高的延迟并且在作业提交和调度的时候需要大量的开销。<strong>因此，****Hive</strong> <strong>并不能够在大规模数据集上实现低延迟快速的查询</strong>，例如，Hive 在几百MB 的数据集上执行查询一般有分钟级的时间延迟。</p>
-<p>​    因此，Hive 并不适合那些需要低延迟的应用，例如，联机事务处理(OLTP)。Hive 查询操作过程严格遵守Hadoop MapReduce 的作业执行模型，Hive 将用户的HiveQL 语句通过解释器转换为MapReduce 作业提交到Hadoop 集群上，Hadoop 监控作业执行过程，然后返回作业执行结果给用户。Hive 并非为联机事务处理而设计，Hive 并不提供实时的查询和基于行级的数据更新操作。<strong>Hive</strong> <strong>的最佳使用场合是大数据集的离线批处理作业，例如，网络日志分析</strong>。</p>
-<h2 id="Hive架构"><a href="#Hive架构" class="headerlink" title="Hive架构"></a>Hive架构</h2><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive09.png" alt="img"></p>
-<p>由上图可知，hadoop和mapreduce是hive架构的根基。Hive架构包括如下组件：CLI（command line interface）、JDBC/ODBC、Thrift Server、WEB GUI、metastore和Driver(Complier、Optimizer和Executor)，这些组件我可以分为两大类：服务端组件和客户端组件。</p>
-<h3 id="2-1服务端组件："><a href="#2-1服务端组件：" class="headerlink" title="2.1服务端组件："></a>2.1服务端组件：</h3><p>　　<strong>Driver组件</strong>：该组件包括Complier、Optimizer和Executor，它的作用是将我们写的HiveQL（类SQL）语句进行解析、编译优化，生成执行计划，然后调用底层的mapreduce计算框架。</p>
-<p>　　<strong>Metastore组件</strong>：元数据服务组件，这个组件存储hive的元数据，hive的元数据存储在关系数据库里，hive支持的关系数据库有derby、mysql。元数据对于hive十分重要，因此hive支持把metastore服务独立出来，安装到远程的服务器集群里，从而解耦hive服务和metastore服务，保证hive运行的健壮性.</p>
-<p>　　<strong>Thrift服务</strong>：thrift是facebook开发的一个软件框架，它用来进行可扩展且跨语言的服务的开发，hive集成了该服务，能让不同的编程语言调用hive的接口。</p>
-<h3 id="2-2客户端组件："><a href="#2-2客户端组件：" class="headerlink" title="2.2客户端组件："></a>2.2客户端组件：</h3><p>　　<strong>CLI</strong>：command line interface，命令行接口。</p>
-<p>　　<strong>Thrift客户端</strong>：上面的架构图里没有写上Thrift客户端，但是hive架构的许多客户端接口是建立在thrift客户端之上，包括JDBC和ODBC接口。</p>
-<p>　　<strong>WEBGUI</strong>：hive客户端提供了一种通过网页的方式访问hive所提供的服务。这个接口对应hive的hwi组件（hive web interface），使用前要启动hwi服务。</p>
-<p><strong>详解metastore：</strong></p>
-<p>Hive的metastore组件是hive元数据集中存放地。Metastore组件包括两个部分：metastore服务和后台数据的存储。后台数据存储的介质就是关系数据库，例如hive默认的嵌入式磁盘数据库derby，还有mysql数据库。Metastore服务是建立在后台数据存储介质之上，并且可以和hive服务进行交互的服务组件，默认情况下，metastore服务和hive服务是安装在一起的，运行在同一个进程当中。我也可以把metastore服务从hive服务里剥离出来，metastore独立安装在一个集群里，hive远程调用metastore服务，这样我们可以把元数据这一层放到防火墙之后，客户端访问hive服务，就可以连接到元数据这一层，从而提供了更好的管理性和安全保障。使用远程的metastore服务，可以让metastore服务和hive服务运行在不同的进程里，这样也保证了hive的稳定性，提升了hive服务的效率。</p>
-<h2 id="Hive详细运行架构"><a href="#Hive详细运行架构" class="headerlink" title="Hive详细运行架构"></a>Hive详细运行架构</h2><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive03.png" alt="img"></p>
-<p>工作流程步骤：</p>
-<ol>
-<li><p>ExecuteQuery（执行查询操作）：命令行或Web UI之类的Hive接口将查询发送给Driver（任何数据驱动程序，如JDBC、ODBC等）执行；</p>
-</li>
-<li><p>GetPlan（获取计划任务）：Driver借助编译器解析查询，检查语法和查询计划或查询需求；</p>
-</li>
-<li><p>GetMetaData（获取元数据信息）：编译器将元数据请求发送到Metastore（任何数据库）；</p>
-</li>
-<li><p> SendMetaData（发送元数据）：MetaStore将元数据作为对编译器的响应发送出去；</p>
-</li>
-<li><p> SendPlan（发送计划任务）：编译器检查需求并将计划重新发送给Driver。到目前为止，查询的解析和编译已经完成；</p>
-</li>
-<li><p>ExecutePlan（执行计划任务）：Driver将执行计划发送到执行引擎；</p>
-<p>6.1 ExecuteJob（执行Job任务）：在内部，执行任务的过程是MapReduce Job。执行引擎将Job发送到ResourceManager，ResourceManager位于Name节点中，并将job分配给datanode中的NodeManager。在这里，查询执行MapReduce任务；</p>
-<p>6.1 Metadata Ops（元数据操作）：在执行的同时，执行引擎可以使用Metastore执行元数据操作；</p>
-<p>6.2 jobDone（完成任务）：完成MapReduce Job；</p>
-<p>6.3 dfs operations（dfs操作记录）：向namenode获取操作数据；</p>
-</li>
-<li><p>FetchResult（拉取结果集）：执行引擎将从datanode上获取结果集；</p>
-</li>
-<li><p>SendResults（发送结果集至driver）：执行引擎将这些结果值发送给Driver；</p>
-</li>
-<li><p>SendResults （driver将result发送至interface）：Driver将结果发送到Hive接口（即UI）；</p>
-</li>
-</ol>
-<h2 id="Driver端的Hive编译流程"><a href="#Driver端的Hive编译流程" class="headerlink" title="Driver端的Hive编译流程"></a>Driver端的Hive编译流程</h2><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive04.png" alt="img"></p>
-<p>Hive是如何将SQL转化成MapReduce任务的，整个编辑过程分为六个阶段：</p>
-<ol>
-<li>词法分析/语法分析：使用Antlr定义SQL的语法规则，完成SQL词法，语法解析，将SQL语句解析成抽象语法树（AST Tree）；</li>
-<li>语义分析：遍历AST Tree，抽象出查询的基本组成单元QueryBlock，并从Metastore获取模式信息，验证SQL语句中队表名、列名，以及数据类型（即QueryBlock）的检查和隐式转换，以及Hive提供的函数和用户自定义的函数（UDF/UAF）；</li>
-<li>逻辑计划生成：遍历QueryBlock，翻译生成执行操作树Operator Tree（即逻辑计划）；</li>
-<li>逻辑计划优化：逻辑层优化器对Operator Tree进行变换优化，合并不必要的ReduceSinkOperator，减少shuffle数据量；</li>
-<li>物理计划生成：将Operator Tree（逻辑计划）生成包含由MapReduce任务组成的DAG的物理计划——任务树；</li>
-<li>物理计划优化：物理层优化器对MapReduce任务树进行优化，并进行MapReduce任务的变换，生成最终的执行计划；</li>
-</ol>
-<h2 id="Hive的元数据存储"><a href="#Hive的元数据存储" class="headerlink" title="Hive的元数据存储"></a>Hive的元数据存储</h2><p>　对于数据存储，Hive没有专门的数据存储格式，也没有为数据建立索引，用户可以非常自由的组织Hive中的表，只需要在创建表的时候告诉Hive数据中的列分隔符和行分隔符，Hive就可以解析数据。Hive中所有的数据都存储在HDFS中，存储结构主要包括数据库、文件、表和视图。Hive中包含以下数据模型：Table内部表，External Table外部表，Partition分区，Bucket桶。Hive默认可以直接加载文本文件，还支持sequence file、RCFile。</p>
-<p>　　Hive将元数据存储在RDBMS中，有三种模式可以连接到数据库：</p>
-<h3 id="元数据内嵌模式（Embedded-Metastore-Database）"><a href="#元数据内嵌模式（Embedded-Metastore-Database）" class="headerlink" title="元数据内嵌模式（Embedded Metastore Database）"></a>元数据内嵌模式（Embedded Metastore Database）</h3><p>此模式连接到一个本地内嵌In-memory的数据库Derby，一般用于Unit Test，内嵌的derby数据库每次只能访问一个数据文件，也就意味着它不支持多会话连接。</p>
-<p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive05.png" alt="img"></p>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>描述</th>
-<th>用例</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>javax.jdo.option.ConnectionURL</td>
-<td>JDBC连接url</td>
-<td>jdbc:derby:databaseName=metastore_db;create=true</td>
-</tr>
-<tr>
-<td>javax.jdo.option.ConnectionDriverName</td>
-<td>JDBC driver名称</td>
-<td>org.apache.derby.jdbc.EmbeddedDriver</td>
-</tr>
-<tr>
-<td>javax.jdo.option.ConnectionUserName</td>
-<td>用户名</td>
-<td>xxx</td>
-</tr>
-<tr>
-<td>javax.jdo.option.ConnectionPassword</td>
-<td>密码</td>
-<td>xxxx</td>
-</tr>
-</tbody></table>
-<h3 id="本地元数据存储模式（Local-Metastore-Server）"><a href="#本地元数据存储模式（Local-Metastore-Server）" class="headerlink" title="本地元数据存储模式（Local Metastore Server）"></a>本地元数据存储模式（Local Metastore Server）</h3><p> 　通过网络连接到一个数据库中，是最经常使用到的模式。</p>
-<p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive06.png" alt="img"></p>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>描述</th>
-<th>用例</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>javax.jdo.option.ConnectionURL</td>
-<td>JDBC连接url</td>
-<td>jdbc:mysql://<host name>/databaseName?createDatabaseIfNotExist=true</host></td>
-</tr>
-<tr>
-<td>javax.jdo.option.ConnectionDriverName</td>
-<td>JDBC driver名称</td>
-<td>com.mysql.jdbc.Driver</td>
-</tr>
-<tr>
-<td>javax.jdo.option.ConnectionUserName</td>
-<td>用户名</td>
-<td>xxx</td>
-</tr>
-<tr>
-<td>javax.jdo.option.ConnectionPassword</td>
-<td>密码</td>
-<td>xxxx</td>
-</tr>
-</tbody></table>
-<h3 id="远程访问元数据模式（Remote-Metastore-Server）"><a href="#远程访问元数据模式（Remote-Metastore-Server）" class="headerlink" title="远程访问元数据模式（Remote Metastore Server）"></a>远程访问元数据模式（Remote Metastore Server）</h3><p>　　用于非Java客户端访问元数据库，在服务端启动MetaServer，客户端利用Thrift协议通过MetaStoreServer访问元数据库。</p>
-<p>   <img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive07.png" alt="img"></p>
-<ul>
-<li><p>服务端启动HiveMetaStore</p>
-<p>第一种方式：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hive --service metastore -p 9083 &amp;</span><br></pre></td></tr></table></figure>
-
-<p>第二种方式：</p>
-<p>如果在hive-site.xml里指定了hive.metastore.uris的port，就可以不指定端口启动了</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://node1:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hive --service metastore</span><br></pre></td></tr></table></figure></li>
-</ul>
-<ul>
-<li>客户端配置</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>参数</th>
-<th>描述</th>
-<th>用例</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>hive.metastore.uris</td>
-<td>metastore server的url</td>
-<td>thrift://<host_name>:9083</host_name></td>
-</tr>
-<tr>
-<td>hive.metastore.local</td>
-<td>metastore server的位置</td>
-<td>false表示远程</td>
-</tr>
-</tbody></table>
-<h3 id="三种模式汇总"><a href="#三种模式汇总" class="headerlink" title="三种模式汇总"></a>三种模式汇总</h3><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive08.png" alt="img"></p>
-<h2 id="与RDBMS对比"><a href="#与RDBMS对比" class="headerlink" title="与RDBMS对比"></a>与RDBMS对比</h2><h3 id="RDBMS是什么"><a href="#RDBMS是什么" class="headerlink" title="RDBMS是什么"></a>RDBMS是什么</h3><p>RDBMS 是 <strong>R</strong>elational <strong>D</strong>ata<strong>b</strong>ase <strong>M</strong>anagement <strong>S</strong>ystem 的缩写，中文译为“关系数据库管理系统”，它是 SQL 语言以及所有现代数据库系统（例如 SQL Server、DB2、Oracle、MySQL 和 Microsoft Access）的基础。</p>
-<p>在 RDBMS 中，数据被存储在一种称为表（Table）的数据库对象中，它和 Excel 表格类似，都由许多行（Row）和列（Column）构成。每一行都是一条数据，每一列都是数据的一个属性，整个表就是若干条相关数据的集合。</p>
-<h3 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h3><table>
-<thead>
-<tr>
-<th>对比项</th>
-<th>Hive</th>
-<th>RDBMS</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>查询语言</td>
-<td>HQL</td>
-<td>SQL</td>
-</tr>
-<tr>
-<td>数据存储</td>
-<td>HDFS</td>
-<td>Row Device or Local FS</td>
-</tr>
-<tr>
-<td>执行器</td>
-<td>MapReduce</td>
-<td>Executor</td>
-</tr>
-<tr>
-<td>数据插入</td>
-<td>支持批量导入/单挑插入</td>
-<td>支持单条或批量导入</td>
-</tr>
-<tr>
-<td>数据更新</td>
-<td>不支持</td>
-<td>支持</td>
-</tr>
-<tr>
-<td>处理数据规模</td>
-<td>大</td>
-<td>小</td>
-</tr>
-<tr>
-<td>执行延迟</td>
-<td>高（构建在HDFS和MR之上）</td>
-<td>低</td>
-</tr>
-<tr>
-<td>分区</td>
-<td>支持</td>
-<td>支持</td>
-</tr>
-<tr>
-<td>索引</td>
-<td>0.8版本之后加入索引</td>
-<td>有复杂的索引</td>
-</tr>
-<tr>
-<td>扩展性</td>
-<td>高（好）</td>
-<td>有限（差）</td>
-</tr>
-<tr>
-<td>事务</td>
-<td>不支持（插件下支持，不推荐）</td>
-<td>支持</td>
-</tr>
-<tr>
-<td>应用场景</td>
-<td>海量数据查询</td>
-<td>实时查询</td>
-</tr>
-</tbody></table>
-<p><strong>Below are the key features of Hive that differ from RDBMS.</strong></p>
-<ul>
-<li><p><strong>Hive</strong> resembles a traditional database by supporting SQL interface but it <strong>is not a full database</strong>. Hive can be better called as <strong>data warehouse</strong> instead of <strong>database</strong>.</p>
-</li>
-<li><p>Hive enforces <strong>schema on read</strong> time whereas RDBMS enforces <strong>schema on write time.</strong> </p>
-<p><strong>In RDBMS</strong>, a table’s schema is enforced at data load time, If the data being<br>loaded doesn’t conform to the schema, then it is rejected. This design is called <strong>schema on write.</strong> </p>
-<p>But <strong>Hive</strong> doesn’t verify the data when it is loaded, but rather when a<br>it is retrieved. This is called <strong>schema on read.</strong></p>
-<p><strong>Schema on read</strong> makes for a <strong>very fast initial load</strong>, since the data does not have to be read, parsed, and serialized to disk in the database’s internal format. The load operation is just a file copy or move.</p>
-<p><strong>Schema on write</strong> makes <strong>query time performance faster</strong>, since the database can index columns and perform compression on the data but it takes <strong>longer to load data</strong> into the database.</p>
-</li>
-<li><p>Hive is based on the notion of <strong>Write once, Read many times</strong> but RDBMS is designed for <strong>Read and Write many times.</strong> </p>
-</li>
-<li><p>In <strong>RDBMS</strong>, <strong>record level updates, insertions and deletes, transactions and indexes</strong> are <strong>possible</strong>. Whereas these are not allowed in Hive because Hive was built to operate over HDFS data using MapReduce, where full-table scans are the norm and a table update is achieved by transforming the data into a new table.</p>
-</li>
-<li><p>In RDBMS, maximum data size allowed will be in 10’s of <strong>Terabytes</strong> but whereas Hive can 100’s <strong>Petabytes</strong> very easily.</p>
-</li>
-<li><p>As Hadoop is a batch-oriented system, Hive <strong>doesn’t support OLTP</strong> (Online Transaction Processing) but it is <strong>closer to OLAP</strong> (Online Analytical Processing) <strong>but not ideal</strong> since there is significant latency between issuing a query and receiving a reply, due to the overhead of Mapreduce jobs and due to the size of the data sets Hadoop was designed to serve.</p>
-</li>
-<li><p><strong>RDBMS</strong> is best suited for dynamic data analysis and where fast responses are expected but Hive is suited for data warehouse applications, where relatively static data is analyzed, fast response times are not required, and when the data is not changing rapidly.</p>
-</li>
-<li><p>To overcome the limitations of Hive, <strong>HBase</strong> is being integrated with Hive to support <strong>record level operations</strong> and <strong>OLAP</strong>.</p>
-</li>
-<li><p>Hive is very easily <strong>scalable</strong> at <strong>low cost</strong> but RDBMS is not that much scalable that too it is very costly scale up.</p>
-</li>
-</ul>
-<p>总结：</p>
-<p>Hive并非为联机事务处理而设计，Hive并不提供实时的查询和基于行级的数据更新操作。Hive是建立在Hadoop之上的数据仓库软件工具，它提供了一系列的工具，帮助用户对大规模的数据进行提取、转换和加载，即通常所称的ETL(Extraction，Transformation，and Loading)操作。Hive可以直接访问存储在HDFS或者其他存储系统(如Hbase)中的数据，然后将这些数据组织成表的形式，在其上执行ETL操作。 Hive的最佳使用场合是大数据集的批处理作业，例如，网络日志分析。</p>
-<p>参考链接：</p>
-<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/swordfall/p/13426569.html">https://www.cnblogs.com/swordfall/p/13426569.html</a></p>
-<p><a target="_blank" rel="noopener" href="http://hadooptutorial.info/hive-vs-rdbms/#:~:text=Hive%20can%20be%20better%20called%20as%20data%20warehouseinstead,enforced%20at%20data%20load%20time%2C%C2%A0If%20the%20data%20being">http://hadooptutorial.info/hive-vs-rdbms/#:~:text=Hive%20can%20be%20better%20called%20as%20data%20warehouseinstead,enforced%20at%20data%20load%20time%2C%C2%A0If%20the%20data%20being</a></p>
-<p><a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15072778/3994524">https://blog.51cto.com/u_15072778/3994524</a></p>
-<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/benjamin77/p/10232561.html">https://www.cnblogs.com/benjamin77/p/10232561.html</a></p>
 
       
     </div>
