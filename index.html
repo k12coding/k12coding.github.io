@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">58</span>
+          <span class="site-state-item-count">59</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,116 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/" class="post-title-link" itemprop="url">Sqoop部署</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-02-28 06:57:07 / 修改时间：07:56:26" itemprop="dateCreated datePublished" datetime="2022-02-28T06:57:07+08:00">2022-02-28</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <ol>
+<li><p>下载tar包</p>
+<p>地址：<a target="_blank" rel="noopener" href="http://archive.apache.org/dist/sqoop/">http://archive.apache.org/dist/sqoop/</a></p>
+<p><a target="_blank" rel="noopener" href="http://archive.apache.org/dist/sqoop/1.4.7/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz">sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz</a></p>
+</li>
+<li><p>解压到相应目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ mv sqoop-1.4.7.bin__hadoop-2.6.0 sqoop-1.4.7</span><br><span class="line">[hadoop@hadoop001 software]$ tar -xzvf sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz </span><br><span class="line">[hadoop@hadoop001 app]$ ln -s /home/hadoop/software/sqoop-1.4.7 /home/hadoop/app/sqoop</span><br></pre></td></tr></table></figure></li>
+<li><p>修改conf/sqoop-env.sh</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 sqoop]$ cd conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ cp sqoop-env-template.sh sqoop-env.sh</span><br><span class="line">[hadoop@hadoop001 conf]$ ll</span><br><span class="line">total 32</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 3895 Dec 18  2017 oraoop-site-template.xml</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Feb 27 23:04 sqoop-env.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 1404 Dec 18  2017 sqoop-env-template.cmd</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Dec 18  2017 sqoop-env-template.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site-template.xml</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site.xml</span><br></pre></td></tr></table></figure>
+
+<p>配置相关变量(本机暂未部署hbase和zk)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># Set Hadoop-specific environment variables here.</span><br><span class="line"></span><br><span class="line">#Set path to where bin/hadoop is available</span><br><span class="line">export HADOOP_COMMON_HOME=/home/hadoop/app/hadoop</span><br><span class="line"></span><br><span class="line">#Set path to where hadoop-*-core.jar is available</span><br><span class="line">export HADOOP_MAPRED_HOME=/home/hadoop/app/hadoop</span><br><span class="line"></span><br><span class="line">#set the path to where bin/hbase is available</span><br><span class="line">#export HBASE_HOME=</span><br><span class="line"></span><br><span class="line">#Set the path to where bin/hive is available</span><br><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line"></span><br><span class="line">#Set the path for where zookeper config dir is</span><br><span class="line">#export ZOOCFGDIR=</span><br></pre></td></tr></table></figure></li>
+<li><p>添加环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi .bash_profile </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export SQOOP_HOME=/home/hadoop/app/sqoop</span><br><span class="line">export PATH=$&#123;SQOOP_HOME&#125;/bin:$PATH</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ source .bash_profile </span><br></pre></td></tr></table></figure></li>
+<li><p>拷贝mysql驱动包到sqoop的lib目录下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cp lib/mysql-connector-java-5.1.47.jar app/sqoop/lib/</span><br></pre></td></tr></table></figure></li>
+<li><p>测试Sqoop是否能够成功连接数据库</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password 123456</span><br></pre></td></tr></table></figure>
+
+<p>插曲：报错<code>Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</code>看最后问题总结</p>
+</li>
+<li><p>成功访问</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password &#x27;123456&#x27;</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-27 23:54:08,530 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-27 23:54:08,647 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-27 23:54:08,832 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Sun Feb 27 23:54:09 GMT 2022 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">information_schema</span><br><span class="line">azkaban</span><br><span class="line">hive</span><br><span class="line">mysql</span><br><span class="line">performance_schema</span><br><span class="line">bigdata</span><br><span class="line">sys</span><br></pre></td></tr></table></figure></li>
+<li><p>问题总结</p>
+<ul>
+<li><p>Exception in thread “main” java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password &#x27;123456&#x27;</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-27 23:25:34,723 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-27 23:25:34,838 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-27 23:25:35,007 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</span><br><span class="line">	at org.apache.sqoop.manager.MySQLManager.initOptionDefaults(MySQLManager.java:73)</span><br><span class="line">	at org.apache.sqoop.manager.SqlManager.&lt;init&gt;(SqlManager.java:89)</span><br><span class="line">	at com.cloudera.sqoop.manager.SqlManager.&lt;init&gt;(SqlManager.java:33)</span><br><span class="line">	at org.apache.sqoop.manager.GenericJdbcManager.&lt;init&gt;(GenericJdbcManager.java:51)</span><br><span class="line">	at com.cloudera.sqoop.manager.GenericJdbcManager.&lt;init&gt;(GenericJdbcManager.java:30)</span><br><span class="line">	at org.apache.sqoop.manager.CatalogQueryManager.&lt;init&gt;(CatalogQueryManager.java:46)</span><br><span class="line">	at com.cloudera.sqoop.manager.CatalogQueryManager.&lt;init&gt;(CatalogQueryManager.java:31)</span><br><span class="line">	at org.apache.sqoop.manager.InformationSchemaManager.&lt;init&gt;(InformationSchemaManager.java:38)</span><br><span class="line">	at com.cloudera.sqoop.manager.InformationSchemaManager.&lt;init&gt;(InformationSchemaManager.java:31)</span><br><span class="line">	at org.apache.sqoop.manager.MySQLManager.&lt;init&gt;(MySQLManager.java:65)</span><br><span class="line">	at org.apache.sqoop.manager.DefaultManagerFactory.accept(DefaultManagerFactory.java:67)</span><br><span class="line">	at org.apache.sqoop.ConnFactory.getManager(ConnFactory.java:184)</span><br><span class="line">	at org.apache.sqoop.tool.BaseSqoopTool.init(BaseSqoopTool.java:272)</span><br><span class="line">	at org.apache.sqoop.tool.ListDatabasesTool.run(ListDatabasesTool.java:44)</span><br><span class="line">	at org.apache.sqoop.Sqoop.run(Sqoop.java:147)</span><br><span class="line">	at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:76)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runSqoop(Sqoop.java:183)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)</span><br><span class="line">	at org.apache.sqoop.Sqoop.main(Sqoop.java:252)</span><br><span class="line">Caused by: java.lang.ClassNotFoundException: org.apache.commons.lang.StringUtils</span><br><span class="line">	at java.net.URLClassLoader.findClass(URLClassLoader.java:381)</span><br><span class="line">	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)</span><br><span class="line">	at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:331)</span><br><span class="line">	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)</span><br><span class="line">	... 20 more</span><br><span class="line">[hadoop@hadoop001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p><strong>原因</strong>：Caused by: java.lang.ClassNotFoundException: org.apache.commons.lang.StringUtils</p>
+<p>Sqoop1.4.7默认只加载了commons-lang3-3.4.jar的jar包，里面的StringUtils类的package为：org/apache/commons/lang3/StringUtils，所以直接使用sqoop命令时报上述错误。</p>
+<p><strong>解决方法</strong>：</p>
+<p>将旧版的jar包下载并导入到sqoop目录下的lib目录下即可</p>
+<p>下载：<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/commons-lang/commons-lang/2.6/commons-lang-2.6.jar">commons-lang-2.6.jar</a></p>
+</li>
+<li><p>MySQL登录验证失败</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2022-02-27 23:45:27,936 ERROR sqoop.Sqoop: Got exception running Sqoop: java.lang.RuntimeException: java.sql.SQLException: Access denied for user &#x27;root&#x27;@&#x27;hadoop001&#x27; (using password: YES)</span><br><span class="line">java.lang.RuntimeException: java.sql.SQLException: Access denied for user &#x27;root&#x27;@&#x27;hadoop001&#x27; (using password: YES)</span><br></pre></td></tr></table></figure>
+
+<p>检查密码有没有输入出错，在<code>--password</code>选项建议添加单引号输入，如：<code>&#39;password&#39;</code></p>
+</li>
+</ul>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1447,133 +1557,6 @@
 <p>参考链接：</p>
 <p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/" class="post-title-link" itemprop="url">Hive四种排序方式:order by,sort by,distribute by,cluster by</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2022-01-29 21:21:41" itemprop="dateCreated datePublished" datetime="2022-01-29T21:21:41+08:00">2022-01-29</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-01-30 01:40:21" itemprop="dateModified" datetime="2022-01-30T01:40:21+08:00">2022-01-30</time>
-      </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
-
-<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
-<ul>
-<li>效率较低。</li>
-<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
-<li>ORDER BY 子句在SELECT 语句的结尾</li>
-</ul>
-<p>例：</p>
-<p>select * from emp order by sal desc;</p>
-<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
-
-<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
-<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
-<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
-<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
-<p>例：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
-
-<p>查询有2个reducer,它们的输出分别是：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
-
-<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
-<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 1 got</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 2 got</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
-
-<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
-<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
-<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
-<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
-<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
-<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
-<p>Reducer 1 got</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 2 got</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
-
-<p>和Distribute By的例子相比，具有排序功能。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
-
-<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
 
       
     </div>
