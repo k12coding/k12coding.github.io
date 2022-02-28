@@ -251,6 +251,49 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>HDFS中的数据块(Block)</title>
     <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
     <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
@@ -374,46 +417,63 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
+    <title>HDFS文件读写流程与副本放置策略</title>
+    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
+<ol>
+<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
 </li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
+<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
+<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
 </li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
+<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
 </li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
 </li>
-</ul>
+<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
+</li>
+<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
+</li>
+<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
 </li>
 </ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
+<ol>
+<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
+</li>
+<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
+</li>
+<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
+</li>
+<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
+</li>
+<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
+<ul>
+<li>假如ok就关闭与DN通信。</li>
+<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
+</ul>
+<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
+<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
+<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
+</li>
+<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
+</li>
+</ol>
+<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
+<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
+<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
+<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
+</blockquote>
+<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
+<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
+<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
+<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
+<p>假如还有更多副本：随机放。</p>
+<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
+<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
+<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
 ]]></content>
   </entry>
   <entry>
@@ -519,173 +579,6 @@
 <p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS文件读写流程与副本放置策略</title>
-    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
-<ol>
-<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
-</li>
-<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
-<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
-<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
-</li>
-<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
-<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
-</li>
-<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
-</li>
-<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
-</li>
-<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
-</li>
-<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
-</li>
-</ol>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
-<ol>
-<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
-</li>
-<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
-</li>
-<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
-</li>
-<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
-</li>
-<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
-<ul>
-<li>假如ok就关闭与DN通信。</li>
-<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
-</ul>
-<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
-<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
-<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
-</li>
-<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
-</li>
-</ol>
-<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
-<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
-<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
-<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
-</blockquote>
-<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
-<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
-<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
-<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
-<p>假如还有更多副本：随机放。</p>
-<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
-<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
-<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HIVE的部署</title>
-    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
-    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
-<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
-<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
-<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
-
-<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
-
-<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
-<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
-
-<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
-
-<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
-<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
-<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
-<p>解决办法：</p>
-<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
-<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
-<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
-<p>再次启动问题得到解决！</p>
-</li>
-<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
-<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
-<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
-</li>
-</ul>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hadoop Archives</title>
-    <url>/2021/12/20/Hadoop-Archives/</url>
-    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
-<p>Hadoop存档(har文件)目录包含</p>
-<ul>
-<li><p>元数据（采用_index和_masterindex形式）</p>
-</li>
-<li><p>数据部分data（part- *）文件。</p>
-</li>
-</ul>
-<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
-<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
-<span id="more"></span>
-
-<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
-<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数说明</strong></p>
-<ul>
-<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
-<li>-p 父目录:指定归档文件基于的相对路径</li>
-<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
-<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
-<li>&lt;dest&gt;:har文件保存到的目标路径</li>
-</ul>
-<p><strong>Example:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
-<p>如果想归档目录 /foo/bar，可以省略src：</p>
-<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
-<p><strong>补充说明</strong></p>
-<ol>
-<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
-<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
-<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
-</ol>
-<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
-<p>Hadoop Archives的URI是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
-<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
-<p>依次取消存档：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<p>要并行解压缩，请使用DistCp：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
-<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
-<li><p>准备文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>创建har文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
-<li><p>查看文件组成结构</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
-<li><p>使用hdfs文件系统查看har文件目录内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
-</ol>
 ]]></content>
   </entry>
   <entry>
@@ -869,6 +762,113 @@
 <p>打印类的路径</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
 
+]]></content>
+  </entry>
+  <entry>
+    <title>HIVE的部署</title>
+    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
+<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
+<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
+<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
+
+<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
+<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
+
+<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
+<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
+<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
+<p>解决办法：</p>
+<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
+<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
+<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
+<p>再次启动问题得到解决！</p>
+</li>
+<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
+<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
+<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
+</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hadoop Archives</title>
+    <url>/2021/12/20/Hadoop-Archives/</url>
+    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
+<p>Hadoop存档(har文件)目录包含</p>
+<ul>
+<li><p>元数据（采用_index和_masterindex形式）</p>
+</li>
+<li><p>数据部分data（part- *）文件。</p>
+</li>
+</ul>
+<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
+<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
+<span id="more"></span>
+
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
+<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<ul>
+<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
+<li>-p 父目录:指定归档文件基于的相对路径</li>
+<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
+<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
+<li>&lt;dest&gt;:har文件保存到的目标路径</li>
+</ul>
+<p><strong>Example:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
+<p>如果想归档目录 /foo/bar，可以省略src：</p>
+<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
+<p><strong>补充说明</strong></p>
+<ol>
+<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
+<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
+<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
+</ol>
+<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
+<p>Hadoop Archives的URI是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
+<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
+<p>依次取消存档：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<p>要并行解压缩，请使用DistCp：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
+<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
+<li><p>准备文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>创建har文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
+<li><p>查看文件组成结构</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
+<li><p>使用hdfs文件系统查看har文件目录内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -1115,152 +1115,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive：内部表与外部表</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
-    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
-<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
-<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
-</li>
-<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
-<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
-</li>
-<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
-</li>
-<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
-</li>
-<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
-</li>
-</ul>
-<p>补充说明：</p>
-<ul>
-<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
-<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
-<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
-</ul>
-<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
-<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
-</blockquote>
-<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
-<p>修改内部表为外部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>修改外部表为内部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
-<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
-<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
-<p>对于外部表，Hive 假定它不管理数据。</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
-<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
-<ul>
-<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
-<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
-<li>ACID /事务处理仅适用于托管表</li>
-<li>查询结果缓存仅适用于托管表</li>
-<li>外部表仅允许 RELY 约束</li>
-<li>某些物化视图功能仅适用于托管表</li>
-</ul>
-<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
-<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
-<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
-<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
-<p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
-<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hive：分区</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
-    <content><![CDATA[<blockquote>
-<p>Hive分区的概念与传统关系型数据库分区不同。</p>
-<p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
-<p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
-</blockquote>
-<h1 id="静态分区"><a href="#静态分区" class="headerlink" title="静态分区"></a>静态分区</h1><h2 id="一级分区"><a href="#一级分区" class="headerlink" title="一级分区"></a>一级分区</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p>Hive分区是在创建表的时候用Partitioned by 关键字定义的，但要注意，Partitioned by子句中定义的列是表中正式的列，但是Hive下的数据文件中并不包含这些列，因为它们是目录名。注意：分区字段不能和表中的字段重复。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]</span><br><span class="line">一级分区：一个目录</span><br><span class="line">多级分区：多个目录</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE `emp_partition`(</span><br><span class="line">`empno` int, </span><br><span class="line">`ename` string, </span><br><span class="line">`job` string, </span><br><span class="line">`mgr` int, </span><br><span class="line">`hiredate` string, </span><br><span class="line">`sal` double, </span><br><span class="line">`comm` double</span><br><span class="line">) partitioned by (deptno string)</span><br><span class="line">row format delimited fields terminated by &#x27;\t&#x27;;</span><br></pre></td></tr></table></figure>
-
-<p>通过desc查看的表结构如下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; desc emp_partition;</span><br><span class="line">OK</span><br><span class="line">col_name	data_type	comment</span><br><span class="line">empno               	int</span><br><span class="line">ename               	string</span><br><span class="line">job                 	string</span><br><span class="line">mgr                 	int</span><br><span class="line">hiredate            	string</span><br><span class="line">sal                 	double</span><br><span class="line">comm                	double</span><br><span class="line">deptno              	string</span><br><span class="line">	 	 </span><br><span class="line"># Partition Information	 	 </span><br><span class="line"># col_name            	data_type           	comment             </span><br><span class="line">deptno              	string              	                    </span><br><span class="line">Time taken: 0.546 seconds, Fetched: 12 row(s)</span><br></pre></td></tr></table></figure>
-
-<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">格式1:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row …];</span><br><span class="line">格式2：</span><br><span class="line">load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
-
-<p>从其他表中插入数据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.269 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; insert into emp_partition partition(deptno=30) select empno,ename,job,mgr,hiredate,sal,comm from emp where deptno=10;</span><br></pre></td></tr></table></figure>
-
-<p>从文件加载数据到表中（不包含分区列字段）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ cat emp_10.txt </span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000	500</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
-
-<h3 id="查看数据"><a href="#查看数据" class="headerlink" title="查看数据"></a>查看数据</h3><p>利用分区表查询：(一般分区表都是利用where语句查询的)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp_partition where deptno=10;</span><br><span class="line">OK</span><br><span class="line">emp_partition.empno	emp_partition.ename	emp_partition.job	emp_partition.mgr	emp_partition.hiredate	emp_partition.sal	emp_partition.comm	emp_partition.deptno</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000.0	500.0	10</span><br><span class="line">Time taken: 0.25 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
-
-<p>查看hdfs上emp_partition表目录结构，可以看到在以表名目录下，有以deptno=10（分区名）的子目录存放着真实的数据文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br></pre></td></tr></table></figure>
-
-<p>同理，插入deptno为20，30的数据。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10/emp_10.txt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        214 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20/000000_0</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30/000000_0</span><br></pre></td></tr></table></figure>
-
-<h3 id="查看分区"><a href="#查看分区" class="headerlink" title="查看分区"></a>查看分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">Time taken: 0.152 seconds, Fetched: 3 row(s)</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加分区"><a href="#添加分区" class="headerlink" title="添加分区"></a>添加分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; alter table emp_partition  add partition (deptno=40);</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.282 seconds</span><br><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">deptno=40</span><br><span class="line">Time taken: 0.127 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
-
-<h3 id="删除分区-删除相应分区文件"><a href="#删除分区-删除相应分区文件" class="headerlink" title="删除分区(删除相应分区文件)"></a>删除分区(删除相应分区文件)</h3><p>注意，对于外表进行drop partition并不会删除hdfs上的文件，并且可以通过<code>msck repair table table_name</code>同步hdfs上的分区。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table emp_partition drop partition (deptno = 40);</span><br></pre></td></tr></table></figure>
-
-<h3 id="修复分区"><a href="#修复分区" class="headerlink" title="修复分区"></a>修复分区</h3><p>修复分区就是重新同步hdfs上的分区信息。（外部表在hdfs目录上添加文件后使用）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msck repair table table_name  [ADD/DROP/SYNC PARTITIONS];</span><br></pre></td></tr></table></figure>
-
-<p>在hive3.0中msck命令支持删除partition信息。</p>
-<h2 id="多级分区"><a href="#多级分区" class="headerlink" title="多级分区"></a>多级分区</h2><p>多分区表装载数据时，分区字段必须都要加。如果只有一个，会报错。</p>
-<p>下面创建一张静态分区表par_tab_muilt，多个分区（性别+日期）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create table par_tab_muilt (name string, nation string) partitioned by (sex string,dt string) row format delimited fields terminated by &#x27;,&#x27; ;</span><br><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/files/par_tab.txt&#x27; into table par_tab_muilt partition (sex=&#x27;man&#x27;,dt=&#x27;2021-12-28&#x27;);</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 files]$ hadoop fs -ls -R /user/hive/warehouse/par_tab_muilt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28</span><br><span class="line">-rwxr-xr-x   1 hadoop supergroup         71 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28/par_tab.txt</span><br></pre></td></tr></table></figure>
-
-<p>可见，新建表的时候定义的分区顺序，决定了文件目录顺序（谁是父目录谁是子目录），正因为有了这个层级关系，当我们查询所有man的时候，man以下的所有日期下的数据都会被查出来。如果只查询日期分区，但父目录sex=man和sex=woman都有该日期的数据，那么Hive会对输入路径进行修剪，从而只扫描日期分区，性别分区不作过滤（即查询结果包含了所有性别）。</p>
-<h1 id="动态分区"><a href="#动态分区" class="headerlink" title="动态分区"></a>动态分区</h1><p>为什么要使用动态分区呢，我们举个例子，假如中国有50个省，每个省有50个市，每个市都有100个区，那我们都要使用静态分区要使用多久才能搞完。所有我们要使用动态分区。</p>
-<blockquote>
-<p>注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区。</p>
-<p>动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode</p>
-</blockquote>
-<p>动态分区默认是没有开启。开启后默认是以严格模式执行的，在这种模式下需要至少一个分区字段是静态的。这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。这有助于阻止因设计错误导致导致查询差生大量的分区。列如：用户可能错误使用时间戳作为分区表字段。然后导致每秒都对应一个分区！这样我们也可以采用相应的措施:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关闭严格分区模式		set hive.exec.dynamic.partition.mode=nonstrict	//分区模式，默认strict（至少有一个分区列是静态分区）</span><br><span class="line">开启支持动态分区		set hive.exec.dynamic.partition=true			//开启动态分区,默认true</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">其他相关参数 ：</span><br><span class="line">set hive.exec.max.dynamic.partitions.pernode; #每一个执行mr节点上，允许创建的动态分区的最大数量(100) </span><br><span class="line">set hive.exec.max.dynamic.partitions;         #所有执行mr节点上，允许创建的所有动态分区的最大数量(1000) </span><br><span class="line">set hive.exec.max.created.files;              #所有的mr job允许创建的文件的最大数量(100000)</span><br></pre></td></tr></table></figure>
-
-<p>利用动态分区，我们可以一次完成插入上面例子中deptno不同的数据的操作</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert overwrite table emp_partition partition(deptno) select empno,ename,job,mgr,hiredate,sal,comm,deptno from emp;</span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
-<li>hive的分区使用的表外字段，分区字段是一个伪列但是可以查询过滤。</li>
-<li>分区字段不建议使用中文.</li>
-<li>不太建议使用动态分区。因为动态分区将会使用mapreduce来查询数据，如果分区数量过多将导致namenode和yarn的资源瓶颈。所以建议动态分区前也尽可能之前预知分区数量。</li>
-<li>分区属性的修改均可以使用手动元数据和hdfs的数据内容</li>
-</ol>
-<h2 id="外部分区表"><a href="#外部分区表" class="headerlink" title="外部分区表"></a>外部分区表</h2><p>外部表同样可以使用分区，事实上，用户会发现，只是管理大型生产数据集最常见的情况，这种结合给用户提供一个和其他工具共享数据的方式，同时也可以优化查询性能。这样我们就可以把数据路径改变而不影响数据的丢失，这是内部分区表远远不能做的事情:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1,(因为我们创建的是外部表)所有我们可以把表数据放到hdfs上的随便一个地方这里自动数据加载到/user/had/data/下(当然我们之前在外部表上指定了路径)</span><br><span class="line">load data local inpath &#x27;/home/had/data.txt&#x27; into table employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br><span class="line">2,如果我们加载的数据要分离一些旧数据的时候就可以hadoop的distcp命令来copy数据到某个路径</span><br><span class="line">hadoop distcp /user/had/data/country=china/state=Asia /user/had/data_old/country=china/state=Asia</span><br><span class="line">3,修改表，把移走的数据的路径在hive里修改</span><br><span class="line">alter table employees partition(country=&quot;china&quot;,state=&quot;Asia&quot;) set location &#x27;/user/had/data_old/country=china/state=Asia&#x27;</span><br><span class="line">4,使用hdfs的rm命令删除之前路径的数据</span><br><span class="line">hdfs dfs -rmr /user/had/data/country=china/state=Asia</span><br><span class="line">这样我们就完成一次数据迁移</span><br><span class="line"></span><br><span class="line">如果觉得突然忘记了数据的位置使用使用下面的方式查看</span><br><span class="line">describe extend employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br></pre></td></tr></table></figure>
-
-<h2 id="众多的修改语句"><a href="#众多的修改语句" class="headerlink" title="众多的修改语句"></a>众多的修改语句</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1，把一个分区打包成一个har包</span><br><span class="line">  alter table employees archive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">2, 把一个分区har包还原成原来的分区</span><br><span class="line">  alter table employees unarchive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">3, 保护分区防止被删除</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable no_drop</span><br><span class="line">4,保护分区防止被查询</span><br><span class="line">    alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable offline</span><br><span class="line">5，允许分区删除和查询</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable no_drop</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable offline</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
-<p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
-<p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hive四种排序方式:order by,sort by,distribute by,cluster by</title>
     <url>/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/</url>
     <content><![CDATA[<h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
@@ -1320,6 +1174,65 @@
 <p>参考链接：</p>
 <p><a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
 <p><a href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hive：内部表与外部表</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
+    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
+</ul>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>参考链接：</p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1442,6 +1355,146 @@
 ]]></content>
   </entry>
   <entry>
+    <title>IDEA中测试Hive源码</title>
+    <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
+    <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
+<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFAddRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFRemoveRandom.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>修改ql/src/java/org/apache/hadoop/hive/ql/exec/FunctionRegistry.java</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在WINDOWS上部署maven，编译hive</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220106155419571.png" alt="image-20220106155419571"></p>
+<p>编译好的整个文件夹导入到idea中</p>
+<p>使用快捷键Ctrl+Alt+shift+S打开项目的jdk配置，把内存改大点再rebuild</p>
+<p>rebuild，期间如有报错，按提示修改，最终Build completed successfully</p>
+<ul>
+<li><p>设置hive-site.xml与服务器上的一样，CliDriver目录下的resources文件夹（需要自己手动创建）</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143625518.png" alt="image-20220107143625518"></p>
+<p>简单做法：只有一个hive-site.xml也可以了</p>
+<p>hive-site.xml：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;ruozedata001&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.bind.host&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;hadoop001&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.port&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;10000&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<p>复杂做法：5个都放进去</p>
+</li>
+<li><p>metastore</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107162612716.png" alt="metastore"></p>
+<p>在hive-site.xml中添加<code>hive.metastore.uris：thrift://hadoop001:9083</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>在服务器上执行<code>hive --service metastore</code>启动服务端metastore </p>
+</li>
+<li><p>修改运行环境，IDEA 的 VM 添加 ：</p>
+<p>设置系统属性jline.WindowsTerminal.directConsole为false，控制台才能接受输入，否则输入命令后回车没有反应：</p>
+<p><code>-Djline.WindowsTerminal.directConsole=false</code> </p>
+<p>修改系统用户名称，否则无权限访问hdfs：</p>
+<p><code>-DHADOOP_USER_NAME=hadoop</code></p>
+</li>
+</ul>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107164818544.png" alt="image-20220107164818544"></p>
+<p>运行入口文件CliDriver.java</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143910446.png" alt="image-20220107143910446"></p>
+<p>验证函数是否存在；</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143958077.png" alt="image-20220107143958077"></p>
+<p>测试使用：</p>
+<p><strong>add_ramdom</strong>:</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
+<p><strong>remove_random</strong>:</p>
+<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hive：分区</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
+    <content><![CDATA[<blockquote>
+<p>Hive分区的概念与传统关系型数据库分区不同。</p>
+<p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
+<p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
+</blockquote>
+<h1 id="静态分区"><a href="#静态分区" class="headerlink" title="静态分区"></a>静态分区</h1><h2 id="一级分区"><a href="#一级分区" class="headerlink" title="一级分区"></a>一级分区</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p>Hive分区是在创建表的时候用Partitioned by 关键字定义的，但要注意，Partitioned by子句中定义的列是表中正式的列，但是Hive下的数据文件中并不包含这些列，因为它们是目录名。注意：分区字段不能和表中的字段重复。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]</span><br><span class="line">一级分区：一个目录</span><br><span class="line">多级分区：多个目录</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE `emp_partition`(</span><br><span class="line">`empno` int, </span><br><span class="line">`ename` string, </span><br><span class="line">`job` string, </span><br><span class="line">`mgr` int, </span><br><span class="line">`hiredate` string, </span><br><span class="line">`sal` double, </span><br><span class="line">`comm` double</span><br><span class="line">) partitioned by (deptno string)</span><br><span class="line">row format delimited fields terminated by &#x27;\t&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>通过desc查看的表结构如下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; desc emp_partition;</span><br><span class="line">OK</span><br><span class="line">col_name	data_type	comment</span><br><span class="line">empno               	int</span><br><span class="line">ename               	string</span><br><span class="line">job                 	string</span><br><span class="line">mgr                 	int</span><br><span class="line">hiredate            	string</span><br><span class="line">sal                 	double</span><br><span class="line">comm                	double</span><br><span class="line">deptno              	string</span><br><span class="line">	 	 </span><br><span class="line"># Partition Information	 	 </span><br><span class="line"># col_name            	data_type           	comment             </span><br><span class="line">deptno              	string              	                    </span><br><span class="line">Time taken: 0.546 seconds, Fetched: 12 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">格式1:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row …];</span><br><span class="line">格式2：</span><br><span class="line">load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<p>从其他表中插入数据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.269 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; insert into emp_partition partition(deptno=30) select empno,ename,job,mgr,hiredate,sal,comm from emp where deptno=10;</span><br></pre></td></tr></table></figure>
+
+<p>从文件加载数据到表中（不包含分区列字段）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ cat emp_10.txt </span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000	500</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看数据"><a href="#查看数据" class="headerlink" title="查看数据"></a>查看数据</h3><p>利用分区表查询：(一般分区表都是利用where语句查询的)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp_partition where deptno=10;</span><br><span class="line">OK</span><br><span class="line">emp_partition.empno	emp_partition.ename	emp_partition.job	emp_partition.mgr	emp_partition.hiredate	emp_partition.sal	emp_partition.comm	emp_partition.deptno</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000.0	500.0	10</span><br><span class="line">Time taken: 0.25 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<p>查看hdfs上emp_partition表目录结构，可以看到在以表名目录下，有以deptno=10（分区名）的子目录存放着真实的数据文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br></pre></td></tr></table></figure>
+
+<p>同理，插入deptno为20，30的数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10/emp_10.txt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        214 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20/000000_0</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30/000000_0</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看分区"><a href="#查看分区" class="headerlink" title="查看分区"></a>查看分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">Time taken: 0.152 seconds, Fetched: 3 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加分区"><a href="#添加分区" class="headerlink" title="添加分区"></a>添加分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; alter table emp_partition  add partition (deptno=40);</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.282 seconds</span><br><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">deptno=40</span><br><span class="line">Time taken: 0.127 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除分区-删除相应分区文件"><a href="#删除分区-删除相应分区文件" class="headerlink" title="删除分区(删除相应分区文件)"></a>删除分区(删除相应分区文件)</h3><p>注意，对于外表进行drop partition并不会删除hdfs上的文件，并且可以通过<code>msck repair table table_name</code>同步hdfs上的分区。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table emp_partition drop partition (deptno = 40);</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复分区"><a href="#修复分区" class="headerlink" title="修复分区"></a>修复分区</h3><p>修复分区就是重新同步hdfs上的分区信息。（外部表在hdfs目录上添加文件后使用）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msck repair table table_name  [ADD/DROP/SYNC PARTITIONS];</span><br></pre></td></tr></table></figure>
+
+<p>在hive3.0中msck命令支持删除partition信息。</p>
+<h2 id="多级分区"><a href="#多级分区" class="headerlink" title="多级分区"></a>多级分区</h2><p>多分区表装载数据时，分区字段必须都要加。如果只有一个，会报错。</p>
+<p>下面创建一张静态分区表par_tab_muilt，多个分区（性别+日期）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create table par_tab_muilt (name string, nation string) partitioned by (sex string,dt string) row format delimited fields terminated by &#x27;,&#x27; ;</span><br><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/files/par_tab.txt&#x27; into table par_tab_muilt partition (sex=&#x27;man&#x27;,dt=&#x27;2021-12-28&#x27;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 files]$ hadoop fs -ls -R /user/hive/warehouse/par_tab_muilt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28</span><br><span class="line">-rwxr-xr-x   1 hadoop supergroup         71 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28/par_tab.txt</span><br></pre></td></tr></table></figure>
+
+<p>可见，新建表的时候定义的分区顺序，决定了文件目录顺序（谁是父目录谁是子目录），正因为有了这个层级关系，当我们查询所有man的时候，man以下的所有日期下的数据都会被查出来。如果只查询日期分区，但父目录sex=man和sex=woman都有该日期的数据，那么Hive会对输入路径进行修剪，从而只扫描日期分区，性别分区不作过滤（即查询结果包含了所有性别）。</p>
+<h1 id="动态分区"><a href="#动态分区" class="headerlink" title="动态分区"></a>动态分区</h1><p>为什么要使用动态分区呢，我们举个例子，假如中国有50个省，每个省有50个市，每个市都有100个区，那我们都要使用静态分区要使用多久才能搞完。所有我们要使用动态分区。</p>
+<blockquote>
+<p>注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区。</p>
+<p>动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode</p>
+</blockquote>
+<p>动态分区默认是没有开启。开启后默认是以严格模式执行的，在这种模式下需要至少一个分区字段是静态的。这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。这有助于阻止因设计错误导致导致查询差生大量的分区。列如：用户可能错误使用时间戳作为分区表字段。然后导致每秒都对应一个分区！这样我们也可以采用相应的措施:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关闭严格分区模式		set hive.exec.dynamic.partition.mode=nonstrict	//分区模式，默认strict（至少有一个分区列是静态分区）</span><br><span class="line">开启支持动态分区		set hive.exec.dynamic.partition=true			//开启动态分区,默认true</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">其他相关参数 ：</span><br><span class="line">set hive.exec.max.dynamic.partitions.pernode; #每一个执行mr节点上，允许创建的动态分区的最大数量(100) </span><br><span class="line">set hive.exec.max.dynamic.partitions;         #所有执行mr节点上，允许创建的所有动态分区的最大数量(1000) </span><br><span class="line">set hive.exec.max.created.files;              #所有的mr job允许创建的文件的最大数量(100000)</span><br></pre></td></tr></table></figure>
+
+<p>利用动态分区，我们可以一次完成插入上面例子中deptno不同的数据的操作</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert overwrite table emp_partition partition(deptno) select empno,ename,job,mgr,hiredate,sal,comm,deptno from emp;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>hive的分区使用的表外字段，分区字段是一个伪列但是可以查询过滤。</li>
+<li>分区字段不建议使用中文.</li>
+<li>不太建议使用动态分区。因为动态分区将会使用mapreduce来查询数据，如果分区数量过多将导致namenode和yarn的资源瓶颈。所以建议动态分区前也尽可能之前预知分区数量。</li>
+<li>分区属性的修改均可以使用手动元数据和hdfs的数据内容</li>
+</ol>
+<h2 id="外部分区表"><a href="#外部分区表" class="headerlink" title="外部分区表"></a>外部分区表</h2><p>外部表同样可以使用分区，事实上，用户会发现，只是管理大型生产数据集最常见的情况，这种结合给用户提供一个和其他工具共享数据的方式，同时也可以优化查询性能。这样我们就可以把数据路径改变而不影响数据的丢失，这是内部分区表远远不能做的事情:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1,(因为我们创建的是外部表)所有我们可以把表数据放到hdfs上的随便一个地方这里自动数据加载到/user/had/data/下(当然我们之前在外部表上指定了路径)</span><br><span class="line">load data local inpath &#x27;/home/had/data.txt&#x27; into table employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br><span class="line">2,如果我们加载的数据要分离一些旧数据的时候就可以hadoop的distcp命令来copy数据到某个路径</span><br><span class="line">hadoop distcp /user/had/data/country=china/state=Asia /user/had/data_old/country=china/state=Asia</span><br><span class="line">3,修改表，把移走的数据的路径在hive里修改</span><br><span class="line">alter table employees partition(country=&quot;china&quot;,state=&quot;Asia&quot;) set location &#x27;/user/had/data_old/country=china/state=Asia&#x27;</span><br><span class="line">4,使用hdfs的rm命令删除之前路径的数据</span><br><span class="line">hdfs dfs -rmr /user/had/data/country=china/state=Asia</span><br><span class="line">这样我们就完成一次数据迁移</span><br><span class="line"></span><br><span class="line">如果觉得突然忘记了数据的位置使用使用下面的方式查看</span><br><span class="line">describe extend employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="众多的修改语句"><a href="#众多的修改语句" class="headerlink" title="众多的修改语句"></a>众多的修改语句</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1，把一个分区打包成一个har包</span><br><span class="line">  alter table employees archive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">2, 把一个分区har包还原成原来的分区</span><br><span class="line">  alter table employees unarchive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">3, 保护分区防止被删除</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable no_drop</span><br><span class="line">4,保护分区防止被查询</span><br><span class="line">    alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable offline</span><br><span class="line">5，允许分区删除和查询</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable no_drop</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable offline</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
+<p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
+<p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>IDEA编译Spark3.2.0测试SparkSQL</title>
     <url>/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/</url>
     <content><![CDATA[<p><a href="https://spark.apache.org/docs/latest/building-spark.html">https://spark.apache.org/docs/latest/building-spark.html</a></p>
@@ -1524,59 +1577,6 @@
 <p>解决方法：配置VM options：<code>-Djline.WindowsTerminal.directConsole=false</code></p>
 </li>
 </ul>
-]]></content>
-  </entry>
-  <entry>
-    <title>IDEA中测试Hive源码</title>
-    <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
-    <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
-<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFAddRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">import java.util.Random;</span><br><span class="line"></span><br><span class="line">public class UDFAddRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		int num = new Random().nextInt(10);</span><br><span class="line">		return s+&quot;_&quot;+num;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFAddRandom input = new UDFAddRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>ql/src/java/org/apache/hadoop/hive/ql/udf/UDFRemoveRandom.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package org.apache.hadoop.hive.ql.udf;</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.hive.ql.exec.UDF;</span><br><span class="line"></span><br><span class="line">public class UDFRemoveRandom extends UDF &#123;</span><br><span class="line">	public String evaluate(String s)&#123;</span><br><span class="line">		return s.split(&quot;_&quot;)[0];</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	public static void main(String[] args) &#123;</span><br><span class="line">		UDFRemoveRandom input = new UDFRemoveRandom();</span><br><span class="line">		System.out.println(input.evaluate(&quot;PK_91&quot;));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>修改ql/src/java/org/apache/hadoop/hive/ql/exec/FunctionRegistry.java</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.hive.ql.udf.UDFAddRandom; </span><br><span class="line">import org.apache.hadoop.hive.ql.udf.UDFRemoveRandom; </span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">static &#123;</span><br><span class="line">    system.registerUDF(&quot;add_random&quot;, UDFAddRandom.class, false);</span><br><span class="line">	system.registerUDF(&quot;remove_random&quot;, UDFRemoveRandom.class, false);</span><br><span class="line">    ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在WINDOWS上部署maven，编译hive</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220106155419571.png" alt="image-20220106155419571"></p>
-<p>编译好的整个文件夹导入到idea中</p>
-<p>使用快捷键Ctrl+Alt+shift+S打开项目的jdk配置，把内存改大点再rebuild</p>
-<p>rebuild，期间如有报错，按提示修改，最终Build completed successfully</p>
-<ul>
-<li><p>设置hive-site.xml与服务器上的一样，CliDriver目录下的resources文件夹（需要自己手动创建）</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143625518.png" alt="image-20220107143625518"></p>
-<p>简单做法：只有一个hive-site.xml也可以了</p>
-<p>hive-site.xml：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;ruozedata001&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.bind.host&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;hadoop001&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.server2.thrift.port&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;10000&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<p>复杂做法：5个都放进去</p>
-</li>
-<li><p>metastore</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107162612716.png" alt="metastore"></p>
-<p>在hive-site.xml中添加<code>hive.metastore.uris：thrift://hadoop001:9083</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://hadoop001:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>在服务器上执行<code>hive --service metastore</code>启动服务端metastore </p>
-</li>
-<li><p>修改运行环境，IDEA 的 VM 添加 ：</p>
-<p>设置系统属性jline.WindowsTerminal.directConsole为false，控制台才能接受输入，否则输入命令后回车没有反应：</p>
-<p><code>-Djline.WindowsTerminal.directConsole=false</code> </p>
-<p>修改系统用户名称，否则无权限访问hdfs：</p>
-<p><code>-DHADOOP_USER_NAME=hadoop</code></p>
-</li>
-</ul>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107164818544.png" alt="image-20220107164818544"></p>
-<p>运行入口文件CliDriver.java</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143910446.png" alt="image-20220107143910446"></p>
-<p>验证函数是否存在；</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107143958077.png" alt="image-20220107143958077"></p>
-<p>测试使用：</p>
-<p><strong>add_ramdom</strong>:</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
-<p><strong>remove_random</strong>:</p>
-<p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
 ]]></content>
   </entry>
   <entry>
@@ -1866,6 +1866,21 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Spark:Compression codec com.hadoop.compression.lzo.LzoCodec not found</title>
+    <url>/2022/02/22/Spark-Compression-codec-com-hadoop-compression-lzo-LzoCodec-not-found/</url>
+    <content><![CDATA[<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在安装完Hadoop Lzo后。进入spark-sql shell 正常，但是执行查询语句时候，抛出：</p>
+<p>Caused by: java.lang.IllegalArgumentException: Compression codec com.hadoop.compression.lzo.LzoCodec not found.</p>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>原因：在hadoop中配置了编解码器lzo，所以当使用yarn模式时，spark自身没有lzo的jar包所以无法找到。这是因为在hadoop 的core-site.xml 和mapred-site.xml 中开启了压缩，并且压缩式lzo的。这就导致写入上传到hdfs 的文件自动被压缩为lzo了。而spark没有lzo这个jar包，所以无法被找到。</p>
+<p>解决方法有2个：</p>
+<p>1.软连接</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ln -s  /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar /home/hadoop/app/spark/jars/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
+
+<p>2.配置路径</p>
+<p>配置spark-default.conf如下即可：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark.jars=/home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
+]]></content>
+  </entry>
+  <entry>
     <title>Spark DF/DS API：行列转换</title>
     <url>/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
     <content><![CDATA[<p>前文回顾：<a href="https://k12coding.github.io/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">Hive：行列转换</a></p>
@@ -1885,21 +1900,6 @@
 
 <h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>Spark:Compression codec com.hadoop.compression.lzo.LzoCodec not found</title>
-    <url>/2022/02/22/Spark-Compression-codec-com-hadoop-compression-lzo-LzoCodec-not-found/</url>
-    <content><![CDATA[<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在安装完Hadoop Lzo后。进入spark-sql shell 正常，但是执行查询语句时候，抛出：</p>
-<p>Caused by: java.lang.IllegalArgumentException: Compression codec com.hadoop.compression.lzo.LzoCodec not found.</p>
-<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>原因：在hadoop中配置了编解码器lzo，所以当使用yarn模式时，spark自身没有lzo的jar包所以无法找到。这是因为在hadoop 的core-site.xml 和mapred-site.xml 中开启了压缩，并且压缩式lzo的。这就导致写入上传到hdfs 的文件自动被压缩为lzo了。而spark没有lzo这个jar包，所以无法被找到。</p>
-<p>解决方法有2个：</p>
-<p>1.软连接</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ln -s  /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar /home/hadoop/app/spark/jars/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
-
-<p>2.配置路径</p>
-<p>配置spark-default.conf如下即可：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark.jars=/home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -1949,35 +1949,24 @@
     <title>Sqoop部署</title>
     <url>/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/</url>
     <content><![CDATA[<ol>
-<li><p>下载tar包</p>
-<p>地址：<a href="http://archive.apache.org/dist/sqoop/">http://archive.apache.org/dist/sqoop/</a></p>
+<li><h3 id="下载tar包"><a href="#下载tar包" class="headerlink" title="下载tar包"></a>下载tar包</h3><p>地址：<a href="http://archive.apache.org/dist/sqoop/">http://archive.apache.org/dist/sqoop/</a></p>
 <p><a href="http://archive.apache.org/dist/sqoop/1.4.7/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz">sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz</a></p>
 </li>
-<li><p>解压到相应目录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ mv sqoop-1.4.7.bin__hadoop-2.6.0 sqoop-1.4.7</span><br><span class="line">[hadoop@hadoop001 software]$ tar -xzvf sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz </span><br><span class="line">[hadoop@hadoop001 app]$ ln -s /home/hadoop/software/sqoop-1.4.7 /home/hadoop/app/sqoop</span><br></pre></td></tr></table></figure></li>
-<li><p>修改conf/sqoop-env.sh</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 sqoop]$ cd conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ cp sqoop-env-template.sh sqoop-env.sh</span><br><span class="line">[hadoop@hadoop001 conf]$ ll</span><br><span class="line">total 32</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 3895 Dec 18  2017 oraoop-site-template.xml</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Feb 27 23:04 sqoop-env.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 1404 Dec 18  2017 sqoop-env-template.cmd</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Dec 18  2017 sqoop-env-template.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site-template.xml</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site.xml</span><br></pre></td></tr></table></figure>
+<li><h3 id="解压到相应目录"><a href="#解压到相应目录" class="headerlink" title="解压到相应目录"></a>解压到相应目录</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ mv sqoop-1.4.7.bin__hadoop-2.6.0 sqoop-1.4.7</span><br><span class="line">[hadoop@hadoop001 software]$ tar -xzvf sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz </span><br><span class="line">[hadoop@hadoop001 app]$ ln -s /home/hadoop/software/sqoop-1.4.7 /home/hadoop/app/sqoop</span><br></pre></td></tr></table></figure></li>
+<li><h3 id="修改conf-sqoop-env-sh"><a href="#修改conf-sqoop-env-sh" class="headerlink" title="修改conf/sqoop-env.sh"></a>修改conf/sqoop-env.sh</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 sqoop]$ cd conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ cp sqoop-env-template.sh sqoop-env.sh</span><br><span class="line">[hadoop@hadoop001 conf]$ ll</span><br><span class="line">total 32</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 3895 Dec 18  2017 oraoop-site-template.xml</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Feb 27 23:04 sqoop-env.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 1404 Dec 18  2017 sqoop-env-template.cmd</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Dec 18  2017 sqoop-env-template.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site-template.xml</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site.xml</span><br></pre></td></tr></table></figure>
 
 <p>配置相关变量(本机暂未部署hbase和zk)</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Set Hadoop-specific environment variables here.</span><br><span class="line"></span><br><span class="line">#Set path to where bin/hadoop is available</span><br><span class="line">export HADOOP_COMMON_HOME=/home/hadoop/app/hadoop</span><br><span class="line"></span><br><span class="line">#Set path to where hadoop-*-core.jar is available</span><br><span class="line">export HADOOP_MAPRED_HOME=/home/hadoop/app/hadoop</span><br><span class="line"></span><br><span class="line">#set the path to where bin/hbase is available</span><br><span class="line">#export HBASE_HOME=</span><br><span class="line"></span><br><span class="line">#Set the path to where bin/hive is available</span><br><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line"></span><br><span class="line">#Set the path for where zookeper config dir is</span><br><span class="line">#export ZOOCFGDIR=</span><br></pre></td></tr></table></figure></li>
-<li><p>添加环境变量</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi .bash_profile </span><br></pre></td></tr></table></figure>
+<li><h3 id="添加环境变量"><a href="#添加环境变量" class="headerlink" title="添加环境变量"></a>添加环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi .bash_profile </span><br></pre></td></tr></table></figure>
 
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SQOOP_HOME=/home/hadoop/app/sqoop</span><br><span class="line">export PATH=$&#123;SQOOP_HOME&#125;/bin:$PATH</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ source .bash_profile </span><br></pre></td></tr></table></figure></li>
-<li><p>拷贝mysql驱动包到sqoop的lib目录下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cp lib/mysql-connector-java-5.1.47.jar app/sqoop/lib/</span><br></pre></td></tr></table></figure></li>
-<li><p>测试Sqoop是否能够成功连接数据库</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password 123456</span><br></pre></td></tr></table></figure>
-
-<p>插曲：报错<code>Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</code>看最后问题总结</p>
-</li>
-<li><p>成功访问</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password &#x27;123456&#x27;</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-27 23:54:08,530 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-27 23:54:08,647 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-27 23:54:08,832 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Sun Feb 27 23:54:09 GMT 2022 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">information_schema</span><br><span class="line">mysql</span><br><span class="line">performance_schema</span><br><span class="line">sys</span><br></pre></td></tr></table></figure></li>
-<li><p>问题总结</p>
-<ul>
-<li><p>Exception in thread “main” java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</p>
+<li><h3 id="拷贝mysql驱动包到sqoop的lib目录下"><a href="#拷贝mysql驱动包到sqoop的lib目录下" class="headerlink" title="拷贝mysql驱动包到sqoop的lib目录下"></a>拷贝mysql驱动包到sqoop的lib目录下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cp lib/mysql-connector-java-5.1.47.jar app/sqoop/lib/</span><br></pre></td></tr></table></figure></li>
+<li><h3 id="测试Sqoop是否能够成功连接数据库"><a href="#测试Sqoop是否能够成功连接数据库" class="headerlink" title="测试Sqoop是否能够成功连接数据库"></a>测试Sqoop是否能够成功连接数据库</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password 123456</span><br></pre></td></tr></table></figure></li>
+<li><h3 id="成功访问"><a href="#成功访问" class="headerlink" title="成功访问"></a>成功访问</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password &#x27;123456&#x27;</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-27 23:54:08,530 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-27 23:54:08,647 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-27 23:54:08,832 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Sun Feb 27 23:54:09 GMT 2022 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">information_schema</span><br><span class="line">mysql</span><br><span class="line">performance_schema</span><br><span class="line">sys</span><br></pre></td></tr></table></figure></li>
+<li><h3 id="问题总结"><a href="#问题总结" class="headerlink" title="问题总结"></a>问题总结</h3><ul>
+<li><p><code>Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</code></p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password &#x27;123456&#x27;</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-27 23:25:34,723 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-27 23:25:34,838 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-27 23:25:35,007 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</span><br><span class="line">	at org.apache.sqoop.manager.MySQLManager.initOptionDefaults(MySQLManager.java:73)</span><br><span class="line">	at org.apache.sqoop.manager.SqlManager.&lt;init&gt;(SqlManager.java:89)</span><br><span class="line">	at com.cloudera.sqoop.manager.SqlManager.&lt;init&gt;(SqlManager.java:33)</span><br><span class="line">	at org.apache.sqoop.manager.GenericJdbcManager.&lt;init&gt;(GenericJdbcManager.java:51)</span><br><span class="line">	at com.cloudera.sqoop.manager.GenericJdbcManager.&lt;init&gt;(GenericJdbcManager.java:30)</span><br><span class="line">	at org.apache.sqoop.manager.CatalogQueryManager.&lt;init&gt;(CatalogQueryManager.java:46)</span><br><span class="line">	at com.cloudera.sqoop.manager.CatalogQueryManager.&lt;init&gt;(CatalogQueryManager.java:31)</span><br><span class="line">	at org.apache.sqoop.manager.InformationSchemaManager.&lt;init&gt;(InformationSchemaManager.java:38)</span><br><span class="line">	at com.cloudera.sqoop.manager.InformationSchemaManager.&lt;init&gt;(InformationSchemaManager.java:31)</span><br><span class="line">	at org.apache.sqoop.manager.MySQLManager.&lt;init&gt;(MySQLManager.java:65)</span><br><span class="line">	at org.apache.sqoop.manager.DefaultManagerFactory.accept(DefaultManagerFactory.java:67)</span><br><span class="line">	at org.apache.sqoop.ConnFactory.getManager(ConnFactory.java:184)</span><br><span class="line">	at org.apache.sqoop.tool.BaseSqoopTool.init(BaseSqoopTool.java:272)</span><br><span class="line">	at org.apache.sqoop.tool.ListDatabasesTool.run(ListDatabasesTool.java:44)</span><br><span class="line">	at org.apache.sqoop.Sqoop.run(Sqoop.java:147)</span><br><span class="line">	at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:76)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runSqoop(Sqoop.java:183)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)</span><br><span class="line">	at org.apache.sqoop.Sqoop.main(Sqoop.java:252)</span><br><span class="line">Caused by: java.lang.ClassNotFoundException: org.apache.commons.lang.StringUtils</span><br><span class="line">	at java.net.URLClassLoader.findClass(URLClassLoader.java:381)</span><br><span class="line">	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)</span><br><span class="line">	at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:331)</span><br><span class="line">	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)</span><br><span class="line">	... 20 more</span><br><span class="line">[hadoop@hadoop001 ~]$ </span><br></pre></td></tr></table></figure>
 
 <p><strong>原因</strong>：Caused by: java.lang.ClassNotFoundException: org.apache.commons.lang.StringUtils</p>
@@ -2676,23 +2665,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
-]]></content>
-  </entry>
-  <entry>
     <title>搭建HUE，集成hdfs,Hive,MySQL</title>
     <url>/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/</url>
     <content><![CDATA[<p>本机环境：</p>
@@ -2800,6 +2772,57 @@
 
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 rh]# python get-pip.py</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting pip&lt;21.0</span><br><span class="line">  Using cached pip-20.3.4-py2.py3-none-any.whl (1.5 MB)</span><br><span class="line">Installing collected packages: pip</span><br><span class="line">  Attempting uninstall: pip</span><br><span class="line">    Found existing installation: pip 20.3.4</span><br><span class="line">    Uninstalling pip-20.3.4:</span><br><span class="line">      Successfully uninstalled pip-20.3.4</span><br><span class="line">Successfully installed pip-20.3.4</span><br><span class="line">[root@hadoop001 rh]# pip install mysqlclient</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting mysqlclient</span><br><span class="line">  Downloading mysqlclient-1.4.6.tar.gz (85 kB)</span><br><span class="line">     |████████████████████████████████| 85 kB 879 kB/s </span><br><span class="line">Building wheels for collected packages: mysqlclient</span><br><span class="line">  Building wheel for mysqlclient (setup.py) ... done</span><br><span class="line">  Created wheel for mysqlclient: filename=mysqlclient-1.4.6-cp27-cp27m-linux_x86_64.whl size=93309 sha256=e8a53d4de8684dfdda60179f73cfb2f8083b3e3051412cdd6d5263782befd504</span><br><span class="line">  Stored in directory: /root/.cache/pip/wheels/04/5f/2b/e542c27913779611971f196081df58f969c742c01d93af1197</span><br><span class="line">Successfully built mysqlclient</span><br><span class="line">Installing collected packages: mysqlclient</span><br><span class="line">Successfully installed mysqlclient-1.4.6</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>数据本地性（data locality）</title>
+    <url>/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/</url>
+    <content><![CDATA[<h1 id="一、什么是数据本地性（data-locality）"><a href="#一、什么是数据本地性（data-locality）" class="headerlink" title="一、什么是数据本地性（data locality）"></a>一、什么是数据本地性（data locality）</h1><p>大数据中有一个很有名的概念就是“移动数据不如移动计算”，之所以有数据本地性就是因为数据在网络中传输会有不小的I/O消耗，如果能够想办法尽量减少这个I/O消耗就能够提升效率。那么如何减少I/O消耗呢，当然是尽量不让数据在网络上传输，即使无法避免数据在网络上传输，也要尽量缩短传输距离，这个数据需要传输多远的距离（实际意味着数据传输的代价）就是数据本地性，数据本地性根据传输距离分为几个级别，不在网络上传输肯定是最好的级别，其它级别划分依据传输距离越远级别越低，Spark在分配任务的时候会考虑到数据本地性，优先将任务分配给数据本地性最好的Executor执行。</p>
+<p>在执行任务时查看Task的执行情况，经常能够看到Task的状态中有这么一列： <img src="/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/1.png" alt="image"></p>
+<p>这一列就是在说这个Task任务读取数据的本地性是哪个级别，数据本地性共分为五个级别：</p>
+<p>PROCESS_LOCAL：顾名思义，要处理的数据就在同一个本地进程中，即数据和Task在同一个Executor JVM中，这种情况就是RDD的数据在之前就已经被缓存过了，因为BlockManager是以Executor为单位的，所以只要Task所需要的Block在所属的Executor的BlockManager上已经被缓存，这个数据本地性就是PROCESS_LOCAL，这种是最好的locality，这种情况下数据不需要在网络中传输。</p>
+<p>NODE_LOCAL：数据在同一台节点上，但是并不不在同一个jvm中，比如数据在同一台节点上的另外一个Executor上，速度要比PROCESS_LOCAL略慢。还有一种情况是读取HDFS的块就在当前节点上，数据本地性也是NODE_LOCAL。</p>
+<p>NO_PREF：数据从哪里访问都一样，表示数据本地性无意义，看起来很奇怪，其实指的是从MySQL、MongoDB之类的数据源读取数据。</p>
+<p>RACK_LOCAL：数据在同一机架上的其它节点，需要经过网络传输，速度要比NODE_LOCAL慢。</p>
+<p>ANY：数据在其它更远的网络上，甚至都不在同一个机架上，比RACK_LOCAL更慢，一般情况下不会出现这种级别，万一出现了可能是有什么异常需要排查下原因。</p>
+<p>使用一张图来表示五个传输级别：</p>
+<p><img src="/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/2.png" alt="image"></p>
+<h1 id="二、延迟调度策略（Delay-Scheduler）"><a href="#二、延迟调度策略（Delay-Scheduler）" class="headerlink" title="二、延迟调度策略（Delay Scheduler）"></a>二、延迟调度策略（Delay Scheduler）</h1><p>Spark在调度程序的时候并不一定总是能按照计算出的数据本地性执行，因为即使计算出在某个Executor上执行时数据本地性最好，但是Executor的core也是有限的，有可能计算出TaskFoo在ExecutorBar上执行数据本地性最好，但是发现ExecutorBar的所有core都一直被用着腾不出资源来执行新来的TaskFoo，所以当TaskFoo等待一段时间之后发现仍然等不到资源的话就尝试降低数据本地性级别让其它的Executor去执行。</p>
+<p>比如当前有一个RDD，有四个分区，称为A、B、C、D，当前Stage中这个RDD的每个分区对应的Task分别称为TaskA、TaskB、TaskC、TaskD，在之前的Stage中将这个RDD cache在了一台机器上的两个Executor上，称为ExecutorA、ExecutorB，每个Executor的core是2，ExecutorA上缓存了RDD的A、B、C分区，ExecutorB上缓存了RDD的D分区，然后分配Task的时候会把TaskA、TaskB、TaskC分配给ExecutorA，TaskD分配给ExecutorB，但是因为每个Executor只有两个core，只能同时执行两个Task，所以ExecutorA能够执行TaskA和TaskB，但是TaskC就只能等着，尽管它在ExecutorA上执行的数据本地性是PROCESS_LOCAL，但是人家没有资源啊，于是TaskC就等啊等，但是等了一会儿它发现不太对劲，搞这个数据本地性不就是为了加快Task的执行速度以提高Stage的整体执行速度吗，我搁这里干等着可不能加快Stage的整体速度，我要看下边上有没有其它的Executor是闲着的，假设我在ExecutorA需要再排队10秒才能拿到core资源执行，拿到资源之后我需要执行30秒，那么我只需要找到一个其它的Executor，即使因为数据本地性不好但是如果我能够在40秒内执行完的话还是要比在这边继续傻等要快的，所以TaskC就给自己设定了一个时间，当超过n毫秒之后还等不到就放弃PROCESS_LOCAL级别，转而尝试NODE_LOCAL级别的Executor，然后它看到了ExecutorB，ExecutorB和ExecutorA在同一台机器上，只是两个不同的jvm，所以在ExecutorB上执行需要从ExecutorA上拉取数据，通过BlockManager的getRemote，底层通过BlockTransferService去把数据拉取过来，因为是在同一台机器上的两个进程之间使用socket数据传输，走的应该是回环地址，速度会非常快，所以对于这种数据存储在同一台机器上的不同Executor上因为降级导致的NODE_LOCAL的情况，理论上并不会比PROCESS_LOCAL慢多少，TaskC在ExecutorB上执行并不会比ExecutorA上执行慢多少。但是对于比如HDFS块存储在此节点所以将Task分配到此节点的情况导致的NODE_LOCAL，因为要跟HDFS交互，还要读取磁盘文件，涉及到了一些I/O操作，这种情况就会耗费较长时间，相比较于PROCESS_LOCAL级别就慢上不少了。</p>
+<p>上面举的例子中提到了TaskC会等待一段时间，根据数据本地性不同，等待的时间间隔也不一致，不同数据本地性的等待时间设置参数：</p>
+<p>spark.locality.wait：设置所有级别的数据本地性，默认是3000毫秒</p>
+<p>spark.locality.wait.process：多长时间等不到PROCESS_LOCAL就降级，默认为${spark.locality.wait}</p>
+<p>spark.locality.wait.node：多长时间等不到NODE_LOCAL就降级，默认为${spark.locality.wait}</p>
+<p>spark.locality.wait.rack：多长时间等不到RACK_LOCAL就降级，默认为${spark.locality.wait}</p>
+<p>总结一下数据延迟调度策略：当使用当前的数据本地性级别等待一段时间之后仍然没有资源执行时，尝试降低数据本地性级别使用更低的数据本地性对应的Executor执行，这个就是Task的延迟调度策略。</p>
+<p><strong>最后探讨一下什么样的Task可以针对数据本地性延迟调度的等待时间做优化？</strong></p>
+<p>如果Task的输入数据比较大，那么耗费在数据读取上的时间会比较长，一个好的数据本地性能够节省很长时间，所以这种情况下最好还是将延迟调度的降级等待时间调长一些。而对于输入数据比较小的，即使数据本地性不好也只是多花一点点时间，那么便不必在延迟调度上耗费太长时间。总结一下就是如果数据本地性对任务的执行时间影响较大的话就稍稍调高延迟调度的降级等待时间。</p>
+<p>相关资料：</p>
+<ol>
+<li><p><a href="https://blog.csdn.net/qq403977698/article/details/51084437">spark on yarn 中的延迟调度(delay scheduler)</a></p>
+</li>
+<li><p><a href="http://coolplayer.net/2017/05/02/%E8%B0%88%E8%B0%88spark-%E7%9A%84%E8%AE%A1%E7%AE%97%E6%9C%AC%E5%9C%B0%E6%80%A7/">谈谈spark 的计算本地性</a></p>
+</li>
+<li><p><a href="https://www.cnblogs.com/cc11001100/p/10301716.html">Spark笔记之数据本地性（data locality）</a></p>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -5545,40 +5568,6 @@
 
 <p><img src="/2021/11/25/hdfs%E4%BC%AA%E5%88%86%E5%B8%83%E5%BC%8F%E9%83%A8%E7%BD%B2/image-20211126093406585.png" alt="通过浏览器查看任务"></p>
 <h4 id="5-停止服务"><a href="#5-停止服务" class="headerlink" title="5.停止服务"></a>5.停止服务</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop]$ stop-yarn.sh </span><br><span class="line">Stopping nodemanagers</span><br><span class="line">localhost: WARNING: nodemanager did not stop gracefully after 5 seconds: Trying to kill with kill -9</span><br><span class="line">Stopping resourcemanager</span><br><span class="line">[hadoop@hadoop001 hadoop]$ jps</span><br></pre></td></tr></table></figure>
-]]></content>
-  </entry>
-  <entry>
-    <title>数据本地性（data locality）</title>
-    <url>/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/</url>
-    <content><![CDATA[<h1 id="一、什么是数据本地性（data-locality）"><a href="#一、什么是数据本地性（data-locality）" class="headerlink" title="一、什么是数据本地性（data locality）"></a>一、什么是数据本地性（data locality）</h1><p>大数据中有一个很有名的概念就是“移动数据不如移动计算”，之所以有数据本地性就是因为数据在网络中传输会有不小的I/O消耗，如果能够想办法尽量减少这个I/O消耗就能够提升效率。那么如何减少I/O消耗呢，当然是尽量不让数据在网络上传输，即使无法避免数据在网络上传输，也要尽量缩短传输距离，这个数据需要传输多远的距离（实际意味着数据传输的代价）就是数据本地性，数据本地性根据传输距离分为几个级别，不在网络上传输肯定是最好的级别，其它级别划分依据传输距离越远级别越低，Spark在分配任务的时候会考虑到数据本地性，优先将任务分配给数据本地性最好的Executor执行。</p>
-<p>在执行任务时查看Task的执行情况，经常能够看到Task的状态中有这么一列： <img src="/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/1.png" alt="image"></p>
-<p>这一列就是在说这个Task任务读取数据的本地性是哪个级别，数据本地性共分为五个级别：</p>
-<p>PROCESS_LOCAL：顾名思义，要处理的数据就在同一个本地进程中，即数据和Task在同一个Executor JVM中，这种情况就是RDD的数据在之前就已经被缓存过了，因为BlockManager是以Executor为单位的，所以只要Task所需要的Block在所属的Executor的BlockManager上已经被缓存，这个数据本地性就是PROCESS_LOCAL，这种是最好的locality，这种情况下数据不需要在网络中传输。</p>
-<p>NODE_LOCAL：数据在同一台节点上，但是并不不在同一个jvm中，比如数据在同一台节点上的另外一个Executor上，速度要比PROCESS_LOCAL略慢。还有一种情况是读取HDFS的块就在当前节点上，数据本地性也是NODE_LOCAL。</p>
-<p>NO_PREF：数据从哪里访问都一样，表示数据本地性无意义，看起来很奇怪，其实指的是从MySQL、MongoDB之类的数据源读取数据。</p>
-<p>RACK_LOCAL：数据在同一机架上的其它节点，需要经过网络传输，速度要比NODE_LOCAL慢。</p>
-<p>ANY：数据在其它更远的网络上，甚至都不在同一个机架上，比RACK_LOCAL更慢，一般情况下不会出现这种级别，万一出现了可能是有什么异常需要排查下原因。</p>
-<p>使用一张图来表示五个传输级别：</p>
-<p><img src="/2022/01/10/%E6%95%B0%E6%8D%AE%E6%9C%AC%E5%9C%B0%E6%80%A7%EF%BC%88data-locality%EF%BC%89/2.png" alt="image"></p>
-<h1 id="二、延迟调度策略（Delay-Scheduler）"><a href="#二、延迟调度策略（Delay-Scheduler）" class="headerlink" title="二、延迟调度策略（Delay Scheduler）"></a>二、延迟调度策略（Delay Scheduler）</h1><p>Spark在调度程序的时候并不一定总是能按照计算出的数据本地性执行，因为即使计算出在某个Executor上执行时数据本地性最好，但是Executor的core也是有限的，有可能计算出TaskFoo在ExecutorBar上执行数据本地性最好，但是发现ExecutorBar的所有core都一直被用着腾不出资源来执行新来的TaskFoo，所以当TaskFoo等待一段时间之后发现仍然等不到资源的话就尝试降低数据本地性级别让其它的Executor去执行。</p>
-<p>比如当前有一个RDD，有四个分区，称为A、B、C、D，当前Stage中这个RDD的每个分区对应的Task分别称为TaskA、TaskB、TaskC、TaskD，在之前的Stage中将这个RDD cache在了一台机器上的两个Executor上，称为ExecutorA、ExecutorB，每个Executor的core是2，ExecutorA上缓存了RDD的A、B、C分区，ExecutorB上缓存了RDD的D分区，然后分配Task的时候会把TaskA、TaskB、TaskC分配给ExecutorA，TaskD分配给ExecutorB，但是因为每个Executor只有两个core，只能同时执行两个Task，所以ExecutorA能够执行TaskA和TaskB，但是TaskC就只能等着，尽管它在ExecutorA上执行的数据本地性是PROCESS_LOCAL，但是人家没有资源啊，于是TaskC就等啊等，但是等了一会儿它发现不太对劲，搞这个数据本地性不就是为了加快Task的执行速度以提高Stage的整体执行速度吗，我搁这里干等着可不能加快Stage的整体速度，我要看下边上有没有其它的Executor是闲着的，假设我在ExecutorA需要再排队10秒才能拿到core资源执行，拿到资源之后我需要执行30秒，那么我只需要找到一个其它的Executor，即使因为数据本地性不好但是如果我能够在40秒内执行完的话还是要比在这边继续傻等要快的，所以TaskC就给自己设定了一个时间，当超过n毫秒之后还等不到就放弃PROCESS_LOCAL级别，转而尝试NODE_LOCAL级别的Executor，然后它看到了ExecutorB，ExecutorB和ExecutorA在同一台机器上，只是两个不同的jvm，所以在ExecutorB上执行需要从ExecutorA上拉取数据，通过BlockManager的getRemote，底层通过BlockTransferService去把数据拉取过来，因为是在同一台机器上的两个进程之间使用socket数据传输，走的应该是回环地址，速度会非常快，所以对于这种数据存储在同一台机器上的不同Executor上因为降级导致的NODE_LOCAL的情况，理论上并不会比PROCESS_LOCAL慢多少，TaskC在ExecutorB上执行并不会比ExecutorA上执行慢多少。但是对于比如HDFS块存储在此节点所以将Task分配到此节点的情况导致的NODE_LOCAL，因为要跟HDFS交互，还要读取磁盘文件，涉及到了一些I/O操作，这种情况就会耗费较长时间，相比较于PROCESS_LOCAL级别就慢上不少了。</p>
-<p>上面举的例子中提到了TaskC会等待一段时间，根据数据本地性不同，等待的时间间隔也不一致，不同数据本地性的等待时间设置参数：</p>
-<p>spark.locality.wait：设置所有级别的数据本地性，默认是3000毫秒</p>
-<p>spark.locality.wait.process：多长时间等不到PROCESS_LOCAL就降级，默认为${spark.locality.wait}</p>
-<p>spark.locality.wait.node：多长时间等不到NODE_LOCAL就降级，默认为${spark.locality.wait}</p>
-<p>spark.locality.wait.rack：多长时间等不到RACK_LOCAL就降级，默认为${spark.locality.wait}</p>
-<p>总结一下数据延迟调度策略：当使用当前的数据本地性级别等待一段时间之后仍然没有资源执行时，尝试降低数据本地性级别使用更低的数据本地性对应的Executor执行，这个就是Task的延迟调度策略。</p>
-<p><strong>最后探讨一下什么样的Task可以针对数据本地性延迟调度的等待时间做优化？</strong></p>
-<p>如果Task的输入数据比较大，那么耗费在数据读取上的时间会比较长，一个好的数据本地性能够节省很长时间，所以这种情况下最好还是将延迟调度的降级等待时间调长一些。而对于输入数据比较小的，即使数据本地性不好也只是多花一点点时间，那么便不必在延迟调度上耗费太长时间。总结一下就是如果数据本地性对任务的执行时间影响较大的话就稍稍调高延迟调度的降级等待时间。</p>
-<p>相关资料：</p>
-<ol>
-<li><p><a href="https://blog.csdn.net/qq403977698/article/details/51084437">spark on yarn 中的延迟调度(delay scheduler)</a></p>
-</li>
-<li><p><a href="http://coolplayer.net/2017/05/02/%E8%B0%88%E8%B0%88spark-%E7%9A%84%E8%AE%A1%E7%AE%97%E6%9C%AC%E5%9C%B0%E6%80%A7/">谈谈spark 的计算本地性</a></p>
-</li>
-<li><p><a href="https://www.cnblogs.com/cc11001100/p/10301716.html">Spark笔记之数据本地性（data locality）</a></p>
-</li>
-</ol>
 ]]></content>
   </entry>
   <entry>
