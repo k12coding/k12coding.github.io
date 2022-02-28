@@ -251,49 +251,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
-</li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
-</li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
-</li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>HDFS中的数据块(Block)</title>
     <url>/2021/12/03/HDFS%E4%B8%AD%E7%9A%84%E6%95%B0%E6%8D%AE%E5%9D%97-Block/</url>
     <content><![CDATA[<p>我们在分布式存储原理总结中了解了分布式存储的三大特点：</p>
@@ -414,6 +371,49 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -579,6 +579,46 @@
 <p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
 
+]]></content>
+  </entry>
+  <entry>
+    <title>HIVE的部署</title>
+    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
+<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
+<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
+<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
+
+<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
+<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
+
+<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
+<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
+<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
+<p>解决办法：</p>
+<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
+<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
+<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
+<p>再次启动问题得到解决！</p>
+</li>
+<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
+<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
+<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
+</li>
+</ul>
 ]]></content>
   </entry>
   <entry>
@@ -762,46 +802,6 @@
 <p>打印类的路径</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>HIVE的部署</title>
-    <url>/2021/12/28/HIVE%E7%9A%84%E9%83%A8%E7%BD%B2/</url>
-    <content><![CDATA[<h3 id="0-前期准备"><a href="#0-前期准备" class="headerlink" title="0.前期准备"></a>0.前期准备</h3><p>启动mysql和hadoop</p>
-<h3 id="1-下载hive的tar包"><a href="#1-下载hive的tar包" class="headerlink" title="1.下载hive的tar包"></a>1.下载hive的tar包</h3><p>到<a href="https://dlcdn.apache.org/hive/%E9%80%89%E6%8B%A9%E9%9C%80%E8%A6%81%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E6%88%91%E8%BF%99%E9%87%8C%E9%83%A8%E7%BD%B2hive-3.1.2%E7%89%88%E6%9C%AC%EF%BC%9A">https://dlcdn.apache.org/hive/选择需要的版本，我这里部署hive-3.1.2版本：</a></p>
-<p><a href="https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz">apache-hive-3.1.2-bin.tar.gz</a></p>
-<h3 id="2-通过rz命令上传到服务器并解压，"><a href="#2-通过rz命令上传到服务器并解压，" class="headerlink" title="2.通过rz命令上传到服务器并解压，"></a>2.通过rz命令上传到服务器并解压，</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ rz</span><br><span class="line">[hadoop@hadoop001 software]$ tar -zvxf apache-hive-3.1.2-bin.tar.gz </span><br><span class="line">[hadoop@hadoop001 software]$ ll</span><br><span class="line">total 1109404</span><br><span class="line">drwxrwxr-x. 10 hadoop hadoop      4096 Dec 27 00:09 apache-hive-3.1.2-bin</span><br><span class="line">[hadoop@hadoop001 software]$ cd ~/app</span><br><span class="line">[hadoop@hadoop001 app]$ ln -s hive /home/hadoop/software/apache-hive-3.1.2-bin</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-配置环境变量"><a href="#3-配置环境变量" class="headerlink" title="3.配置环境变量"></a>3.配置环境变量</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile   </span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line">export PATH=$HIVE_HOME/bin:$PATH </span><br></pre></td></tr></table></figure>
-
-<h3 id="4-拷贝mysql的驱动到lib下"><a href="#4-拷贝mysql的驱动到lib下" class="headerlink" title="4.拷贝mysql的驱动到lib下"></a>4.拷贝mysql的驱动到lib下</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mv mysql-connector-java-5.1.47.jar app/hive/lib/</span><br></pre></td></tr></table></figure>
-
-<h3 id="5-配置hive-site-xml"><a href="#5-配置hive-site-xml" class="headerlink" title="5.配置hive-site.xml"></a>5.配置hive-site.xml</h3><p>hive-site.xml配置mysql相关信息（hive-site.xml这个配置文件是配置元数据的相关信息，元数据存放在mysql中）</p>
-<p>hive-site.xml所在目录 <code>/home/hadoop/app/hive/conf/</code>,如果没有vi创建。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;&lt;!--</span><br><span class="line">   Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line">   contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line">   this work for additional information regarding copyright ownership.</span><br><span class="line">   The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line">   (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line">   the License.  You may obtain a copy of the License at</span><br><span class="line"></span><br><span class="line">       http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line"></span><br><span class="line">   Unless required by applicable law or agreed to in writing, software</span><br><span class="line">   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line">   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line">   See the License for the specific language governing permissions and</span><br><span class="line">   limitations under the License.</span><br><span class="line">--&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionURL&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;jdbc:mysql://hadoop001:3306/hive?createDatabaseIfNotExist=true&amp;amp;useSSL=false&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionDriverName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.mysql.jdbc.Driver&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Driver class name for a JDBC metastore&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionUserName&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Username to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;javax.jdo.option.ConnectionPassword&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;root&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;password to use against metastore database&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.metastore.warehouse.dir&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;/user/hive/warehouse&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;location of default database for the warehouse&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.header&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line"></span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;hive.cli.print.current.db&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="6-初始化"><a href="#6-初始化" class="headerlink" title="6.初始化"></a>6.初始化</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">schematool -dbType mysql -initSchema</span><br></pre></td></tr></table></figure>
-
-<h3 id="7-启动hive"><a href="#7-启动hive" class="headerlink" title="7.启动hive"></a>7.启动hive</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hive</span><br><span class="line">which: no hbase in (/home/hadoop/app/hive/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/home/hadoop/app/scala/bin:/home/hadoop/app/hadoop/bin:/home/hadoop/app/hadoop/sbin:/home/hadoop/app/protobuf/bin:/home/hadoop/app/maven/bin:/usr/local/mysql/bin:/usr/java/jdk1.8.0_45/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin)</span><br><span class="line">SLF4J: Class path contains multiple SLF4J bindings.</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/log4j-slf4j-impl-2.10.0.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: Found binding in [jar:file:/home/hadoop/software/hadoop-3.2.2/share/hadoop/common/lib/slf4j-log4j12-1.7.25.jar!/org/slf4j/impl/StaticLoggerBinder.class]</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.</span><br><span class="line">SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]</span><br><span class="line">Hive Session ID = 70f578b4-d4d6-4236-a82f-580ff0ca44a3</span><br><span class="line"></span><br><span class="line">Logging initialized using configuration in jar:file:/home/hadoop/software/apache-hive-3.1.2-bin/lib/hive-common-3.1.2.jar!/hive-log4j2.properties Async: true</span><br><span class="line">Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.</span><br><span class="line">Hive Session ID = c1629998-6455-4976-a8c2-c97d2f94104c</span><br><span class="line">hive (default)&gt; show databases;</span><br><span class="line">OK</span><br><span class="line">database_name</span><br><span class="line">default</span><br><span class="line">Time taken: 0.779 seconds, Fetched: 1 row(s)</span><br><span class="line">hive (default)&gt; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="8-在mysql中查看hive的元信息"><a href="#8-在mysql中查看hive的元信息" class="headerlink" title="8.在mysql中查看hive的元信息"></a>8.在mysql中查看hive的元信息</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">| Database           |</span><br><span class="line">+--------------------+</span><br><span class="line">| information_schema |</span><br><span class="line">| hive               |</span><br><span class="line">| mysql              |</span><br><span class="line">| performance_schema |</span><br><span class="line">| ruozedata          |</span><br><span class="line">| sys                |</span><br><span class="line">+--------------------+</span><br><span class="line">6 rows in set (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; use hive;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; show tables;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| Tables_in_hive                |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| aux_table                     |</span><br><span class="line">| bucketing_cols                |</span><br><span class="line">| cds                           |</span><br><span class="line">| columns_v2                    |</span><br><span class="line">| compaction_queue              |</span><br><span class="line">| completed_compactions         |</span><br><span class="line">| completed_txn_components      |</span><br><span class="line">| ctlgs                         |</span><br><span class="line">| database_params               |</span><br><span class="line">| db_privs                      |</span><br><span class="line">| dbs                           |</span><br><span class="line">| delegation_tokens             |</span><br><span class="line">| func_ru                       |</span><br><span class="line">| funcs                         |</span><br><span class="line">| global_privs                  |</span><br><span class="line">| hive_locks                    |</span><br><span class="line">| i_schema                      |</span><br><span class="line">| idxs                          |</span><br><span class="line">| index_params                  |</span><br><span class="line">| key_constraints               |</span><br><span class="line">| master_keys                   |</span><br><span class="line">| materialization_rebuild_locks |</span><br><span class="line">| metastore_db_properties       |</span><br><span class="line">| min_history_level             |</span><br><span class="line">| mv_creation_metadata          |</span><br><span class="line">| mv_tables_used                |</span><br><span class="line">| next_compaction_queue_id      |</span><br><span class="line">| next_lock_id                  |</span><br><span class="line">| next_txn_id                   |</span><br><span class="line">| next_write_id                 |</span><br><span class="line">| notification_log              |</span><br><span class="line">| notification_sequence         |</span><br><span class="line">| nucleus_tables                |</span><br><span class="line">| part_col_privs                |</span><br><span class="line">| part_col_stats                |</span><br><span class="line">| part_privs                    |</span><br><span class="line">| partition_events              |</span><br><span class="line">| partition_key_vals            |</span><br><span class="line">| partition_keys                |</span><br><span class="line">| partition_params              |</span><br><span class="line">| partitions                    |</span><br><span class="line">| repl_txn_map                  |</span><br><span class="line">| role_map                      |</span><br><span class="line">| roles                         |</span><br><span class="line">| runtime_stats                 |</span><br><span class="line">| schema_version                |</span><br><span class="line">| sd_params                     |</span><br><span class="line">| sds                           |</span><br><span class="line">| sequence_table                |</span><br><span class="line">| serde_params                  |</span><br><span class="line">| serdes                        |</span><br><span class="line">| skewed_col_names              |</span><br><span class="line">| skewed_col_value_loc_map      |</span><br><span class="line">| skewed_string_list            |</span><br><span class="line">| skewed_string_list_values     |</span><br><span class="line">| skewed_values                 |</span><br><span class="line">| sort_cols                     |</span><br><span class="line">| tab_col_stats                 |</span><br><span class="line">| table_params                  |</span><br><span class="line">| tbl_col_privs                 |</span><br><span class="line">| tbl_privs                     |</span><br><span class="line">| tbls                          |</span><br><span class="line">| txn_components                |</span><br><span class="line">| txn_to_write_id               |</span><br><span class="line">| txns                          |</span><br><span class="line">| type_fields                   |</span><br><span class="line">| types                         |</span><br><span class="line">| version                       |</span><br><span class="line">| wm_mapping                    |</span><br><span class="line">| wm_pool                       |</span><br><span class="line">| wm_pool_to_trigger            |</span><br><span class="line">| wm_resourceplan               |</span><br><span class="line">| wm_trigger                    |</span><br><span class="line">| write_set                     |</span><br><span class="line">+-------------------------------+</span><br><span class="line">74 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; </span><br></pre></td></tr></table></figure>
-
-<h3 id="9-其他（部署过程中遇到的问题）"><a href="#9-其他（部署过程中遇到的问题）" class="headerlink" title="9.其他（部署过程中遇到的问题）"></a>9.其他（部署过程中遇到的问题）</h3><ul>
-<li><p>Hive启动报错：java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument</p>
-<p>错误原因：系统找不到这个类所在的jar包或者jar包的版本不一样系统不知道使用哪个。hive启动报错的原因是后者</p>
-<p>解决办法：</p>
-<p>1、com.google.common.base.Preconditions.checkArgument这个类所在的jar包为：guava.jar</p>
-<p>2、hadoop-3.2.1（路径：hadoop\share\hadoop\common\lib）中该jar包为 guava-27.0-jre.jar；而hive-3.1.2(路径：hive/lib)中该jar包为guava-19.0.1.jar</p>
-<p>3、将jar包变成一致的版本：删除hive中低版本jar包，将hadoop中高版本的复制到hive的lib中。</p>
-<p>再次启动问题得到解决！</p>
-</li>
-<li><p>FAILED: HiveException java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.me</p>
-<p>原因分析：<br>是由于没有初始化数据库导致，执行名称初始化数据库即可。</p>
-<p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
-</li>
-</ul>
 ]]></content>
   </entry>
   <entry>
@@ -1236,6 +1236,93 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hive：分区</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
+    <content><![CDATA[<blockquote>
+<p>Hive分区的概念与传统关系型数据库分区不同。</p>
+<p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
+<p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
+</blockquote>
+<h1 id="静态分区"><a href="#静态分区" class="headerlink" title="静态分区"></a>静态分区</h1><h2 id="一级分区"><a href="#一级分区" class="headerlink" title="一级分区"></a>一级分区</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p>Hive分区是在创建表的时候用Partitioned by 关键字定义的，但要注意，Partitioned by子句中定义的列是表中正式的列，但是Hive下的数据文件中并不包含这些列，因为它们是目录名。注意：分区字段不能和表中的字段重复。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]</span><br><span class="line">一级分区：一个目录</span><br><span class="line">多级分区：多个目录</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE `emp_partition`(</span><br><span class="line">`empno` int, </span><br><span class="line">`ename` string, </span><br><span class="line">`job` string, </span><br><span class="line">`mgr` int, </span><br><span class="line">`hiredate` string, </span><br><span class="line">`sal` double, </span><br><span class="line">`comm` double</span><br><span class="line">) partitioned by (deptno string)</span><br><span class="line">row format delimited fields terminated by &#x27;\t&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>通过desc查看的表结构如下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; desc emp_partition;</span><br><span class="line">OK</span><br><span class="line">col_name	data_type	comment</span><br><span class="line">empno               	int</span><br><span class="line">ename               	string</span><br><span class="line">job                 	string</span><br><span class="line">mgr                 	int</span><br><span class="line">hiredate            	string</span><br><span class="line">sal                 	double</span><br><span class="line">comm                	double</span><br><span class="line">deptno              	string</span><br><span class="line">	 	 </span><br><span class="line"># Partition Information	 	 </span><br><span class="line"># col_name            	data_type           	comment             </span><br><span class="line">deptno              	string              	                    </span><br><span class="line">Time taken: 0.546 seconds, Fetched: 12 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">格式1:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row …];</span><br><span class="line">格式2：</span><br><span class="line">load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<p>从其他表中插入数据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.269 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; insert into emp_partition partition(deptno=30) select empno,ename,job,mgr,hiredate,sal,comm from emp where deptno=10;</span><br></pre></td></tr></table></figure>
+
+<p>从文件加载数据到表中（不包含分区列字段）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ cat emp_10.txt </span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000	500</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看数据"><a href="#查看数据" class="headerlink" title="查看数据"></a>查看数据</h3><p>利用分区表查询：(一般分区表都是利用where语句查询的)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp_partition where deptno=10;</span><br><span class="line">OK</span><br><span class="line">emp_partition.empno	emp_partition.ename	emp_partition.job	emp_partition.mgr	emp_partition.hiredate	emp_partition.sal	emp_partition.comm	emp_partition.deptno</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000.0	500.0	10</span><br><span class="line">Time taken: 0.25 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<p>查看hdfs上emp_partition表目录结构，可以看到在以表名目录下，有以deptno=10（分区名）的子目录存放着真实的数据文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br></pre></td></tr></table></figure>
+
+<p>同理，插入deptno为20，30的数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10/emp_10.txt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        214 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20/000000_0</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30/000000_0</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看分区"><a href="#查看分区" class="headerlink" title="查看分区"></a>查看分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">Time taken: 0.152 seconds, Fetched: 3 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加分区"><a href="#添加分区" class="headerlink" title="添加分区"></a>添加分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; alter table emp_partition  add partition (deptno=40);</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.282 seconds</span><br><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">deptno=40</span><br><span class="line">Time taken: 0.127 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除分区-删除相应分区文件"><a href="#删除分区-删除相应分区文件" class="headerlink" title="删除分区(删除相应分区文件)"></a>删除分区(删除相应分区文件)</h3><p>注意，对于外表进行drop partition并不会删除hdfs上的文件，并且可以通过<code>msck repair table table_name</code>同步hdfs上的分区。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table emp_partition drop partition (deptno = 40);</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复分区"><a href="#修复分区" class="headerlink" title="修复分区"></a>修复分区</h3><p>修复分区就是重新同步hdfs上的分区信息。（外部表在hdfs目录上添加文件后使用）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msck repair table table_name  [ADD/DROP/SYNC PARTITIONS];</span><br></pre></td></tr></table></figure>
+
+<p>在hive3.0中msck命令支持删除partition信息。</p>
+<h2 id="多级分区"><a href="#多级分区" class="headerlink" title="多级分区"></a>多级分区</h2><p>多分区表装载数据时，分区字段必须都要加。如果只有一个，会报错。</p>
+<p>下面创建一张静态分区表par_tab_muilt，多个分区（性别+日期）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create table par_tab_muilt (name string, nation string) partitioned by (sex string,dt string) row format delimited fields terminated by &#x27;,&#x27; ;</span><br><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/files/par_tab.txt&#x27; into table par_tab_muilt partition (sex=&#x27;man&#x27;,dt=&#x27;2021-12-28&#x27;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 files]$ hadoop fs -ls -R /user/hive/warehouse/par_tab_muilt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28</span><br><span class="line">-rwxr-xr-x   1 hadoop supergroup         71 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28/par_tab.txt</span><br></pre></td></tr></table></figure>
+
+<p>可见，新建表的时候定义的分区顺序，决定了文件目录顺序（谁是父目录谁是子目录），正因为有了这个层级关系，当我们查询所有man的时候，man以下的所有日期下的数据都会被查出来。如果只查询日期分区，但父目录sex=man和sex=woman都有该日期的数据，那么Hive会对输入路径进行修剪，从而只扫描日期分区，性别分区不作过滤（即查询结果包含了所有性别）。</p>
+<h1 id="动态分区"><a href="#动态分区" class="headerlink" title="动态分区"></a>动态分区</h1><p>为什么要使用动态分区呢，我们举个例子，假如中国有50个省，每个省有50个市，每个市都有100个区，那我们都要使用静态分区要使用多久才能搞完。所有我们要使用动态分区。</p>
+<blockquote>
+<p>注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区。</p>
+<p>动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode</p>
+</blockquote>
+<p>动态分区默认是没有开启。开启后默认是以严格模式执行的，在这种模式下需要至少一个分区字段是静态的。这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。这有助于阻止因设计错误导致导致查询差生大量的分区。列如：用户可能错误使用时间戳作为分区表字段。然后导致每秒都对应一个分区！这样我们也可以采用相应的措施:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关闭严格分区模式		set hive.exec.dynamic.partition.mode=nonstrict	//分区模式，默认strict（至少有一个分区列是静态分区）</span><br><span class="line">开启支持动态分区		set hive.exec.dynamic.partition=true			//开启动态分区,默认true</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">其他相关参数 ：</span><br><span class="line">set hive.exec.max.dynamic.partitions.pernode; #每一个执行mr节点上，允许创建的动态分区的最大数量(100) </span><br><span class="line">set hive.exec.max.dynamic.partitions;         #所有执行mr节点上，允许创建的所有动态分区的最大数量(1000) </span><br><span class="line">set hive.exec.max.created.files;              #所有的mr job允许创建的文件的最大数量(100000)</span><br></pre></td></tr></table></figure>
+
+<p>利用动态分区，我们可以一次完成插入上面例子中deptno不同的数据的操作</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert overwrite table emp_partition partition(deptno) select empno,ename,job,mgr,hiredate,sal,comm,deptno from emp;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>hive的分区使用的表外字段，分区字段是一个伪列但是可以查询过滤。</li>
+<li>分区字段不建议使用中文.</li>
+<li>不太建议使用动态分区。因为动态分区将会使用mapreduce来查询数据，如果分区数量过多将导致namenode和yarn的资源瓶颈。所以建议动态分区前也尽可能之前预知分区数量。</li>
+<li>分区属性的修改均可以使用手动元数据和hdfs的数据内容</li>
+</ol>
+<h2 id="外部分区表"><a href="#外部分区表" class="headerlink" title="外部分区表"></a>外部分区表</h2><p>外部表同样可以使用分区，事实上，用户会发现，只是管理大型生产数据集最常见的情况，这种结合给用户提供一个和其他工具共享数据的方式，同时也可以优化查询性能。这样我们就可以把数据路径改变而不影响数据的丢失，这是内部分区表远远不能做的事情:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1,(因为我们创建的是外部表)所有我们可以把表数据放到hdfs上的随便一个地方这里自动数据加载到/user/had/data/下(当然我们之前在外部表上指定了路径)</span><br><span class="line">load data local inpath &#x27;/home/had/data.txt&#x27; into table employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br><span class="line">2,如果我们加载的数据要分离一些旧数据的时候就可以hadoop的distcp命令来copy数据到某个路径</span><br><span class="line">hadoop distcp /user/had/data/country=china/state=Asia /user/had/data_old/country=china/state=Asia</span><br><span class="line">3,修改表，把移走的数据的路径在hive里修改</span><br><span class="line">alter table employees partition(country=&quot;china&quot;,state=&quot;Asia&quot;) set location &#x27;/user/had/data_old/country=china/state=Asia&#x27;</span><br><span class="line">4,使用hdfs的rm命令删除之前路径的数据</span><br><span class="line">hdfs dfs -rmr /user/had/data/country=china/state=Asia</span><br><span class="line">这样我们就完成一次数据迁移</span><br><span class="line"></span><br><span class="line">如果觉得突然忘记了数据的位置使用使用下面的方式查看</span><br><span class="line">describe extend employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="众多的修改语句"><a href="#众多的修改语句" class="headerlink" title="众多的修改语句"></a>众多的修改语句</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1，把一个分区打包成一个har包</span><br><span class="line">  alter table employees archive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">2, 把一个分区har包还原成原来的分区</span><br><span class="line">  alter table employees unarchive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">3, 保护分区防止被删除</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable no_drop</span><br><span class="line">4,保护分区防止被查询</span><br><span class="line">    alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable offline</span><br><span class="line">5，允许分区删除和查询</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable no_drop</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable offline</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
+<p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
+<p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hive：加载数据到表的方式</title>
     <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
     <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
@@ -1405,93 +1492,6 @@
 <p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
 <p><strong>remove_random</strong>:</p>
 <p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hive：分区</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
-    <content><![CDATA[<blockquote>
-<p>Hive分区的概念与传统关系型数据库分区不同。</p>
-<p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
-<p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
-</blockquote>
-<h1 id="静态分区"><a href="#静态分区" class="headerlink" title="静态分区"></a>静态分区</h1><h2 id="一级分区"><a href="#一级分区" class="headerlink" title="一级分区"></a>一级分区</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p>Hive分区是在创建表的时候用Partitioned by 关键字定义的，但要注意，Partitioned by子句中定义的列是表中正式的列，但是Hive下的数据文件中并不包含这些列，因为它们是目录名。注意：分区字段不能和表中的字段重复。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]</span><br><span class="line">一级分区：一个目录</span><br><span class="line">多级分区：多个目录</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE `emp_partition`(</span><br><span class="line">`empno` int, </span><br><span class="line">`ename` string, </span><br><span class="line">`job` string, </span><br><span class="line">`mgr` int, </span><br><span class="line">`hiredate` string, </span><br><span class="line">`sal` double, </span><br><span class="line">`comm` double</span><br><span class="line">) partitioned by (deptno string)</span><br><span class="line">row format delimited fields terminated by &#x27;\t&#x27;;</span><br></pre></td></tr></table></figure>
-
-<p>通过desc查看的表结构如下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; desc emp_partition;</span><br><span class="line">OK</span><br><span class="line">col_name	data_type	comment</span><br><span class="line">empno               	int</span><br><span class="line">ename               	string</span><br><span class="line">job                 	string</span><br><span class="line">mgr                 	int</span><br><span class="line">hiredate            	string</span><br><span class="line">sal                 	double</span><br><span class="line">comm                	double</span><br><span class="line">deptno              	string</span><br><span class="line">	 	 </span><br><span class="line"># Partition Information	 	 </span><br><span class="line"># col_name            	data_type           	comment             </span><br><span class="line">deptno              	string              	                    </span><br><span class="line">Time taken: 0.546 seconds, Fetched: 12 row(s)</span><br></pre></td></tr></table></figure>
-
-<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">格式1:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row …];</span><br><span class="line">格式2：</span><br><span class="line">load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
-
-<p>从其他表中插入数据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.269 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; insert into emp_partition partition(deptno=30) select empno,ename,job,mgr,hiredate,sal,comm from emp where deptno=10;</span><br></pre></td></tr></table></figure>
-
-<p>从文件加载数据到表中（不包含分区列字段）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ cat emp_10.txt </span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000	500</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
-
-<h3 id="查看数据"><a href="#查看数据" class="headerlink" title="查看数据"></a>查看数据</h3><p>利用分区表查询：(一般分区表都是利用where语句查询的)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp_partition where deptno=10;</span><br><span class="line">OK</span><br><span class="line">emp_partition.empno	emp_partition.ename	emp_partition.job	emp_partition.mgr	emp_partition.hiredate	emp_partition.sal	emp_partition.comm	emp_partition.deptno</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000.0	500.0	10</span><br><span class="line">Time taken: 0.25 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
-
-<p>查看hdfs上emp_partition表目录结构，可以看到在以表名目录下，有以deptno=10（分区名）的子目录存放着真实的数据文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br></pre></td></tr></table></figure>
-
-<p>同理，插入deptno为20，30的数据。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10/emp_10.txt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        214 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20/000000_0</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30/000000_0</span><br></pre></td></tr></table></figure>
-
-<h3 id="查看分区"><a href="#查看分区" class="headerlink" title="查看分区"></a>查看分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">Time taken: 0.152 seconds, Fetched: 3 row(s)</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加分区"><a href="#添加分区" class="headerlink" title="添加分区"></a>添加分区</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; alter table emp_partition  add partition (deptno=40);</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.282 seconds</span><br><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">deptno=40</span><br><span class="line">Time taken: 0.127 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
-
-<h3 id="删除分区-删除相应分区文件"><a href="#删除分区-删除相应分区文件" class="headerlink" title="删除分区(删除相应分区文件)"></a>删除分区(删除相应分区文件)</h3><p>注意，对于外表进行drop partition并不会删除hdfs上的文件，并且可以通过<code>msck repair table table_name</code>同步hdfs上的分区。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table emp_partition drop partition (deptno = 40);</span><br></pre></td></tr></table></figure>
-
-<h3 id="修复分区"><a href="#修复分区" class="headerlink" title="修复分区"></a>修复分区</h3><p>修复分区就是重新同步hdfs上的分区信息。（外部表在hdfs目录上添加文件后使用）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msck repair table table_name  [ADD/DROP/SYNC PARTITIONS];</span><br></pre></td></tr></table></figure>
-
-<p>在hive3.0中msck命令支持删除partition信息。</p>
-<h2 id="多级分区"><a href="#多级分区" class="headerlink" title="多级分区"></a>多级分区</h2><p>多分区表装载数据时，分区字段必须都要加。如果只有一个，会报错。</p>
-<p>下面创建一张静态分区表par_tab_muilt，多个分区（性别+日期）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; create table par_tab_muilt (name string, nation string) partitioned by (sex string,dt string) row format delimited fields terminated by &#x27;,&#x27; ;</span><br><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/files/par_tab.txt&#x27; into table par_tab_muilt partition (sex=&#x27;man&#x27;,dt=&#x27;2021-12-28&#x27;);</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 files]$ hadoop fs -ls -R /user/hive/warehouse/par_tab_muilt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28</span><br><span class="line">-rwxr-xr-x   1 hadoop supergroup         71 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28/par_tab.txt</span><br></pre></td></tr></table></figure>
-
-<p>可见，新建表的时候定义的分区顺序，决定了文件目录顺序（谁是父目录谁是子目录），正因为有了这个层级关系，当我们查询所有man的时候，man以下的所有日期下的数据都会被查出来。如果只查询日期分区，但父目录sex=man和sex=woman都有该日期的数据，那么Hive会对输入路径进行修剪，从而只扫描日期分区，性别分区不作过滤（即查询结果包含了所有性别）。</p>
-<h1 id="动态分区"><a href="#动态分区" class="headerlink" title="动态分区"></a>动态分区</h1><p>为什么要使用动态分区呢，我们举个例子，假如中国有50个省，每个省有50个市，每个市都有100个区，那我们都要使用静态分区要使用多久才能搞完。所有我们要使用动态分区。</p>
-<blockquote>
-<p>注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区。</p>
-<p>动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode</p>
-</blockquote>
-<p>动态分区默认是没有开启。开启后默认是以严格模式执行的，在这种模式下需要至少一个分区字段是静态的。这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。这有助于阻止因设计错误导致导致查询差生大量的分区。列如：用户可能错误使用时间戳作为分区表字段。然后导致每秒都对应一个分区！这样我们也可以采用相应的措施:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关闭严格分区模式		set hive.exec.dynamic.partition.mode=nonstrict	//分区模式，默认strict（至少有一个分区列是静态分区）</span><br><span class="line">开启支持动态分区		set hive.exec.dynamic.partition=true			//开启动态分区,默认true</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">其他相关参数 ：</span><br><span class="line">set hive.exec.max.dynamic.partitions.pernode; #每一个执行mr节点上，允许创建的动态分区的最大数量(100) </span><br><span class="line">set hive.exec.max.dynamic.partitions;         #所有执行mr节点上，允许创建的所有动态分区的最大数量(1000) </span><br><span class="line">set hive.exec.max.created.files;              #所有的mr job允许创建的文件的最大数量(100000)</span><br></pre></td></tr></table></figure>
-
-<p>利用动态分区，我们可以一次完成插入上面例子中deptno不同的数据的操作</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert overwrite table emp_partition partition(deptno) select empno,ename,job,mgr,hiredate,sal,comm,deptno from emp;</span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
-<li>hive的分区使用的表外字段，分区字段是一个伪列但是可以查询过滤。</li>
-<li>分区字段不建议使用中文.</li>
-<li>不太建议使用动态分区。因为动态分区将会使用mapreduce来查询数据，如果分区数量过多将导致namenode和yarn的资源瓶颈。所以建议动态分区前也尽可能之前预知分区数量。</li>
-<li>分区属性的修改均可以使用手动元数据和hdfs的数据内容</li>
-</ol>
-<h2 id="外部分区表"><a href="#外部分区表" class="headerlink" title="外部分区表"></a>外部分区表</h2><p>外部表同样可以使用分区，事实上，用户会发现，只是管理大型生产数据集最常见的情况，这种结合给用户提供一个和其他工具共享数据的方式，同时也可以优化查询性能。这样我们就可以把数据路径改变而不影响数据的丢失，这是内部分区表远远不能做的事情:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1,(因为我们创建的是外部表)所有我们可以把表数据放到hdfs上的随便一个地方这里自动数据加载到/user/had/data/下(当然我们之前在外部表上指定了路径)</span><br><span class="line">load data local inpath &#x27;/home/had/data.txt&#x27; into table employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br><span class="line">2,如果我们加载的数据要分离一些旧数据的时候就可以hadoop的distcp命令来copy数据到某个路径</span><br><span class="line">hadoop distcp /user/had/data/country=china/state=Asia /user/had/data_old/country=china/state=Asia</span><br><span class="line">3,修改表，把移走的数据的路径在hive里修改</span><br><span class="line">alter table employees partition(country=&quot;china&quot;,state=&quot;Asia&quot;) set location &#x27;/user/had/data_old/country=china/state=Asia&#x27;</span><br><span class="line">4,使用hdfs的rm命令删除之前路径的数据</span><br><span class="line">hdfs dfs -rmr /user/had/data/country=china/state=Asia</span><br><span class="line">这样我们就完成一次数据迁移</span><br><span class="line"></span><br><span class="line">如果觉得突然忘记了数据的位置使用使用下面的方式查看</span><br><span class="line">describe extend employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br></pre></td></tr></table></figure>
-
-<h2 id="众多的修改语句"><a href="#众多的修改语句" class="headerlink" title="众多的修改语句"></a>众多的修改语句</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1，把一个分区打包成一个har包</span><br><span class="line">  alter table employees archive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">2, 把一个分区har包还原成原来的分区</span><br><span class="line">  alter table employees unarchive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">3, 保护分区防止被删除</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable no_drop</span><br><span class="line">4,保护分区防止被查询</span><br><span class="line">    alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable offline</span><br><span class="line">5，允许分区删除和查询</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable no_drop</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable offline</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
-<p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
-<p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2041,6 +2041,28 @@
 ]]></content>
   </entry>
   <entry>
+    <title>MapReduceClass extends Configured implements Tool代码</title>
+    <url>/2021/12/18/hadoop-Interface-Tool/</url>
+    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
+<ol>
+<li>extends Configured implements Tool</li>
+<li>run()放置任务代码.以下为mapreduce代码</li>
+<li>main方法中调用run()方法</li>
+</ol>
+<span id="more"></span>
+
+<p>代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li><p>补充：自定义序列化类</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>参考链接：</p>
+<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>dependencies与dependencyManagement的区别</title>
     <url>/2022/01/10/dependencies%E4%B8%8EdependencyManagement%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
     <content><![CDATA[<h2 id="个人小结"><a href="#个人小结" class="headerlink" title="个人小结"></a>个人小结</h2><ul>
@@ -2092,28 +2114,6 @@
 <p>参考链接：</p>
 <p><a href="https://blog.csdn.net/liutengteng130/article/details/46991829">https://blog.csdn.net/liutengteng130/article/details/46991829</a></p>
 <p><a href="https://www.cnblogs.com/clover-forever/p/15548681.html">https://www.cnblogs.com/clover-forever/p/15548681.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>MapReduceClass extends Configured implements Tool代码</title>
-    <url>/2021/12/18/hadoop-Interface-Tool/</url>
-    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
-<ol>
-<li>extends Configured implements Tool</li>
-<li>run()放置任务代码.以下为mapreduce代码</li>
-<li>main方法中调用run()方法</li>
-</ol>
-<span id="more"></span>
-
-<p>代码如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<ol start="4">
-<li><p>补充：自定义序列化类</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>参考链接：</p>
-<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2294,78 +2294,6 @@
 <p>再次测试：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>将Hexo部署到GitHub</title>
-    <url>/2021/10/24/%E5%B0%86Hexo%E9%83%A8%E7%BD%B2%E5%88%B0GitHub/</url>
-    <content><![CDATA[<p>参考<a href="https://hexo.io/zh-cn/docs">Hexo文档</a> </p>
-<span id="more"></span>
-
-<h2 id="一、安装Git"><a href="#一、安装Git" class="headerlink" title="一、安装Git"></a>一、安装Git</h2><ol>
-<li><p><a href="https://gitforwindows.org/">gitforwindows</a> 下载安装</p>
-</li>
-<li><p>安装完查看git版本：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git --version</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="二、安装Node-js"><a href="#二、安装Node-js" class="headerlink" title="二、安装Node.js"></a>二、安装Node.js</h2><ol>
-<li><p><a href="https://nodejs.org/en/download/">node.js</a> 选择LTS的window版本，下载安装</p>
-</li>
-<li><p>安装完查看node.js版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li>
-<li><p>更改npm镜像源：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
-<li><p>查看npm镜像源：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm get registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="三、安装Hexo"><a href="#三、安装Hexo" class="headerlink" title="三、安装Hexo"></a>三、安装Hexo</h2><ol>
-<li><p>安装Hexo</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="四、建站"><a href="#四、建站" class="headerlink" title="四、建站"></a>四、建站</h2><ol>
-<li><p>初始化博客目录</p>
-<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure></li>
-<li><p>常用命令：</p>
-<ul>
-<li>清理缓存： <code>hexo clean</code></li>
-<li>生成静态文件： <code>hexo g/generate</code></li>
-<li>生成静态文件： <code>hexo s/server</code></li>
-<li>组合版：<code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</code></li>
-<li>发布到github：<code>hexo d</code></li>
-</ul>
-<p>本地访问地址：<a href="http://localhost:4000/">http://localhost:4000</a></p>
-</li>
-<li><p>修改网站基本配置信息参考<a href="https://hexo.io/zh-cn/docs/configuration">配置</a></p>
-</li>
-</ol>
-<h2 id="五、将hexo部署到GitHub"><a href="#五、将hexo部署到GitHub" class="headerlink" title="五、将hexo部署到GitHub"></a>五、将hexo部署到GitHub</h2><ol>
-<li><p>生成SSH添加到GitHub</p>
-<p>生成key，可以git部署网站</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</span><br></pre></td></tr></table></figure>
-
-<p>然后需要配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global user.email “you@example.com”</span><br><span class="line">git config --global user.name “Your Name”</span><br></pre></td></tr></table></figure>
-
-<p>将这个文件拷贝到git的<a href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>查看是否配置成功</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure></li>
-<li><p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 <code>&lt;你的 GitHub 用户名&gt;.github.io</code> 访问，你的 repository 应该直接命名为 <code>&lt;你的 GitHub 用户名&gt;.github.io</code>。</p>
-</li>
-<li><p>安装 hexo-deployer-git.：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure></li>
-<li><p>在 _config.yml（如果有已存在的请删除）添加如下配置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">    type: git  </span><br><span class="line">    repo: https://github.com/&lt;username&gt;/&lt;project&gt; </span><br></pre></td></tr></table></figure></li>
-<li><p>运行 hexo </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
-<li><p>查看 <code>username.github.io</code> 上的网页是否部署成功。</p>
-</li>
-</ol>
-<h2 id="六、发布文章"><a href="#六、发布文章" class="headerlink" title="六、发布文章"></a>六、发布文章</h2><ol>
-<li><p>创建文章</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new post &quot;title&quot;</span><br></pre></td></tr></table></figure></li>
-<li><p>然后用编辑器修改好文本，发布</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
-</ol>
 ]]></content>
   </entry>
   <entry>
@@ -2823,6 +2751,78 @@
 <p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
 <p>最后，更新软件包缓存</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
+]]></content>
+  </entry>
+  <entry>
+    <title>将Hexo部署到GitHub</title>
+    <url>/2021/10/24/%E5%B0%86Hexo%E9%83%A8%E7%BD%B2%E5%88%B0GitHub/</url>
+    <content><![CDATA[<p>参考<a href="https://hexo.io/zh-cn/docs">Hexo文档</a> </p>
+<span id="more"></span>
+
+<h2 id="一、安装Git"><a href="#一、安装Git" class="headerlink" title="一、安装Git"></a>一、安装Git</h2><ol>
+<li><p><a href="https://gitforwindows.org/">gitforwindows</a> 下载安装</p>
+</li>
+<li><p>安装完查看git版本：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git --version</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装Node-js"><a href="#二、安装Node-js" class="headerlink" title="二、安装Node.js"></a>二、安装Node.js</h2><ol>
+<li><p><a href="https://nodejs.org/en/download/">node.js</a> 选择LTS的window版本，下载安装</p>
+</li>
+<li><p>安装完查看node.js版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node -v</span><br><span class="line">npm -v</span><br></pre></td></tr></table></figure></li>
+<li><p>更改npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+<li><p>查看npm镜像源：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm get registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="三、安装Hexo"><a href="#三、安装Hexo" class="headerlink" title="三、安装Hexo"></a>三、安装Hexo</h2><ol>
+<li><p>安装Hexo</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="四、建站"><a href="#四、建站" class="headerlink" title="四、建站"></a>四、建站</h2><ol>
+<li><p>初始化博客目录</p>
+<p>安装 Hexo 完成后，请执行下列命令，Hexo 将会在指定文件夹中新建所需要的文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo init &lt;folder&gt;</span><br><span class="line">cd &lt;folder&gt;</span><br><span class="line">npm install</span><br></pre></td></tr></table></figure></li>
+<li><p>常用命令：</p>
+<ul>
+<li>清理缓存： <code>hexo clean</code></li>
+<li>生成静态文件： <code>hexo g/generate</code></li>
+<li>生成静态文件： <code>hexo s/server</code></li>
+<li>组合版：<code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</code></li>
+<li>发布到github：<code>hexo d</code></li>
+</ul>
+<p>本地访问地址：<a href="http://localhost:4000/">http://localhost:4000</a></p>
+</li>
+<li><p>修改网站基本配置信息参考<a href="https://hexo.io/zh-cn/docs/configuration">配置</a></p>
+</li>
+</ol>
+<h2 id="五、将hexo部署到GitHub"><a href="#五、将hexo部署到GitHub" class="headerlink" title="五、将hexo部署到GitHub"></a>五、将hexo部署到GitHub</h2><ol>
+<li><p>生成SSH添加到GitHub</p>
+<p>生成key，可以git部署网站</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</span><br></pre></td></tr></table></figure>
+
+<p>然后需要配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global user.email “you@example.com”</span><br><span class="line">git config --global user.name “Your Name”</span><br></pre></td></tr></table></figure>
+
+<p>将这个文件拷贝到git的<a href="https://github.com/settings/keys">https://github.com/settings/keys</a><br>查看是否配置成功</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure></li>
+<li><p>GitHub创建个人仓库<br>新建一个 repository。如果你希望你的站点能通过域名 <code>&lt;你的 GitHub 用户名&gt;.github.io</code> 访问，你的 repository 应该直接命名为 <code>&lt;你的 GitHub 用户名&gt;.github.io</code>。</p>
+</li>
+<li><p>安装 hexo-deployer-git.：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure></li>
+<li><p>在 _config.yml（如果有已存在的请删除）添加如下配置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">deploy:  </span><br><span class="line">    type: git  </span><br><span class="line">    repo: https://github.com/&lt;username&gt;/&lt;project&gt; </span><br></pre></td></tr></table></figure></li>
+<li><p>运行 hexo </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
+<li><p>查看 <code>username.github.io</code> 上的网页是否部署成功。</p>
+</li>
+</ol>
+<h2 id="六、发布文章"><a href="#六、发布文章" class="headerlink" title="六、发布文章"></a>六、发布文章</h2><ol>
+<li><p>创建文章</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo new post &quot;title&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>然后用编辑器修改好文本，发布</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
