@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="语句insert ignore intoINSERT IGNORE 与INSERT INTO的区别就是INSERT IGNORE会忽略数据库中已经存在 的数据，如果数据库没有数据，就插入新的数据，如果有数据的话就跳过这条数据。这样就可以保留数据库中已经存在数据，达到在间隙中插入数据的目的。 insert into … on duplicate key update …123456789101112">
+<meta property="og:type" content="article">
+<meta property="og:title" content="我的mysql笔记">
+<meta property="og:url" content="https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="语句insert ignore intoINSERT IGNORE 与INSERT INTO的区别就是INSERT IGNORE会忽略数据库中已经存在 的数据，如果数据库没有数据，就插入新的数据，如果有数据的话就跳过这条数据。这样就可以保留数据库中已经存在数据，达到在间隙中插入数据的目的。 insert into … on duplicate key update …123456789101112">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/hexo/k12blog/source_posts/我的mysql笔记/zzbds1.jpg">
+<meta property="og:image" content="https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/hexo/k12blog/source_posts/我的mysql笔记/zzbds2.jpg">
+<meta property="article:published_time" content="2022-03-26T14:01:37.000Z">
+<meta property="article:modified_time" content="2022-03-26T18:46:57.940Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/hexo/k12blog/source_posts/我的mysql笔记/zzbds1.jpg">
+
+
+<link rel="canonical" href="https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/","path":"2022/03/26/我的mysql笔记/","title":"我的mysql笔记"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>我的mysql笔记 | k12的博客</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">k12的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">k12的笔记</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%AD%E5%8F%A5"><span class="nav-text">语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#insert-ignore-into"><span class="nav-text">insert ignore into</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#insert-into-%E2%80%A6-on-duplicate-key-update-%E2%80%A6"><span class="nav-text">insert into … on duplicate key update …</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#replace-into"><span class="nav-text">replace into</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#alter"><span class="nav-text">alter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#WITH-ROLLUP"><span class="nav-text">WITH ROLLUP</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E5%A4%96%E9%94%AE%E7%BA%A6%E6%9D%9F"><span class="nav-text">添加外键约束</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0"><span class="nav-text">函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#REPLACE-str-old-string-new-string"><span class="nav-text">REPLACE(str,old_string,new_string)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REGEXP-REPLACE-expression-pattern-replace-string-pos-occurrence-match-type"><span class="nav-text">REGEXP_REPLACE (expression, pattern, replace_string[, pos[, occurrence[, match_type]]])</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RIGHT-s%EF%BC%8Cn-%E5%92%8CLEFT-s%EF%BC%8Cn"><span class="nav-text">RIGHT(s，n)和LEFT(s，n)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#group-concat-X-Y"><span class="nav-text">group_concat(X,Y)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#last-day-curdate"><span class="nav-text">last_day(curdate());</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cast"><span class="nav-text">cast()</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0LAG-%E5%92%8CLEAD"><span class="nav-text">窗口函数LAG()和LEAD()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0NTH-VALUE"><span class="nav-text">窗口函数NTH_VALUE()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MOD-N-M"><span class="nav-text">MOD(N,M)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%96%E6%95%B4%E5%87%BD%E6%95%B0%EF%BC%88ceil%E3%80%81floor%E3%80%81round%EF%BC%89"><span class="nav-text">取整函数（ceil、floor、round）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SUBSTRING-string-position"><span class="nav-text">SUBSTRING(string,position)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#substring-index-str-delim-count"><span class="nav-text">substring_index(str,delim,count)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#date-add-%E5%92%8Cdate-sub"><span class="nav-text">date_add()和date_sub()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DATEDIFF"><span class="nav-text">DATEDIFF()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TIMESTAMPDIFF-unit-begin-end"><span class="nav-text">TIMESTAMPDIFF(unit,begin,end)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E6%AE%B5%E9%95%BF%E5%BA%A6char-length%E5%92%8Clength"><span class="nav-text">字段长度char_length和length</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#COALESCE-value1-value2-%E2%80%A6"><span class="nav-text">COALESCE(value1,value2,…)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REGEXP%EF%BC%9A%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%9F%A5%E8%AF%A2-rlike"><span class="nav-text">REGEXP：正则表达式查询(rlike)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E7%82%B9"><span class="nav-text">知识点</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">k12</p>
+  <div class="site-description" itemprop="description">2</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          我的mysql笔记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-03-26 22:01:37" itemprop="dateCreated datePublished" datetime="2022-03-26T22:01:37+08:00">2022-03-26</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-03-27 02:46:57" itemprop="dateModified" datetime="2022-03-27T02:46:57+08:00">2022-03-27</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h3 id="语句"><a href="#语句" class="headerlink" title="语句"></a>语句</h3><h4 id="insert-ignore-into"><a href="#insert-ignore-into" class="headerlink" title="insert ignore into"></a>insert ignore into</h4><p>INSERT IGNORE 与INSERT INTO的区别就是INSERT IGNORE会忽略数据库中已经存在 的数据，如果数据库没有数据，就插入新的数据，如果有数据的话就跳过这条数据。这样就可以保留数据库中已经存在数据，达到在间隙中插入数据的目的。</p>
+<h4 id="insert-into-…-on-duplicate-key-update-…"><a href="#insert-into-…-on-duplicate-key-update-…" class="headerlink" title="insert into … on duplicate key update …"></a>insert into … on duplicate key update …</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">1.on duplicate key update 含义：</span><br><span class="line">  1）如果在INSERT语句末尾指定了 on duplicate key update，并且插入行后会导致在一个UNIQUE索引或PRIMARY KEY中出现重复值，则在出现重复值的行执行UPDATE；</span><br><span class="line">  2）如果不会导致唯一值列重复的问题，则插入新行。</span><br><span class="line"> </span><br><span class="line">2. values(col_name)函数只是取当前插入语句中的插入值，并没有累加功能。</span><br><span class="line">  如：count = values(count) 取前面 insert into 中的 count 值，并更新</span><br><span class="line">当有多条记录冲突，需要插入时，前面的更新值都被最后一条记录覆盖，所以呈现出取最后一条更新的现象。</span><br><span class="line">  如：count = count + values(count) 依然取前面 insert into 中的 count 值，并与原记录值相加后更新回数据库，这样，当多条记录冲突需要插入时，就实现了不断累加更新的现象。</span><br><span class="line"> </span><br><span class="line">注：</span><br><span class="line">1.insert into ... on duplicate key update ... values() 这个语句</span><br><span class="line">    尽管在冲突时执行了更新，并没有插入，但是发现依然会占用 id 序号（自增），</span><br><span class="line">2.如果要更新的字段是主键或者唯一索引，不能和表中已有的数据重复，否则插入更新都失败。</span><br></pre></td></tr></table></figure>
+
+<h4 id="replace-into"><a href="#replace-into" class="headerlink" title="replace into"></a>replace into</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">对表进行replace into操作的时候，</span><br><span class="line">如果表只包含主键：</span><br><span class="line">   当不存在冲突时,replace into 相当于insert操作。</span><br><span class="line">   当存在冲突时,replace into 相当于update操作。</span><br><span class="line">如果表包含主键和唯一性索引：</span><br><span class="line">   当不存在冲突时,replace into 相当于insert操作。 </span><br><span class="line">   当存在主键冲突的时候是先<span class="keyword">delete</span>再insert,如果主键是自增的，则自增主键会做 +<span class="number">1</span> 操作。</span><br><span class="line">   当存在唯一性索引冲突的时候是直接update。,如果主键是自增的，则自增主键会做 +<span class="number">1</span> 操作。 </span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>REPLACE INTO <code>table</code> (<code>unique_column</code>,<code>num</code>) VALUES (‘$unique_value’,$num);</p>
+<p>跟</p>
+<p>INSERT INTO <code>table</code> (<code>unique_column</code>,<code>num</code>) VALUES(‘$unique_value’,$num) ON DUPLICATE UPDATE num=$num;还是有些区别的.<br>区别就是replace into的时候会删除老记录。如果表中有一个自增的主键。<br>那么就要出问题了。</p>
+<p>首先，因为新纪录与老记录的主键值不同，所以其他表中所有与本表老数据主键id建立的关联全部会被破坏。</p>
+<p>其次，就是，频繁的REPLACE INTO 会造成新纪录的主键的值迅速增大。<br>总有一天。达到最大值后就会因为数据太大溢出了。就没法再插入新纪录了。数据表满了，不是因为空间不够了，而是因为主键的值没法再增加了</p>
+</blockquote>
+<p>看上面知道，其实<code>insert into ... on duplicate key update ...</code>也是会造成主键的值迅速增大的问题</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">请注意，没有出现在`REPLACE`语句中的列将使用默认值插入相应的列。 如果列具有`NOT NULL`属性并且没有默认值，并且您如果没有在`REPLACE`语句中指定该值，则MySQL将引发错误。这是`REPLACE`和`INSERT`语句之间的区别。</span><br><span class="line"></span><br><span class="line">使用REPLACE语句时需要知道几个重点：</span><br><span class="line">如果您开发的应用程序不仅支持MySQL数据库，而且还支持其他关系数据库管理系统(RDBMS)，则应避免使用REPLACE语句，因为其他RDBMS可能不支持。代替的作法是在事务中使用DELETE和INSERT语句的组合。</span><br><span class="line">如果在具有触发器的表中使用了REPLACE语句，并且发生了重复键错误的删除，则触发器将按以下顺序触发：在删除前删除，删除之后，删除后，如果REPLACE语句删除当前 行并插入新行。 如果REPLACE语句更新当前行，则触发BEFORE UPDATE和AFTER UPDATE触发器。</span><br></pre></td></tr></table></figure>
+
+<h4 id="alter"><a href="#alter" class="headerlink" title="alter"></a>alter</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">1) 加索引</span><br><span class="line">  mysql&gt; alter table 表名 add index 索引名 (字段名1[，字段名2 …]);</span><br><span class="line"></span><br><span class="line">2) 加主关键字的索引</span><br><span class="line">  mysql&gt; alter table 表名 add primary key (字段名);</span><br><span class="line"></span><br><span class="line">3) 加唯一限制条件的索引</span><br><span class="line">  mysql&gt; alter table 表名 add unique 索引名 (字段名);</span><br><span class="line"></span><br><span class="line">4) 删除某个索引</span><br><span class="line">  mysql&gt; alter table 表名 drop index 索引名;</span><br><span class="line"></span><br><span class="line">5) 增加字段</span><br><span class="line">  mysql&gt; ALTER TABLE table_name ADD field_name field_type;</span><br><span class="line">  </span><br><span class="line">  如果你需要指定新增字段的位置，可以使用MySQL提供的关键字 FIRST (设定位第一列)， AFTER 字段名（设定位于某个字段之后）。</span><br><span class="line"></span><br><span class="line">6) 修改原字段名称及类型(modify或者change)</span><br><span class="line">  mysql&gt; ALTER TABLE table_name CHANGE old_field_name new_field_name field_type;</span><br><span class="line"></span><br><span class="line">7) 删除字段</span><br><span class="line">  mysql&gt; ALTER TABLE table_name DROP field_name;</span><br></pre></td></tr></table></figure>
+
+<h4 id="WITH-ROLLUP"><a href="#WITH-ROLLUP" class="headerlink" title="WITH ROLLUP"></a>WITH ROLLUP</h4><p>在group分组字段的基础上再进行统计数据。搭配ifnull()或者COALESCE()使用对汇总值命名</p>
+<h4 id="添加外键约束"><a href="#添加外键约束" class="headerlink" title="添加外键约束"></a>添加外键约束</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">--sql语句创建表的同时添加外键约束 CREATE TABLE tb_UserAndRole  --用户角色表</span><br><span class="line">(</span><br><span class="line">  ID INT PRIMARY KEY IDENTITY(1,1),</span><br><span class="line">  UserID INT NOT NULL,--用户ID</span><br><span class="line">  RoleID INT NOT NULL,--角色ID</span><br><span class="line">  foreign key(UserID) references tb_Users(ID)--tb_Users表的ID作为tb_UserAndRole表的外键 ) </span><br><span class="line"></span><br><span class="line">  --2、添加外键约束(关联字段要用括号括起来)</span><br><span class="line"></span><br><span class="line">  -- ALTER TABLE 从表</span><br><span class="line"></span><br><span class="line">  -- ADD CONSTRAINT 约束名 FOREIGN KEY (关联字段) references 主表(关联字段);</span><br></pre></td></tr></table></figure>
+
+<p>ALTER TABLE &lt;数据表名&gt; ADD CONSTRAINT &lt;外键名&gt;<br>FOREIGN KEY(&lt;列名&gt;) REFERENCES &lt;主表名&gt; (&lt;列名&gt;);</p>
+<h3 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h3><h4 id="REPLACE-str-old-string-new-string"><a href="#REPLACE-str-old-string-new-string" class="headerlink" title="REPLACE(str,old_string,new_string)"></a>REPLACE(str,old_string,new_string)</h4><p><code>REPLACE()</code>函数有三个参数，它将<code>string</code>中的<code>old_string</code>替换为<code>new_string</code>字符串。</p>
+<h4 id="REGEXP-REPLACE-expression-pattern-replace-string-pos-occurrence-match-type"><a href="#REGEXP-REPLACE-expression-pattern-replace-string-pos-occurrence-match-type" class="headerlink" title="REGEXP_REPLACE (expression, pattern, replace_string[, pos[, occurrence[, match_type]]])"></a>REGEXP_REPLACE (expression, pattern, replace_string[, pos[, occurrence[, match_type]]])</h4><p><code>REGEXP_REPLACE (expression, pattern, replace_string[, pos[, occurrence[, match_type]]])</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">参数说明</span><br><span class="line">REGEXP_REPLACE() 函数参数的解释是：</span><br><span class="line">expression:它是一个输入字符串，我们将通过正则表达式参数和函数对其进行搜索。</span><br><span class="line">patterns:它表示子字符串的正则表达式模式。</span><br><span class="line">replace_string：如果找到匹配项，将被替换的子字符串。</span><br><span class="line">REGEXP_INSTR() 函数使用下面给出的各种可选参数：</span><br><span class="line">pos:它用于指定字符串中表达式中的位置以开始搜索。如果我们不指定此参数，它将从位置 1 开始。</span><br><span class="line">occurrence:它用于指定我们要搜索的匹配项。如果我们不指定这个参数，所有出现的都会被替换。</span><br><span class="line">match_type：它是一个字符串，可以让我们细化正则表达式。它使用以下可能的字符来执行匹配。</span><br><span class="line">- c:它表示区分大小写的匹配。</span><br><span class="line">- i:它表示不区分大小写的匹配。</span><br><span class="line">- m:它代表 multiple-line 模式，允许在字符串中使用行终止符。默认情况下，此函数匹配字符串开头和结尾的行终止符。</span><br><span class="line">- n:它用于修改 . (点)字符来匹配行终止符。</span><br><span class="line">- u:它代表 Unix-only 行结尾。</span><br></pre></td></tr></table></figure>
+
+<p>案例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">1、用’#‘替换字符串中的所有数字</span><br><span class="line">SELECT regexp_replace(&#x27;01234abcde56789&#x27;,&#x27;[0-9]&#x27;,&#x27;#&#x27;) AS new_str FROM dual;</span><br><span class="line">结果：#####abcde#####</span><br><span class="line"></span><br><span class="line">用’#‘替换字符串中的数字0、9</span><br><span class="line">SELECT regexp_replace(‘01234abcde56789’,’[09]’,’#’) AS new_str FROM dual;</span><br><span class="line">结果：#1234abcde5678#</span><br><span class="line"></span><br><span class="line">2、遇到非小写字母或者数字跳过，从匹配到的第4个值开始替换，替换为&#x27;&#x27;</span><br><span class="line">SELECT regexp_replace(&#x27;abcdefg123456ABC&#x27;,&#x27;[a-z0-9]&#x27;,&#x27;&#x27;,4)</span><br><span class="line">结果：abcefg123456ABC</span><br><span class="line"></span><br><span class="line">SELECT regexp_replace(&#x27;abcDEfg123456ABC&#x27;,&#x27;[a-z0-9]&#x27;,&#x27;&#x27;,4)</span><br><span class="line">结果：abcDEg123456ABC</span><br><span class="line"></span><br><span class="line">SELECT regexp_replace(&#x27;abcDEfg123456ABC&#x27;,&#x27;[a-z0-9]&#x27;,&#x27;&#x27;,7);</span><br><span class="line">结果：abcDEfg13456ABC</span><br><span class="line"></span><br><span class="line">遇到非小写字母或者数字跳过，将所有匹配到的值替换为&#x27;&#x27;</span><br><span class="line">SELECT regexp_replace(&#x27;abcDefg123456ABC&#x27;,&#x27;[a-z0-9]&#x27;,&#x27;&#x27;,0);</span><br><span class="line">结果：DABC</span><br><span class="line"></span><br><span class="line">3、格式化手机号，将+86 13811112222转换为(+86) 138-1111-2222,’+‘在正则表达式中有定义，需要转义。\\1表示引用的第一个组</span><br><span class="line">SELECT regexp_replace(&#x27;+86 13811112222&#x27;,&#x27;(\\+[0-9]&#123;2&#125;)( )([0-9]&#123;3&#125;)([0-9]&#123;4&#125;)([0-9]&#123;4&#125;)&#x27;,&#x27;(\\1)\\3-\\4-\\5&#x27;,0);</span><br><span class="line">结果：(+86)138-1111-2222</span><br><span class="line"></span><br><span class="line">SELECT regexp_replace(&quot;123.456.7890&quot;,&quot;([[:digit:]]&#123;3&#125;)\\.([[:digit:]]&#123;3&#125;)\\.([[:digit:]]&#123;4&#125;)&quot;,&quot;(\\1)\\2-\\3&quot;,0) ;</span><br><span class="line">SELECT regexp_replace(&quot;123.456.7890&quot;,&quot;([0-9]&#123;3&#125;)\\.([0-9]&#123;3&#125;)\\.([0-9]&#123;4&#125;)&quot;,&quot;(\\1)\\2-\\3&quot;,0) ;</span><br><span class="line">结果：(123)456-7890</span><br><span class="line"></span><br><span class="line">4、将字符用空格分隔开，0表示替换掉所有的匹配子串。</span><br><span class="line">SELECT regexp_replace(&#x27;abcdefg123456ABC&#x27;,&#x27;(.)&#x27;,&#x27;\\1 &#x27;,0) AS new_str FROM dual;</span><br><span class="line">结果：a b c d e f g 1 2 3 4 5 6 A B C</span><br><span class="line"></span><br><span class="line">SELECT regexp_replace(&#x27;abcdefg123456ABC&#x27;,&#x27;(.)&#x27;,&#x27;\\1 &#x27;,2) AS new_str FROM dual;</span><br><span class="line">结果：ab cdefg123456ABC</span><br><span class="line"></span><br><span class="line">5、</span><br><span class="line">SELECT regexp_replace(&quot;abcd&quot;,&quot;(.*)(.)$&quot;,&quot;\\1&quot;,0) ;</span><br><span class="line">结果：abc</span><br><span class="line"></span><br><span class="line">SELECT regexp_replace(&quot;abcd&quot;,&quot;(.*)(.)$&quot;,&quot;\\2&quot;,0) ;</span><br><span class="line">结果：d</span><br><span class="line"></span><br><span class="line">SELECT regexp_replace(&quot;abcd&quot;,&quot;(.*)(.)$&quot;,&quot;\\1-\\2&quot;,0) ;</span><br><span class="line">结果：abc-d</span><br></pre></td></tr></table></figure>
+
+<p>正则符号释义：</p>
+<p><img src="/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/hexo\k12blog\source_posts\我的mysql笔记\zzbds1.jpg" alt="img"></p>
+<p><img src="/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/hexo\k12blog\source_posts\我的mysql笔记\zzbds2.jpg" alt="img"></p>
+<h4 id="RIGHT-s，n-和LEFT-s，n"><a href="#RIGHT-s，n-和LEFT-s，n" class="headerlink" title="RIGHT(s，n)和LEFT(s，n)"></a>RIGHT(s，n)和LEFT(s，n)</h4><p>RIGHT(s，n) 函数返回字符串 s 最右边的 n 个字符。</p>
+<p>LEFT(s，n) 函数返回字符串 s 最左边的 n 个字符。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">mysql&gt; SELECT RIGHT(&#x27;MySQL&#x27;,3);</span><br><span class="line">+------------------+</span><br><span class="line">| RIGHT(&#x27;MySQL&#x27;,3) |</span><br><span class="line">+------------------+</span><br><span class="line">| SQL              |</span><br><span class="line">+------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line">mysql&gt; SELECT LEFT(&#x27;MySQL&#x27;,2);</span><br><span class="line">+-----------------+</span><br><span class="line">| LEFT(&#x27;MySQL&#x27;,2) |</span><br><span class="line">+-----------------+</span><br><span class="line">| My              |</span><br><span class="line">+-----------------+</span><br><span class="line">1 row in set (0.04 sec)</span><br></pre></td></tr></table></figure>
+
+<h4 id="group-concat-X-Y"><a href="#group-concat-X-Y" class="headerlink" title="group_concat(X,Y)"></a>group_concat(X,Y)</h4><p>其中X是要连接的字段，Y是连接时用的符号，可省略，默认为逗号。此函数必须与 GROUP BY 配合使用。（=hive里的concat_ws(“,”,collect_set(字段))）</p>
+<p>group_concat函数，实现分组查询之后的数据进行合并，并返回一个字符串结果。</p>
+<p>格式：group_concat（ [distinct] 要连接的字段 [order by 排序字段 asc/desc  ] [separator ‘分隔符’] ）</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GROUP_CONCAT(</span><br><span class="line">    <span class="keyword">DISTINCT</span> expression</span><br><span class="line">    <span class="keyword">ORDER</span> <span class="keyword">BY</span> expression</span><br><span class="line">    SEPARATOR sep</span><br><span class="line">);</span><br><span class="line">group_concat(<span class="keyword">distinct</span> emp_no <span class="keyword">order</span> <span class="keyword">by</span> emp_no <span class="keyword">asc</span> separator <span class="string">&#x27;,&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h4 id="last-day-curdate"><a href="#last-day-curdate" class="headerlink" title="last_day(curdate());"></a>last_day(curdate());</h4><p>获取当月最后一天</p>
+<h3 id="cast"><a href="#cast" class="headerlink" title="cast()"></a>cast()</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CAST</span>(expression <span class="keyword">AS</span> TYPE);</span><br></pre></td></tr></table></figure>
+
+<p><code>CAST()</code>函数将任何类型的值转换为具有指定类型的值。目标类型可以是以下类型之一：<code>BINARY</code>，<code>CHAR</code>，<code>DATE</code>，<code>DATETIME</code>，<code>TIME</code>，<code>DECIMAL</code>，<code>SIGNED</code>，<code>UNSIGNED</code>。</p>
+<p><code>CAST()</code>函数通常用于返回具有指定类型的值，以便在WHERE、JOIN和HAVING子句中进行比较。</p>
+<p>案例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">在下面的例子中，在进行计算之前，MySQL将一个字符串隐式转换成一个整数：</span><br><span class="line">mysql&gt; SELECT (1 + &#x27;1&#x27;)/2;</span><br><span class="line">+-------------+</span><br><span class="line">| (1 + &#x27;1&#x27;)/2 |</span><br><span class="line">+-------------+</span><br><span class="line">|           1 |</span><br><span class="line">+-------------+</span><br><span class="line">1 row in set</span><br><span class="line">SQL</span><br><span class="line"></span><br><span class="line">要将字符串显式转换为整数，可以使用CAST()函数，如以下语句：</span><br><span class="line">mysql&gt; SELECT (1 + CAST(&#x27;1&#x27; AS UNSIGNED))/2;</span><br><span class="line">+-------------------------------+</span><br><span class="line">| (1 + CAST(&#x27;1&#x27; AS UNSIGNED))/2 |</span><br><span class="line">+-------------------------------+</span><br><span class="line">| 1                             |</span><br><span class="line">+-------------------------------+</span><br><span class="line"></span><br><span class="line">为了安全起见，可以使用CAST()函数将字符串显式转换为TIMESTAMP值</span><br><span class="line">SELECT orderNumber,</span><br><span class="line">       requiredDate</span><br><span class="line">FROM orders</span><br><span class="line">WHERE requiredDate BETWEEN  CAST(&#x27;2013-01-01&#x27; AS DATETIME)</span><br><span class="line">                        AND CAST(&#x27;2013-01-31&#x27; AS DATETIME);//原文出</span><br></pre></td></tr></table></figure>
+
+<h4 id="窗口函数LAG-和LEAD"><a href="#窗口函数LAG-和LEAD" class="headerlink" title="窗口函数LAG()和LEAD()"></a>窗口函数LAG()和LEAD()</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">LAG()函数是一个窗口函数，允许您回顾多行并从当前行访问行的数据。</span><br><span class="line">LAG(&lt;expression&gt;[,offset[, default_value]]) OVER (</span><br><span class="line">    PARTITION BY expr,...</span><br><span class="line">    ORDER BY expr [ASC|DESC],...</span><br><span class="line">) </span><br><span class="line">expression：LAG()函数返回expression当前行之前的行的值，其值为offset 其分区或结果集中的行数。</span><br><span class="line">offset：offset是从当前行返回的行数，以获取值。offset必须是零或文字正整数。如果offset为零，则LAG()函数计算expression当前行的值。如果未指定offset，则LAG()默认情况下函数使用一个。</span><br><span class="line">default_value：如果没有前一行，则LAG()函数返回default_value。例如，如果offset为2，则第一行的返回值为default_value。如果省略default_value，则默认LAG()返回函数NULL。</span><br><span class="line">PARTITION BY子句将结果集中的行划分LAG()为应用函数的分区。如果省略PARTITION BY子句，LAG()函数会将整个结果集视为单个分区。</span><br><span class="line">ORDER BY 子句</span><br><span class="line">ORDER BY子句指定在LAG()应用函数之前每个分区中的行的顺序。</span><br><span class="line"></span><br><span class="line">LAG()函数可用于计算当前行和上一行之间的差异。</span><br><span class="line">LEAD()函数是一个窗口函数，允许您向前看多行并从当前行访问行的数据。</span><br><span class="line">与LAG()函数类似，LEAD()函数对于计算同一结果集中当前行和后续行之间的差异非常有用。</span><br></pre></td></tr></table></figure>
+
+<p>窗口函数指定窗口案例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">sum(U_Id) over(partition by U_Pwd order by U_Id) 列1,</span><br><span class="line">sum(U_Id) over(partition by U_Pwd order by U_Id RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) 列2,</span><br><span class="line">sum(U_Id) over(partition by U_Pwd order by U_Id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) 列3,</span><br><span class="line">sum(U_Id) over(partition by U_Pwd order by U_Id ROWS BETWEEN 1 PRECEDING AND 2 FOLLOWING) 列4,</span><br><span class="line">sum(U_Id) over(partition by U_Pwd order by U_Id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) 列5</span><br></pre></td></tr></table></figure>
+
+<h4 id="窗口函数NTH-VALUE"><a href="#窗口函数NTH-VALUE" class="headerlink" title="窗口函数NTH_VALUE()"></a>窗口函数NTH_VALUE()</h4><p><code>NTH_VALUE()</code>函数返回<code>expression</code>窗口框架第N行的值。如果第N行不存在，则函数返回<code>NULL</code>。</p>
+<h4 id="MOD-N-M"><a href="#MOD-N-M" class="headerlink" title="MOD(N,M)"></a>MOD(N,M)</h4><p>该函数返回N除以M后的余数. 分请看下面的例子：                        </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt;SELECT MOD(29,3);</span><br><span class="line">+---------------------------------------------------------+</span><br><span class="line">| MOD(29,3)                                               |</span><br><span class="line">+---------------------------------------------------------+</span><br><span class="line">| 2                                                       |</span><br><span class="line">+---------------------------------------------------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<h4 id="取整函数（ceil、floor、round）"><a href="#取整函数（ceil、floor、round）" class="headerlink" title="取整函数（ceil、floor、round）"></a>取整函数（ceil、floor、round）</h4><p>CEIL()函数：返回大于或等于数字的最小整数值。</p>
+<p>floor()函数：返回小于或等于数字的最大整数值。</p>
+<p>ROUND(X,D)：此函数返回x舍入到最接近的整数。如果第二个参数，D有提供，则函数返回x四舍五入至第D位小数点。</p>
+<h4 id="SUBSTRING-string-position"><a href="#SUBSTRING-string-position" class="headerlink" title="SUBSTRING(string,position)"></a>SUBSTRING(string,position)</h4><p><code>SUBSTRING</code>函数从特定位置开始的字符串返回一个给定长度的子字符串。 MySQL提供了各种形式的子串功能。</p>
+<p>substring（被截取字段，从第几位开始截取）<br>substring（被截取字段，从第几位开始截取，截取长度） </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT SUBSTRING(&#x27;MYSQL SUBSTRING&#x27;, 7);</span><br><span class="line">+---------------------------------+</span><br><span class="line">| SUBSTRING(&#x27;MYSQL SUBSTRING&#x27;, 7) |</span><br><span class="line">+---------------------------------+</span><br><span class="line">| SUBSTRING                       |</span><br><span class="line">+---------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>注意，如果<code>position</code>参数为零，则<code>SUBSTRING</code>函数返回一个空字符串</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT SUBSTRING(&#x27;MYSQL SUBSTRING&#x27;, 0);</span><br><span class="line">+---------------------------------+</span><br><span class="line">| SUBSTRING(&#x27;MYSQL SUBSTRING&#x27;, 0) |</span><br><span class="line">+---------------------------------+</span><br><span class="line">|                                 |</span><br><span class="line">+---------------------------------+</span><br><span class="line">1 row in set</span><br></pre></td></tr></table></figure>
+
+<h4 id="substring-index-str-delim-count"><a href="#substring-index-str-delim-count" class="headerlink" title="substring_index(str,delim,count)"></a>substring_index(str,delim,count)</h4><p>substring_index（str,delim,count）<br>说明：substring_index（被截取字段，关键字，关键字出现的次数） </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT SUBSTRING_INDEX(&#x27;blog.jb51.net&#x27;, 2);</span><br><span class="line">+--------------------------------------------+</span><br><span class="line">| SELECT SUBSTRING_INDEX(&#x27;blog.jb51.net&#x27;, 2) |</span><br><span class="line">+--------------------------------------------+</span><br><span class="line">| blog.jb51                                  |</span><br><span class="line">+--------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<h4 id="date-add-和date-sub"><a href="#date-add-和date-sub" class="headerlink" title="date_add()和date_sub()"></a>date_add()和date_sub()</h4><p>date_add()：为日期增加一个时间间隔</p>
+<p>date_sub()：为日期减去一个时间间隔</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">select date_add(now(), interval 1 day); - 加1天</span><br><span class="line">select date_add(now(), interval 1 hour); -加1小时</span><br><span class="line">select date_add(now(), interval 1 minute); - 加1分钟</span><br><span class="line">select date_add(now(), interval 1 second); -加1秒</span><br><span class="line">select date_add(now(), interval 1 microsecond);-加1毫秒</span><br><span class="line">select date_add(now(), interval 1 week);-加1周</span><br><span class="line">select date_add(now(), interval 1 month);-加1月</span><br><span class="line">select date_add(now(), interval 1 quarter);-加1季</span><br><span class="line">select date_add(now(), interval 1 year);-加1年</span><br><span class="line">MySQL date_sub() 日期时间函数 和date_add() 用法一致。</span><br></pre></td></tr></table></figure>
+
+<h4 id="DATEDIFF"><a href="#DATEDIFF" class="headerlink" title="DATEDIFF()"></a>DATEDIFF()</h4><p>DATEDIFF() 函数返回两个日期之间的天数。前者减后者。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT DATEDIFF(&#x27;2008-12-30&#x27;,&#x27;2008-12-29&#x27;) AS DiffDate</span><br><span class="line">+----------+</span><br><span class="line">| DiffDate |</span><br><span class="line">+----------+</span><br><span class="line">| 1        |</span><br><span class="line">+----------+</span><br><span class="line">mysql&gt; SELECT DATEDIFF(&#x27;2008-12-29&#x27;,&#x27;2008-12-30&#x27;) AS DiffDate</span><br><span class="line">+----------+</span><br><span class="line">| DiffDate |</span><br><span class="line">+----------+</span><br><span class="line">| -1        |</span><br><span class="line">+----------+</span><br></pre></td></tr></table></figure>
+
+<h4 id="TIMESTAMPDIFF-unit-begin-end"><a href="#TIMESTAMPDIFF-unit-begin-end" class="headerlink" title="TIMESTAMPDIFF(unit,begin,end)"></a>TIMESTAMPDIFF(unit,begin,end)</h4><p><code>TIMESTAMPDIFF</code>函数返回<code>begin-end</code>的结果，其中<code>begin</code>和<code>end</code>是<a target="_blank" rel="noopener" href="http://www.yiibai.com/mysql/date.html">DATE</a>或<a target="_blank" rel="noopener" href="http://www.yiibai.com/mysql/datetime.html">DATETIME</a>表达式。</p>
+<p><code>TIMESTAMPDIFF</code>函数允许其参数具有混合类型，例如，<code>begin</code>是<code>DATE</code>值，<code>end</code>可以是<code>DATETIME</code>值。 如果使用<code>DATE</code>值，则<code>TIMESTAMPDIFF</code>函数将其视为时间部分为<code>“00:00:00”</code>的<code>DATETIME</code>值。</p>
+<p><code>unit</code>参数是确定(<code>end-begin</code>)的结果的单位，表示为整数。 以下是有效单位：</p>
+<p>MICROSECOND、SECOND、MINUTE、HOUR、DAY、WEEK、MONTH、QUARTER、YEAR</p>
+<h4 id="字段长度char-length和length"><a href="#字段长度char-length和length" class="headerlink" title="字段长度char_length和length"></a>字段长度char_length和length</h4><p><strong>char_length(str)</strong></p>
+<ol>
+<li>计算单位：字符</li>
+<li>不管汉字还是数字或者是字母都算是一个字符</li>
+</ol>
+<p><strong>length(str)</strong></p>
+<ol>
+<li>计算单位：字节</li>
+<li>utf8编码：一个汉字三个字节，一个数字或字母一个字节。</li>
+<li>gbk编码：一个汉字两个字节，一个数字或字母一个字节。</li>
+</ol>
+<p>MySQL5.0.3版本之后varchar类型大小的计算方式有所变化，从最早的按字节算大小varchar(length)改成了varchar(char_length)。</p>
+<p>1）MySQL 5.0.3 之前：</p>
+<ul>
+<li>数据类型大小：0–255字节</li>
+<li>详解：varchar(20)中的20表示字节数，如果存放utf-8编码的话只能放6个汉字。varchar(n)，这里的n表示字节数。</li>
+</ul>
+<p>2）MySQL 5.0.3之后：</p>
+<ul>
+<li>数据类型大小：0–65535字节，但最多占65532字节（其中需要用两个字节存放长度，小于255字节用1个字节存放长度）</li>
+<li>详解：varchar(20)表示字符数，不管什么编码，不管是英文还是中文都可以存放20个。</li>
+</ul>
+<h4 id="COALESCE-value1-value2-…"><a href="#COALESCE-value1-value2-…" class="headerlink" title="COALESCE(value1,value2,…)"></a>COALESCE(value1,value2,…)</h4><p><code>COALESCE</code>函数需要许多参数，并返回第一个非<code>NULL</code>参数。如果所有参数都为<code>NULL</code>，则<code>COALESCE</code>函数返回<code>NULL</code>。</p>
+<h4 id="REGEXP：正则表达式查询-rlike"><a href="#REGEXP：正则表达式查询-rlike" class="headerlink" title="REGEXP：正则表达式查询(rlike)"></a>REGEXP：正则表达式查询(rlike)</h4><h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><ol>
+<li><p>limit分页</p>
+<ol>
+<li><p><code>select * from article LIMIT 3 OFFSET 1</code>等价于<code>select* from article LIMIT 1,3</code>都表示取2,3,4三条条数据</p>
+</li>
+<li><p><strong>select * from table limit (start-1)*pageSize,pageSize;</strong> 其中<strong>start</strong>是页码，<strong>pageSize</strong>是每页显示的条数。</p>
+</li>
+<li><p>页数公式：totalRecord是总记录数；pageSize是一页分多少条记录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">int totalPageNum = (totalRecord +pageSize - 1) / pageSize;</span><br></pre></td></tr></table></figure></li>
+<li><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/youyoui/p/7851007.html">MySQL分页查询优化 </a></p>
+</li>
+</ol>
+</li>
+<li><p>根据阿里巴巴Java开发规范v1.4中，数据库规约，关键词应大写，SELECT后面不要跟着“*”，要把具体的字段写出来。</p>
+</li>
+<li><p>group by vs distinct，group by性能高</p>
+<p>对于distinct与group by的使用: </p>
+<p>1、当对系统的性能高并数据量大时使用group by </p>
+<p>2、当对系统的性能不高时使用数据量少时两者皆可 </p>
+<p>3、尽量使用group by</p>
+<p>参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/zox2011/archive/2012/09/12/2681797.html">MySQL中distinct和group by性能比较</a></p>
+</li>
+<li><p>触发器</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">create trigger audit_log after insert </span><br><span class="line">on employees_test </span><br><span class="line">for each row </span><br><span class="line">begin </span><br><span class="line">INSERT INTO audit (EMP_no,NAME) VALUES (new.id, new.name);</span><br><span class="line">end </span><br></pre></td></tr></table></figure></li>
+<li><p>报错：SQL_ERROR_INFO: “You can’t specify target table ‘titles_test’ for update in FROM clause”</p>
+<p>原因：同一张表的 UPDATE 操作和 SELECT 不能同时进行</p>
+<p>解决：在子查询中重命名表格名（必须），再进行 SELECT</p>
+</li>
+<li><p>update操作，要注意若干列之间只能用逗号连接，切勿用AND 连接。</p>
+</li>
+<li><p>mysql中修改表信息的规则。</p>
+<p>alter table 表名 change 原列名 新列名 类型； –修改表的列属性名</p>
+<p>alter table 表名 modify 列名 类型 ； –修改表的类类型</p>
+<p>alter table 表名 drop 列名； –删除表的某一列</p>
+<p>alter table 表名 add 列名 类型；–添加某一列</p>
+<p>alter table 表名 rename 新表名； –修改表名</p>
+</li>
+<li><p>表改名</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ALTER TABLE titles_test RENAME TO titles_2017;</span><br><span class="line">#另外一种写法：</span><br><span class="line">RENAME TABLE titles_test TO titles_2017;</span><br></pre></td></tr></table></figure></li>
+<li><p>SQL解决同一时刻最大数量问题</p>
+<p>用union把in_time和out_time放到同一个表中，并添加一个字段diff区分，intime的值为1，outtime的值为-1，然后用窗口函数在每个时间点上做sum计算，有规定先算in再算out的话，order by再添加一个diff字段。</p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/" rel="prev" title="Sqoop：部署与使用">
+                  <i class="fa fa-chevron-left"></i> Sqoop：部署与使用
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
