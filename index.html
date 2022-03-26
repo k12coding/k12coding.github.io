@@ -219,7 +219,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-03-27 02:46:57" itemprop="dateModified" datetime="2022-03-27T02:46:57+08:00">2022-03-27</time>
+        <time title="修改时间：2022-03-27 02:53:31" itemprop="dateModified" datetime="2022-03-27T02:53:31+08:00">2022-03-27</time>
       </span>
 
   
@@ -273,7 +273,7 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GROUP_CONCAT(</span><br><span class="line">    <span class="keyword">DISTINCT</span> expression</span><br><span class="line">    <span class="keyword">ORDER</span> <span class="keyword">BY</span> expression</span><br><span class="line">    SEPARATOR sep</span><br><span class="line">);</span><br><span class="line">group_concat(<span class="keyword">distinct</span> emp_no <span class="keyword">order</span> <span class="keyword">by</span> emp_no <span class="keyword">asc</span> separator <span class="string">&#x27;,&#x27;</span>)</span><br></pre></td></tr></table></figure>
 
 <h4 id="last-day-curdate"><a href="#last-day-curdate" class="headerlink" title="last_day(curdate());"></a>last_day(curdate());</h4><p>获取当月最后一天</p>
-<h3 id="cast"><a href="#cast" class="headerlink" title="cast()"></a>cast()</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CAST</span>(expression <span class="keyword">AS</span> TYPE);</span><br></pre></td></tr></table></figure>
+<h4 id="cast"><a href="#cast" class="headerlink" title="cast()"></a>cast()</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CAST</span>(expression <span class="keyword">AS</span> TYPE);</span><br></pre></td></tr></table></figure>
 
 <p><code>CAST()</code>函数将任何类型的值转换为具有指定类型的值。目标类型可以是以下类型之一：<code>BINARY</code>，<code>CHAR</code>，<code>DATE</code>，<code>DATETIME</code>，<code>TIME</code>，<code>DECIMAL</code>，<code>SIGNED</code>，<code>UNSIGNED</code>。</p>
 <p><code>CAST()</code>函数通常用于返回具有指定类型的值，以便在WHERE、JOIN和HAVING子句中进行比较。</p>
