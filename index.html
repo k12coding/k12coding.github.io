@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-count">61</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,189 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/" class="post-title-link" itemprop="url">Kafka为什么能那么快</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-05-13 02:33:47 / 修改时间：03:01:52" itemprop="dateCreated datePublished" datetime="2022-05-13T02:33:47+08:00">2022-05-13</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>​    Kafka的消息是保存或缓存在磁盘上的，一般认为在磁盘上读写数据是会降低性能的，因为寻址会比较消耗时间，但是实际上，Kafka的特性之一就是高吞吐率。</p>
+<p>即使是普通的服务器，Kafka也可以轻松支持每秒百万级的写入请求，超过了大部分的消息中间件，这种特性也使得Kafka在日志处理等海量数据场景广泛应用。</p>
+<p>针对Kafka的基准测试可以参考，Apache Kafka基准测试：每秒写入2百万（在三台廉价机器上）</p>
+<h2 id="利用-Partition-实现并行处理"><a href="#利用-Partition-实现并行处理" class="headerlink" title="利用 Partition 实现并行处理"></a>利用 Partition 实现并行处理</h2><p>我们都知道 Kafka 是一个 Pub-Sub 的消息系统，无论是发布还是订阅，都要指定 Topic。</p>
+<p>Topic 只是一个逻辑的概念。每个 Topic 都包含一个或多个 Partition，不同 Partition 可位于不同节点。</p>
+<p>一方面，由于不同 Partition 可位于不同机器，因此可以充分利用集群优势，实现机器间的并行处理。另一方面，由于 Partition 在物理上对应一个文件夹，即使多个 Partition 位于同一个节点，也可通过配置让同一节点上的不同 Partition 置于不同的磁盘上，从而实现磁盘间的并行处理，充分发挥多磁盘的优势。</p>
+<p>能并行处理，速度肯定会有提升，多个工人肯定比一个工人干的快。</p>
+<h2 id="顺序写磁盘"><a href="#顺序写磁盘" class="headerlink" title="顺序写磁盘"></a>顺序写磁盘</h2><p><img src="/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/hexo\k12blog\source_posts\Kafka为什么能那么快\kafka01.jpg" alt="img"></p>
+<p><strong>Kafka 中每个分区是一个有序的，不可变的消息序列</strong>，新的消息不断追加到 partition 的末尾，这个就是顺序写。</p>
+<p>这种方法有一个缺陷—— 没有办法删除数据 ，所以Kafka是不会删除数据的，它会把所有的数据都保留下来，每个消费者（Consumer）对每个Topic都有一个offset用来表示 读取到了第几条数据 。</p>
+<p><img src="/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/hexo\k12blog\source_posts\Kafka为什么能那么快\kafka05.jpg" alt="img"></p>
+<p>两个消费者，Consumer1有两个offset分别对应Partition0、Partition1（假设每一个Topic一个Partition）；Consumer2有一个offset对应Partition2。这个offset是由客户端SDK负责保存的，Kafka的Broker完全无视这个东西的存在；一般情况下SDK会把它保存到zookeeper里面。(所以需要给Consumer提供zookeeper的地址)。</p>
+<p>如果不删除硬盘肯定会被撑满，所以Kakfa提供了两种策略来删除数据。一是基于时间，二是基于partition文件大小。具体配置可以参看它的配置文档。</p>
+<p>所以 Kafka 采用各种删除策略删除数据的时候，并非通过使用“读 - 写”模式去修改文件，而是将 Partition 分为多个 Segment，每个 Segment 对应一个物理文件，通过删除整个文件的方式去删除 Partition 内的数据。这种方式清除旧数据的方式，也避免了对文件的随机写操作。</p>
+<h2 id="充分利用-Page-Cache"><a href="#充分利用-Page-Cache" class="headerlink" title="充分利用 Page Cache"></a>充分利用 Page Cache</h2><blockquote>
+<p>引入 Cache 层的目的是为了提高 Linux 操作系统对磁盘访问的性能。Cache 层在内存中缓存了磁盘上的部分数据。当数据的请求到达时，如果在 Cache 中存在该数据且是最新的，则直接将数据传递给用户程序，免除了对底层磁盘的操作，提高了性能。Cache 层也正是磁盘 IOPS 为什么能突破 200 的主要原因之一。</p>
+<p>在 Linux 的实现中，文件 Cache 分为两个层面，一是 Page Cache，另一个 Buffer Cache，每一个 Page Cache 包含若干 Buffer Cache。Page Cache 主要用来作为文件系统上的文件数据的缓存来用，尤其是针对当进程对文件有 read/write 操作的时候。Buffer Cache 则主要是设计用来在系统对块设备进行读写的时候，对块进行数据缓存的系统来使用。</p>
+</blockquote>
+<p>使用 Page Cache 的好处：</p>
+<ul>
+<li>I/O Scheduler 会将连续的小块写组装成大块的物理写从而提高性能</li>
+<li>I/O Scheduler 会尝试将一些写操作重新按顺序排好，从而减少磁盘头的移动时间</li>
+<li>充分利用所有空闲内存（非 JVM 内存）。如果使用应用层 Cache（即 JVM 堆内存），会增加 GC 负担</li>
+<li>读操作可直接在 Page Cache 内进行。如果消费和生产速度相当，甚至不需要通过物理磁盘（直接通过 Page Cache）交换数据</li>
+<li>如果进程重启，JVM 内的 Cache 会失效，但 Page Cache 仍然可用</li>
+</ul>
+<p>Broker 收到数据后，写磁盘时只是将数据写入 Page Cache，并不保证数据一定完全写入磁盘。从这一点看，可能会造成机器宕机时，Page Cache 内的数据未写入磁盘从而造成数据丢失。但是这种丢失只发生在机器断电等造成操作系统不工作的场景，而这种场景完全可以由 Kafka 层面的 Replication 机制去解决。如果为了保证这种情况下数据不丢失而强制将 Page Cache 中的数据 Flush 到磁盘，反而会降低性能。也正因如此，Kafka 虽然提供了 <code>flush.messages</code> 和 <code>flush.ms</code> 两个参数将 Page Cache 中的数据强制 Flush 到磁盘，但是 Kafka 并不建议使用。</p>
+<h2 id="基于sendfile实现Zero-Copy零拷贝技术"><a href="#基于sendfile实现Zero-Copy零拷贝技术" class="headerlink" title="基于sendfile实现Zero Copy零拷贝技术"></a>基于sendfile实现Zero Copy零拷贝技术</h2><p>Kafka 中存在大量的网络数据持久化到磁盘（Producer 到 Broker）和磁盘文件通过网络发送（Broker 到 Consumer）的过程。这一过程的性能直接影响 Kafka 的整体吞吐量。</p>
+<blockquote>
+<p>操作系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空间，也有访问底层硬件设备的权限。</p>
+<p>为了避免用户进程直接操作内核，保证内核安全，操作系统将虚拟内存划分为两部分，一部分是内核空间（Kernel-space），一部分是用户空间（User-space）。</p>
+</blockquote>
+<p>传统的 Linux 系统中，标准的 I/O 接口（例如read，write）都是基于数据拷贝操作的，即 I/O 操作会导致数据在内核地址空间的缓冲区和用户地址空间的缓冲区之间进行拷贝，所以标准 I/O 也被称作缓存 I/O。这样做的好处是，如果所请求的数据已经存放在内核的高速缓冲存储器中，那么就可以减少实际的 I/O 操作，但坏处就是数据拷贝的过程，会导致 CPU 开销。</p>
+<p><strong>我们把 Kafka 的生产和消费简化成如下两个过程来看</strong>：</p>
+<ol>
+<li>网络数据持久化到磁盘 (Producer 到 Broker)</li>
+<li>磁盘文件通过网络发送（Broker 到 Consumer）</li>
+</ol>
+<h3 id="网络数据持久化到磁盘-Producer-到-Broker"><a href="#网络数据持久化到磁盘-Producer-到-Broker" class="headerlink" title="网络数据持久化到磁盘 (Producer 到 Broker)"></a>网络数据持久化到磁盘 (Producer 到 Broker)</h3><p>传统模式下，数据从网络传输到文件需要 4 次数据拷贝、4 次上下文切换和两次系统调用。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">data = socket.read()// 读取网络数据 </span><br><span class="line">File file = new File() </span><br><span class="line">file.write(data)// 持久化到磁盘 </span><br><span class="line">file.flush()</span><br></pre></td></tr></table></figure>
+
+<p>这一过程实际上发生了四次数据拷贝：</p>
+<ol>
+<li>首先通过 DMA copy 将网络数据拷贝到内核态 Socket Buffer</li>
+<li>然后应用程序将内核态 Buffer 数据读入用户态（CPU copy）</li>
+<li>接着用户程序将用户态 Buffer 再拷贝到内核态（CPU copy）</li>
+<li>最后通过 DMA copy 将数据拷贝到磁盘文件</li>
+</ol>
+<blockquote>
+<p>DMA（Direct Memory Access）：直接存储器访问。DMA 是一种无需 CPU 的参与，让外设和系统内存之间进行双向数据传输的硬件机制。使用 DMA 可以使系统 CPU 从实际的 I/O 数据传输过程中摆脱出来，从而大大提高系统的吞吐率。</p>
+</blockquote>
+<p>同时，还伴随着四次上下文切换，如下图所示</p>
+<p><img src="/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/hexo\k12blog\source_posts\Kafka为什么能那么快\kafka02.jpg" alt="img"></p>
+<p>数据落盘通常都是非实时的，kafka 生产者数据持久化也是如此。Kafka 的数据<strong>并不是实时的写入硬盘</strong>，它充分利用了现代操作系统分页存储来利用内存提高 I/O 效率，就是上一节提到的 Page Cache。</p>
+<p>对于 kafka 来说，Producer 生产的数据存到 broker，这个过程读取到 socket buffer 的网络数据，其实可以直接在内核空间完成落盘。并没有必要将 socket buffer 的网络数据，读取到应用进程缓冲区；在这里应用进程缓冲区其实就是 broker，broker 收到生产者的数据，就是为了持久化。</p>
+<p>在此<code>特殊场景</code>下：接收来自 socket buffer 的网络数据，应用进程不需要中间处理、直接进行持久化时。可以使用 mmap 内存文件映射。</p>
+<blockquote>
+<p><strong>Memory Mapped Files</strong>：简称 mmap，也有叫 <strong>MMFile</strong> 的，使用 mmap 的目的是将内核中读缓冲区（read buffer）的地址与用户空间的缓冲区（user buffer）进行映射。从而实现内核缓冲区与应用程序内存的共享，省去了将数据从内核读缓冲区（read buffer）拷贝到用户缓冲区（user buffer）的过程。它的工作原理是直接利用操作系统的 Page 来实现文件到物理内存的直接映射。完成映射之后你对物理内存的操作会被同步到硬盘上。</p>
+<p>使用这种方式可以获取很大的 I/O 提升，省去了用户空间到内核空间复制的开销。</p>
+</blockquote>
+<p>mmap 也有一个很明显的缺陷——不可靠，写到 mmap 中的数据并没有被真正的写到硬盘，操作系统会在程序主动调用 flush 的时候才把数据真正的写到硬盘。Kafka 提供了一个参数——<code>producer.type</code> 来控制是不是主动flush；如果 Kafka 写入到 mmap 之后就立即 flush 然后再返回 Producer 叫同步(sync)；写入 mmap 之后立即返回 Producer 不调用 flush 就叫异步(async)，默认是 sync。</p>
+<p><img src="/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/hexo\k12blog\source_posts\Kafka为什么能那么快\kafka03.jpg" alt="img"></p>
+<blockquote>
+<p>零拷贝（Zero-copy）技术指在计算机执行操作时，CPU 不需要先将数据从一个内存区域复制到另一个内存区域，从而可以减少上下文切换以及 CPU 的拷贝时间。</p>
+<p>它的作用是在数据报从网络设备到用户程序空间传递的过程中，减少数据拷贝次数，减少系统调用，实现 CPU 的零参与，彻底消除 CPU 在这方面的负载。</p>
+<p><strong>目前零拷贝技术主要有三种类型</strong>[3]：</p>
+<ul>
+<li><p>直接I/O：数据直接跨过内核，在用户地址空间与I/O设备之间传递，内核只是进行必要的虚拟存储配置等辅助工作；</p>
+</li>
+<li><p>避免内核和用户空间之间的数据拷贝：当应用程序不需要对数据进行访问时，则可以避免将数据从内核空间拷贝到用户空间</p>
+</li>
+<li><ul>
+<li>mmap</li>
+<li>sendfile</li>
+<li>splice &amp;&amp; tee</li>
+<li>sockmap</li>
+</ul>
+</li>
+<li><p>copy on write：写时拷贝技术，数据不需要提前拷贝，而是当需要修改的时候再进行部分拷贝。</p>
+</li>
+</ul>
+</blockquote>
+<h3 id="磁盘文件通过网络发送（Broker-到-Consumer）"><a href="#磁盘文件通过网络发送（Broker-到-Consumer）" class="headerlink" title="磁盘文件通过网络发送（Broker 到 Consumer）"></a>磁盘文件通过网络发送（Broker 到 Consumer）</h3><p>传统方式实现：先读取磁盘、再用 socket 发送，实际也是进过四次 copy</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">buffer = File.read </span><br><span class="line">Socket.send(buffer)</span><br></pre></td></tr></table></figure>
+
+<p>这一过程可以类比上边的生产消息：</p>
+<ol>
+<li>首先通过系统调用将文件数据读入到内核态 Buffer（DMA 拷贝）</li>
+<li>然后应用程序将内存态 Buffer 数据读入到用户态 Buffer（CPU 拷贝）</li>
+<li>接着用户程序通过 Socket 发送数据时将用户态 Buffer 数据拷贝到内核态 Buffer（CPU 拷贝）</li>
+<li>最后通过 DMA 拷贝将数据拷贝到 NIC Buffer</li>
+</ol>
+<p>Linux 2.4+ 内核通过 sendfile 系统调用，提供了零拷贝。数据通过 DMA 拷贝到内核态 Buffer 后，直接通过 DMA 拷贝到 NIC Buffer，无需 CPU 拷贝。这也是零拷贝这一说法的来源。除了减少数据拷贝外，因为整个读文件 - 网络发送由一个 sendfile 调用完成，整个过程只有两次上下文切换，因此大大提高了性能。</p>
+<p><img src="/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/hexo\k12blog\source_posts\Kafka为什么能那么快\kafka04.jpg" alt="相较传统read/write方式，2.1版本内核引进的sendfile已经减少了内核缓冲区到user缓冲区，再由user缓冲区到socket相关缓冲区的文件copy，而在内核版本2.4之后，文件描述符结果被改变，sendfile实现了更简单的方式，再次减少了一次copy操作。"></p>
+<p>Kafka 在这里采用的方案是通过 NIO 的 <code>transferTo/transferFrom</code> 调用操作系统的 sendfile 实现零拷贝。总共发生 2 次内核数据拷贝、2 次上下文切换和一次系统调用，消除了 CPU 数据拷贝</p>
+<h2 id="批量压缩"><a href="#批量压缩" class="headerlink" title="批量压缩"></a><strong>批量压缩</strong></h2><p>在很多情况下，系统的瓶颈不是CPU或磁盘，而是网络IO，对于需要在广域网上的数据中心之间发送消息的数据流水线尤其如此。进行数据压缩会消耗少量的CPU资源,不过对于kafka而言,网络IO更应该需要考虑。</p>
+<p>1、如果每个消息都压缩，但是压缩率相对很低，所以Kafka使用了批量压缩，即将多个消息一起压缩而不是单个消息压缩</p>
+<p>2、Kafka允许使用递归的消息集合，批量的消息可以通过压缩的形式传输并且在日志中也可以保持压缩格式，直到被消费者解压缩</p>
+<p>3、Kafka支持多种压缩协议，目前支持的压缩算法有：Snappy、Gzip、LZ4。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>partition 并行处理</p>
+</li>
+<li><p>顺序写磁盘，充分利用磁盘特性</p>
+</li>
+<li><p>利用了现代操作系统分页存储 Page Cache 来利用内存提高 I/O 效率</p>
+</li>
+<li><p>采用了零拷贝技术</p>
+</li>
+<li><ul>
+<li>Producer 生产的数据持久化到 broker，采用 mmap 文件映射，实现顺序的快速写入</li>
+<li>Customer 从 broker 读取数据，采用 sendfile，将磁盘文件读到 OS 内核缓冲区后，转到 NIO buffer进行网络发送，减少 CPU 消耗</li>
+</ul>
+</li>
+</ul>
+<p>一句话：</p>
+<p>Kafka速度的秘诀在于，它把所有的消息都变成一个批量的文件，并且进行合理的批量压缩，减少网络IO损耗，通过mmap提高I/O速度，写入数据的时候由于单个partition 是末尾添加所以速度最优；读取数据的时候配合sendfile直接暴力输出。</p>
+<p>参考：</p>
+<p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/dbnpPEF0FBB5A5xH21OoeQ">Kafka 为什么能那么快的 6 个原因</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/binyue/p/10308754.html">为什么Kafka速度那么快 </a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1671,121 +1854,8 @@
 
 
 
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/" class="post-title-link" itemprop="url">Hive：加载数据到表的方式</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-30 04:27:50 / 修改时间：05:30:03" itemprop="dateCreated datePublished" datetime="2022-01-30T04:27:50+08:00">2022-01-30</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
-<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
-
-<p>适用于建（外部）表时，数据文件已经存在的情况</p>
-<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
-
-<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
-
-<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
-<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
-<li>用来复制表的结构</li>
-<li>需要外部表的话，通过create external table as …指定</li>
-<li>不CTAS语句会填充数据</li>
-</ul>
-<p>创建表并加载数据（as select）</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
-
-<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
-<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
-<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
-<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
-<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
-<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
-<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
-<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
-<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
-
-<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a target="_blank" rel="noopener" href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 </div>
