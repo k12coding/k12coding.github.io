@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>CentOS 6.5下安装python3.7</title>
+    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
+    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+
+<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
+<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+
+<p>把最上面的一行配置回python2.6.6就行了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+
+<p>有打印出相应信息就是成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>Azkaban multiple-executor模式部署</title>
     <url>/2022/02/22/Azkaban-multiple-executor%E6%A8%A1%E5%BC%8F%E9%83%A8%E7%BD%B2/</url>
     <content><![CDATA[<h2 id="以Multi-Executor-Server部署Azkaban"><a href="#以Multi-Executor-Server部署Azkaban" class="headerlink" title="以Multi Executor Server部署Azkaban"></a>以Multi Executor Server部署Azkaban</h2><h3 id="mysql准备"><a href="#mysql准备" class="headerlink" title="mysql准备"></a>mysql准备</h3><ol>
@@ -108,31 +133,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>CentOS 6.5下安装python3.7</title>
-    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
-    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
-
-<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
-<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
-
-<p>把最上面的一行配置回python2.6.6就行了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
-
-<p>有打印出相应信息就是成功了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
     <title>CentOS6.5安装NodeJS14.18.3</title>
     <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
     <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
@@ -156,6 +156,98 @@
 <li><p>刷新配置，查看版本</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS API</title>
+    <url>/2021/12/13/HDFS-API/</url>
+    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
+<span id="more"></span>
+
+<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>导入需要的package</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
+
+<p>类中具体方法可参考：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
+<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
+<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p>获取Configuration对象</p>
+<p>我们需要先new一个Configuration对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
+
+<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>获取FileSystem对象</p>
+<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
+<li><p>进行文件操作</p>
+<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>释放资源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
+
+<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
+
+<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
+
+<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Deprecated.</strong> </p>
+<p>Renames Path src to Path dst</p>
+<ul>
+<li>Fails if src is a file and dst is a directory.</li>
+<li>Fails if src is a directory and dst is a file.</li>
+<li>Fails if the parent of dst does not exist or is a file.</li>
+</ul>
+<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
+<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
+<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
+<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
+<ul>
+<li><strong>Parameters:</strong></li>
+</ul>
+<p> <code>src</code> - path to be renamed</p>
+<p> <code>dst</code> - new path after rename</p>
+<ul>
+<li><strong>Throws:</strong></li>
+</ul>
+<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
+<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
+<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
+<p> <code>IOException</code> - on failure</p>
+</blockquote>
+<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
+
+<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
+
+<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
+
+<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
+</ul>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -293,95 +385,46 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS API</title>
-    <url>/2021/12/13/HDFS-API/</url>
-    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
-<span id="more"></span>
-
-<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>导入需要的package</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
-
-<p>类中具体方法可参考：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
-<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
-<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><p>获取Configuration对象</p>
-<p>我们需要先new一个Configuration对象</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
-
-<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>获取FileSystem对象</p>
-<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
-<li><p>进行文件操作</p>
-<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>释放资源</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
-
-<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
-
-<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
-
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
 <blockquote>
-<p><strong>Deprecated.</strong> </p>
-<p>Renames Path src to Path dst</p>
-<ul>
-<li>Fails if src is a file and dst is a directory.</li>
-<li>Fails if src is a directory and dst is a file.</li>
-<li>Fails if the parent of dst does not exist or is a file.</li>
-</ul>
-<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
-<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
-<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
-<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
-<ul>
-<li><strong>Parameters:</strong></li>
-</ul>
-<p> <code>src</code> - path to be renamed</p>
-<p> <code>dst</code> - new path after rename</p>
-<ul>
-<li><strong>Throws:</strong></li>
-</ul>
-<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
-<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
-<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
-<p> <code>IOException</code> - on failure</p>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
 </blockquote>
-<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
-
-<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
-
-<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
-
-<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
-
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
 <ul>
-<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
 </ul>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -508,109 +551,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS文件读写流程与副本放置策略</title>
-    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
-<ol>
-<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
-</li>
-<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
-<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
-<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
-</li>
-<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
-<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
-</li>
-<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
-</li>
-<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
-</li>
-<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
-</li>
-<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
-</li>
-</ol>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
-<ol>
-<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
-</li>
-<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
-</li>
-<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
-</li>
-<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
-</li>
-<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
-<ul>
-<li>假如ok就关闭与DN通信。</li>
-<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
-</ul>
-<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
-<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
-<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
-</li>
-<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
-</li>
-</ol>
-<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
-<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
-<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
-<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
-</blockquote>
-<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
-<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
-<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
-<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
-<p>假如还有更多副本：随机放。</p>
-<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
-<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
-<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
-</li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
-</li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
-</li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>HIVE UDF 与 HIVE源码编译</title>
     <url>/2021/12/29/HIVE-UDF/</url>
     <content><![CDATA[<h2 id="一、实现UDF"><a href="#一、实现UDF" class="headerlink" title="一、实现UDF"></a>一、实现UDF</h2><p>需求：添加随机数<code>add_random</code>、去除随机数<code>remove_random</code></p>
@@ -713,6 +653,66 @@
 <p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
 
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS文件读写流程与副本放置策略</title>
+    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
+<ol>
+<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
+</li>
+<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
+<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
+<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
+</li>
+<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
+<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
+</li>
+<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
+</li>
+<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
+</li>
+<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
+</li>
+<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
+</li>
+</ol>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
+<ol>
+<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
+</li>
+<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
+</li>
+<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
+</li>
+<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
+</li>
+<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
+<ul>
+<li>假如ok就关闭与DN通信。</li>
+<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
+</ul>
+<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
+<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
+<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
+</li>
+<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
+</li>
+</ol>
+<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
+<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
+<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
+<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
+</blockquote>
+<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
+<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
+<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
+<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
+<p>假如还有更多副本：随机放。</p>
+<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
+<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
+<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
 ]]></content>
   </entry>
   <entry>
@@ -939,73 +939,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hadoop Archives</title>
-    <url>/2021/12/20/Hadoop-Archives/</url>
-    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
-<p>Hadoop存档(har文件)目录包含</p>
-<ul>
-<li><p>元数据（采用_index和_masterindex形式）</p>
-</li>
-<li><p>数据部分data（part- *）文件。</p>
-</li>
-</ul>
-<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
-<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
-<span id="more"></span>
-
-<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
-<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数说明</strong></p>
-<ul>
-<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
-<li>-p 父目录:指定归档文件基于的相对路径</li>
-<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
-<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
-<li>&lt;dest&gt;:har文件保存到的目标路径</li>
-</ul>
-<p><strong>Example:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
-<p>如果想归档目录 /foo/bar，可以省略src：</p>
-<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
-<p><strong>补充说明</strong></p>
-<ol>
-<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
-<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
-<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
-</ol>
-<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
-<p>Hadoop Archives的URI是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
-<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
-<p>依次取消存档：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<p>要并行解压缩，请使用DistCp：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
-<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
-<li><p>准备文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>创建har文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
-<li><p>查看文件组成结构</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
-<li><p>使用hdfs文件系统查看har文件目录内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop基础知识</title>
     <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
     <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
@@ -1111,6 +1044,73 @@
 <p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
 <p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
 <p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hadoop Archives</title>
+    <url>/2021/12/20/Hadoop-Archives/</url>
+    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
+<p>Hadoop存档(har文件)目录包含</p>
+<ul>
+<li><p>元数据（采用_index和_masterindex形式）</p>
+</li>
+<li><p>数据部分data（part- *）文件。</p>
+</li>
+</ul>
+<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
+<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
+<span id="more"></span>
+
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
+<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<ul>
+<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
+<li>-p 父目录:指定归档文件基于的相对路径</li>
+<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
+<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
+<li>&lt;dest&gt;:har文件保存到的目标路径</li>
+</ul>
+<p><strong>Example:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
+<p>如果想归档目录 /foo/bar，可以省略src：</p>
+<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
+<p><strong>补充说明</strong></p>
+<ol>
+<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
+<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
+<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
+</ol>
+<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
+<p>Hadoop Archives的URI是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
+<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
+<p>依次取消存档：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<p>要并行解压缩，请使用DistCp：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
+<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
+<li><p>准备文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>创建har文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
+<li><p>查看文件组成结构</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
+<li><p>使用hdfs文件系统查看har文件目录内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -1457,71 +1457,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive：行列转换</title>
-    <url>/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
-    <content><![CDATA[<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><p>假设数据表row2col：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   col2    col3</span><br><span class="line">a      c       1</span><br><span class="line">a      d       2</span><br><span class="line">a      e       3  </span><br><span class="line">b      c       4</span><br><span class="line">b      d       5</span><br><span class="line">b      e       6</span><br></pre></td></tr></table></figure>
-
-<p>现在要将其转化为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   c      d      e</span><br><span class="line">a      1      2      3</span><br><span class="line">b      4      5      6</span><br></pre></td></tr></table></figure>
-
-<p>此时需要使用到max(case … when … then … else 0 end)，仅限于转化的字段为数值类型，且为正值的情况。</p>
-<p>HQL语句为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1,</span><br><span class="line">max(case col2 when &#x27;c&#x27; then col3 else 0 end) as c,</span><br><span class="line">max(case col2 when &#x27;d&#x27; then col3 else 0 end) as d,</span><br><span class="line">max(case col2 when &#x27;e&#x27; then col3 else 0 end) as e</span><br><span class="line">from row2col</span><br><span class="line">group by col1;</span><br></pre></td></tr></table></figure>
-
-<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><p>假设数据表row2col：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1</span><br><span class="line">a       b       2</span><br><span class="line">a       b       3</span><br><span class="line">c       d       4</span><br><span class="line">c       d       5</span><br><span class="line">c       d       6</span><br></pre></td></tr></table></figure>
-
-<p>现在要将其转化为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1,2,3</span><br><span class="line">c       d       4,5,6</span><br></pre></td></tr></table></figure>
-
-<p>此时需要用到内置的UDF：</p>
-<ol>
-<li>concat_ws(separator, str1, str2, …)：把多个字符串用分隔符进行拼接</li>
-<li>collect_set()：把列聚合成为数据，去重</li>
-<li>collect_list()：把列聚合成为数组，不去重</li>
-</ol>
-<p>HQL语句为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, col2, concat_ws(&#x27;,&#x27;, collect_set(col3)) as col3</span><br><span class="line">from row2col</span><br><span class="line">group by col1, col2;</span><br></pre></td></tr></table></figure>
-
-<p>注意：由于使用concat_ws()函数，collect_set()中的字段必须为string类型，如果是其他类型可使用cast(col3 as string)将其转换为string类型。</p>
-<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><p>假设有数据表col2row：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   c      d      e</span><br><span class="line">a      1      2      3</span><br><span class="line">b      4      5      6</span><br></pre></td></tr></table></figure>
-
-<p>现要将其转化为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   col2    col3</span><br><span class="line">a      c       1</span><br><span class="line">a      d       2</span><br><span class="line">a      e       3</span><br><span class="line">b      c       4</span><br><span class="line">b      d       5</span><br><span class="line">b      e       6</span><br></pre></td></tr></table></figure>
-
-<p>这里需要使用union进行拼接。</p>
-<p>HQL语句为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, &#x27;c&#x27; as col2, c as col3 from col2row</span><br><span class="line">UNION ALL</span><br><span class="line">select col1, &#x27;d&#x27; as col2, d as col3 from col2row</span><br><span class="line">UNION ALL</span><br><span class="line">select col1, &#x27;e&#x27; as col2, e as col3 from col2row</span><br><span class="line">order by col1, col2;</span><br></pre></td></tr></table></figure>
-
-<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><p>假设有数据表col2row：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1,2,3</span><br><span class="line">c       d       4,5,6</span><br></pre></td></tr></table></figure>
-
-<p>现要将其转化为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1</span><br><span class="line">a       b       2</span><br><span class="line">a       b       3</span><br><span class="line">c       d       4</span><br><span class="line">c       d       5</span><br><span class="line">c       d       6</span><br></pre></td></tr></table></figure>
-
-<p>这里需要使用UDTF（表生成函数）explode()，该函数接受array类型的参数，其作用恰好与collect_set相反，实现将array类型数据行转列。explode配合lateral view实现将某列数据拆分成多行。</p>
-<p>HQL语句为：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, col2, lv.col3 as col3</span><br><span class="line">from col2row </span><br><span class="line">lateral view explode(split(col3, &#x27;,&#x27;)) lv as col3;</span><br></pre></td></tr></table></figure>
-
-
-
-<p>下面看下行转列使用的函数：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">lateral view explode(split表达式) tableName as columnName</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>tableName 表示虚拟表的名称。</li>
-<li>columnName 表示虚拟表的虚拟字段名称，如果分裂之后有一个列，则写一个即可；如果分裂之后有多个列，按照列的顺序在括号中声明所有虚拟列名，以逗号隔开。</li>
-</ul>
-<p><strong>explode 函数</strong>：处理数组结构的字段，将数组转换成多行。</p>
-<p><strong>Lateral View</strong>：其实explode是一个UDTF函数（一行输入多行输出），这个时候如果要select除了explode得到的字段以外的多个字段，需要创建虚拟表</p>
-<blockquote>
-<p>Lateral View 用于<strong>和UDTF函数【explode,split】结合来使用</strong>。<br>首先通过 UDTF 函数将数据拆分成多行，再将多行结果组合成一个支持别名的虚拟表。<br>主要解决在 select 使用UDTF做查询的过程中查询只能包含单个UDTF，不能包含其它字段以及多个UDTF的情况。<br>语法：LATERAL VIEW udtf(expression) tableAlias AS columnAlias (‘,’ columnAlias)</p>
-</blockquote>
-]]></content>
-  </entry>
-  <entry>
     <title>Hive：加载数据到表的方式</title>
     <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
     <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
@@ -1711,6 +1646,71 @@
 <p>解决方法：配置VM options：<code>-Djline.WindowsTerminal.directConsole=false</code></p>
 </li>
 </ul>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hive：行列转换</title>
+    <url>/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
+    <content><![CDATA[<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><p>假设数据表row2col：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   col2    col3</span><br><span class="line">a      c       1</span><br><span class="line">a      d       2</span><br><span class="line">a      e       3  </span><br><span class="line">b      c       4</span><br><span class="line">b      d       5</span><br><span class="line">b      e       6</span><br></pre></td></tr></table></figure>
+
+<p>现在要将其转化为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   c      d      e</span><br><span class="line">a      1      2      3</span><br><span class="line">b      4      5      6</span><br></pre></td></tr></table></figure>
+
+<p>此时需要使用到max(case … when … then … else 0 end)，仅限于转化的字段为数值类型，且为正值的情况。</p>
+<p>HQL语句为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1,</span><br><span class="line">max(case col2 when &#x27;c&#x27; then col3 else 0 end) as c,</span><br><span class="line">max(case col2 when &#x27;d&#x27; then col3 else 0 end) as d,</span><br><span class="line">max(case col2 when &#x27;e&#x27; then col3 else 0 end) as e</span><br><span class="line">from row2col</span><br><span class="line">group by col1;</span><br></pre></td></tr></table></figure>
+
+<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><p>假设数据表row2col：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1</span><br><span class="line">a       b       2</span><br><span class="line">a       b       3</span><br><span class="line">c       d       4</span><br><span class="line">c       d       5</span><br><span class="line">c       d       6</span><br></pre></td></tr></table></figure>
+
+<p>现在要将其转化为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1,2,3</span><br><span class="line">c       d       4,5,6</span><br></pre></td></tr></table></figure>
+
+<p>此时需要用到内置的UDF：</p>
+<ol>
+<li>concat_ws(separator, str1, str2, …)：把多个字符串用分隔符进行拼接</li>
+<li>collect_set()：把列聚合成为数据，去重</li>
+<li>collect_list()：把列聚合成为数组，不去重</li>
+</ol>
+<p>HQL语句为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, col2, concat_ws(&#x27;,&#x27;, collect_set(col3)) as col3</span><br><span class="line">from row2col</span><br><span class="line">group by col1, col2;</span><br></pre></td></tr></table></figure>
+
+<p>注意：由于使用concat_ws()函数，collect_set()中的字段必须为string类型，如果是其他类型可使用cast(col3 as string)将其转换为string类型。</p>
+<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><p>假设有数据表col2row：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   c      d      e</span><br><span class="line">a      1      2      3</span><br><span class="line">b      4      5      6</span><br></pre></td></tr></table></figure>
+
+<p>现要将其转化为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1   col2    col3</span><br><span class="line">a      c       1</span><br><span class="line">a      d       2</span><br><span class="line">a      e       3</span><br><span class="line">b      c       4</span><br><span class="line">b      d       5</span><br><span class="line">b      e       6</span><br></pre></td></tr></table></figure>
+
+<p>这里需要使用union进行拼接。</p>
+<p>HQL语句为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, &#x27;c&#x27; as col2, c as col3 from col2row</span><br><span class="line">UNION ALL</span><br><span class="line">select col1, &#x27;d&#x27; as col2, d as col3 from col2row</span><br><span class="line">UNION ALL</span><br><span class="line">select col1, &#x27;e&#x27; as col2, e as col3 from col2row</span><br><span class="line">order by col1, col2;</span><br></pre></td></tr></table></figure>
+
+<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><p>假设有数据表col2row：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1,2,3</span><br><span class="line">c       d       4,5,6</span><br></pre></td></tr></table></figure>
+
+<p>现要将其转化为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">col1    col2    col3</span><br><span class="line">a       b       1</span><br><span class="line">a       b       2</span><br><span class="line">a       b       3</span><br><span class="line">c       d       4</span><br><span class="line">c       d       5</span><br><span class="line">c       d       6</span><br></pre></td></tr></table></figure>
+
+<p>这里需要使用UDTF（表生成函数）explode()，该函数接受array类型的参数，其作用恰好与collect_set相反，实现将array类型数据行转列。explode配合lateral view实现将某列数据拆分成多行。</p>
+<p>HQL语句为：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select col1, col2, lv.col3 as col3</span><br><span class="line">from col2row </span><br><span class="line">lateral view explode(split(col3, &#x27;,&#x27;)) lv as col3;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>下面看下行转列使用的函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">lateral view explode(split表达式) tableName as columnName</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>tableName 表示虚拟表的名称。</li>
+<li>columnName 表示虚拟表的虚拟字段名称，如果分裂之后有一个列，则写一个即可；如果分裂之后有多个列，按照列的顺序在括号中声明所有虚拟列名，以逗号隔开。</li>
+</ul>
+<p><strong>explode 函数</strong>：处理数组结构的字段，将数组转换成多行。</p>
+<p><strong>Lateral View</strong>：其实explode是一个UDTF函数（一行输入多行输出），这个时候如果要select除了explode得到的字段以外的多个字段，需要创建虚拟表</p>
+<blockquote>
+<p>Lateral View 用于<strong>和UDTF函数【explode,split】结合来使用</strong>。<br>首先通过 UDTF 函数将数据拆分成多行，再将多行结果组合成一个支持别名的虚拟表。<br>主要解决在 select 使用UDTF做查询的过程中查询只能包含单个UDTF，不能包含其它字段以及多个UDTF的情况。<br>语法：LATERAL VIEW udtf(expression) tableAlias AS columnAlias (‘,’ columnAlias)</p>
+</blockquote>
 ]]></content>
   </entry>
   <entry>
@@ -2349,17 +2349,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>spark-sql启动参数</title>
-    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
-    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
-
-<p>带参数启动成功：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
     <title>mapreduce执行速度慢的原因</title>
     <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
     <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
@@ -2393,6 +2382,17 @@
 <p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
 <p>参考链接：</p>
 <p><a href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>spark-sql启动参数</title>
+    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
+    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
+
+<p>带参数启动成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
