@@ -1,84 +1,25 @@
 <!DOCTYPE html>
-
-
-
-  
-
-
-<html class="theme-next muse use-motion" lang="zh-CN">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8"/>
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
 
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-
-
-
-
-
-<meta http-equiv="Cache-Control" content="no-transform" />
-<meta http-equiv="Cache-Control" content="no-siteapp" />
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
-
-
-
-
-
-
-
-<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
-
-<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
-
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
-
-
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
-
-
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
-
-
-  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
-
-
-
-
-
-  <meta name="keywords" content="Hexo, NexT" />
-
-
-
-
-
-
-
-
-
-
+<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
 <meta name="description" content="SQL练习题–部门表dept部门表(deptno部门编号&#x2F;dname部门名称&#x2F;loc地点) 12345create table dept (deptno numeric(2),dname varchar(14),loc varchar(13));insert into dept values (10, &amp;#x27;ACCOUNTING&amp;#x27;, &amp;#x27;NEW YORK&amp;#x27;);in">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SQL练习题">
@@ -92,213 +33,209 @@
 <meta name="twitter:card" content="summary">
 
 
-
-<script type="text/javascript" id="hexo.configurations">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    root: '',
-    scheme: 'Muse',
-    version: '5.1.4',
-    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
-    fancybox: true,
-    tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
-    duoshuo: {
-      userId: '0',
-      author: 'Author'
-    },
-    algolia: {
-      applicationID: '',
-      apiKey: '',
-      indexName: '',
-      hits: {"per_page":10},
-      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
-    }
-  };
-</script>
+<link rel="canonical" href="https://k12coding.github.io/2021/11/29/SQL%E7%BB%83%E4%B9%A0%E9%A2%98/">
 
 
 
-  <link rel="canonical" href="https://k12coding.github.io/2021/11/29/SQL练习题/"/>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://k12coding.github.io/2021/11/29/SQL%E7%BB%83%E4%B9%A0%E9%A2%98/","path":"2021/11/29/SQL练习题/","title":"SQL练习题"}</script>
 
-
-
-
-
-  <title>SQL练习题 | k12的博客</title>
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>SQL练习题 | k12的博客</title>
   
 
 
 
 
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
 
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
 
-
-
-<meta name="generator" content="Hexo 5.4.0"></head>
-
-<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
-
-  
-  
-    
-  
-
-  <div class="container sidebar-position-left page-post-detail">
-    <div class="headband"></div>
-
-    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
-  <div class="site-meta ">
-    
-
-    <div class="custom-logo-site-title">
-      <a href="/"  class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">k12的博客</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
     </div>
-      
-        <p class="site-subtitle">k12的笔记</p>
-      
   </div>
 
-  <div class="site-nav-toggle">
-    <button>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">k12的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">k12的笔记</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
   </div>
 </div>
 
+
+
 <nav class="site-nav">
-  
-
-  
-    <ul id="menu" class="menu">
-      
-        
-        <li class="menu-item menu-item-home">
-          <a href="/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
-            
-            Home
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-archives">
-          <a href="/archives" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
-            
-            Archives
-          </a>
-        </li>
-      
-
-      
-    </ul>
-  
-
-  
+  <ul class="main-menu menu">
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
 </nav>
 
 
 
- </div>
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL%E7%BB%83%E4%B9%A0%E9%A2%98"><span class="nav-text">SQL练习题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%9F%A5%E8%AF%A2%E5%87%BA%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E4%B8%BA30%E7%9A%84%E6%89%80%E6%9C%89%E5%91%98%E5%B7%A5%E7%9A%84%E7%BC%96%E5%8F%B7%E5%92%8C%E5%A7%93%E5%90%8D"><span class="nav-text">一、查询出部门编号为30的所有员工的编号和姓名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%89%BE%E5%87%BA%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E4%B8%BA10%E4%B8%AD%E6%89%80%E6%9C%89%E7%BB%8F%E7%90%86%EF%BC%8C%E5%92%8C%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E4%B8%BA20%E4%B8%AD%E6%89%80%E6%9C%89%E9%94%80%E5%94%AE%E5%91%98%E7%9A%84%E8%AF%A6%E7%BB%86%E8%B5%84%E6%96%99%E3%80%82"><span class="nav-text">二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%9F%A5%E8%AF%A2%E6%89%80%E6%9C%89%E5%91%98%E5%B7%A5%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF%EF%BC%8C%E7%94%A8%E5%B7%A5%E8%B5%84%E9%99%8D%E5%BA%8F%E6%8E%92%E5%BA%8F%EF%BC%8C%E5%A6%82%E6%9E%9C%E5%B7%A5%E8%B5%84%E7%9B%B8%E5%90%8C%E4%BD%BF%E7%94%A8%E5%85%A5%E8%81%8C%E6%97%A5%E6%9C%9F%E5%8D%87%E5%BA%8F%E6%8E%92%E5%BA%8F"><span class="nav-text">三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%88%97%E5%87%BA%E8%96%AA%E9%87%91%E5%A4%A7%E4%BA%8E1500%E7%9A%84%E5%90%84%E7%A7%8D%E5%B7%A5%E4%BD%9C%E5%8F%8A%E4%BB%8E%E4%BA%8B%E6%AD%A4%E5%B7%A5%E4%BD%9C%E7%9A%84%E5%91%98%E5%B7%A5%E4%BA%BA%E6%95%B0%E3%80%82"><span class="nav-text">四、列出薪金大于1500的各种工作及从事此工作的员工人数。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%88%97%E5%87%BA%E5%9C%A8%E9%94%80%E5%94%AE%E9%83%A8%E5%B7%A5%E4%BD%9C%E7%9A%84%E5%91%98%E5%B7%A5%E7%9A%84%E5%A7%93%E5%90%8D%EF%BC%8C%E5%81%87%E5%AE%9A%E4%B8%8D%E7%9F%A5%E9%81%93%E9%94%80%E5%94%AE%E9%83%A8%E7%9A%84%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E3%80%82"><span class="nav-text">五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E6%9F%A5%E8%AF%A2%E5%A7%93%E5%90%8D%E4%BB%A5S%E5%BC%80%E5%A4%B4%E7%9A%84-%E4%BB%A5S%E7%BB%93%E5%B0%BE-%E5%8C%85%E5%90%ABS%E5%AD%97%E7%AC%A6-%E7%AC%AC%E4%BA%8C%E4%B8%AA%E5%AD%97%E6%AF%8D%E4%B8%BAL"><span class="nav-text">六、查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%9F%A5%E8%AF%A2%E6%AF%8F%E7%A7%8D%E5%B7%A5%E4%BD%9C%E7%9A%84%E6%9C%80%E9%AB%98%E5%B7%A5%E8%B5%84%E3%80%81%E6%9C%80%E4%BD%8E%E5%B7%A5%E8%B5%84%E3%80%81%E4%BA%BA%E6%95%B0"><span class="nav-text">七、查询每种工作的最高工资、最低工资、人数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E5%88%97%E5%87%BA%E8%96%AA%E9%87%91-%E9%AB%98%E4%BA%8E-%E5%85%AC%E5%8F%B8%E5%B9%B3%E5%9D%87%E8%96%AA%E9%87%91%E7%9A%84%E6%89%80%E6%9C%89%E5%91%98%E5%B7%A5%E5%8F%B7%EF%BC%8C%E5%91%98%E5%B7%A5%E5%A7%93%E5%90%8D%EF%BC%8C%E6%89%80%E5%9C%A8%E9%83%A8%E9%97%A8%E5%90%8D%E7%A7%B0%EF%BC%8C%E4%B8%8A%E7%BA%A7%E9%A2%86%E5%AF%BC%EF%BC%8C%E5%B7%A5%E8%B5%84%EF%BC%8C%E5%B7%A5%E8%B5%84%E7%AD%89%E7%BA%A7"><span class="nav-text">八、列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E5%88%97%E5%87%BA%E8%96%AA%E9%87%91-%E9%AB%98%E4%BA%8E-%E5%9C%A8%E9%83%A8%E9%97%A830%E5%B7%A5%E4%BD%9C%E7%9A%84-%E6%89%80%E6%9C%89-%E4%BB%BB%E6%84%8F%E4%B8%80%E4%B8%AA%E5%91%98%E5%B7%A5%E7%9A%84%E8%96%AA%E9%87%91%E7%9A%84%E5%91%98%E5%B7%A5%E5%A7%93%E5%90%8D%E5%92%8C%E8%96%AA%E9%87%91%E3%80%81%E9%83%A8%E9%97%A8%E5%90%8D%E7%A7%B0%E3%80%82"><span class="nav-text">九、列出薪金  高于  在部门30工作的  所有&#x2F;任意一个员工的薪金的员工姓名和薪金、部门名称。</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">k12</p>
+  <div class="site-description" itemprop="description">2</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">62</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
     </header>
 
-    <main id="main" class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          <div id="content" class="content">
-            
-
-  <div id="posts" class="posts-expand">
     
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
 
   
 
-  
+
+<div class="post-block">
   
   
 
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/11/29/SQL%E7%BB%83%E4%B9%A0%E9%A2%98/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="">
-      <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="k12的博客">
     </span>
-
-    
       <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SQL练习题
+        </h1>
 
-        
-        
-          <h1 class="post-title" itemprop="name headline">SQL练习题</h1>
-        
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-11-29T20:07:39+08:00">
-                2021-11-29
-              </time>
-            
+      <time title="创建时间：2021-11-29 20:07:39" itemprop="dateCreated datePublished" datetime="2021-11-29T20:07:39+08:00">2021-11-29</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2021-11-30 17:37:45" itemprop="dateModified" datetime="2021-11-30T17:37:45+08:00">2021-11-30</time>
+      </span>
 
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
+  
+</div>
 
         </div>
       </header>
-    
 
     
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
         <h1 id="SQL练习题"><a href="#SQL练习题" class="headerlink" title="SQL练习题"></a>SQL练习题</h1><p>–部门表<br>dept部门表(deptno部门编号/dname部门名称/loc地点)</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">create table dept (deptno numeric(2),dname varchar(14),loc varchar(13));</span><br><span class="line">insert into dept values (10, &#x27;ACCOUNTING&#x27;, &#x27;NEW YORK&#x27;);</span><br><span class="line">insert into dept values (20, &#x27;RESEARCH&#x27;, &#x27;DALLAS&#x27;);</span><br><span class="line">insert into dept values (30, &#x27;SALES&#x27;, &#x27;CHICAGO&#x27;);</span><br><span class="line">insert into dept values (40, &#x27;OPERATIONS&#x27;, &#x27;BOSTON&#x27;);</span><br></pre></td></tr></table></figure>
 
@@ -348,315 +285,65 @@
 <h2 id="九、列出薪金-高于-在部门30工作的-所有-任意一个员工的薪金的员工姓名和薪金、部门名称。"><a href="#九、列出薪金-高于-在部门30工作的-所有-任意一个员工的薪金的员工姓名和薪金、部门名称。" class="headerlink" title="九、列出薪金  高于  在部门30工作的  所有/任意一个员工的薪金的员工姓名和薪金、部门名称。"></a>九、列出薪金  高于  在部门30工作的  所有/任意一个员工的薪金的员工姓名和薪金、部门名称。</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select ename,sal+ifnull(comm,0) as empsal,dname  from emp  left join dept on emp.deptno = dept.deptno where sal+ifnull(comm,0) &gt; ALL( select sal+ifnull(comm,0) from emp where deptno=30 );</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">| ename | empsal  | dname      |</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">| KING  | 5000.00 | ACCOUNTING |</span><br><span class="line">| JONES | 2975.00 | RESEARCH   |</span><br><span class="line">| SCOTT | 3000.00 | RESEARCH   |</span><br><span class="line">| FORD  | 3000.00 | RESEARCH   |</span><br><span class="line">+-------+---------+------------+</span><br><span class="line">4 rows in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select ename,sal+ifnull(comm,0) as empsal,dname  from emp  left join dept on emp.deptno = dept.deptno where sal+ifnull(comm,0) &gt; ANY( select sal+ifnull(comm,0) from emp where deptno==30 );</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">| ename  | empsal  | dname      |</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">| CLARK  | 2450.00 | ACCOUNTING |</span><br><span class="line">| KING   | 5000.00 | ACCOUNTING |</span><br><span class="line">| MILLER | 1300.00 | ACCOUNTING |</span><br><span class="line">| JONES  | 2975.00 | RESEARCH   |</span><br><span class="line">| SCOTT  | 3000.00 | RESEARCH   |</span><br><span class="line">| ADAMS  | 1100.00 | RESEARCH   |</span><br><span class="line">| FORD   | 3000.00 | RESEARCH   |</span><br><span class="line">| ALLEN  | 1900.00 | SALES      |</span><br><span class="line">| WARD   | 1750.00 | SALES      |</span><br><span class="line">| MARTIN | 2650.00 | SALES      |</span><br><span class="line">| BLAKE  | 2850.00 | SALES      |</span><br><span class="line">| TURNER | 1500.00 | SALES      |</span><br><span class="line">+--------+---------+------------+</span><br><span class="line">12 rows in set (0.00 sec)</span><br></pre></td></tr></table></figure>
 
 
-      
     </div>
-    
-    
-    
 
     
-
     
-
     
 
     <footer class="post-footer">
-      
 
-      
-      
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/" rel="next" title="Hadoop Shell命令">
-                <i class="fa fa-chevron-left"></i> Hadoop Shell命令
-              </a>
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2021/12/02/%E7%AE%80%E6%98%8E-VIM-%E7%BB%83%E7%BA%A7%E6%94%BB%E7%95%A5%EF%BC%88%E8%BD%AC%E8%BD%BD%EF%BC%89/" rel="prev" title="简明 VIM 练级攻略（转载）">
-                简明 VIM 练级攻略（转载） <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
-      
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-
-    <div class="post-spread">
-      
-    </div>
-  </div>
-
-
-          </div>
-          
-
-
-          
-
-  
-
-
-
-        </div>
         
-          
-  
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
-    </div>
-  </div>
 
-  <aside id="sidebar" class="sidebar">
-    
-    <div class="sidebar-inner">
-
-      
-
-      
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            Table of Contents
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            Overview
-          </li>
-        </ul>
-      
-
-      <section class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-            
-              <p class="site-author-name" itemprop="name"></p>
-              <p class="site-description motion-element" itemprop="description"></p>
-          </div>
-
-          <nav class="site-state motion-element">
-
-            
-              <div class="site-state-item site-state-posts">
-              
-                <a href="/archives">
-              
-                  <span class="site-state-item-count">62</span>
-                  <span class="site-state-item-name">posts</span>
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/11/26/Hadoop%20Shell%E5%91%BD%E4%BB%A4/" rel="prev" title="Hadoop Shell命令">
+                  <i class="fa fa-chevron-left"></i> Hadoop Shell命令
                 </a>
-              </div>
-            
-
-            
-
-            
-
-          </nav>
-
-          
-
-          
-
-          
-          
-
-          
-          
-
-          
-
-        </div>
-      </section>
-
-      
-      <!--noindex-->
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-              
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL%E7%BB%83%E4%B9%A0%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">SQL练习题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%9F%A5%E8%AF%A2%E5%87%BA%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E4%B8%BA30%E7%9A%84%E6%89%80%E6%9C%89%E5%91%98%E5%B7%A5%E7%9A%84%E7%BC%96%E5%8F%B7%E5%92%8C%E5%A7%93%E5%90%8D"><span class="nav-number">1.1.</span> <span class="nav-text">一、查询出部门编号为30的所有员工的编号和姓名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%89%BE%E5%87%BA%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E4%B8%BA10%E4%B8%AD%E6%89%80%E6%9C%89%E7%BB%8F%E7%90%86%EF%BC%8C%E5%92%8C%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E4%B8%BA20%E4%B8%AD%E6%89%80%E6%9C%89%E9%94%80%E5%94%AE%E5%91%98%E7%9A%84%E8%AF%A6%E7%BB%86%E8%B5%84%E6%96%99%E3%80%82"><span class="nav-number">1.2.</span> <span class="nav-text">二、找出部门编号为10中所有经理，和部门编号为20中所有销售员的详细资料。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%9F%A5%E8%AF%A2%E6%89%80%E6%9C%89%E5%91%98%E5%B7%A5%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF%EF%BC%8C%E7%94%A8%E5%B7%A5%E8%B5%84%E9%99%8D%E5%BA%8F%E6%8E%92%E5%BA%8F%EF%BC%8C%E5%A6%82%E6%9E%9C%E5%B7%A5%E8%B5%84%E7%9B%B8%E5%90%8C%E4%BD%BF%E7%94%A8%E5%85%A5%E8%81%8C%E6%97%A5%E6%9C%9F%E5%8D%87%E5%BA%8F%E6%8E%92%E5%BA%8F"><span class="nav-number">1.3.</span> <span class="nav-text">三、查询所有员工详细信息，用工资降序排序，如果工资相同使用入职日期升序排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%88%97%E5%87%BA%E8%96%AA%E9%87%91%E5%A4%A7%E4%BA%8E1500%E7%9A%84%E5%90%84%E7%A7%8D%E5%B7%A5%E4%BD%9C%E5%8F%8A%E4%BB%8E%E4%BA%8B%E6%AD%A4%E5%B7%A5%E4%BD%9C%E7%9A%84%E5%91%98%E5%B7%A5%E4%BA%BA%E6%95%B0%E3%80%82"><span class="nav-number">1.4.</span> <span class="nav-text">四、列出薪金大于1500的各种工作及从事此工作的员工人数。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%88%97%E5%87%BA%E5%9C%A8%E9%94%80%E5%94%AE%E9%83%A8%E5%B7%A5%E4%BD%9C%E7%9A%84%E5%91%98%E5%B7%A5%E7%9A%84%E5%A7%93%E5%90%8D%EF%BC%8C%E5%81%87%E5%AE%9A%E4%B8%8D%E7%9F%A5%E9%81%93%E9%94%80%E5%94%AE%E9%83%A8%E7%9A%84%E9%83%A8%E9%97%A8%E7%BC%96%E5%8F%B7%E3%80%82"><span class="nav-number">1.5.</span> <span class="nav-text">五、列出在销售部工作的员工的姓名，假定不知道销售部的部门编号。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E6%9F%A5%E8%AF%A2%E5%A7%93%E5%90%8D%E4%BB%A5S%E5%BC%80%E5%A4%B4%E7%9A%84-%E4%BB%A5S%E7%BB%93%E5%B0%BE-%E5%8C%85%E5%90%ABS%E5%AD%97%E7%AC%A6-%E7%AC%AC%E4%BA%8C%E4%B8%AA%E5%AD%97%E6%AF%8D%E4%B8%BAL"><span class="nav-number">1.6.</span> <span class="nav-text">六、查询姓名以S开头的\以S结尾\包含S字符\第二个字母为L</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%9F%A5%E8%AF%A2%E6%AF%8F%E7%A7%8D%E5%B7%A5%E4%BD%9C%E7%9A%84%E6%9C%80%E9%AB%98%E5%B7%A5%E8%B5%84%E3%80%81%E6%9C%80%E4%BD%8E%E5%B7%A5%E8%B5%84%E3%80%81%E4%BA%BA%E6%95%B0"><span class="nav-number">1.7.</span> <span class="nav-text">七、查询每种工作的最高工资、最低工资、人数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E5%88%97%E5%87%BA%E8%96%AA%E9%87%91-%E9%AB%98%E4%BA%8E-%E5%85%AC%E5%8F%B8%E5%B9%B3%E5%9D%87%E8%96%AA%E9%87%91%E7%9A%84%E6%89%80%E6%9C%89%E5%91%98%E5%B7%A5%E5%8F%B7%EF%BC%8C%E5%91%98%E5%B7%A5%E5%A7%93%E5%90%8D%EF%BC%8C%E6%89%80%E5%9C%A8%E9%83%A8%E9%97%A8%E5%90%8D%E7%A7%B0%EF%BC%8C%E4%B8%8A%E7%BA%A7%E9%A2%86%E5%AF%BC%EF%BC%8C%E5%B7%A5%E8%B5%84%EF%BC%8C%E5%B7%A5%E8%B5%84%E7%AD%89%E7%BA%A7"><span class="nav-number">1.8.</span> <span class="nav-text">八、列出薪金 高于 公司平均薪金的所有员工号，员工姓名，所在部门名称，上级领导，工资，工资等级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E5%88%97%E5%87%BA%E8%96%AA%E9%87%91-%E9%AB%98%E4%BA%8E-%E5%9C%A8%E9%83%A8%E9%97%A830%E5%B7%A5%E4%BD%9C%E7%9A%84-%E6%89%80%E6%9C%89-%E4%BB%BB%E6%84%8F%E4%B8%80%E4%B8%AA%E5%91%98%E5%B7%A5%E7%9A%84%E8%96%AA%E9%87%91%E7%9A%84%E5%91%98%E5%B7%A5%E5%A7%93%E5%90%8D%E5%92%8C%E8%96%AA%E9%87%91%E3%80%81%E9%83%A8%E9%97%A8%E5%90%8D%E7%A7%B0%E3%80%82"><span class="nav-number">1.9.</span> <span class="nav-text">九、列出薪金  高于  在部门30工作的  所有&#x2F;任意一个员工的薪金的员工姓名和薪金、部门名称。</span></a></li></ol></li></ol></div>
-            
-
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/12/02/%E7%AE%80%E6%98%8E-VIM-%E7%BB%83%E7%BA%A7%E6%94%BB%E7%95%A5%EF%BC%88%E8%BD%AC%E8%BD%BD%EF%BC%89/" rel="next" title="简明 VIM 练级攻略（转载）">
+                  简明 VIM 练级攻略（转载） <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
           </div>
-        </section>
-      <!--/noindex-->
-      
-
-      
-
-    </div>
-  </aside>
-
-
-        
-      </div>
-    </main>
-
-    <footer id="footer" class="footer">
-      <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
-  <span class="with-love">
-    <i class="fa fa-user"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">k12</span>
-
-  
+    </footer>
+  </article>
 </div>
 
 
-  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
-
-
-
-  <span class="post-meta-divider">|</span>
-
-
-
-  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
 
 
 
 
-        
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
 
 
-
-
-
-
-
-        
-      </div>
-    </footer>
-
-    
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-        
-      </div>
-    
-
-    
-
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
   </div>
 
-  
-
-<script type="text/javascript">
-  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
-    window.Promise = null;
-  }
-</script>
-
-
-
-
-
-
-
-
+    </div>
+  </footer>
 
   
-
-
-
-
-
-
-
-
-
-
-
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
 
   
-  
-    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-  
-
-  
-  
-    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
-  
-
-
-  
-
-
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
-
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
-
-
-
-  
-  
-
-  
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
-
-
-
-  
-
-
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
-
-
-
-  
-
-
-  
-
-
-
-
-	
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
 
 
 
@@ -667,40 +354,6 @@
 
 
 
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-  
-
-  
-
-  
-  
-
-  
-
-  
-
-  
 
 </body>
 </html>
