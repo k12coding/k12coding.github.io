@@ -28,7 +28,7 @@
 <meta property="og:description" content="案例一：netcat source需求：监听localhost机器的44444端口，接收到数据sink到终端  创建agent配置文件 12[hadoop@hadoop001 ~]$ cd app&#x2F;flume&#x2F;conf&#x2F;[hadoop@hadoop001 conf]$ vi example.conf  example.conf 12345678910111213141516171819202122">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-05-16T23:41:07.000Z">
-<meta property="article:modified_time" content="2022-05-16T23:44:32.999Z">
+<meta property="article:modified_time" content="2022-05-16T23:53:51.780Z">
 <meta property="article:author" content="k12">
 <meta name="twitter:card" content="summary">
 
@@ -217,7 +217,7 @@
       <span class="post-meta-item-text">发表于</span>
       
 
-      <time title="创建时间：2022-05-17 07:41:07 / 修改时间：07:44:32" itemprop="dateCreated datePublished" datetime="2022-05-17T07:41:07+08:00">2022-05-17</time>
+      <time title="创建时间：2022-05-17 07:41:07 / 修改时间：07:53:51" itemprop="dateCreated datePublished" datetime="2022-05-17T07:41:07+08:00">2022-05-17</time>
     </span>
 
   
@@ -239,7 +239,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># example.conf: A single-node Flume configuration</span><br><span class="line">#需求：监听localhost机器的44444端口，接收到数据sink到终端</span><br><span class="line"></span><br><span class="line"># Name the components on this agent   配置各种名字</span><br><span class="line">a1.sources = r1  #配置source的名字</span><br><span class="line">a1.sinks = k1    #配置sink的名字</span><br><span class="line">a1.channels = c1  #配置channel的名字</span><br><span class="line"></span><br><span class="line"># Describe/configure the source       配置source的基本属性</span><br><span class="line">a1.sources.r1.type = netcat</span><br><span class="line">a1.sources.r1.bind = localhost</span><br><span class="line">a1.sources.r1.port = 44444</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory  配置channel的基本属性</span><br><span class="line">a1.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Describe the sink                  配置sink的基本属性</span><br><span class="line">a1.sinks.k1.type = logger</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel      连线</span><br><span class="line">a1.sources.r1.channels = c1</span><br><span class="line">a1.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
 
 <p>This configuration defines a single agent named a1. a1 has a source that listens for data on port 44444, a channel that buffers event data in memory, and a sink that logs event data to the console. The configuration file names the various components, then describes their types and configuration parameters. A given configuration file might define several named agents; when a given Flume process is launched a flag is passed telling it which named agent to manifest.</p>
-</li>
+<span id="more"></span></li>
 <li><p>启动flume agent a1</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name a1 \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/example.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure></li>
 <li><p>在另一个终端telnet localhost 44444 发送event</p>
