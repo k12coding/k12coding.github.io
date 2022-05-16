@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">62</span>
+          <span class="site-state-item-count">63</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,85 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/05/17/Flume-v1-9-0%E5%90%AF%E5%8A%A8%E6%8A%A5%E9%94%99ERROR-org-apache-flume-sink-hdfs-HDFSEventSink-process/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/05/17/Flume-v1-9-0%E5%90%AF%E5%8A%A8%E6%8A%A5%E9%94%99ERROR-org-apache-flume-sink-hdfs-HDFSEventSink-process/" class="post-title-link" itemprop="url">Flume v1.9.0启动报错ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-05-17 07:12:13 / 修改时间：07:19:21" itemprop="dateCreated datePublished" datetime="2022-05-17T07:12:13+08:00">2022-05-17</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>hadoop 3.2.2,flume 1.9.0版本操作hdfs sink报错</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">2022-05-16 23:07:35,002 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.HDFSDataStream.configure(HDFSDataStream.java:57)] Serializer = TEXT, UseRawLocalFileSystem = false</span><br><span class="line">2022-05-16 23:07:35,048 (SinkRunner-PollingRunner-DefaultSinkProcessor) [ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:459)] process failed</span><br><span class="line">java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument(ZLjava/lang/String;Ljava/lang/Object;)V</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1357)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1338)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.setBoolean(Configuration.java:1679)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:221)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.append(BucketWriter.java:572)</span><br><span class="line">	at org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:412)</span><br><span class="line">	at org.apache.flume.sink.DefaultSinkProcessor.process(DefaultSinkProcessor.java:67)</span><br><span class="line">	at org.apache.flume.SinkRunner$PollingRunner.run(SinkRunner.java:145)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:745)</span><br><span class="line">Exception in thread &quot;SinkRunner-PollingRunner-DefaultSinkProcessor&quot; java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument(ZLjava/lang/String;Ljava/lang/Object;)V</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1357)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1338)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.setBoolean(Configuration.java:1679)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:221)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.append(BucketWriter.java:572)</span><br><span class="line">	at org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:412)</span><br><span class="line">	at org.apache.flume.sink.DefaultSinkProcessor.process(DefaultSinkProcessor.java:67)</span><br><span class="line">	at org.apache.flume.SinkRunner$PollingRunner.run(SinkRunner.java:145)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:745)</span><br></pre></td></tr></table></figure>
+
+<p>内容：ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:459)<br>java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument(ZLjava/lang/String;Ljava/lang/Object;)</p>
+<h2 id="报错原因"><a href="#报错原因" class="headerlink" title="报错原因"></a>报错原因</h2><p>Hadoop 3.2.2 中的 guava 版本和 Flume 1.9.0 中的版本不一致<br>经查Hadoop 3.2.2 中 guava-27.0-jre.jar</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ ll app/hadoop/share/hadoop/common/lib/guava-27.0-jre.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 2747878 Jan  3  2021 app/hadoop/share/hadoop/common/lib/guava-27.0-jre.jar</span><br></pre></td></tr></table></figure>
+
+<p>Flume 1.9.0 中 guava-11.0.2.jar</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ ll app/flume/lib/guava-11.0.2.jar </span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 1648200 Sep 13  2018 app/flume/lib/guava-11.0.2.jar</span><br></pre></td></tr></table></figure>
+
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>删除低版本的 guava ，把高版本的 guava 复制一份放在低版本处<br>删除 Flume 中的 guava,把 Hadoop 中的 guava 复制到 Flume 中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ rm app/flume/lib/guava-11.0.2.jar</span><br><span class="line">[hadoop@hadoop001 ~]$ ll app/flume/lib/guava-11.0.2.jar </span><br><span class="line">ls: cannot access app/flume/lib/guava-11.0.2.jar: No such file or directory</span><br><span class="line">[hadoop@hadoop001 ~]$ cp app/hadoop/share/hadoop/common/lib/guava-27.0-jre.jar app/flume/lib</span><br><span class="line">[hadoop@hadoop001 ~]$ ll app/flume/lib/guava-27.0-jre.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 2747878 May 16 23:18 app/flume/lib/guava-27.0-jre.jar</span><br></pre></td></tr></table></figure>
+
+<p>重新启动 Flume 问题解决！</p>
+<p>参考链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/llwy1428/article/details/112169028">https://blog.csdn.net/llwy1428/article/details/112169028</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -219,7 +298,7 @@
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-05-17 02:16:35" itemprop="dateModified" datetime="2022-05-17T02:16:35+08:00">2022-05-17</time>
+        <time title="修改时间：2022-05-17 07:09:54" itemprop="dateModified" datetime="2022-05-17T07:09:54+08:00">2022-05-17</time>
       </span>
 
   
@@ -488,87 +567,6 @@
             </div>
           <!--/noindex-->
         
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/" class="post-title-link" itemprop="url">Spark DF/DS API：行列转换</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-02-23 01:36:53 / 修改时间：01:46:05" itemprop="dateCreated datePublished" datetime="2022-02-23T01:36:53+08:00">2022-02-23</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>前文回顾：<a href="https://k12coding.github.io/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">Hive：行列转换</a></p>
-<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">val rows1 = new util.ArrayList[Row]()</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;c&quot;, 1))</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;d&quot;, 2))</span><br><span class="line"></span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;e&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema1 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df1 = spark.createDataFrame(rows1, schema1)</span><br><span class="line"></span><br><span class="line">println(&quot;多行转多列&quot;)</span><br><span class="line">df1.show()</span><br><span class="line"></span><br><span class="line">df1.groupBy(&#x27;col1)</span><br><span class="line">.pivot(&#x27;col2)</span><br><span class="line">.max(&quot;col3&quot;).na.fill(0)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">多行转多列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   b|  0|  5|  6|</span><br><span class="line">|   a|  1|  2|  0|</span><br><span class="line">+----+---+---+---+</span><br></pre></td></tr></table></figure>
-
-<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><h4 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">val rows2 = new util.ArrayList[Row]()</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 1))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 2))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 3))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 4))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema2 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df2 = spark.createDataFrame(rows2, schema2)</span><br><span class="line">println(&quot;多行转单列&quot;)</span><br><span class="line">df2.show()</span><br><span class="line">df2.groupBy(&#x27;col1,&#x27;col2)</span><br><span class="line">.agg(concat_ws(&quot;,&quot;,collect_set(&#x27;col3)).as(&quot;col3&quot;))</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">多行转单列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   b|   d|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   d|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   b|   d|5,6,4|</span><br><span class="line">+----+----+-----+</span><br></pre></td></tr></table></figure>
-
-<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><h4 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">val rows3 = new util.ArrayList[Row]()</span><br><span class="line">rows3.add(Row(&quot;a&quot;, 1, 2, 3))</span><br><span class="line">rows3.add(Row(&quot;b&quot;, 4, 5, 6))</span><br><span class="line"></span><br><span class="line">val schema3 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;c&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;d&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;e&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df3 = spark.createDataFrame(rows3, schema3)</span><br><span class="line"></span><br><span class="line">println(&quot;多列转多行&quot;)</span><br><span class="line">df3.show()</span><br><span class="line">df3.selectExpr(&quot;col1&quot;,&quot;stack(3, &#x27;c&#x27;, c, &#x27;d&#x27;, d, &#x27;e&#x27;, e) as (`col2`,`col3`)&quot;)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">多列转多行</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   a|  1|  2|  3|</span><br><span class="line">|   b|  4|  5|  6|</span><br><span class="line">+----+---+---+---+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   a|   e|   3|</span><br><span class="line">|   b|   c|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
-
-<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><h4 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">val rows4 = new util.ArrayList[Row]()</span><br><span class="line">rows4.add(Row(&quot;a&quot;, &quot;b&quot;, &quot;1,2,3&quot;))</span><br><span class="line">rows4.add(Row(&quot;c&quot;, &quot;d&quot;, &quot;4,5,6&quot;))</span><br><span class="line"></span><br><span class="line">val schema4 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, StringType):: Nil</span><br><span class="line">)</span><br><span class="line">val df4 = spark.createDataFrame(rows4, schema4)</span><br><span class="line"></span><br><span class="line">println(&quot;单列转多行&quot;)</span><br><span class="line">df4.show()</span><br><span class="line">df4.select(&#x27;col1,&#x27;col2,explode(split(&#x27;col3,&quot;,&quot;)).as(&quot;col3&quot;)).show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
-
-
       
     </div>
 

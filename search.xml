@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>CentOS 6.5下安装python3.7</title>
+    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
+    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+
+<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
+<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+
+<p>把最上面的一行配置回python2.6.6就行了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+
+<p>有打印出相应信息就是成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>Azkaban multiple-executor模式部署</title>
     <url>/2022/02/22/Azkaban-multiple-executor%E6%A8%A1%E5%BC%8F%E9%83%A8%E7%BD%B2/</url>
     <content><![CDATA[<h2 id="以Multi-Executor-Server部署Azkaban"><a href="#以Multi-Executor-Server部署Azkaban" class="headerlink" title="以Multi Executor Server部署Azkaban"></a>以Multi Executor Server部署Azkaban</h2><h3 id="mysql准备"><a href="#mysql准备" class="headerlink" title="mysql准备"></a>mysql准备</h3><ol>
@@ -108,167 +133,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>CentOS 6.5下安装python3.7</title>
-    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
-    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
-
-<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
-<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
-
-<p>把最上面的一行配置回python2.6.6就行了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
-
-<p>有打印出相应信息就是成功了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
-    <title>Flume介绍与使用</title>
-    <url>/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/</url>
-    <content><![CDATA[<h1 id="一、Flume介绍与原理"><a href="#一、Flume介绍与原理" class="headerlink" title="一、Flume介绍与原理"></a>一、Flume介绍与原理</h1><h2 id="Flume简介"><a href="#Flume简介" class="headerlink" title="Flume简介"></a>Flume简介</h2><p>​    Flume 作为 cloudera 开发的实时日志收集系统，受到了业界的认可与广泛应用。Flume 初始的发行版本目前被统称为 Flume OG（original generation），属于 cloudera。但随着 FLume 功能的扩展，Flume OG 代码工程臃肿、核心组件设计不合理、核心配置不标准等缺点暴露出来，尤其是在 Flume OG 的最后一个发行版本 0.9.4. 中，日志传输不稳定的现象尤为严重，为了解决这些问题，2011 年 10 月 22 号，cloudera 完成了 Flume-728，对 Flume 进行了里程碑式的改动：重构核心组件、核心配置以及代码架构，重构后的版本统称为 Flume NG（next generation）；改动的另一原因是将 Flume 纳入 apache 旗下，cloudera Flume 改名为 Apache Flume。</p>
-<p>​    Flume 在0.9.x and 1.x之间有较大的架构调整，1.x版本之后的改称Flume NG，0.9.x的称为Flume OG。</p>
-<p>​    Flume目前只有Linux系统的启动脚本，没有Windows环境的启动脚本。</p>
-<p>　Flume是Apache的顶级项目，官方网站：<a href="http://flume.apache.org/">http://flume.apache.org/</a></p>
-<span id="more"></span>
-
-<h2 id="Flume-NG的介绍"><a href="#Flume-NG的介绍" class="headerlink" title="Flume NG的介绍"></a>Flume NG的介绍</h2><blockquote>
-<p>Flume is a distributed, reliable, and available service for efficiently collecting, aggregating, and moving large amounts of log data. It has a simple and flexible architecture based on streaming data flows. It is robust and fault tolerant with tunable reliability mechanisms and many failover and recovery mechanisms. It uses a simple extensible data model that allows for online analytic application.</p>
-<p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png" alt="img"></p>
-</blockquote>
-<h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><p>​    flume是一个分布式、可靠、和高可用的海量日志采集、聚合和传输的系统。支持在日志系统中定制各类数据发送方，用于收集数据;同时，Flume提供对数据进行简单处理，并写到各种数据接受方(比如文本、HDFS、Hbase等)的能力 。</p>
-<p>​    flume的数据流由事件(Event)贯穿始终。事件是Flume的基本数据单位，它携带日志数据(字节数组形式)并且携带有头信息，这些Event由Agent外部的Source生成，当Source捕获事件后会进行特定的格式化，然后Source会把事件推入(单个或多个)Channel中。你可以把Channel看作是一个缓冲区，它将保存事件直到Sink处理完该事件。Sink负责持久化日志或者把事件推向另一个Source。</p>
-<p><strong>flume的可靠性</strong> </p>
-<p>Flume 使用事务性的方式保证传送Event整个过程的可靠性。 Sink 必须在Event 被存入 Channel 后，或者，已经被传达到下一站agent里，又或者，已经被存入外部数据目的地之后，才能把 Event 从 Channel 中 remove 掉。这样数据流里的 event 无论是在一个 agent 里还是多个 agent 之间流转，都能保证可靠，因为以上的事务保证了 event 会被成功存储起来。比如 Flume支持在本地保存一份文件 channel 作为备份，而memory channel 将event存在内存 queue 里，速度快，但丢失的话无法恢复。</p>
-<p>当节点出现故障时，日志能够被传送到其他节点上而不会丢失。Flume提供了三种级别的可靠性保障，从强到弱依次分别为：</p>
-<ul>
-<li>end-to-end（收到数据agent首先将event写到磁盘上，当数据传送成功后，再删除；如果数据发送失败，可以重新发送。）</li>
-<li>Store on failure（这也是scribe采用的策略，当数据接收方crash时，将数据写到本地，待恢复后，继续发送）</li>
-<li>Besteffort（数据发送到接收方后，不会进行确认）。</li>
-</ul>
-<p><strong>flume的可恢复性</strong></p>
-<p>还是靠Channel。推荐使用FileChannel，事件持久化在本地文件系统里(性能较差)。</p>
-<h3 id="Flume的一些核心概念"><a href="#Flume的一些核心概念" class="headerlink" title="Flume的一些核心概念"></a>Flume的一些核心概念</h3><ul>
-<li>Client：Client生产数据，运行在一个独立的线程。</li>
-<li>Event： Flume当中对数据的一种封装。是一个数据单元。flume传输数据最基本的单元，由消息头和消息体组成。（事务的基本单位，Events可以是日志记录、 avro 对象等。）</li>
-<li>Flow： Event从源点到达目的点的迁移的抽象。</li>
-<li>Agent： 一个独立的Flume进程，包含组件Source、 Channel、 Sink。（Agent使用JVM 运行Flume。每台机器运行一个agent，但是可以在一个agent中包含多个sources和sinks。）</li>
-<li>Source： 数据收集组件。（source从Client收集数据，传递给Channel）</li>
-<li>Channel： 中转Event的一个临时存储，保存由Source组件传递过来的Event。（Channel连接 sources 和 sinks ，这个有点像一个队列。）</li>
-<li>Sink： 从Channel中读取并移除Event， 将Event传递到FlowPipeline中的下一个Agent（如果有的话）（Sink从Channel收集数据，运行在一个独立线程。）</li>
-<li>Channel Selector： 通道选择器，主要作用是根据用户配置将数据放到不同的Channel当中。</li>
-<li>Sink Processor：主要策略有，负载均衡，故障转移以及直通。</li>
-<li> Interceptor：拦截器，主要作用是将采集到的数据根据用户的配置进行过滤和修饰。</li>
-</ul>
-<h3 id="Flume-NG的体系结构"><a href="#Flume-NG的体系结构" class="headerlink" title="Flume NG的体系结构"></a>Flume NG的体系结构</h3><p>Flume 运行的核心是 Agent。Flume以agent为最小的独立运行单位。一个agent就是一个JVM。它是一个完整的数据收集工具，含有三个核心组件，分别source、 channel、 sink。通过这些组件， Event 可以从一个地方流向另一个地方，如下图所示。</p>
-<p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png" alt="img"></p>
-<h4 id="Source"><a href="#Source" class="headerlink" title="Source"></a>Source</h4><p>Source是数据的收集端，负责将数据捕获后进行特殊的格式化，将数据封装到事件（event） 里，然后将事件推入Channel中。 Flume提供了很多内置的Source， 支持 Avro， log4j， syslog 和 http post(body为json格式)。可以让应用程序同已有的Source直接打交道，如AvroSource，SyslogTcpSource。 如果内置的Source无法满足需要， Flume还支持自定义Source。</p>
-<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F02.png" alt="img" style="zoom: 80%;">
-
-<p>Source类型：</p>
-<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F14.png" alt="img" style="zoom: 80%;">
-
-
-
-<h4 id="Channel"><a href="#Channel" class="headerlink" title="Channel"></a>Channel</h4><p>Channel是连接Source和Sink的组件，大家可以将它看做一个数据的缓冲区（数据队列），它可以将事件暂存到内存中也可以持久化到本地磁盘上， 直到Sink处理完该事件。介绍两个较为常用的Channel， MemoryChannel和FileChannel。</p>
-<ul>
-<li>MemoryChannel可以实现高速的吞吐， 但是无法保证数据完整性</li>
-<li>FileChannel保证数据的完整性与一致性。在具体配置不现的FileChannel时，建议FileChannel设置的目录和程序日志文件保存的目录设成不同的磁盘，以便提高效率。</li>
-</ul>
-<p>Channel类型：</p>
-<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F04.png" alt="img" style="zoom: 67%;">
-
-<h4 id="Sink"><a href="#Sink" class="headerlink" title="Sink"></a>Sink</h4><p>Sink从Channel中取出事件，然后将数据发到别处，可以向文件系统、数据库、 hadoop存数据， 也可以是其他agent的Source。在日志数据较少时，可以将数据存储在文件系统中，并且设定一定的时间间隔保存数据。</p>
-<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F15.png" alt="img" style="zoom: 67%;">
-
-<p>Sink类型：</p>
-<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F16.png" alt="img" style="zoom:67%;">
-
-
-
-<h3 id="flume执行流程与事务"><a href="#flume执行流程与事务" class="headerlink" title="flume执行流程与事务"></a>flume执行流程与事务</h3><h4 id="Flume-传输流程"><a href="#Flume-传输流程" class="headerlink" title="Flume 传输流程"></a>Flume 传输流程</h4><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F07.png" alt="img" style="zoom: 50%;">
-
-<ol>
-<li>Source 接受数据</li>
-<li>Channel Processor 处理 Event</li>
-<li>Channel Processor 将 Event 传递给 interceptor链对 Event 进行过滤操作</li>
-<li>过滤完之后再把 Event 发送回 Channel Prodessor</li>
-<li>Channel Processor把 Event 发送给Channel selectors</li>
-<li>Channel selector返回Event 属于哪个Channel</li>
-<li>根据第6步返回的结果，将Event发送到指定的Channel</li>
-<li>SinkProcessor从Channel中拉去数据</li>
-<li>最后把数据Sink出去</li>
-</ol>
-<p><strong>重要组件：</strong></p>
-<ul>
-<li><p>Channel Selector</p>
-<p>Channel Selector 的作用就是选出 Event 将要被发往哪个 Channel。共有两种类型，分别是 **Replicating Channel Selector (default)**（复制）和 <strong>Multiplexing Channel Selector</strong>（多路复用）。</p>
-<p>Replicating Selector 会将 source 过来的每一个 Event 发往所有的 Channel，Multiplexing 会根据相应的原则，将不同的 Event 发往不同的 Channel。</p>
-</li>
-<li><p>Sink Processor</p>
-<p>Sink Processor 共有三种类型，分别是 <strong>Default Sink Processor</strong>、<strong>Load Balancing Sink Processor</strong> 和 <strong>Failover Sink Processor</strong>。</p>
-<p>Default Sink Processor 对应的是单个的 Sink，Load Balancing Sink Processor 和 Failover Sink Processor 对应的是 Sink Group。</p>
-<p>Load Balancing Sink Processor 可以实现负载均衡的功能，Failover Sink Processor 可以实现故障转移的功能。</p>
-</li>
-</ul>
-<h4 id="Flume-事务"><a href="#Flume-事务" class="headerlink" title="Flume 事务"></a>Flume 事务</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F08.png" alt="img"></p>
-<p><strong>Put 事务流程</strong></p>
-<p>doPut：将批数据先写入临时缓冲区 putList</p>
-<p>doCommit：检查 channel 内存队列是否足够合并</p>
-<p>doRollback：channel 内存队列空间不足，回滚数据</p>
-<p><strong>Take 事务流程</strong></p>
-<p>doTake：将数据取到临时缓冲区 takeList，并将数据发送到 HDFS</p>
-<p>doCommit：如果数据全部发送成功，则清除临时缓冲区 takeList</p>
-<p>doRollback：数据发送过程中如果出现异常，rollback 将临时缓冲区 takeList 中的数据归还给 channel 内存队列</p>
-<h3 id="Flume的部署类型"><a href="#Flume的部署类型" class="headerlink" title="Flume的部署类型"></a>Flume的部署类型</h3><h4 id="单一流程"><a href="#单一流程" class="headerlink" title="单一流程"></a>单一流程</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F09.png" alt="img"></p>
-<h4 id="多代理流程（多个agent顺序连接）"><a href="#多代理流程（多个agent顺序连接）" class="headerlink" title="多代理流程（多个agent顺序连接）"></a>多代理流程（多个agent顺序连接）</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F17.png" alt="img" style="zoom: 80%;">　　</p>
-<p>　　可以将多个Agent顺序连接起来，将最初的数据源经过收集，存储到最终的存储系统中。这是最简单的情况，一般情况下，应该控制这种顺序连接的Agent 的数量，因为数据流经的路径变长了，如果不考虑failover的话，出现故障将影响整个Flow上的Agent收集服务。 </p>
-<h4 id="流的合并（多个Agent的数据汇聚到同一个Agent-）"><a href="#流的合并（多个Agent的数据汇聚到同一个Agent-）" class="headerlink" title="流的合并（多个Agent的数据汇聚到同一个Agent ）"></a>流的合并（多个Agent的数据汇聚到同一个Agent ）</h4><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F18.png" alt="img" style="zoom: 80%;">
-
-<p>　　这种情况应用的场景比较多，比如要收集Web网站的用户行为日志， Web网站为了可用性使用的负载集群模式，每个节点都产生用户行为日志，可以为每 个节点都配置一个Agent来单独收集日志数据，然后多个Agent将数据最终汇聚到一个用来存储数据存储系统，如HDFS上。</p>
-<h4 id="多路复用流（多级流）"><a href="#多路复用流（多级流）" class="headerlink" title="多路复用流（多级流）"></a>多路复用流（多级流）</h4><p>Flume还支持多级流，什么多级流？来举个例子，当syslog， java， nginx、 tomcat等混合在一起的日志流开始流入一个agent后，可以agent中将混杂的日志流分开，然后给每种日志建立一个自己的传输通道。</p>
-<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F19.png" alt="img" style="zoom: 67%;">
-
-<h4 id="load-balance功能"><a href="#load-balance功能" class="headerlink" title="load balance功能"></a>load balance功能</h4><p>下图Agent1是一个路由节点，负责将Channel暂存的Event均衡到对应的多个Sink组件上，而每个Sink组件分别连接到一个独立的Agent上 。</p>
-<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F20.png" alt="img" style="zoom:67%;">
-
-
-
-<h2 id="个人笔记"><a href="#个人笔记" class="headerlink" title="个人笔记"></a>个人笔记</h2><p><strong>Spooling Directory Source 如何使用？</strong></p>
-<p>Spooling Directory Source 监控文件夹中的日志信息。</p>
-<p>在实际使用的过程中，可以结合log4j使用，使用log4j的时候，将log4j的文件分割机制设为1分钟一次，将文件拷贝到spool的监控目录。log4j有一个TimeRolling的插件，可以把log4j分割的文件到spool目录。基本实现了实时的监控。 Flume在传完文件之后，将会修改文件的后缀.tmp变为.COMPLETED（后缀也可以在配置文件中灵活指定）</p>
-<p>但是有一定的问题，对于已经处理完的文件，后续再次处理或者重名则会报错。</p>
-<p><strong>Exec Source 和 Spooling Directory Source 比较</strong></p>
-<p>1） ExecSource可以实现对日志的实时收集，但是存在Flume不运行或者指令执行出错时，将无法收集到日志数据，无法何证日志数据的完整性。（不太可靠，不建议使用）</p>
-<p>2） Spooling Directory Source 虽然无法实现实时的收集数据，但是可以使用以分钟的方式分割文件，趋近于实时。</p>
-<p>3）总结：如果应用无法实现以分钟切割日志文件的话，可以两种收集方式结合使用。</p>
-<p><strong>Taildir Source</strong></p>
-<p>可以实现断点续传。</p>
-<p><strong>hdfs sink</strong></p>
-<p>会一直刷新文件。可以使用roll，设置hdfs.rollInterval、hdfs.rollSize、hdfs.rollCount参数避免小文件问题。一个批次中，没有数据输入不产生文件。</p>
-<p>在</p>
-<p><strong>Avro client</strong> </p>
-<p>An Avro client included in the Flume distribution can send a given file to Flume Avro source using avro RPC mechanism:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ bin/flume-ng avro-client -H localhost -p 41414 -F /usr/logs/log.10</span><br></pre></td></tr></table></figure>
-
-<p>The above command will send the contents of /usr/logs/log.10 to to the Flume source listening on that ports.</p>
-<p>但是，Avro client 不适用于增量数据，对于增量数据，要采用avro sink到avro source的方式。</p>
-<h1 id="二、Flume的安装与使用"><a href="#二、Flume的安装与使用" class="headerlink" title="二、Flume的安装与使用"></a>二、Flume的安装与使用</h1><h2 id="Flume的安装"><a href="#Flume的安装" class="headerlink" title="Flume的安装"></a>Flume的安装</h2><p>参考链接：</p>
-<p><a href="https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0">https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0</a></p>
-<p><a href="https://blog.csdn.net/u010452388/article/details/101697570">https://blog.csdn.net/u010452388/article/details/101697570</a></p>
-<p><a href="https://www.cnblogs.com/jhxxb/p/11574494.html">https://www.cnblogs.com/jhxxb/p/11574494.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>CentOS6.5安装NodeJS14.18.3</title>
     <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
     <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
@@ -292,6 +156,26 @@
 <li><p>刷新配置，查看版本</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>Flume v1.9.0启动报错ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process</title>
+    <url>/2022/05/17/Flume-v1-9-0%E5%90%AF%E5%8A%A8%E6%8A%A5%E9%94%99ERROR-org-apache-flume-sink-hdfs-HDFSEventSink-process/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>hadoop 3.2.2,flume 1.9.0版本操作hdfs sink报错</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2022-05-16 23:07:35,002 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.HDFSDataStream.configure(HDFSDataStream.java:57)] Serializer = TEXT, UseRawLocalFileSystem = false</span><br><span class="line">2022-05-16 23:07:35,048 (SinkRunner-PollingRunner-DefaultSinkProcessor) [ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:459)] process failed</span><br><span class="line">java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument(ZLjava/lang/String;Ljava/lang/Object;)V</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1357)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1338)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.setBoolean(Configuration.java:1679)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:221)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.append(BucketWriter.java:572)</span><br><span class="line">	at org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:412)</span><br><span class="line">	at org.apache.flume.sink.DefaultSinkProcessor.process(DefaultSinkProcessor.java:67)</span><br><span class="line">	at org.apache.flume.SinkRunner$PollingRunner.run(SinkRunner.java:145)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:745)</span><br><span class="line">Exception in thread &quot;SinkRunner-PollingRunner-DefaultSinkProcessor&quot; java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument(ZLjava/lang/String;Ljava/lang/Object;)V</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1357)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.set(Configuration.java:1338)</span><br><span class="line">	at org.apache.hadoop.conf.Configuration.setBoolean(Configuration.java:1679)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:221)</span><br><span class="line">	at org.apache.flume.sink.hdfs.BucketWriter.append(BucketWriter.java:572)</span><br><span class="line">	at org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:412)</span><br><span class="line">	at org.apache.flume.sink.DefaultSinkProcessor.process(DefaultSinkProcessor.java:67)</span><br><span class="line">	at org.apache.flume.SinkRunner$PollingRunner.run(SinkRunner.java:145)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:745)</span><br></pre></td></tr></table></figure>
+
+<p>内容：ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:459)<br>java.lang.NoSuchMethodError: com.google.common.base.Preconditions.checkArgument(ZLjava/lang/String;Ljava/lang/Object;)</p>
+<h2 id="报错原因"><a href="#报错原因" class="headerlink" title="报错原因"></a>报错原因</h2><p>Hadoop 3.2.2 中的 guava 版本和 Flume 1.9.0 中的版本不一致<br>经查Hadoop 3.2.2 中 guava-27.0-jre.jar</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ ll app/hadoop/share/hadoop/common/lib/guava-27.0-jre.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 2747878 Jan  3  2021 app/hadoop/share/hadoop/common/lib/guava-27.0-jre.jar</span><br></pre></td></tr></table></figure>
+
+<p>Flume 1.9.0 中 guava-11.0.2.jar</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ ll app/flume/lib/guava-11.0.2.jar </span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 1648200 Sep 13  2018 app/flume/lib/guava-11.0.2.jar</span><br></pre></td></tr></table></figure>
+
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>删除低版本的 guava ，把高版本的 guava 复制一份放在低版本处<br>删除 Flume 中的 guava,把 Hadoop 中的 guava 复制到 Flume 中</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ rm app/flume/lib/guava-11.0.2.jar</span><br><span class="line">[hadoop@hadoop001 ~]$ ll app/flume/lib/guava-11.0.2.jar </span><br><span class="line">ls: cannot access app/flume/lib/guava-11.0.2.jar: No such file or directory</span><br><span class="line">[hadoop@hadoop001 ~]$ cp app/hadoop/share/hadoop/common/lib/guava-27.0-jre.jar app/flume/lib</span><br><span class="line">[hadoop@hadoop001 ~]$ ll app/flume/lib/guava-27.0-jre.jar </span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 2747878 May 16 23:18 app/flume/lib/guava-27.0-jre.jar</span><br></pre></td></tr></table></figure>
+
+<p>重新启动 Flume 问题解决！</p>
+<p>参考链接：<a href="https://blog.csdn.net/llwy1428/article/details/112169028">https://blog.csdn.net/llwy1428/article/details/112169028</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -510,49 +394,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
-</li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
-</li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
-</li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>HDFS文件读写流程与副本放置策略</title>
     <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
@@ -610,6 +451,49 @@
 <p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
 <p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
 <p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -755,6 +639,73 @@
 <p>解决办法：<br>执行命令：<code>schematool -dbType mysql -initSchema</code></p>
 </li>
 </ul>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hadoop Archives</title>
+    <url>/2021/12/20/Hadoop-Archives/</url>
+    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
+<p>Hadoop存档(har文件)目录包含</p>
+<ul>
+<li><p>元数据（采用_index和_masterindex形式）</p>
+</li>
+<li><p>数据部分data（part- *）文件。</p>
+</li>
+</ul>
+<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
+<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
+<span id="more"></span>
+
+<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
+<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<ul>
+<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
+<li>-p 父目录:指定归档文件基于的相对路径</li>
+<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
+<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
+<li>&lt;dest&gt;:har文件保存到的目标路径</li>
+</ul>
+<p><strong>Example:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
+<p>如果想归档目录 /foo/bar，可以省略src：</p>
+<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
+<p><strong>补充说明</strong></p>
+<ol>
+<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
+<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
+<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
+</ol>
+<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
+<p>Hadoop Archives的URI是</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
+<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
+<p>依次取消存档：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<p>要并行解压缩，请使用DistCp：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
+<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
+<li><p>准备文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>创建har文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
+<li><p>查看文件组成结构</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
+<li><p>使用hdfs文件系统查看har文件目录内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
+</ol>
 ]]></content>
   </entry>
   <entry>
@@ -938,73 +889,6 @@
 <p>打印类的路径</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop classpath</span><br><span class="line">/home/hadoop/app/hadoop/etc/hadoop:/home/hadoop/app/hadoop/share/hadoop/common/lib/*:/home/hadoop/app/hadoop/share/hadoop/common/*:/home/hadoop/app/hadoop/share/hadoop/hdfs:/home/hadoop/app/hadoop/share/hadoop/hdfs/lib/*:/home/hadoop/app/hadoop/share/hadoop/hdfs/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/lib/*:/home/hadoop/app/hadoop/share/hadoop/mapreduce/*:/home/hadoop/app/hadoop/share/hadoop/yarn:/home/hadoop/app/hadoop/share/hadoop/yarn/lib/*:/home/hadoop/app/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>Hadoop Archives</title>
-    <url>/2021/12/20/Hadoop-Archives/</url>
-    <content><![CDATA[<h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Hadoop Archives就是指Hadoop存档。Hadoop Archives是特殊格式的存档，它会映射一个文件系统目录。一个Hadoop Archives文件总是带有<code>.har</code>扩展名</p>
-<p>Hadoop存档(har文件)目录包含</p>
-<ul>
-<li><p>元数据（采用_index和_masterindex形式）</p>
-</li>
-<li><p>数据部分data（part- *）文件。</p>
-</li>
-</ul>
-<p>_index文件包含归档文件的名称和部分文件中的位置。</p>
-<p><img src="/2021/12/20/Hadoop-Archives/arcvhives1" alt="img"></p>
-<span id="more"></span>
-
-<h2 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h2><p>​    hdfs并不擅长存储小文件，因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存，如果存在这样大量的小文件，它们会吃掉namenode节点的大量内存。<br>​    hadoop Archives可以有效的处理以上问题，他可以把多个文件归档成为一个文件，归档成一个文件后还可以透明的访问每一个文件，并且可以做为mapreduce任务的输入。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能将小文件合并到一个split中去，一个小文件一个split）</p>
-<h2 id="创建档案文件"><a href="#创建档案文件" class="headerlink" title="创建档案文件"></a>创建档案文件</h2><p>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: hadoop archive -archiveName name -p &lt;parent&gt; [-r &lt;replication factor&gt;] &lt;src&gt;* &lt;dest&gt;</span><br><span class="line">用法：hadoop archive -archiveName  归档名称 -p 父目录 [-r &lt;复制因子&gt;]  原路径（可以多个）  目的路径</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数说明</strong></p>
-<ul>
-<li>-archiveName 档案名.har:以<code>.har</code>为扩展名结尾的档案文件名字</li>
-<li>-p 父目录:指定归档文件基于的相对路径</li>
-<li>-r 副本数：所需的复制因子，不设置的话默认为3</li>
-<li>&lt;src&gt;*:要归档的文件源路径，可多个</li>
-<li>&lt;dest&gt;:har文件保存到的目标路径</li>
-</ul>
-<p><strong>Example:</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop archive -archiveName foo.har -p /foo/bar -r 3 dir1 dir2 /user/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><code>/foo/bar</code>是<code>dir1</code>，<code>dir2</code>两个src路径的父目录，所以以上命令是归档<code>/foo/bar/dir1</code>，<code>/foo/bar/dir2</code>到 <code>/user/hadoop/foo.bar</code>中</p>
-<p>如果想归档目录 /foo/bar，可以省略src：</p>
-<p><code>hadoop archive -archiveName zoo.har -p /foo/bar -r 3 /outputdir</code></p>
-<p><strong>补充说明</strong></p>
-<ol>
-<li>创建档案文件是一个Map/Reduce job，所以需要一个map reduce集群来运行它（启动YARN）。</li>
-<li>归档文件后，不会删除源文件。如果需要删除源文件（来减少namespace），需要自己手动删除。</li>
-<li>如果您指定加密区域中的源文件，它们将被解密并写入存档。如果har文件不在加密区中，则它们将以解密的形式存储。如果har文件位于加密区域，它们将以加密形式存储。</li>
-</ol>
-<h2 id="查看归档中的文件"><a href="#查看归档中的文件" class="headerlink" title="查看归档中的文件"></a>查看归档中的文件</h2><p>档案将自己公开为文件系统层。因此，档案中的所有fs shell命令都可以工作，但使用不同的URI。</p>
-<p>Hadoop Archives的URI是</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：//方案-主机名：端口/ archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p>如果没有提供方案，它假定底层文件系统。在这种情况下，URI看起来像</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HAR：/// archivepath / fileinarchive</span><br></pre></td></tr></table></figure>
-
-<p><strong>注意：</strong>档案是不可变的。所以，重命名，删除并创建返回一个错误。</p>
-<h2 id="如何解除归档"><a href="#如何解除归档" class="headerlink" title="如何解除归档"></a>如何解除归档</h2><p>由于档案中的所有fs shell命令都是透明的，因此取消存档只是复制的问题。</p>
-<p>依次取消存档：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -cp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<p>要并行解压缩，请使用DistCp：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop distcp har:///user/zoo/foo.har/dir1 hdfs:/user/zoo/newdir</span><br></pre></td></tr></table></figure>
-
-<h2 id="Hadoop-Archives-and-MapReduce"><a href="#Hadoop-Archives-and-MapReduce" class="headerlink" title="Hadoop Archives and MapReduce"></a>Hadoop Archives and MapReduce</h2><p>​    在MapReduce中，与输入数据 使用默认文件系统一样，也可以使用Hadoop Archives(归档)文件作为输入文件系统。如果你有存储在HDFS目录下<code>/user/zoo/foo.har</code>的Hadoop Archives(归档)文件 ，然后你在MapReduce程序中就可以使用如下路径<code>har:///user/zoo/foo.har</code>作为输入文件。<br>由于Hadoop Archives(归档)文件是作为一种文件类型，MapReduce将能够使用Hadoop Archives(归档)文件中的所有逻辑输入文件作为输入源。</p>
-<h2 id="个人示例"><a href="#个人示例" class="headerlink" title="个人示例"></a>个人示例</h2><ol>
-<li><p>准备文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R /user/hadoop/input</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/a.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         18 2021-12-19 15:54 /user/hadoop/input/b.log</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         11 2021-12-19 15:54 /user/hadoop/input/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input/d</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          4 2021-12-19 15:54 /user/hadoop/input/d/e.log</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>创建har文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop archive -archiveName input.har -p /user/hadoop/input /user/hadoop</span><br><span class="line">2021-12-19 15:56:44,393 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-19 15:56:45,593 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,217 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,258 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-19 15:56:46,685 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,302 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">2021-12-19 15:56:47,571 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:47,578 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-19 15:56:47,895 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-19 15:56:47,895 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-19 15:56:48,044 INFO impl.YarnClientImpl: Submitted application application_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:48,119 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639763497373_0008/</span><br><span class="line">2021-12-19 15:56:48,124 INFO mapreduce.Job: Running job: job_1639763497373_0008</span><br><span class="line">2021-12-19 15:56:58,359 INFO mapreduce.Job: Job job_1639763497373_0008 running in uber mode : false</span><br><span class="line">2021-12-19 15:56:58,361 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-19 15:57:05,437 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-19 15:57:12,484 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-19 15:57:13,506 INFO mapreduce.Job: Job job_1639763497373_0008 completed successfully</span><br><span class="line">2021-12-19 15:57:13,611 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=425</span><br><span class="line">		FILE: Number of bytes written=473491</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=581</span><br><span class="line">		HDFS: Number of bytes written=450</span><br><span class="line">		HDFS: Number of read operations=24</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=12</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=1</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=1</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=4796</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=4103</span><br><span class="line">		Total time spent by all map tasks (ms)=4796</span><br><span class="line">		Total time spent by all reduce tasks (ms)=4103</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=4796</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=4103</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=4911104</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=4201472</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=6</span><br><span class="line">		Map output records=6</span><br><span class="line">		Map output bytes=407</span><br><span class="line">		Map output materialized bytes=425</span><br><span class="line">		Input split bytes=118</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=6</span><br><span class="line">		Reduce shuffle bytes=425</span><br><span class="line">		Reduce input records=6</span><br><span class="line">		Reduce output records=0</span><br><span class="line">		Spilled Records=12</span><br><span class="line">		Shuffled Maps =1</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=1</span><br><span class="line">		GC time elapsed (ms)=181</span><br><span class="line">		CPU time spent (ms)=1520</span><br><span class="line">		Physical memory (bytes) snapshot=322760704</span><br><span class="line">		Virtual memory (bytes) snapshot=5437816832</span><br><span class="line">		Total committed heap usage (bytes)=170004480</span><br><span class="line">		Peak Map Physical memory (bytes)=212164608</span><br><span class="line">		Peak Map Virtual memory (bytes)=2717405184</span><br><span class="line">		Peak Reduce Physical memory (bytes)=110596096</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=419</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=0</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/</span><br><span class="line">Found 2 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 /user/hadoop/input</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har</span><br></pre></td></tr></table></figure></li>
-<li><p>查看文件组成结构</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -cat /user/hadoop/input.har</span><br><span class="line">cat: `/user/hadoop/input.har&#x27;: Is a directory</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls /user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2021-12-19 15:57 /user/hadoop/input.har/_SUCCESS</span><br><span class="line">-rw-r--r--   3 hadoop supergroup        383 2021-12-19 15:57 /user/hadoop/input.har/_index</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         23 2021-12-19 15:57 /user/hadoop/input.har/_masterindex</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         44 2021-12-19 15:57 /user/hadoop/input.har/part-0</span><br></pre></td></tr></table></figure></li>
-<li><p>使用hdfs文件系统查看har文件目录内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls har:///user/hadoop/input.har</span><br><span class="line">Found 4 items</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">[hadoop@hadoop001 data]$ hdfs dfs -ls -R har:///user/hadoop/input.har</span><br><span class="line">2021-12-19 16:03:48,906 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/a.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         18 2021-12-19 15:54 har:///user/hadoop/input.har/b.log</span><br><span class="line">-rw-r--r--   3 hadoop supergroup         11 2021-12-19 15:54 har:///user/hadoop/input.har/c.log</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-19 15:54 har:///user/hadoop/input.har/d</span><br><span class="line">-rw-r--r--   3 hadoop supergroup          4 2021-12-19 15:54 har:///user/hadoop/input.har/d/e.log</span><br></pre></td></tr></table></figure></li>
-</ol>
 ]]></content>
   </entry>
   <entry>
@@ -1251,65 +1135,62 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive四种排序方式:order by,sort by,distribute by,cluster by</title>
-    <url>/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/</url>
-    <content><![CDATA[<h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
-
-<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
-<ul>
-<li>效率较低。</li>
-<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
-<li>ORDER BY 子句在SELECT 语句的结尾</li>
+    <title>Hive：内部表与外部表</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
+    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
 </ul>
-<p>例：</p>
-<p>select * from emp order by sal desc;</p>
-<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
 
-<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
-<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
-<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
-<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
-<p>例：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
 
-<p>查询有2个reducer,它们的输出分别是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
-
-<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
-<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 1 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 2 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
-
-<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
-<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
-<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
-<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
-<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
-<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
-<p>Reducer 1 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
-
-<p>Reducer 2 got</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
-
-<p>和Distribute By的例子相比，具有排序功能。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
-
-<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
-
-
-
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
 <p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
-<p><a href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1400,62 +1281,65 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive：内部表与外部表</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
-    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
-<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
-<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
-</li>
-<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
-<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
-</li>
-<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
-</li>
-<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
-</li>
-<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
-</li>
-</ul>
-<p>补充说明：</p>
-<ul>
-<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
-<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
-<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
-</ul>
-<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
-<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
-</blockquote>
-<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
-<p>修改内部表为外部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+    <title>Hive四种排序方式:order by,sort by,distribute by,cluster by</title>
+    <url>/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/</url>
+    <content><![CDATA[<h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
 
-<p>修改外部表为内部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
-<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
-<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
-<p>对于外部表，Hive 假定它不管理数据。</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
-<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
 <ul>
-<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
-<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
-<li>ACID /事务处理仅适用于托管表</li>
-<li>查询结果缓存仅适用于托管表</li>
-<li>外部表仅允许 RELY 约束</li>
-<li>某些物化视图功能仅适用于托管表</li>
+<li>效率较低。</li>
+<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
+<li>ORDER BY 子句在SELECT 语句的结尾</li>
 </ul>
-<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
-<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
-<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
-<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>例：</p>
+<p>select * from emp order by sal desc;</p>
+<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
+
+<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
+<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
+<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
+<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
+
+<p>查询有2个reducer,它们的输出分别是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
+
+<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
+<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
+
+<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
+<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
+<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
+<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
+<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
+<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
+
+<p>和Distribute By的例子相比，具有排序功能。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
+
+<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
+
+
+
 <p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
-<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
+<p><a href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1838,6 +1722,31 @@
 ]]></content>
   </entry>
   <entry>
+    <title>MR作业的迭代：JobControl设计及用法</title>
+    <url>/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/</url>
+    <content><![CDATA[<h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
+<p><img src="/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo\k12blog\source_posts\MR作业的迭代：JobControl设计及用法\JobControl.jpg" alt="img"></p>
+<p>​    JobControl 封装了一系列 MapReduce 作业及其对应的依赖关系。 它将处于不同状态的作业放入不同的哈希表中，并按照图所示的状态转移作业，直到所有作业运行完成。在实现的时候，JobControl 包含一个线程用于周期性地监控和更新各个作业的运行状态，调度依赖作业运行完成的作业，提交处于 READY 状态的作业等。同时，它还提供了一些API 用于挂起、恢复和暂停该线程。</p>
+<h2 id="JobControl代码实现"><a href="#JobControl代码实现" class="headerlink" title="JobControl代码实现"></a>JobControl代码实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.HashSet;</span><br><span class="line"> </span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;</span><br><span class="line">import org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"> </span><br><span class="line">import mapreduce.SegmentUtil;</span><br><span class="line"> </span><br><span class="line">public class JobControlDemo &#123;</span><br><span class="line">	public static int main(String[] args) throws IOException, ClassNotFoundException, InterruptedException &#123;</span><br><span class="line">		Configuration conf = new Configuration();</span><br><span class="line">		String[] otherargs = new GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">		if (otherargs.length != 3) &#123;</span><br><span class="line">			System.err.println(&quot;Usage JobControlDemo &lt;InputPath1&gt; &lt;InputPath1&gt; &lt;OutPath&gt;&quot;);</span><br><span class="line">			System.exit(2);</span><br><span class="line">		&#125;</span><br><span class="line"> </span><br><span class="line">		// 创建基础作业</span><br><span class="line">		Job job1 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;1&quot;);</span><br><span class="line">		Job job2 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;2&quot;);</span><br><span class="line">		Job job3 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;3&quot;);</span><br><span class="line"> </span><br><span class="line">		// Job1作业参数配置</span><br><span class="line">		job1.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job1.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job1.setMapOutputValueClass(Text.class);</span><br><span class="line">		job1.setOutputKeyClass(Text.class);</span><br><span class="line">		job1.setOutputValueClass(Text.class);</span><br><span class="line">		job1.setMapperClass(MyMapper1.class);</span><br><span class="line">		job1.setReducerClass(MyReducer1.class);</span><br><span class="line">		job1.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job1.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job1, new Path(otherargs[0]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job1, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job2作业参数配置</span><br><span class="line">		job2.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job2.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job2.setMapOutputValueClass(Text.class);</span><br><span class="line">		job2.setOutputKeyClass(Text.class);</span><br><span class="line">		job2.setOutputValueClass(Text.class);</span><br><span class="line">		job2.setMapperClass(MyMapper2.class);</span><br><span class="line">		job2.setReducerClass(MyReducer2.class);</span><br><span class="line">		job2.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job2.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job2, new Path(otherargs[1]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job2, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job3作业参数配置</span><br><span class="line">		job3.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job3.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job3.setMapOutputValueClass(Text.class);</span><br><span class="line">		job3.setOutputKeyClass(Text.class);</span><br><span class="line">		job3.setOutputValueClass(Text.class);</span><br><span class="line">		job3.setMapperClass(MyMapper3.class);</span><br><span class="line">		job3.setReducerClass(MyReducer3.class);</span><br><span class="line">		job3.setInputFormatClass(KeyValueTextInputFormat.class);</span><br><span class="line">		job3.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line">		FileOutputFormat.setOutputPath(job3, new Path(otherargs[2]+File.separator+&quot;result&quot;));</span><br><span class="line"> </span><br><span class="line">		// 创建受控作业</span><br><span class="line">		ControlledJob cjob1 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob2 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob3 = new ControlledJob(conf);</span><br><span class="line"> </span><br><span class="line">		// 将普通作业包装成受控作业</span><br><span class="line">		cjob1.setJob(job1);</span><br><span class="line">		cjob2.setJob(job2);</span><br><span class="line">		cjob3.setJob(job3);</span><br><span class="line"> </span><br><span class="line">		// 设置依赖关系</span><br><span class="line">		//cjob2.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob2);</span><br><span class="line"> </span><br><span class="line">		// 新建作业控制器</span><br><span class="line">		JobControl jc = new JobControl(&quot;My control job&quot;);</span><br><span class="line"> </span><br><span class="line">		// 将受控作业添加到控制器中</span><br><span class="line">		jc.addJob(cjob1);</span><br><span class="line">		jc.addJob(cjob2);</span><br><span class="line">		jc.addJob(cjob3);</span><br><span class="line"> </span><br><span class="line">		/**</span><br><span class="line">		 * hadoop的JobControl类实现了线程Runnable接口。我们需要实例化一个线程来让它启动。直接调用JobControl的run()方法，线程将无法结束。</span><br><span class="line">		 */</span><br><span class="line">		//jc.run();</span><br><span class="line">		</span><br><span class="line">        Thread jcThread = new Thread(jc);  </span><br><span class="line">        jcThread.start();  </span><br><span class="line">        while(true)&#123;  </span><br><span class="line">            if(jc.allFinished())&#123;  </span><br><span class="line">                System.out.println(jc.getSuccessfulJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 0;  </span><br><span class="line">            &#125;  </span><br><span class="line">            if(jc.getFailedJobList().size() &gt; 0)&#123;  </span><br><span class="line">                System.out.println(jc.getFailedJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 1;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125; </span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第一个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper1 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl1=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl1.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl1[0].trim()), new Text(spl1[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer1 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k2, Iterable&lt;Text&gt; v2s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v2 : v2s) &#123;</span><br><span class="line">				context.write(k2, v2);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第二个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper2 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl2=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl2.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl2[0].trim()), new Text(spl2[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer2 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k3, Iterable&lt;Text&gt; v3s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v3 : v3s) &#123;</span><br><span class="line">				context.write(k3, v3);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第三个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper3 extends Mapper&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(Text key, Text value, Mapper&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			context.write(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer3 extends Reducer&lt;Text,Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k4, Iterable&lt;Text&gt; v4s,Reducer&lt;Text, Text, Text, Text&gt;.Context context) </span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			HashSet&lt;String&gt; hashSet=new HashSet&lt;String&gt;();</span><br><span class="line">			for (Text v4 : v4s) &#123;</span><br><span class="line">				hashSet.add(v4.toString().trim());</span><br><span class="line">			&#125;</span><br><span class="line">			if(hashSet.size()&gt;=2)&#123;</span><br><span class="line">				context.write(k4, new Text(&quot;OK&quot;));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试输入数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath1.txt</span><br><span class="line">hadoop  a</span><br><span class="line">spark   a</span><br><span class="line">hive    a</span><br><span class="line">hbase   a</span><br><span class="line">tachyon a</span><br><span class="line">storm   a</span><br><span class="line">redis   a</span><br><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath2.txt</span><br><span class="line">hadoop  b</span><br><span class="line">spark   b</span><br><span class="line">kafka   b</span><br><span class="line">tachyon b</span><br><span class="line">oozie   b</span><br><span class="line">flume   b</span><br><span class="line">sqoop   b</span><br><span class="line">solr    b</span><br></pre></td></tr></table></figure>
+
+<p>测试输出数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpathmerge2.txt/result/*</span><br><span class="line">hadoop  OK</span><br><span class="line">spark   OK</span><br><span class="line">tachyon OK</span><br></pre></td></tr></table></figure>
+
+<p>运行输出信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[sshexec] cmd : bash -c &#x27;source  /home/jiuqian/.bashrc; /home/hduser/hadoop/bin/hadoop jar  /home/jiuqian/blb/JobControlDemo.jar -D mapreduce.map.java.opts=-Xmx2048m -D mapreduce.input.fileinputformat.split.minsize=1 -Dmapreduce.input.fileinputformat.split.maxsize=512000000 -D mapred.linerecordreader.maxlength=32768 /user/jiuqian/libin/input/inputpath1.txt /user/jiuqian/libin/input/inputpath2.txt /user/jiuqian/libin/input/inputpathmerge2.txt&#x27;</span><br><span class="line">16/02/27 12:37:45 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/192.168.1.2:8032</span><br><span class="line">16/02/27 12:37:46 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:46 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:46 INFO Configuration.deprecation: mapred.linerecordreader.maxlength is deprecated. Instead, use mapreduce.input.linerecordreader.line.maxlength</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17037/</span><br><span class="line">16/02/27 12:37:47 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:37:47 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17038/</span><br><span class="line">16/02/27 12:38:13 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:38:13 INFO input.FileInputFormat: Total input paths to process : 2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17039/</span><br><span class="line">[job name:	JobControlDemo1</span><br><span class="line">job id:	My control job0</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17037</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo2</span><br><span class="line">job id:	My control job1</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17038</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo3</span><br><span class="line">job id:	My control job2</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17039</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has 2 dependeng jobs:</span><br><span class="line">	 depending job 0:	JobControlDemo1</span><br><span class="line">	 depending job 1:	JobControlDemo2</span><br><span class="line">]</span><br><span class="line">[INFO] Executed tasks</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br><span class="line">[INFO] BUILD SUCCESS</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html</a></p>
+<p><a href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
+<p><a href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>MR Chain（ChainMapper与ChainReducer）</title>
     <url>/2021/12/21/MR-Chain/</url>
     <content><![CDATA[<h2 id="ChainMapper-ChainReducer的实现原理"><a href="#ChainMapper-ChainReducer的实现原理" class="headerlink" title="ChainMapper/ChainReducer的实现原理"></a>ChainMapper/ChainReducer的实现原理</h2><p>​    ChainMapper/ChainReducer主要为了解决线性链式Mapper而提出的。也就是说，在Map或者Reduce阶段存在多个Mapper，这些Mapper像linux管道一样，前一个Mapper的输出结果直接重定向到下一个Mapper的输入，形成一个流水线，形式类似于[MAP + REDUCE MAP*]。下图展示了一个典型的ChainMapper/ChainReducer的应用场景。</p>
@@ -1871,31 +1780,6 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.IntWritable;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainMapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line"></span><br><span class="line">import java.io.IOException;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Created by yanzhe on 2017/8/18.</span><br><span class="line"> */</span><br><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        args = new String[]&#123;&quot;d:/java/mr/data/data.txt&quot;, &quot;d:/java/mr/out&quot;&#125; ;</span><br><span class="line"></span><br><span class="line">        Configuration conf = new Configuration();</span><br><span class="line"></span><br><span class="line">        FileSystem fs = FileSystem.get(conf) ;</span><br><span class="line"></span><br><span class="line">        Path outPath = new Path(args[1]) ;</span><br><span class="line">        if (fs.exists(outPath))&#123;</span><br><span class="line">            fs.delete(outPath,true) ;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Job job = Job.getInstance(conf) ;</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper1.class, LongWritable.class, Text.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper2.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainMapper.addMapper(job,Mapper3.class, Text.class,IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.setReducer(job, Reducer1.class, Text.class, IntWritable.class, Text.class, IntWritable.class,job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        ChainReducer.addMapper(job, ReducerMapper1.class, Text.class,</span><br><span class="line">                IntWritable.class, Text.class, IntWritable.class, job.getConfiguration());</span><br><span class="line"></span><br><span class="line">        FileInputFormat.addInputPath(job,new Path(args[0]));</span><br><span class="line"></span><br><span class="line">        FileOutputFormat.setOutputPath(job,outPath);</span><br><span class="line"></span><br><span class="line">        job.setNumReduceTasks(2);</span><br><span class="line">        job.setCombinerClass(Combiner1.class);</span><br><span class="line">        job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line"></span><br><span class="line">        job.waitForCompletion(true) ;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public class Mapper1 extends Mapper&lt;LongWritable, Text, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map1===========&quot; + value.toString());</span><br><span class="line">            String line = value.toString() ;</span><br><span class="line">            String[] strArr = line.split(&quot; &quot;) ;</span><br><span class="line"></span><br><span class="line">            for (String w: strArr) &#123;</span><br><span class="line">                context.write(new Text(w), new IntWritable(1));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Mapper2 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map2==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;of&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;of&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class Mapper3 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            System.out.println(&quot;map3==================&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">            //过滤单词&#x27;google&#x27;</span><br><span class="line">            if (! key.toString().equals(&quot;xxx&quot;))&#123;</span><br><span class="line">                context.write(key, value);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class Reducer1 extends Reducer&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void reduce(Text key, Iterable&lt;IntWritable&gt; values, Context context) </span><br><span class="line">        throws IOException, InterruptedException &#123;</span><br><span class="line">            int count = 0 ;</span><br><span class="line">            for (IntWritable iw: values) &#123;</span><br><span class="line">                count += iw.get();</span><br><span class="line">            &#125;</span><br><span class="line">            context.write(key, new IntWritable(count));</span><br><span class="line">            System.out.println(&quot;reduce=========&quot; + key.toString() + &quot;:&quot; + count);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    public static class ReducerMapper1 extends Mapper&lt;Text, IntWritable, Text, IntWritable&gt; &#123;</span><br><span class="line">    </span><br><span class="line">        @Override</span><br><span class="line">        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">            if (value.get() &gt; 5)</span><br><span class="line">                context.write(key, value);</span><br><span class="line"></span><br><span class="line">            System.out.println(&quot;reduceMap======&quot; + key.toString() + &quot;:&quot; + value.toString());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
 <p>原文链接：<a href="https://blog.csdn.net/u010521842/article/details/77413104">https://blog.csdn.net/u010521842/article/details/77413104</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>MR作业的迭代：JobControl设计及用法</title>
-    <url>/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/</url>
-    <content><![CDATA[<h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
-<p><img src="/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo\k12blog\source_posts\MR作业的迭代：JobControl设计及用法\JobControl.jpg" alt="img"></p>
-<p>​    JobControl 封装了一系列 MapReduce 作业及其对应的依赖关系。 它将处于不同状态的作业放入不同的哈希表中，并按照图所示的状态转移作业，直到所有作业运行完成。在实现的时候，JobControl 包含一个线程用于周期性地监控和更新各个作业的运行状态，调度依赖作业运行完成的作业，提交处于 READY 状态的作业等。同时，它还提供了一些API 用于挂起、恢复和暂停该线程。</p>
-<h2 id="JobControl代码实现"><a href="#JobControl代码实现" class="headerlink" title="JobControl代码实现"></a>JobControl代码实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.HashSet;</span><br><span class="line"> </span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;</span><br><span class="line">import org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"> </span><br><span class="line">import mapreduce.SegmentUtil;</span><br><span class="line"> </span><br><span class="line">public class JobControlDemo &#123;</span><br><span class="line">	public static int main(String[] args) throws IOException, ClassNotFoundException, InterruptedException &#123;</span><br><span class="line">		Configuration conf = new Configuration();</span><br><span class="line">		String[] otherargs = new GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">		if (otherargs.length != 3) &#123;</span><br><span class="line">			System.err.println(&quot;Usage JobControlDemo &lt;InputPath1&gt; &lt;InputPath1&gt; &lt;OutPath&gt;&quot;);</span><br><span class="line">			System.exit(2);</span><br><span class="line">		&#125;</span><br><span class="line"> </span><br><span class="line">		// 创建基础作业</span><br><span class="line">		Job job1 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;1&quot;);</span><br><span class="line">		Job job2 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;2&quot;);</span><br><span class="line">		Job job3 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;3&quot;);</span><br><span class="line"> </span><br><span class="line">		// Job1作业参数配置</span><br><span class="line">		job1.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job1.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job1.setMapOutputValueClass(Text.class);</span><br><span class="line">		job1.setOutputKeyClass(Text.class);</span><br><span class="line">		job1.setOutputValueClass(Text.class);</span><br><span class="line">		job1.setMapperClass(MyMapper1.class);</span><br><span class="line">		job1.setReducerClass(MyReducer1.class);</span><br><span class="line">		job1.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job1.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job1, new Path(otherargs[0]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job1, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job2作业参数配置</span><br><span class="line">		job2.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job2.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job2.setMapOutputValueClass(Text.class);</span><br><span class="line">		job2.setOutputKeyClass(Text.class);</span><br><span class="line">		job2.setOutputValueClass(Text.class);</span><br><span class="line">		job2.setMapperClass(MyMapper2.class);</span><br><span class="line">		job2.setReducerClass(MyReducer2.class);</span><br><span class="line">		job2.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job2.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job2, new Path(otherargs[1]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job2, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job3作业参数配置</span><br><span class="line">		job3.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job3.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job3.setMapOutputValueClass(Text.class);</span><br><span class="line">		job3.setOutputKeyClass(Text.class);</span><br><span class="line">		job3.setOutputValueClass(Text.class);</span><br><span class="line">		job3.setMapperClass(MyMapper3.class);</span><br><span class="line">		job3.setReducerClass(MyReducer3.class);</span><br><span class="line">		job3.setInputFormatClass(KeyValueTextInputFormat.class);</span><br><span class="line">		job3.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line">		FileOutputFormat.setOutputPath(job3, new Path(otherargs[2]+File.separator+&quot;result&quot;));</span><br><span class="line"> </span><br><span class="line">		// 创建受控作业</span><br><span class="line">		ControlledJob cjob1 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob2 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob3 = new ControlledJob(conf);</span><br><span class="line"> </span><br><span class="line">		// 将普通作业包装成受控作业</span><br><span class="line">		cjob1.setJob(job1);</span><br><span class="line">		cjob2.setJob(job2);</span><br><span class="line">		cjob3.setJob(job3);</span><br><span class="line"> </span><br><span class="line">		// 设置依赖关系</span><br><span class="line">		//cjob2.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob2);</span><br><span class="line"> </span><br><span class="line">		// 新建作业控制器</span><br><span class="line">		JobControl jc = new JobControl(&quot;My control job&quot;);</span><br><span class="line"> </span><br><span class="line">		// 将受控作业添加到控制器中</span><br><span class="line">		jc.addJob(cjob1);</span><br><span class="line">		jc.addJob(cjob2);</span><br><span class="line">		jc.addJob(cjob3);</span><br><span class="line"> </span><br><span class="line">		/**</span><br><span class="line">		 * hadoop的JobControl类实现了线程Runnable接口。我们需要实例化一个线程来让它启动。直接调用JobControl的run()方法，线程将无法结束。</span><br><span class="line">		 */</span><br><span class="line">		//jc.run();</span><br><span class="line">		</span><br><span class="line">        Thread jcThread = new Thread(jc);  </span><br><span class="line">        jcThread.start();  </span><br><span class="line">        while(true)&#123;  </span><br><span class="line">            if(jc.allFinished())&#123;  </span><br><span class="line">                System.out.println(jc.getSuccessfulJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 0;  </span><br><span class="line">            &#125;  </span><br><span class="line">            if(jc.getFailedJobList().size() &gt; 0)&#123;  </span><br><span class="line">                System.out.println(jc.getFailedJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 1;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125; </span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第一个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper1 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl1=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl1.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl1[0].trim()), new Text(spl1[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer1 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k2, Iterable&lt;Text&gt; v2s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v2 : v2s) &#123;</span><br><span class="line">				context.write(k2, v2);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第二个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper2 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl2=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl2.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl2[0].trim()), new Text(spl2[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer2 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k3, Iterable&lt;Text&gt; v3s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v3 : v3s) &#123;</span><br><span class="line">				context.write(k3, v3);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第三个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper3 extends Mapper&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(Text key, Text value, Mapper&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			context.write(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer3 extends Reducer&lt;Text,Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k4, Iterable&lt;Text&gt; v4s,Reducer&lt;Text, Text, Text, Text&gt;.Context context) </span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			HashSet&lt;String&gt; hashSet=new HashSet&lt;String&gt;();</span><br><span class="line">			for (Text v4 : v4s) &#123;</span><br><span class="line">				hashSet.add(v4.toString().trim());</span><br><span class="line">			&#125;</span><br><span class="line">			if(hashSet.size()&gt;=2)&#123;</span><br><span class="line">				context.write(k4, new Text(&quot;OK&quot;));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试输入数据：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath1.txt</span><br><span class="line">hadoop  a</span><br><span class="line">spark   a</span><br><span class="line">hive    a</span><br><span class="line">hbase   a</span><br><span class="line">tachyon a</span><br><span class="line">storm   a</span><br><span class="line">redis   a</span><br><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath2.txt</span><br><span class="line">hadoop  b</span><br><span class="line">spark   b</span><br><span class="line">kafka   b</span><br><span class="line">tachyon b</span><br><span class="line">oozie   b</span><br><span class="line">flume   b</span><br><span class="line">sqoop   b</span><br><span class="line">solr    b</span><br></pre></td></tr></table></figure>
-
-<p>测试输出数据：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpathmerge2.txt/result/*</span><br><span class="line">hadoop  OK</span><br><span class="line">spark   OK</span><br><span class="line">tachyon OK</span><br></pre></td></tr></table></figure>
-
-<p>运行输出信息：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[sshexec] cmd : bash -c &#x27;source  /home/jiuqian/.bashrc; /home/hduser/hadoop/bin/hadoop jar  /home/jiuqian/blb/JobControlDemo.jar -D mapreduce.map.java.opts=-Xmx2048m -D mapreduce.input.fileinputformat.split.minsize=1 -Dmapreduce.input.fileinputformat.split.maxsize=512000000 -D mapred.linerecordreader.maxlength=32768 /user/jiuqian/libin/input/inputpath1.txt /user/jiuqian/libin/input/inputpath2.txt /user/jiuqian/libin/input/inputpathmerge2.txt&#x27;</span><br><span class="line">16/02/27 12:37:45 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/192.168.1.2:8032</span><br><span class="line">16/02/27 12:37:46 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:46 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:46 INFO Configuration.deprecation: mapred.linerecordreader.maxlength is deprecated. Instead, use mapreduce.input.linerecordreader.line.maxlength</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17037/</span><br><span class="line">16/02/27 12:37:47 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:37:47 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17038/</span><br><span class="line">16/02/27 12:38:13 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:38:13 INFO input.FileInputFormat: Total input paths to process : 2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17039/</span><br><span class="line">[job name:	JobControlDemo1</span><br><span class="line">job id:	My control job0</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17037</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo2</span><br><span class="line">job id:	My control job1</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17038</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo3</span><br><span class="line">job id:	My control job2</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17039</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has 2 dependeng jobs:</span><br><span class="line">	 depending job 0:	JobControlDemo1</span><br><span class="line">	 depending job 1:	JobControlDemo2</span><br><span class="line">]</span><br><span class="line">[INFO] Executed tasks</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br><span class="line">[INFO] BUILD SUCCESS</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html</a></p>
-<p><a href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
-<p><a href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2259,6 +2143,46 @@
 ]]></content>
   </entry>
   <entry>
+    <title>MapReduceClass extends Configured implements Tool代码</title>
+    <url>/2021/12/18/hadoop-Interface-Tool/</url>
+    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
+<ol>
+<li>extends Configured implements Tool</li>
+<li>run()放置任务代码.以下为mapreduce代码</li>
+<li>main方法中调用run()方法</li>
+</ol>
+<span id="more"></span>
+
+<p>代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li><p>补充：自定义序列化类</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>参考链接：</p>
+<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>dependencies与dependencyManagement的区别</title>
     <url>/2022/01/10/dependencies%E4%B8%8EdependencyManagement%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
     <content><![CDATA[<h2 id="个人小结"><a href="#个人小结" class="headerlink" title="个人小结"></a>个人小结</h2><ul>
@@ -2313,46 +2237,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MapReduceClass extends Configured implements Tool代码</title>
-    <url>/2021/12/18/hadoop-Interface-Tool/</url>
-    <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
-<ol>
-<li>extends Configured implements Tool</li>
-<li>run()放置任务代码.以下为mapreduce代码</li>
-<li>main方法中调用run()方法</li>
-</ol>
-<span id="more"></span>
-
-<p>代码如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//标出大概流程，具体实现代码省略</span><br><span class="line">//Tool接口可以支持处理通用的命令行选项，它是所有Map-Reduce程序的都可用的一个标准接口</span><br><span class="line"></span><br><span class="line">public class WordCount extends Configured implements Tool &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws Exception &#123;</span><br><span class="line">    </span><br><span class="line">    	// 让ToolRunner执行</span><br><span class="line">    	System.exit(ToolRunner.run(new Configuration(), new WordCount(),args));</span><br><span class="line">    				//ToolRunner.run(new Configuration(),new ClassName(),参数args)</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">    public int run(String[] strings) throws Exception &#123;</span><br><span class="line"></span><br><span class="line">        //ToolRunner要处理的Configuration，Tool通过ToolRunner调用ToolRunner.run时，传入参数Configuration</span><br><span class="line">        Configuration conf = getConf();</span><br><span class="line">        //根据需要设置configuration</span><br><span class="line">        //conf.set(key,value);</span><br><span class="line">        </span><br><span class="line">        //获取job</span><br><span class="line">        Job job = Job.getInstance(conf, &quot;word count&quot;);</span><br><span class="line"></span><br><span class="line">        // 2 设置jar</span><br><span class="line">        job.setJarByClass(WordCount.class);</span><br><span class="line"></span><br><span class="line">        // 3 设置mapper和reducer</span><br><span class="line">        job.setMapperClass(MyMapper.class);</span><br><span class="line">        job.setReducerClass(MyReducer.class);</span><br><span class="line"></span><br><span class="line">        // 4 设置map的输出类型</span><br><span class="line">        job.setMapOutputKeyClass(Access.class);//key1</span><br><span class="line">        job.setMapOutputValueClass(NullWritable.class);//value1</span><br><span class="line"></span><br><span class="line">        // 5 设置reduce的输出类型</span><br><span class="line">        job.setOutputKeyClass(Text.class);//key2</span><br><span class="line">        job.setOutputValueClass(IntWritable.class);//value2</span><br><span class="line"></span><br><span class="line">        //设置分区</span><br><span class="line">        //job.setPartitionerClass(MyPartitioner.class);</span><br><span class="line">        //job.setNumReduceTasks(4);</span><br><span class="line"></span><br><span class="line">        // 6 设置输入输出</span><br><span class="line">        FileInputFormat.setInputPaths(job, new Path(input));</span><br><span class="line">        FileOutputFormat.setOutputPath(job, new Path(output));</span><br><span class="line"></span><br><span class="line">        // 7 提交作业</span><br><span class="line">        boolean result = job.waitForCompletion(true);</span><br><span class="line">        return result?0:1;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    public static class MyMapper extends Mapper&lt;Object, Text, Text, IntWritable&gt;&#123;</span><br><span class="line">                                                                    //key1,	value1</span><br><span class="line">    @Override			</span><br><span class="line">    public void map(Object key, Text value, Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">        context.write(word, one);							//context.write(key1,value1)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static class MyReducer extends Reducer&lt;Text,IntWritable,Text,IntWritable&gt; &#123;</span><br><span class="line">    												&lt;key1,	value1, key2, value2&gt;</span><br><span class="line">    @Override	//reduce(key1,value1,key2,value2)</span><br><span class="line">    public void reduce(Text key, Iterable&lt;IntWritable&gt; values,Context context) throws IOException, InterruptedException &#123;</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">    	.</span><br><span class="line">      context.write(key, result);//context.write(key2,value2)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<ol start="4">
-<li><p>补充：自定义序列化类</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">自定义序列化类的实现步骤：</span><br><span class="line">* 1）implements Writable</span><br><span class="line">* 2）必须要有无参构造</span><br><span class="line">* 3）实现write和readFields方法</span><br><span class="line">* 4）这两个方法中的字段顺序一定要一致</span><br><span class="line">* 5) optional:  toString</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>参考链接：</p>
-<p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>mapreduce执行速度慢的原因</title>
     <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
     <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
@@ -2400,36 +2284,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>spark读取GBK编码文件乱码问题</title>
-    <url>/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
-<li><p>SPARK 常用的textFile方法默认是写死了读UTF－8格式的文件，其他编码格式文件会显示乱码</p>
-</li>
-<li><p>查看textFile方法的实现</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">def textFile(</span><br><span class="line">    path: String,</span><br><span class="line">    minPartitions: Int = defaultMinPartitions): RDD[String] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>读文件的时候用到了hadoopFile方法，读取的文件时调用<strong>TextInputformat</strong>类来解析文本文件，输出K V键值对。继续查看TextInputformat方法读取文件的实现，其中读记录生成K V键值对的方法的实现如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public RecordReader&lt;LongWritable, Text&gt; getRecordReader(InputSplit genericSplit, JobConf job, Reporter reporter) throws IOException &#123;</span><br><span class="line">    reporter.setStatus(genericSplit.toString());</span><br><span class="line">    String delimiter = job.get(&quot;textinputformat.record.delimiter&quot;);</span><br><span class="line">    byte[] recordDelimiterBytes = null;</span><br><span class="line">    if (null != delimiter) &#123;</span><br><span class="line">        recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    return new LineRecordReader(job, (FileSplit)genericSplit, recordDelimiterBytes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>虽然代码中有<code>delimiter.getBytes(Charsets.UTF_8)</code>，但并不是最后输出的关键，这里是指定分隔符用UTF-8解码，并设置分隔符。继续往下看，最后发现LineRecordReader–&gt;readLine–&gt;Text，返回指定的字符集UTF-8。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Text extends BinaryComparable implements WritableComparable&lt;BinaryComparable&gt; &#123;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetEncoder&gt; ENCODER_FACTORY = new ThreadLocal&lt;CharsetEncoder&gt;() &#123;</span><br><span class="line">        protected CharsetEncoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newEncoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetDecoder&gt; DECODER_FACTORY = new ThreadLocal&lt;CharsetDecoder&gt;() &#123;</span><br><span class="line">        protected CharsetDecoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
-
-<p>所以hadoopFile返回的HadoopRDD，其中输入TextInputformat和输出valueClass均为Text，返回的是字符集UTF-8，而我们输入的是GBK编码，用UTF-8解码就会造成乱码。所以HadoopRDD中的value也是乱码的。</p>
-</li>
-<li><p>如果我们想要读取GBK文件避免乱码，可以通过对HadoopRDD进行操作：</p>
-<p>对HadoopRDD中的value按照GBK的方式读取变成字符串，运行之后能够正常显示:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HadoopRDD.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)</span><br></pre></td></tr></table></figure>
-
-<p>说明：关于String类：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">String.getBytes(Charset charset)。</span><br><span class="line">	返回值：byte[]  返回的是一个 字节数组。</span><br><span class="line">	方法的作用：将String以指定的编码格式(既参数charset)进行解码，然后以字节数组的形式存储这些解码后的字节。</span><br><span class="line">String(byte[] bytes,Charset charset)</span><br><span class="line">	返回值：String  返回的是一串字符串。</span><br><span class="line">	方法的作用：将字节数组bytes以charset的编码格式进行解码。</span><br></pre></td></tr></table></figure></li>
-<li><p>案例</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package com.ruozedata.spark.job</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.io.&#123;LongWritable, Text&#125;</span><br><span class="line">import org.apache.hadoop.mapred.TextInputFormat</span><br><span class="line">import org.apache.spark.&#123;SparkConf, SparkContext&#125;</span><br><span class="line">import java.io.&#123;File, FileOutputStream, OutputStreamWriter&#125;</span><br><span class="line"></span><br><span class="line">object jobApp &#123;</span><br><span class="line">	def main(args: Array[String]): Unit = &#123;</span><br><span class="line">		val sparkConf = new SparkConf().setMaster(&quot;local[2]&quot;).setAppName(this.getClass.getCanonicalName)</span><br><span class="line">		val sc = new SparkContext(sparkConf)</span><br><span class="line"></span><br><span class="line">		val GBKPATH = &quot;data/GBKtext.txt&quot;</span><br><span class="line">		val UTF8PATH = &quot;data/UTF8text.txt&quot;</span><br><span class="line">		val GBKFile = new File(GBKPATH)</span><br><span class="line">		val UTF8File = new File(UTF8PATH)</span><br><span class="line">		UTF8File</span><br><span class="line">		if(GBKFile.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line">		if(UTF8File.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		val GBKwriter = new OutputStreamWriter(new FileOutputStream(GBKFile), &quot;GBK&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第一行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第二行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第三行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.flush()</span><br><span class="line">		GBKwriter.close()</span><br><span class="line"></span><br><span class="line">		val UTF8writer = new OutputStreamWriter(new FileOutputStream(UTF8File), &quot;UTF-8&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第一行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第二行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第三行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.flush()</span><br><span class="line">		UTF8writer.close()</span><br><span class="line"></span><br><span class="line">    	//val UTF8rdd = sc.textFile(UTF8PATH).collect().foreach(println)</span><br><span class="line">    	/**textFile读UTF-8文件，显示如下：</span><br><span class="line">    	*这是第一行GBK数据</span><br><span class="line">		*这是第二行GBK数据</span><br><span class="line">		*这是第三行GBK数据</span><br><span class="line">		*/</span><br><span class="line">		//val GBKrdd1 = sc.textFile(GBKPATH).collect().foreach(println)</span><br><span class="line">		/**textFile读GBK文件，显示如下：</span><br><span class="line">		 *���ǵ�һ��GBK����</span><br><span class="line">		 *���ǵڶ���GBK����</span><br><span class="line">		 *���ǵ�����GBK����</span><br><span class="line">		 */</span><br><span class="line">		 //textFile实现方法：</span><br><span class="line">		 //hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">		 //	minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">		</span><br><span class="line">		val GBKrdd2 = sc.hadoopFile(GBKPATH, classOf[TextInputFormat], classOf[LongWritable], classOf[Text])</span><br><span class="line">			.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)).collect.foreach(println)</span><br><span class="line"></span><br><span class="line">		sc.stop()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
-<p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>什么是尾递归</title>
     <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
     <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
@@ -2457,6 +2311,36 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>spark读取GBK编码文件乱码问题</title>
+    <url>/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
+<li><p>SPARK 常用的textFile方法默认是写死了读UTF－8格式的文件，其他编码格式文件会显示乱码</p>
+</li>
+<li><p>查看textFile方法的实现</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">def textFile(</span><br><span class="line">    path: String,</span><br><span class="line">    minPartitions: Int = defaultMinPartitions): RDD[String] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>读文件的时候用到了hadoopFile方法，读取的文件时调用<strong>TextInputformat</strong>类来解析文本文件，输出K V键值对。继续查看TextInputformat方法读取文件的实现，其中读记录生成K V键值对的方法的实现如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public RecordReader&lt;LongWritable, Text&gt; getRecordReader(InputSplit genericSplit, JobConf job, Reporter reporter) throws IOException &#123;</span><br><span class="line">    reporter.setStatus(genericSplit.toString());</span><br><span class="line">    String delimiter = job.get(&quot;textinputformat.record.delimiter&quot;);</span><br><span class="line">    byte[] recordDelimiterBytes = null;</span><br><span class="line">    if (null != delimiter) &#123;</span><br><span class="line">        recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    return new LineRecordReader(job, (FileSplit)genericSplit, recordDelimiterBytes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>虽然代码中有<code>delimiter.getBytes(Charsets.UTF_8)</code>，但并不是最后输出的关键，这里是指定分隔符用UTF-8解码，并设置分隔符。继续往下看，最后发现LineRecordReader–&gt;readLine–&gt;Text，返回指定的字符集UTF-8。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public class Text extends BinaryComparable implements WritableComparable&lt;BinaryComparable&gt; &#123;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetEncoder&gt; ENCODER_FACTORY = new ThreadLocal&lt;CharsetEncoder&gt;() &#123;</span><br><span class="line">        protected CharsetEncoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newEncoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetDecoder&gt; DECODER_FACTORY = new ThreadLocal&lt;CharsetDecoder&gt;() &#123;</span><br><span class="line">        protected CharsetDecoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>所以hadoopFile返回的HadoopRDD，其中输入TextInputformat和输出valueClass均为Text，返回的是字符集UTF-8，而我们输入的是GBK编码，用UTF-8解码就会造成乱码。所以HadoopRDD中的value也是乱码的。</p>
+</li>
+<li><p>如果我们想要读取GBK文件避免乱码，可以通过对HadoopRDD进行操作：</p>
+<p>对HadoopRDD中的value按照GBK的方式读取变成字符串，运行之后能够正常显示:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">HadoopRDD.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>说明：关于String类：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">String.getBytes(Charset charset)。</span><br><span class="line">	返回值：byte[]  返回的是一个 字节数组。</span><br><span class="line">	方法的作用：将String以指定的编码格式(既参数charset)进行解码，然后以字节数组的形式存储这些解码后的字节。</span><br><span class="line">String(byte[] bytes,Charset charset)</span><br><span class="line">	返回值：String  返回的是一串字符串。</span><br><span class="line">	方法的作用：将字节数组bytes以charset的编码格式进行解码。</span><br></pre></td></tr></table></figure></li>
+<li><p>案例</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package com.ruozedata.spark.job</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.io.&#123;LongWritable, Text&#125;</span><br><span class="line">import org.apache.hadoop.mapred.TextInputFormat</span><br><span class="line">import org.apache.spark.&#123;SparkConf, SparkContext&#125;</span><br><span class="line">import java.io.&#123;File, FileOutputStream, OutputStreamWriter&#125;</span><br><span class="line"></span><br><span class="line">object jobApp &#123;</span><br><span class="line">	def main(args: Array[String]): Unit = &#123;</span><br><span class="line">		val sparkConf = new SparkConf().setMaster(&quot;local[2]&quot;).setAppName(this.getClass.getCanonicalName)</span><br><span class="line">		val sc = new SparkContext(sparkConf)</span><br><span class="line"></span><br><span class="line">		val GBKPATH = &quot;data/GBKtext.txt&quot;</span><br><span class="line">		val UTF8PATH = &quot;data/UTF8text.txt&quot;</span><br><span class="line">		val GBKFile = new File(GBKPATH)</span><br><span class="line">		val UTF8File = new File(UTF8PATH)</span><br><span class="line">		UTF8File</span><br><span class="line">		if(GBKFile.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line">		if(UTF8File.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		val GBKwriter = new OutputStreamWriter(new FileOutputStream(GBKFile), &quot;GBK&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第一行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第二行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第三行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.flush()</span><br><span class="line">		GBKwriter.close()</span><br><span class="line"></span><br><span class="line">		val UTF8writer = new OutputStreamWriter(new FileOutputStream(UTF8File), &quot;UTF-8&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第一行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第二行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第三行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.flush()</span><br><span class="line">		UTF8writer.close()</span><br><span class="line"></span><br><span class="line">    	//val UTF8rdd = sc.textFile(UTF8PATH).collect().foreach(println)</span><br><span class="line">    	/**textFile读UTF-8文件，显示如下：</span><br><span class="line">    	*这是第一行GBK数据</span><br><span class="line">		*这是第二行GBK数据</span><br><span class="line">		*这是第三行GBK数据</span><br><span class="line">		*/</span><br><span class="line">		//val GBKrdd1 = sc.textFile(GBKPATH).collect().foreach(println)</span><br><span class="line">		/**textFile读GBK文件，显示如下：</span><br><span class="line">		 *���ǵ�һ��GBK����</span><br><span class="line">		 *���ǵڶ���GBK����</span><br><span class="line">		 *���ǵ�����GBK����</span><br><span class="line">		 */</span><br><span class="line">		 //textFile实现方法：</span><br><span class="line">		 //hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">		 //	minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">		</span><br><span class="line">		val GBKrdd2 = sc.hadoopFile(GBKPATH, classOf[TextInputFormat], classOf[LongWritable], classOf[Text])</span><br><span class="line">			.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)).collect.foreach(println)</span><br><span class="line"></span><br><span class="line">		sc.stop()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
+<p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -3399,6 +3283,221 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
 
 <p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Flume介绍与使用</title>
+    <url>/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<h1 id="一、Flume介绍与原理"><a href="#一、Flume介绍与原理" class="headerlink" title="一、Flume介绍与原理"></a>一、Flume介绍与原理</h1><h2 id="Flume简介"><a href="#Flume简介" class="headerlink" title="Flume简介"></a>Flume简介</h2><p>​    Flume 作为 cloudera 开发的实时日志收集系统，受到了业界的认可与广泛应用。Flume 初始的发行版本目前被统称为 Flume OG（original generation），属于 cloudera。但随着 FLume 功能的扩展，Flume OG 代码工程臃肿、核心组件设计不合理、核心配置不标准等缺点暴露出来，尤其是在 Flume OG 的最后一个发行版本 0.9.4. 中，日志传输不稳定的现象尤为严重，为了解决这些问题，2011 年 10 月 22 号，cloudera 完成了 Flume-728，对 Flume 进行了里程碑式的改动：重构核心组件、核心配置以及代码架构，重构后的版本统称为 Flume NG（next generation）；改动的另一原因是将 Flume 纳入 apache 旗下，cloudera Flume 改名为 Apache Flume。</p>
+<p>​    Flume 在0.9.x and 1.x之间有较大的架构调整，1.x版本之后的改称Flume NG，0.9.x的称为Flume OG。</p>
+<p>​    Flume目前只有Linux系统的启动脚本，没有Windows环境的启动脚本。</p>
+<p>　Flume是Apache的顶级项目，官方网站：<a href="http://flume.apache.org/">http://flume.apache.org/</a></p>
+<span id="more"></span>
+
+<h2 id="Flume-NG的介绍"><a href="#Flume-NG的介绍" class="headerlink" title="Flume NG的介绍"></a>Flume NG的介绍</h2><blockquote>
+<p>Flume is a distributed, reliable, and available service for efficiently collecting, aggregating, and moving large amounts of log data. It has a simple and flexible architecture based on streaming data flows. It is robust and fault tolerant with tunable reliability mechanisms and many failover and recovery mechanisms. It uses a simple extensible data model that allows for online analytic application.</p>
+<p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png" alt="img"></p>
+</blockquote>
+<h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><p>​    flume是一个分布式、可靠、和高可用的海量日志采集、聚合和传输的系统。支持在日志系统中定制各类数据发送方，用于收集数据;同时，Flume提供对数据进行简单处理，并写到各种数据接受方(比如文本、HDFS、Hbase等)的能力 。</p>
+<p>​    flume的数据流由事件(Event)贯穿始终。事件是Flume的基本数据单位，它携带日志数据(字节数组形式)并且携带有头信息，这些Event由Agent外部的Source生成，当Source捕获事件后会进行特定的格式化，然后Source会把事件推入(单个或多个)Channel中。你可以把Channel看作是一个缓冲区，它将保存事件直到Sink处理完该事件。Sink负责持久化日志或者把事件推向另一个Source。</p>
+<p><strong>flume的可靠性</strong> </p>
+<p>Flume 使用事务性的方式保证传送Event整个过程的可靠性。 Sink 必须在Event 被存入 Channel 后，或者，已经被传达到下一站agent里，又或者，已经被存入外部数据目的地之后，才能把 Event 从 Channel 中 remove 掉。这样数据流里的 event 无论是在一个 agent 里还是多个 agent 之间流转，都能保证可靠，因为以上的事务保证了 event 会被成功存储起来。比如 Flume支持在本地保存一份文件 channel 作为备份，而memory channel 将event存在内存 queue 里，速度快，但丢失的话无法恢复。</p>
+<p>当节点出现故障时，日志能够被传送到其他节点上而不会丢失。Flume提供了三种级别的可靠性保障，从强到弱依次分别为：</p>
+<ul>
+<li>end-to-end（收到数据agent首先将event写到磁盘上，当数据传送成功后，再删除；如果数据发送失败，可以重新发送。）</li>
+<li>Store on failure（这也是scribe采用的策略，当数据接收方crash时，将数据写到本地，待恢复后，继续发送）</li>
+<li>Besteffort（数据发送到接收方后，不会进行确认）。</li>
+</ul>
+<p><strong>flume的可恢复性</strong></p>
+<p>还是靠Channel。推荐使用FileChannel，事件持久化在本地文件系统里(性能较差)。</p>
+<h3 id="Flume的一些核心概念"><a href="#Flume的一些核心概念" class="headerlink" title="Flume的一些核心概念"></a>Flume的一些核心概念</h3><ul>
+<li>Client：Client生产数据，运行在一个独立的线程。</li>
+<li>Event： Flume当中对数据的一种封装。是一个数据单元。flume传输数据最基本的单元，由消息头和消息体组成。（事务的基本单位，Events可以是日志记录、 avro 对象等。）</li>
+<li>Flow： Event从源点到达目的点的迁移的抽象。</li>
+<li>Agent： 一个独立的Flume进程，包含组件Source、 Channel、 Sink。（Agent使用JVM 运行Flume。每台机器运行一个agent，但是可以在一个agent中包含多个sources和sinks。）</li>
+<li>Source： 数据收集组件。（source从Client收集数据，传递给Channel）</li>
+<li>Channel： 中转Event的一个临时存储，保存由Source组件传递过来的Event。（Channel连接 sources 和 sinks ，这个有点像一个队列。）</li>
+<li>Sink： 从Channel中读取并移除Event， 将Event传递到FlowPipeline中的下一个Agent（如果有的话）（Sink从Channel收集数据，运行在一个独立线程。）</li>
+<li>Channel Selector： 通道选择器，主要作用是根据用户配置将数据放到不同的Channel当中。</li>
+<li>Sink Processor：主要策略有，负载均衡，故障转移以及直通。</li>
+<li> Interceptor：拦截器，主要作用是将采集到的数据根据用户的配置进行过滤和修饰。</li>
+</ul>
+<h3 id="Flume-NG的体系结构"><a href="#Flume-NG的体系结构" class="headerlink" title="Flume NG的体系结构"></a>Flume NG的体系结构</h3><p>Flume 运行的核心是 Agent。Flume以agent为最小的独立运行单位。一个agent就是一个JVM。它是一个完整的数据收集工具，含有三个核心组件，分别source、 channel、 sink。通过这些组件， Event 可以从一个地方流向另一个地方，如下图所示。</p>
+<p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png" alt="img"></p>
+<h4 id="Source"><a href="#Source" class="headerlink" title="Source"></a>Source</h4><p>Source是数据的收集端，负责将数据捕获后进行特殊的格式化，将数据封装到事件（event） 里，然后将事件推入Channel中。 Flume提供了很多内置的Source， 支持 Avro， log4j， syslog 和 http post(body为json格式)。可以让应用程序同已有的Source直接打交道，如AvroSource，SyslogTcpSource。 如果内置的Source无法满足需要， Flume还支持自定义Source。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F02.png" alt="img" style="zoom: 80%;">
+
+<p>Source类型：</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F14.png" alt="img" style="zoom: 80%;">
+
+
+
+<h4 id="Channel"><a href="#Channel" class="headerlink" title="Channel"></a>Channel</h4><p>Channel是连接Source和Sink的组件，大家可以将它看做一个数据的缓冲区（数据队列），它可以将事件暂存到内存中也可以持久化到本地磁盘上， 直到Sink处理完该事件。介绍两个较为常用的Channel， MemoryChannel和FileChannel。</p>
+<ul>
+<li>MemoryChannel可以实现高速的吞吐， 但是无法保证数据完整性</li>
+<li>FileChannel保证数据的完整性与一致性。在具体配置不现的FileChannel时，建议FileChannel设置的目录和程序日志文件保存的目录设成不同的磁盘，以便提高效率。</li>
+</ul>
+<p>Channel类型：</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F04.png" alt="img" style="zoom: 67%;">
+
+<h4 id="Sink"><a href="#Sink" class="headerlink" title="Sink"></a>Sink</h4><p>Sink从Channel中取出事件，然后将数据发到别处，可以向文件系统、数据库、 hadoop存数据， 也可以是其他agent的Source。在日志数据较少时，可以将数据存储在文件系统中，并且设定一定的时间间隔保存数据。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F15.png" alt="img" style="zoom: 67%;">
+
+<p>Sink类型：</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F16.png" alt="img" style="zoom:67%;">
+
+
+
+<h3 id="flume执行流程与事务"><a href="#flume执行流程与事务" class="headerlink" title="flume执行流程与事务"></a>flume执行流程与事务</h3><h4 id="Flume-传输流程"><a href="#Flume-传输流程" class="headerlink" title="Flume 传输流程"></a>Flume 传输流程</h4><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F07.png" alt="img" style="zoom: 50%;">
+
+<ol>
+<li>Source 接受数据</li>
+<li>Channel Processor 处理 Event</li>
+<li>Channel Processor 将 Event 传递给 interceptor链对 Event 进行过滤操作</li>
+<li>过滤完之后再把 Event 发送回 Channel Prodessor</li>
+<li>Channel Processor把 Event 发送给Channel selectors</li>
+<li>Channel selector返回Event 属于哪个Channel</li>
+<li>根据第6步返回的结果，将Event发送到指定的Channel</li>
+<li>SinkProcessor从Channel中拉去数据</li>
+<li>最后把数据Sink出去</li>
+</ol>
+<p><strong>重要组件：</strong></p>
+<ul>
+<li><p>Channel Selector</p>
+<p>Channel Selector 的作用就是选出 Event 将要被发往哪个 Channel。共有两种类型，分别是 **Replicating Channel Selector (default)**（复制）和 <strong>Multiplexing Channel Selector</strong>（多路复用）。</p>
+<p>Replicating Selector 会将 source 过来的每一个 Event 发往所有的 Channel，Multiplexing 会根据相应的原则，将不同的 Event 发往不同的 Channel。</p>
+</li>
+<li><p>Sink Processor</p>
+<p>Sink Processor 共有三种类型，分别是 <strong>Default Sink Processor</strong>、<strong>Load Balancing Sink Processor</strong> 和 <strong>Failover Sink Processor</strong>。</p>
+<p>Default Sink Processor 对应的是单个的 Sink，Load Balancing Sink Processor 和 Failover Sink Processor 对应的是 Sink Group。</p>
+<p>Load Balancing Sink Processor 可以实现负载均衡的功能，Failover Sink Processor 可以实现故障转移的功能。</p>
+</li>
+</ul>
+<h4 id="Flume-事务"><a href="#Flume-事务" class="headerlink" title="Flume 事务"></a>Flume 事务</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F08.png" alt="img"></p>
+<p><strong>Put 事务流程</strong></p>
+<p>doPut：将批数据先写入临时缓冲区 putList</p>
+<p>doCommit：检查 channel 内存队列是否足够合并</p>
+<p>doRollback：channel 内存队列空间不足，回滚数据</p>
+<p><strong>Take 事务流程</strong></p>
+<p>doTake：将数据取到临时缓冲区 takeList，并将数据发送到 HDFS</p>
+<p>doCommit：如果数据全部发送成功，则清除临时缓冲区 takeList</p>
+<p>doRollback：数据发送过程中如果出现异常，rollback 将临时缓冲区 takeList 中的数据归还给 channel 内存队列</p>
+<h3 id="Flume的部署类型"><a href="#Flume的部署类型" class="headerlink" title="Flume的部署类型"></a>Flume的部署类型</h3><h4 id="单一流程"><a href="#单一流程" class="headerlink" title="单一流程"></a>单一流程</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F09.png" alt="img"></p>
+<h4 id="多代理流程（多个agent顺序连接）"><a href="#多代理流程（多个agent顺序连接）" class="headerlink" title="多代理流程（多个agent顺序连接）"></a>多代理流程（多个agent顺序连接）</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F17.png" alt="img" style="zoom: 80%;">　　</p>
+<p>　　可以将多个Agent顺序连接起来，将最初的数据源经过收集，存储到最终的存储系统中。这是最简单的情况，一般情况下，应该控制这种顺序连接的Agent 的数量，因为数据流经的路径变长了，如果不考虑failover的话，出现故障将影响整个Flow上的Agent收集服务。 </p>
+<h4 id="流的合并（多个Agent的数据汇聚到同一个Agent-）"><a href="#流的合并（多个Agent的数据汇聚到同一个Agent-）" class="headerlink" title="流的合并（多个Agent的数据汇聚到同一个Agent ）"></a>流的合并（多个Agent的数据汇聚到同一个Agent ）</h4><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F18.png" alt="img" style="zoom: 80%;">
+
+<p>　　这种情况应用的场景比较多，比如要收集Web网站的用户行为日志， Web网站为了可用性使用的负载集群模式，每个节点都产生用户行为日志，可以为每 个节点都配置一个Agent来单独收集日志数据，然后多个Agent将数据最终汇聚到一个用来存储数据存储系统，如HDFS上。</p>
+<h4 id="多路复用流（多级流）"><a href="#多路复用流（多级流）" class="headerlink" title="多路复用流（多级流）"></a>多路复用流（多级流）</h4><p>Flume还支持多级流，什么多级流？来举个例子，当syslog， java， nginx、 tomcat等混合在一起的日志流开始流入一个agent后，可以agent中将混杂的日志流分开，然后给每种日志建立一个自己的传输通道。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F19.png" alt="img" style="zoom: 67%;">
+
+<h4 id="load-balance功能"><a href="#load-balance功能" class="headerlink" title="load balance功能"></a>load balance功能</h4><p>下图Agent1是一个路由节点，负责将Channel暂存的Event均衡到对应的多个Sink组件上，而每个Sink组件分别连接到一个独立的Agent上 。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F20.png" alt="img" style="zoom:67%;">
+
+
+
+<h2 id="个人笔记"><a href="#个人笔记" class="headerlink" title="个人笔记"></a>个人笔记</h2><p><strong>Spooling Directory Source 如何使用？</strong></p>
+<p>Spooling Directory Source 监控文件夹中的日志信息。</p>
+<p>在实际使用的过程中，可以结合log4j使用，使用log4j的时候，将log4j的文件分割机制设为1分钟一次，将文件拷贝到spool的监控目录。log4j有一个TimeRolling的插件，可以把log4j分割的文件到spool目录。基本实现了实时的监控。 Flume在传完文件之后，将会修改文件的后缀.tmp变为.COMPLETED（后缀也可以在配置文件中灵活指定）</p>
+<p>但是有一定的问题，对于已经处理完的文件，后续再次处理或者重名则会报错。</p>
+<p><strong>Exec Source 和 Spooling Directory Source 比较</strong></p>
+<p>1） ExecSource可以实现对日志的实时收集，但是存在Flume不运行或者指令执行出错时，将无法收集到日志数据，无法何证日志数据的完整性。（不太可靠，不建议使用）</p>
+<p>2） Spooling Directory Source 虽然无法实现实时的收集数据，但是可以使用以分钟的方式分割文件，趋近于实时。</p>
+<p>3）总结：如果应用无法实现以分钟切割日志文件的话，可以两种收集方式结合使用。</p>
+<p><strong>Taildir Source</strong></p>
+<p>可以实现断点续传。</p>
+<p><strong>hdfs sink</strong></p>
+<p>会一直刷新文件。可以使用roll，设置hdfs.rollInterval、hdfs.rollSize、hdfs.rollCount参数避免小文件问题。一个批次中，没有数据输入不产生文件。</p>
+<p>在</p>
+<p><strong>Avro client</strong> </p>
+<p>An Avro client included in the Flume distribution can send a given file to Flume Avro source using avro RPC mechanism:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ bin/flume-ng avro-client -H localhost -p 41414 -F /usr/logs/log.10</span><br></pre></td></tr></table></figure>
+
+<p>The above command will send the contents of /usr/logs/log.10 to to the Flume source listening on that ports.</p>
+<p>但是，Avro client 不适用于增量数据，对于增量数据，要采用avro sink到avro source的方式。</p>
+<h1 id="二、Flume的安装与使用"><a href="#二、Flume的安装与使用" class="headerlink" title="二、Flume的安装与使用"></a>二、Flume的安装与使用</h1><h2 id="Flume的安装"><a href="#Flume的安装" class="headerlink" title="Flume的安装"></a>Flume的安装</h2><ol>
+<li><p>下载tar包</p>
+<p><a href="https://flume.apache.org/download.html">Download</a></p>
+<p><a href="https://dlcdn.apache.org/flume/1.9.0/apache-flume-1.9.0-bin.tar.gz"><strong>https://dlcdn.apache.org/flume/1.9.0/apache-flume-1.9.0-bin.tar.gz</strong></a></p>
+</li>
+<li><p>将安装包上传到服务器并解压</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd software/</span><br><span class="line">[hadoop@hadoop001 software]$ tar -xzvf apache-flume-1.9.0-bin.tar.gz </span><br></pre></td></tr></table></figure></li>
+<li><p>创建软连接</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ $ ln -s /home/hadoop/software/apache-flume-1.9.0-bin /home/hadoop/app/flume</span><br></pre></td></tr></table></figure></li>
+<li><p>修改配置文件和环境变量</p>
+<p>添加环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi ~/.bash_profile </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export FLUME_HOME=/usr/local/flume                   </span><br><span class="line">export FLUME_CONF_DIR=$FLUME_HOME/conf</span><br><span class="line">export PATH=$PATH:$FLUME_HOME/bin</span><br></pre></td></tr></table></figure>
+
+<p>生效环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ source ~/.bash_profile</span><br></pre></td></tr></table></figure>
+
+<p>修改配置文件：/home/hadoop/app/flume/conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd app/flume/conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ cp flume-env.sh.template flume-env.sh</span><br><span class="line">[hadoop@hadoop001 conf]$ ll</span><br><span class="line">total 20</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 1661 Nov 16  2017 flume-conf.properties.template</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 1455 Nov 16  2017 flume-env.ps1.template</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 1568 May 16 21:21 flume-env.sh</span><br><span class="line">-rw-r--r--. 1 hadoop hadoop 1568 Aug 30  2018 flume-env.sh.template</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 3107 Dec 10  2018 log4j.properties</span><br></pre></td></tr></table></figure>
+
+<p>打开flume-env.sh文件，设置JAVA_HOME变量(根据已经安装的Java路径来设置)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># export JAVA_HOME=/usr/lib/jvm/java-8-oracle</span><br><span class="line">JAVA_HOME=/usr/java/jdk1.8.0_45</span><br></pre></td></tr></table></figure></li>
+<li><p>检查版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ flume-ng version</span><br><span class="line">Flume 1.9.0</span><br><span class="line">Source code repository: https://git-wip-us.apache.org/repos/asf/flume.git</span><br><span class="line">Revision: d4fcab4f501d41597bc616921329a4339f73585e</span><br><span class="line">Compiled by fszabo on Mon Dec 17 20:45:25 CET 2018</span><br><span class="line">From source with checksum 35db629a3bda49d23e9b3690c80737f9</span><br></pre></td></tr></table></figure>
+
+<p>如上信息证明安装成功。</p>
+<p>注意：如果系统里安装了hbase，会出现错误: 找不到或无法加载主类 org.apache.flume.tools.GetJavaProperty。如果没有安装hbase，这一步可以略过。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">vi app/hbase/conf/hbase-env.sh</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#1、将hbase的hbase.env.sh的这一行配置注释掉,即在export前加一个#</span><br><span class="line">#export HBASE_CLASSPATH=/home/hadoop/hbase/conf</span><br><span class="line">#2、或者将HBASE_CLASSPATH改为JAVA_CLASSPATH,配置如下</span><br><span class="line">export JAVA_CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar</span><br><span class="line">#笔者用的是第一种方法</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="Flume的使用"><a href="#Flume的使用" class="headerlink" title="Flume的使用"></a>Flume的使用</h2><p>启动顺序，先启动sink（下游），再启动source（上游）。</p>
+<h3 id="案例一：netcat-source"><a href="#案例一：netcat-source" class="headerlink" title="案例一：netcat source"></a>案例一：netcat source</h3><p>需求：监听localhost机器的44444端口，接收到数据sink到终端</p>
+<ol>
+<li><p>创建agent配置文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd app/flume/conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ vi example.conf</span><br></pre></td></tr></table></figure>
+
+<p>example.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># example.conf: A single-node Flume configuration</span><br><span class="line">#需求：监听localhost机器的44444端口，接收到数据sink到终端</span><br><span class="line"></span><br><span class="line"># Name the components on this agent   配置各种名字</span><br><span class="line">a1.sources = r1  #配置source的名字</span><br><span class="line">a1.sinks = k1    #配置sink的名字</span><br><span class="line">a1.channels = c1  #配置channel的名字</span><br><span class="line"></span><br><span class="line"># Describe/configure the source       配置source的基本属性</span><br><span class="line">a1.sources.r1.type = netcat</span><br><span class="line">a1.sources.r1.bind = localhost</span><br><span class="line">a1.sources.r1.port = 44444</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory  配置channel的基本属性</span><br><span class="line">a1.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Describe the sink                  配置sink的基本属性</span><br><span class="line">a1.sinks.k1.type = logger</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel      连线</span><br><span class="line">a1.sources.r1.channels = c1</span><br><span class="line">a1.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>This configuration defines a single agent named a1. a1 has a source that listens for data on port 44444, a channel that buffers event data in memory, and a sink that logs event data to the console. The configuration file names the various components, then describes their types and configuration parameters. A given configuration file might define several named agents; when a given Flume process is launched a flag is passed telling it which named agent to manifest.</p>
+</li>
+<li><p>启动flume agent a1</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name a1 \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/example.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure></li>
+<li><p>在另一个终端telnet localhost 44444 发送event</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ telnet localhost 44444</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">1</span><br><span class="line">OK</span><br><span class="line">2</span><br><span class="line">OK</span><br><span class="line">3</span><br><span class="line">OK</span><br><span class="line">a</span><br><span class="line">OK</span><br><span class="line">b</span><br><span class="line">OK</span><br><span class="line">啊</span><br><span class="line">OK</span><br></pre></td></tr></table></figure></li>
+<li><p>第一个终端的日志控制台也会有相应的显示</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ flume-ng agent \</span><br><span class="line">&gt; --name a1 \</span><br><span class="line">&gt; --conf $FLUME_HOME/conf \</span><br><span class="line">&gt; --conf-file $FLUME_HOME/conf/example.conf \</span><br><span class="line">&gt; -Dflume.root.logger=INFO,console</span><br><span class="line">Info: Sourcing environment configuration script /home/hadoop/app/flume/conf/flume-env.sh</span><br><span class="line">Info: Including Hadoop libraries found via (/home/hadoop/app/hadoop/bin/hadoop) for HDFS access</span><br><span class="line">Info: Including Hive libraries found via (/home/hadoop/app/hive) for Hive access</span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">2022-05-16 21:57:12,297 (lifecycleSupervisor-1-3) [INFO - org.apache.flume.source.NetcatSource.start(NetcatSource.java:166)] Created serverSocket:sun.nio.ch.ServerSocketChannelImpl[/127.0.0.1:44444]</span><br><span class="line">2022-05-16 21:58:30,762 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 31 0D                                           1. &#125;</span><br><span class="line">2022-05-16 21:58:36,151 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 32 0D                                           2. &#125;</span><br><span class="line">2022-05-16 21:58:38,455 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 33 0D                                           3. &#125;</span><br><span class="line">2022-05-16 21:58:39,071 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 61 0D                                           a. &#125;</span><br><span class="line">2022-05-16 21:58:39,847 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 62 0D                                           b. &#125;</span><br><span class="line">2022-05-16 22:02:54,721 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: E5 95 8A 0D                                     .... &#125;</span><br></pre></td></tr></table></figure>
+
+<p>补充一点，flume只能传递英文和字符，不能用中文。</p>
+</li>
+</ol>
+<h3 id="案例二：avro-client"><a href="#案例二：avro-client" class="headerlink" title="案例二：avro client"></a>案例二：avro client</h3><p>flume-avro-client.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">avro-client-agent.sources = r1</span><br><span class="line">avro-client-agent.sinks = k1</span><br><span class="line">avro-client-agent.channels = c1</span><br><span class="line"> </span><br><span class="line"># Describe/configure the source</span><br><span class="line">avro-client-agent.sources.r1.type = avro</span><br><span class="line">avro-client-agent.sources.r1.bind = localhost</span><br><span class="line">avro-client-agent.sources.r1.port = 41414</span><br><span class="line">#注意这个端口名，在后面的教程中会用得到</span><br><span class="line"> </span><br><span class="line"># Describe the sink</span><br><span class="line">avro-client-agent.sinks.k1.type = logger</span><br><span class="line"> </span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">avro-client-agent.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">avro-client-agent.sources.r1.channels = c1</span><br><span class="line">avro-client-agent.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>文本准备</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo &quot;flume&quot; &gt;&gt; data/flume-avro-client.test</span><br><span class="line">[hadoop@hadoop001 ~]$ cat data/flume-avro-client.test</span><br><span class="line">flume</span><br></pre></td></tr></table></figure>
+
+<p>sink启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name avro-client-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/flume-avro-client.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>source启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng avro-client \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">-H localhost \</span><br><span class="line">-p 41414 \</span><br><span class="line">-F ~/data/flume-avro-client.test</span><br></pre></td></tr></table></figure>
+
+<p>结果：</p>
+<p>source端：</p>
+<p>命令执行，event传输完后会退出。退出后再往文件添加数据，并不会传输到sink端，所以avro client的方式不适合于增量data。</p>
+<p>sink端：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 66 6C 75 6D 65                                  flume &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="案例三：exec-hdfs-agent"><a href="#案例三：exec-hdfs-agent" class="headerlink" title="案例三：exec-hdfs-agent"></a>案例三：exec-hdfs-agent</h3><p>flume-exec-hdfs.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#define agent</span><br><span class="line">exec-hdfs-agent.sources = exec-source</span><br><span class="line">exec-hdfs-agent.channels = exec-memory-channel</span><br><span class="line">exec-hdfs-agent.sinks = hdfs-sink</span><br><span class="line"></span><br><span class="line">#define source</span><br><span class="line">exec-hdfs-agent.sources.exec-source.type = exec</span><br><span class="line">exec-hdfs-agent.sources.exec-source.command = tail -F ~/data/flume-exec.test</span><br><span class="line">exec-hdfs-agent.sources.exec-source.shell = /bin/bash -c</span><br><span class="line"></span><br><span class="line">#define channel </span><br><span class="line">exec-hdfs-agent.channels.exec-memory-channel.type = memory</span><br><span class="line"></span><br><span class="line">#define sink </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.type = hdfs</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.path = hdfs://hadoop001:9000//user/hadoop/data/flume/tail</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.fileType = DataStream</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.writeFormat = Text</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.batchSize = 5</span><br><span class="line"></span><br><span class="line">#bind source and sink to channel</span><br><span class="line">exec-hdfs-agent.sources.exec-source.channels = exec-memory-channel  </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.channel = exec-memory-channel  </span><br></pre></td></tr></table></figure>
+
+<p>sink启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name exec-hdfs-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/flume-exec-hdfs.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><p>参考链接：</p>
+<p><a href="https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0">https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0</a></p>
+<p><a href="https://blog.csdn.net/u010452388/article/details/101697570">https://blog.csdn.net/u010452388/article/details/101697570</a></p>
+<p><a href="https://www.cnblogs.com/jhxxb/p/11574494.html">https://www.cnblogs.com/jhxxb/p/11574494.html</a></p>
 ]]></content>
   </entry>
   <entry>
