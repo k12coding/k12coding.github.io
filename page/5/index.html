@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">63</span>
+          <span class="site-state-item-count">64</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,182 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/Hadoop-HA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/Hadoop-HA/" class="post-title-link" itemprop="url">Hadoop HA</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 14:33:46 / 修改时间：16:20:13" itemprop="dateCreated datePublished" datetime="2022-01-26T14:33:46+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="什么是HA？"><a href="#什么是HA？" class="headerlink" title="什么是HA？"></a>什么是HA？</h1><p>   HA的意思是High Availability高可用，指当当前工作中的机器宕机后，会自动处理这个异常，并将工作无缝地转移到其他备用机器上去，以来保证服务的高可用。</p>
+<p>   HA方式安装部署才是最常见的生产环境上的安装部署方式。Hadoop HA是Hadoop 2.x中新添加的特性，包括NameNode HA 和 ResourceManager HA。因为DataNode和NodeManager本身就是被设计为高可用的，所以不用对他们进行特殊的高可用处理。</p>
+<h2 id="NameNode-HA"><a href="#NameNode-HA" class="headerlink" title="NameNode HA"></a>NameNode HA</h2><p>​    在Hadoop2.0之前，NameNode只有一个，存在单点问题（虽然Hadoop1.0有SecondaryNameNode，CheckPointNode，BackupNode这些，但是单点问题依然存在），在hadoop2.0引入了HA机制。Hadoop2.0的HA机制官方介绍了有2种方式，一种是NFS（Network File System）方式，另外一种是QJM（Quorum Journal Manager）方式。</p>
+<p>​    Hadoop2.0的HA 机制有两个NameNode，一个是Active状态，另一个是Standby状态。两者的状态可以切换，但同时最多只有1个是Active状态。只有Active Namenode提供对外的服务。Active NameNode和Standby NameNode之间通过<strong>NFS</strong>或者<strong>JN（JournalNode，QJM方式）</strong>来同步数据。</p>
+<p>​    Active NameNode会把最近的操作记录写到本地的一个edits文件中（edits file），并传输到NFS或者JN中。Standby NameNode定期的检查，从NFS或者JN把最近的edit文件读过来，然后把edits文件和fsimage文件合并成一个新的fsimage，合并完成之后会通知Active NameNode获取这个新fsimage。Active NameNode获得这个新的fsimage文件之后，替换原来旧的fsimage文件。</p>
+<p>​    这样，保持了Active NameNode和Standby NameNode的数据实时同步，Standby NameNode可以随时切换成Active NameNode（譬如Active NameNode挂了）。而且还有一个原来Hadoop1.0的SecondaryNameNode，CheckpointNode，BackupNode的功能：合并edits文件和fsimage文件，使fsimage文件一直保持更新。所以启动了hadoop2.0的HA机制之后，SecondaryNameNode，CheckpointNode，BackupNode这些都不需要了。</p>
+<h3 id="数据同步方式：NFS与-QJM（Quorum-Journal-Manager-）"><a href="#数据同步方式：NFS与-QJM（Quorum-Journal-Manager-）" class="headerlink" title="数据同步方式：NFS与 QJM（Quorum Journal Manager ）"></a>数据同步方式：NFS与 QJM（Quorum Journal Manager ）</h3><h4 id="NFS"><a href="#NFS" class="headerlink" title="NFS"></a>NFS</h4><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-01.png" alt="img"></p>
+<p>NFS作为Active NameNode和Standby NameNode之间数据共享的存储。Active NameNode会把最近的edits文件写到NFS，而Standby NameNode从NFS中把数据读过来。这个方式的缺点是，如果Active NameNode或者Standby Namenode有一个和NFS之间网络有问题，则会造成他们之前数据的同步出问题。</p>
+<h4 id="QJM（Quorum-Journal-Manager-）"><a href="#QJM（Quorum-Journal-Manager-）" class="headerlink" title="QJM（Quorum Journal Manager ）"></a>QJM（Quorum Journal Manager ）</h4><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-02.png" alt="img"></p>
+<p>QJM的方式可以解决上述NFS容错机制不足的问题。Active NameNode和Standby NameNode之间是通过一组JournalNode（数量是奇数，可以是3,5,7…,2n+1）来共享数据。Active NameNode把最近的edits文件写到2n+1个JournalNode上，只要有n+1个写入成功就认为这次写入操作成功了，然后Standby NameNode就可以从JournalNode上读取了。可以看到，QJM方式有容错机制，可以容忍n个JournalNode的失败。</p>
+<p>Active和Standby两个NameNode之间的数据交互流程为：</p>
+<p>1）NameNode在启动后，会先加载FSImage文件和共享目录上的EditLog Segment文件；</p>
+<p>2）Standby NameNode会启动EditLogTailer线程和StandbyCheckpointer线程，正式进入Standby模式；</p>
+<p>3）Active NameNode把EditLog提交到JournalNode集群；</p>
+<p>4）Standby NameNode上的EditLogTailer 线程定时从JournalNode集群上同步EditLog；</p>
+<p>5）Standby NameNode上的StandbyCheckpointer线程定时进行Checkpoint，并将Checkpoint之后的FSImage文件上传到Active NameNode。（在Hadoop 2.0中不再有Secondary NameNode这个角色了，StandbyCheckpointer线程的作用其实是为了替代 Hadoop 1.0版本中的Secondary NameNode的功能。）</p>
+<p>QJM方式有明显的优点，一是本身就有fencing的功能，二是通过多个Journal节点增强了系统的健壮性，所以建议在生产环境中采用QJM的方式。JournalNode消耗的资源很少，不需要额外的机器专门来启动JournalNode，可以从Hadoop集群中选几台机器同时作为JournalNode。</p>
+<h3 id="主备NameNode切换"><a href="#主备NameNode切换" class="headerlink" title="主备NameNode切换"></a>主备NameNode切换</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-03.png" alt="img"></p>
+<p>Active NameNode和Standby NameNode可以随时切换，可以人工和自动。人工切换是通过执行HA管理命令来改变NameNode的状态，从Standby到Active，或从Active到Standby。自动切换则在Active NameNode挂掉的时候，Standby NameNode自动切换成Active状态。</p>
+<p>主备NameNode的自动切换需要配置Zookeeper。Active NameNode和Standby NameNode把他们的状态实时记录到Zookeeper中，Zookeeper监视他们的状态变化。当Zookeeper发现Active NameNode挂掉后，会自动把Standby NameNode切换成Active NameNode。</p>
+<h3 id="HDFS-HA-原理"><a href="#HDFS-HA-原理" class="headerlink" title="HDFS HA 原理"></a>HDFS HA 原理</h3><p>单NameNode的缺陷存在单点故障的问题，如果NameNode不可用，则会导致整个HDFS文件系统不可用。所以需要设计高可用的HDFS（Hadoop HA）来解决NameNode单点故障的问题。解决的方法是在HDFS集群中设置多个NameNode节点。但是一旦引入多个NameNode，就有一些问题需要解决。</p>
+<p>HDFS HA需要保证的四个问题：</p>
+<ol>
+<li>保证NameNode内存中元数据数据一致，并保证编辑日志文件的安全性；</li>
+<li>多个NameNode如何协作；</li>
+<li>客户端如何能正确地访问到可用的那个NameNode；</li>
+<li>怎么保证任意时刻只能有一个NameNode处于对外服务状态。</li>
+</ol>
+<p><strong>解决方法</strong></p>
+<p>对于保证NameNode元数据的一致性和编辑日志的安全性，采用Zookeeper来存储编辑日志文件。</p>
+<p>两个NameNode一个是Active状态的，一个是Standby状态的，一个时间点只能有一个Active状态的。</p>
+<p>NameNode提供服务,两个NameNode上存储的元数据是实时同步的，当Active的NameNode出现问题时，通过Zookeeper实时切换到Standby的NameNode上，并将Standby改为Active状态。</p>
+<p>客户端通过连接一个Zookeeper的代理来确定当时哪个NameNode处于服务状态。</p>
+<h3 id="HDFS-HA架构"><a href="#HDFS-HA架构" class="headerlink" title="HDFS HA架构"></a>HDFS HA架构</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-004.png" alt="img"></p>
+<ol>
+<li>Active NameNode 和 Standby NameNode：两台 NameNode 形成互备，一台处于 Active 状态，为主 NameNode，另外一台处于 Standby 状态，为备 NameNode，只有主 NameNode 才能对外提供读写服务；</li>
+<li>ZKFailoverController（主备切换控制器，FC）：ZKFailoverController 作为独立的进程运行，对 NameNode 的主备切换进行总体控制。ZKFailoverController 能及时检测到 NameNode 的健康状况，在主 NameNode 故障时借助 Zookeeper 实现自动的主备选举和切换（当然 NameNode 目前也支持不依赖于 Zookeeper 的手动主备切换）；</li>
+<li>Zookeeper 集群：为主备切换控制器提供主备选举支持；</li>
+<li>共享存储系统：共享存储系统是实现 NameNode 的高可用最为关键的部分，共享存储系统保存了 NameNode 在运行过程中所产生的 HDFS 的元数据。主 NameNode 和备 NameNode 通过共享存储系统实现元数据同步。在进行主备切换的时候，新的主 NameNode 在<strong>确认元数据完全同步之后才能继续对外提供服务</strong>。</li>
+<li>DataNode 节点：因为主 NameNode 和备 NameNode 需要共享 HDFS 的数据块和 DataNode 之间的映射关系，为了使故障切换能够快速进行，DataNode 会同时向主 NameNode 和备 NameNode 上报数据块的位置信息。</li>
+</ol>
+<h3 id="FailoverController"><a href="#FailoverController" class="headerlink" title="FailoverController"></a>FailoverController</h3><p>FC 最初的目的是为了实现 SNN 和 ANN 之间故障自动切换，FC 是独立与 NN 之外的故障切换控制器，ZKFC 作为 NameNode 机器上一个独立的进程启动 ，它启动的时候会创建 HealthMonitor 和 ActiveStandbyElector 这两个主要的内部组件，其中：</p>
+<ol>
+<li>HealthMonitor：主要负责检测 NameNode 的健康状态，如果检测到 NameNode 的状态发生变化，会回调 ZKFailoverController 的相应方法进行自动的主备选举；</li>
+<li>ActiveStandbyElector：主要负责完成自动的主备选举，内部封装了 Zookeeper 的处理逻辑，一旦 Zookeeper 主备选举完成，会回调 ZKFailoverController 的相应方法来进行 NameNode 的主备状态切换。</li>
+</ol>
+<h3 id="自动触发主备选举"><a href="#自动触发主备选举" class="headerlink" title="自动触发主备选举"></a>自动触发主备选举</h3><p>NameNode 在选举成功后，会在 zk 上创建了一个 <code>/hadoop-ha/$&#123;dfs.nameservices&#125;/ActiveStandbyElectorLock</code> 节点，而没有选举成功的备 NameNode 会监控这个节点，通过 Watcher 来监听这个节点的状态变化事件，ZKFC 的 ActiveStandbyElector 主要关注这个节点的 NodeDeleted 事件（这部分实现跟 Kafka 中 Controller 的选举一样）。</p>
+<p>如果 Active NameNode 对应的 HealthMonitor 检测到 NameNode 的状态异常时， ZKFailoverController 会主动删除当前在 Zookeeper 上建立的临时节点 /hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock，这样处于 Standby 状态的 NameNode 的 ActiveStandbyElector 注册的监听器就会收到这个节点的 NodeDeleted 事件。收到这个事件之后，会马上再次进入到创建 /hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock 节点的流程，如果创建成功，这个本来处于 Standby 状态的 NameNode 就选举为主 NameNode 并随后开始切换为 Active 状态。</p>
+<p>当然，如果是 Active 状态的 NameNode 所在的机器整个宕掉的话，那么根据 Zookeeper 的临时节点特性，/hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock 节点会自动被删除，从而也会自动进行一次主备切换。</p>
+<h3 id="HDFS-脑裂问题"><a href="#HDFS-脑裂问题" class="headerlink" title="HDFS 脑裂问题"></a>HDFS 脑裂问题</h3><p>在实际中，NameNode 可能会出现这种情况，NameNode 在垃圾回收（GC）时，可能会在长时间内整个系统无响应，因此，也就无法向 zk 写入心跳信息，这样的话可能会导致临时节点掉线，备 NameNode 会切换到 Active 状态，这种情况，可能会导致整个集群会有同时有两个 NameNode，这就是脑裂问题。</p>
+<p>脑裂问题的解决方案是隔离（Fencing），主要是在以下三处采用隔离措施：</p>
+<ol>
+<li>第三方共享存储：任一时刻，只有一个 NN 可以写入；</li>
+<li>DataNode：需要保证只有一个 NN 发出与管理数据副本有关的删除命令；</li>
+<li>Client：需要保证同一时刻只有一个 NN 能够对 Client 的请求发出正确的响应。</li>
+</ol>
+<p>关于这个问题目前解决方案的实现如下：</p>
+<ol>
+<li>ActiveStandbyElector 为了实现 fencing，会在成功创建 Zookeeper 节点 hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock 从而成为 Active NameNode 之后，创建另外一个路径为 <strong>/hadoop-ha/${dfs.nameservices}/ActiveBreadCrumb</strong> 的持久节点，这个节点里面保存了这个 Active NameNode 的地址信息；</li>
+<li>Active NameNode 的 ActiveStandbyElector 在正常的状态下关闭 Zookeeper Session 的时候，会一起删除这个持久节点；</li>
+<li>但如果 ActiveStandbyElector 在异常的状态下 Zookeeper Session 关闭 (比如前述的 Zookeeper 假死)，那么由于 /hadoop-ha/${dfs.nameservices}/ActiveBreadCrumb 是持久节点，会一直保留下来，后面当另一个 NameNode 选主成功之后，会注意到上一个 Active NameNode 遗留下来的这个节点，从而会回调 ZKFailoverController 的方法对旧的 Active NameNode 进行 fencing。</li>
+</ol>
+<p>在进行 fencing 的时候，会执行以下的操作：</p>
+<ol>
+<li>首先尝试调用这个旧 Active NameNode 的 HAServiceProtocol RPC 接口的 <code>transitionToStandby</code> 方法，看能不能把它转换为 Standby 状态；</li>
+<li>如果 <code>transitionToStandby</code> 方法调用失败，那么就执行 Hadoop 配置文件之中预定义的隔离措施。</li>
+</ol>
+<p>Hadoop 目前主要提供两种隔离措施，通常会选择第一种：</p>
+<ol>
+<li>sshfence：通过 SSH 登录到目标机器上，执行命令 fuser 将对应的进程杀死；</li>
+<li>shellfence：执行一个用户自定义的 shell 脚本来将对应的进程隔离。</li>
+</ol>
+<p>只有在成功地执行完成 fencing 之后，选主成功的 ActiveStandbyElector 才会回调 ZKFailoverController 的 <code>becomeActive</code> 方法将对应的 NameNode 转换为 Active 状态，开始对外提供服务。</p>
+<p>NameNode 选举的实现机制与 Kafka 的 Controller 类似，那么 Kafka 是如何避免脑裂问题的呢？</p>
+<ol>
+<li>Controller 给 Broker 发送的请求中，都会携带 controller epoch 信息，如果 broker 发现当前请求的 epoch 小于缓存中的值，那么就证明这是来自旧 Controller 的请求，就会决绝这个请求，正常情况下是没什么问题的；</li>
+<li>但是异常情况下呢？如果 Broker 先收到异常 Controller 的请求进行处理呢？现在看 Kafka 在这一部分并没有适合的方案；</li>
+<li>正常情况下，Kafka 新的 Controller 选举出来之后，Controller 会向全局所有 broker 发送一个 metadata 请求，这样全局所有 Broker 都可以知道当前最新的 controller epoch，但是并不能保证可以完全避免上面这个问题，还是有出现这个问题的几率的，只不过非常小，而且即使出现了由于 Kafka 的高可靠架构，影响也非常有限，至少从目前看，这个问题并不是严重的问题。</li>
+</ol>
+<h3 id="第三方存储（共享存储）"><a href="#第三方存储（共享存储）" class="headerlink" title="第三方存储（共享存储）"></a>第三方存储（共享存储）</h3><p>上述 HA 方案还有一个明显缺点，那就是第三方存储节点有可能失效，之前有很多共享存储的实现方案，目前社区已经把由 Clouderea 公司实现的基于 QJM 的方案合并到 HDFS 的 trunk 之中并且作为默认的共享存储实现，本部分只针对基于 QJM 的共享存储方案的内部实现原理进行分析。</p>
+<p>QJM（Quorum Journal Manager）本质上是利用 Paxos 协议来实现的，QJM 在 <code>2F+1</code> 个 JournalNode 上存储 NN 的 editlog，每次写入操作都通过 Paxos 保证写入的一致性，它最多可以允许有 F 个 JournalNode 节点同时故障，其实现如下：</p>
+<p><img src="/2022/01/26/Hadoop-HA/HadoopHA-05.png" alt="基于 QJM 的共享存储的数据同步机制"></p>
+<p>基于 QJM 的共享存储的数据同步机制</p>
+<p>Active NameNode 首先把 EditLog 提交到 JournalNode 集群，然后 Standby NameNode 再从 JournalNode 集群定时同步 EditLog。</p>
+<p>还有一点需要注意的是，在 2.0 中不再有 SNN 这个角色了，NameNode 在启动后，会先加载 FSImage 文件和共享目录上的 EditLog Segment 文件，之后 NameNode 会启动 EditLogTailer 线程和 StandbyCheckpointer 线程，正式进入 Standby 模式，其中：</p>
+<ol>
+<li>EditLogTailer 线程的作用是定时从 JournalNode 集群上同步 EditLog；</li>
+<li>StandbyCheckpointer 线程的作用其实是为了替代 Hadoop 1.x 版本之中的 Secondary NameNode 的功能，StandbyCheckpointer 线程会在 Standby NameNode 节点上定期进行 Checkpoint，将 Checkpoint 之后的 FSImage 文件上传到 Active NameNode 节点。</li>
+</ol>
+<h2 id="YARN-HA-ResourceManager-HA"><a href="#YARN-HA-ResourceManager-HA" class="headerlink" title="YARN HA(ResourceManager HA)"></a>YARN HA(ResourceManager HA)</h2><p>Hadoop2.4版本之前，ResourceManager也存在单点故障的问题，也需要实现HA来保证ResourceManger的高可也用性。</p>
+<p>ResouceManager从记录着当前集群的资源分配情况和JOB的运行状态，YRAN HA 利用Zookeeper等共享存储介质来存储这些信息来达到高可用。另外利用Zookeeper来实现ResourceManager自动故障转移。</p>
+<p><img src="/2022/01/26/Hadoop-HA/YARNHA.png" alt="img"></p>
+<p>如果大家理解HDFS的HA，那么ResourceManager的HA与之是相同道理的：也是Active/Standby架构，任意时刻，都一个是Active，其余处于Standby状态的ResourceManager可以随时转换成Active状态。状态转换可以手工完成，也可以自动完成。手工完成时通过命令行的管理命令(命令是“yarn rmadmin”)。自动完成是通过配置自动故障转移(automatic-failover)，使用集成的failover-controller完成状态的自动切换。</p>
+<p>自动故障转移是依赖于ZooKeeper集群，依赖ZooKeeper的ActiveStandbyElector会嵌入到ResourceManager中，当Active状态的ResourceManager失效时，处于 Standby状态的ResourceManager就会被选举为Active状态的，实现切换。注意：这里没有ZooKeeperFailoverController进程，这点和HDFS的HA不同。</p>
+<p>对于客户端而言，必须知道所有的ResourceManager中。因此，需要在yarn-site.xml中配置所有的ResourceManager。那么，当一个Active状态的ResourceManager失效时，客户端怎么办哪？客户端会采用轮询机制，轮询配置在yarn-site.xml中的ResourceManager，直到找到一个active状态的ResourceManager。如果我们想修改这种寻找ResourceManager的机制，可以继承类<code>org.apache.hadoop.yarn.client.RMFailoverProxyProvider，实现</code>自己的逻辑。然后把类的名字配置到yarn-site.xml的配置项<code>yarn.client.failover-proxy-provider</code>中。</p>
+<p><strong>配置</strong></p>
+<p>在yarn-site.xml中配置如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.ha.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.cluster-id&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;cluster1&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.ha.rm-ids&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;rm1,rm2&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.hostname.rm1&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master1&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.hostname.rm2&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master2&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.webapp.address.rm1&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master1:8088&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.webapp.address.rm2&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master2:8088&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.zk.address&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;zk1:2181,zk2:2181,zk3:2181&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>命令</strong></p>
+<p>查看状态的命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn rmadmin –getServiceState rm1</span><br></pre></td></tr></table></figure>
+
+<p>状态切换的命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn rmadmin –transitionToStandby rm1</span><br></pre></td></tr></table></figure>
+
+
+
+<p>原文链接：</p>
+<p><a target="_blank" rel="noopener" href="http://matt33.com/2018/07/15/hdfs-architecture-learn/">http://matt33.com/2018/07/15/hdfs-architecture-learn/</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/andyguan01_2/article/details/88696239">https://blog.csdn.net/andyguan01_2/article/details/88696239</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/mlj5288/p/4449848.html">https://www.cnblogs.com/mlj5288/p/4449848.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -555,150 +731,6 @@
 <p>带参数启动成功：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
 
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/" class="post-title-link" itemprop="url">IDEA编译Spark3.2.0测试SparkSQL</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-21 04:26:18 / 修改时间：04:39:26" itemprop="dateCreated datePublished" datetime="2022-01-21T04:26:18+08:00">2022-01-21</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p><a target="_blank" rel="noopener" href="https://spark.apache.org/docs/latest/building-spark.html">https://spark.apache.org/docs/latest/building-spark.html</a></p>
-<p>本机环境：</p>
-<p>hadoop:3.2.2</p>
-<p>jdk:1.8+</p>
-<p>scala:2.12.14</p>
-<p>hive:2.3.9（spark中默认版本）</p>
-<h2 id="一、下载"><a href="#一、下载" class="headerlink" title="一、下载"></a>一、下载</h2><p><a target="_blank" rel="noopener" href="https://spark.apache.org/downloads.html">https://spark.apache.org/downloads.html</a></p>
-<p><a target="_blank" rel="noopener" href="https://dlcdn.apache.org/spark/spark-3.2.0/spark-3.2.0.tgz"><strong>spark-3.2.0.tgz</strong></a></p>
-<h2 id="二、解压并导入IDEA"><a href="#二、解压并导入IDEA" class="headerlink" title="二、解压并导入IDEA"></a>二、解压并导入IDEA</h2><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-01.png" alt="image-20220119102329144" style="zoom: 50%;">
-
-<h2 id="三、编译"><a href="#三、编译" class="headerlink" title="三、编译"></a>三、编译</h2><ol>
-<li><h3 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h3><ul>
-<li><p>通过Add Frameworks Support添加Scala2.12支持。</p>
-</li>
-<li><p>执行命令配置Maven：<code>export MAVEN_OPTS=&quot;-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g&quot;</code></p>
-</li>
-<li><p>修改pom.xml</p>
-<p>版本参数</p>
-<p>scala:2.12.14【2处】</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;scala.version&gt;2.12.14&lt;/scala.version&gt;</span><br></pre></td></tr></table></figure>
-
-<p>hadoop : 3.2.2【1处】</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;hadoop.version&gt;3.2.2&lt;/hadoop.version&gt;</span><br></pre></td></tr></table></figure>
-
-<p>hive:默认，不指定hive版本</p>
-<p>其他（否则报错）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;net.alchim31.maven&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;scala-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;3.2.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></li>
-<li><p>修改make-distribution.sh</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">#VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SCALA_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=scala.binary.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HADOOP_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=hadoop.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HIVE=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | fgrep --count &quot;&lt;id&gt;hive&lt;/id&gt;&quot;;\</span><br><span class="line">#    # Reset exit status to 0, otherwise the script stops here if the last grep finds nothing\</span><br><span class="line">#    # because we use &quot;set -o pipefail&quot;</span><br><span class="line">#    echo -n)</span><br><span class="line">VERSION=3.2.0 # spark 版本</span><br><span class="line">SCALA_VERSION=2.12 # scala 版本</span><br><span class="line">SPARK_HADOOP_VERSION=3.2.2 #对应的hadoop 版本</span><br><span class="line">SPARK_HIVE=1 # 支持的hive</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dev/make-distribution.sh --name custom-spark --pip --r --tgz  -Psparkr -Pyarn -Phadoop-3.2.2 -Phive -Phive-thriftserver -Pmesos -Dhadoop.version=3.2.2 </span><br></pre></td></tr></table></figure>
-
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-02.png" alt="image-20220120032650715" style="zoom:50%;"></li>
-<li><h3 id="添加jar包和Scala-SDK依赖，导入模块"><a href="#添加jar包和Scala-SDK依赖，导入模块" class="headerlink" title="添加jar包和Scala SDK依赖，导入模块"></a>添加jar包和Scala SDK依赖，导入模块</h3><p>jar包位置:<code>./assembly/target/scala-2.12</code>（这个包包含了Spark编译得到的jar包，以及编译过程中所依赖的包。）</p>
-<p>添加依赖：</p>
-<ul>
-<li><p>使用MAVEN的Generate Sources and Update Folders For All Projects</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-08.png" alt="image-20220121043339679" style="zoom:50%;"></li>
-<li><p>Project Structure–&gt;Libraries–&gt; 添加Scala SDK</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-03.png" alt="image-20220121041816355" style="zoom:50%;"></li>
-<li><p>Project Structure–&gt;Libraries–&gt; 添加jar包</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-04.png" alt="image-20220121041654274" style="zoom:50%;"></li>
-</ul>
-</li>
-<li><h3 id="SparkSQL和Hive集成"><a href="#SparkSQL和Hive集成" class="headerlink" title="SparkSQL和Hive集成"></a>SparkSQL和Hive集成</h3><p>SparkSQL需要的是Hive表的元数据，将hive的hive-site.xml文件复制到spark的conf文件夹中。hadoop的配置文件也一并放到conf文件夹中</p>
-</li>
-<li><h3 id="启动hadoop和hive的metastore服务"><a href="#启动hadoop和hive的metastore服务" class="headerlink" title="启动hadoop和hive的metastore服务"></a>启动hadoop和hive的metastore服务</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start-all.sh</span><br><span class="line">hive --service metastore &amp;</span><br></pre></td></tr></table></figure></li>
-<li><h3 id="找到spark-sql的入口程序："><a href="#找到spark-sql的入口程序：" class="headerlink" title="找到spark-sql的入口程序："></a>找到spark-sql的入口程序：</h3><p><code>org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver</code></p>
-</li>
-<li><h3 id="配置VM-options"><a href="#配置VM-options" class="headerlink" title="配置VM options"></a>配置VM options</h3><p>VM options:</p>
-<p>-Dscala.usejavacp=true </p>
-<p>-Dspark.master=local[2] </p>
-<p>-Djline.WindowsTerminal.directConsole=false</p>
-<p>启动程序：</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-05.png" alt="image-20220120054854489" style="zoom:50%;"></li>
-<li><h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>执行查询</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">use hive;</span><br><span class="line">select e.empno,e.ename,e.deptno,d.dname from emp e join dept d on e.deptno=d.deptno;</span><br></pre></td></tr></table></figure>
-
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-06.png" alt="image-20220121004018782" style="zoom:50%;"></li>
-</ol>
-<h2 id="四、期间遇到的问题"><a href="#四、期间遇到的问题" class="headerlink" title="四、期间遇到的问题"></a>四、期间遇到的问题</h2><ul>
-<li><p>Classnotfound</p>
-<p>解决方法：导入jar包</p>
-</li>
-<li><p>运行，报错：</p>
-<p><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-09.png" alt="image-20220119230542973"></p>
-<p>解决方法：配置VM options：<code>-Dscala.usejavacp=true</code></p>
-</li>
-<li><p>运行，报错：</p>
-<p><code>org.apache.spark.SparkException: A master URL must be set in your configuration</code></p>
-<p>解决方法：配置VM options：<code>-Dspark.master=local[2]</code></p>
-</li>
-<li><p>spark-sql启动成功，但输入命令后没反应</p>
-<p>以下提示信息可忽略，主要是程序阻塞了导致没反应。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.</span><br></pre></td></tr></table></figure>
-
-<p>解决方法：配置VM options：<code>-Djline.WindowsTerminal.directConsole=false</code></p>
-</li>
-</ul>
 
       
     </div>
