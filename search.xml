@@ -108,31 +108,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>CentOS 6.5下安装python3.7</title>
-    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
-    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
-
-<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
-<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
-
-<p>把最上面的一行配置回python2.6.6就行了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
-
-<p>有打印出相应信息就是成功了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
     <title>CentOS6.5安装NodeJS14.18.3</title>
     <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
     <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
@@ -156,6 +131,31 @@
 <li><p>刷新配置，查看版本</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>CentOS 6.5下安装python3.7</title>
+    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
+    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+
+<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
+<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+
+<p>把最上面的一行配置回python2.6.6就行了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+
+<p>有打印出相应信息就是成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
@@ -292,6 +292,49 @@
 <p><a href="https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0">https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0</a></p>
 <p><a href="https://blog.csdn.net/u010452388/article/details/101697570">https://blog.csdn.net/u010452388/article/details/101697570</a></p>
 <p><a href="https://www.cnblogs.com/jhxxb/p/11574494.html">https://www.cnblogs.com/jhxxb/p/11574494.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>HDFS小文件问题</title>
+    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -507,49 +550,6 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS小文件问题</title>
-    <url>/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
-<li><p>hadoop</p>
-<p>无法高效的对大量小文件进行存储</p>
-<ul>
-<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
-</ul>
-</li>
-<li><p>mapreduce</p>
-<blockquote>
-<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
-</blockquote>
-<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
-</li>
-<li><p>hive</p>
-<ul>
-<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
-</li>
-<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
-<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
-</li>
-</ul>
-</li>
-</ol>
-<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
-<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
-<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
-<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
-<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
-<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
-<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
-<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
-<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
-<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
-<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
-<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
-<p>参考链接：</p>
-<p><a href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1008,141 +1008,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hadoop支持LZO压缩</title>
-    <url>/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/</url>
-    <content><![CDATA[<h2 id="一、Hadoop支持LZO压缩"><a href="#一、Hadoop支持LZO压缩" class="headerlink" title="一、Hadoop支持LZO压缩"></a>一、Hadoop支持LZO压缩</h2><h3 id="1-lzop"><a href="#1-lzop" class="headerlink" title="1.lzop"></a>1.lzop</h3><p>lzo格式文件压缩解压需要用到服务器的lzop工具，hadoop 的<a href="https://so.csdn.net/so/search?q=native&spm=1001.2101.3001.7020">native</a>库（hadoop checknative是没有的lzo,zip相关信息）并不支持</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#安装以前先执行以下命令</span><br><span class="line">[hadoop@hadoop001 ~]$ which lzop</span><br><span class="line">/usr/bin/lzop</span><br></pre></td></tr></table></figure>
-
-<p> 【<em><strong>注意</strong></em>】这代表你已经有lzop，如果找不到，就执行以下命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#若没有执行如下安装命令【这些命令一定要在root用户下安装，否则没有权限】</span><br><span class="line">[root@hadoop001 ~]# yum install -y svn ncurses-devel</span><br><span class="line">[root@hadoop001 ~]# yum install -y gcc gcc-c++ make cmake</span><br><span class="line">[root@hadoop001 ~]# yum install -y openssl openssl-devel svn ncurses-devel zlib-devel libtool</span><br><span class="line">[root@hadoop001 ~]# yum install -y lzo lzo-devel lzop autoconf automake cmake </span><br><span class="line">[root@hadoop001 ~]# yum -y install lzo-devel zlib-devel gcc autoconf automake libtool</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-安装hadoop-lzo"><a href="#2-安装hadoop-lzo" class="headerlink" title="2.安装hadoop-lzo"></a>2.安装hadoop-lzo</h3><ol>
-<li><h4 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://github.com/twitter/hadoop-lzo/archive/master.zip</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="解压"><a href="#解压" class="headerlink" title="解压"></a>解压</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br><span class="line">[hadoop@hadoop001 source]$ unzip master</span><br><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">drwxrwxr-x.  5 hadoop hadoop    4096 Jan 11 22:03 hadoop-lzo-master</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="修改pom-xml"><a href="#修改pom-xml" class="headerlink" title="修改pom.xml"></a>修改pom.xml</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 source]cd hadoop-lzo-master</span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ vi pom.xml </span><br><span class="line">&lt;hadoop.current.version&gt;3.2.2&lt;/hadoop.current.version&gt;</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="声明两个临时环境变量"><a href="#声明两个临时环境变量" class="headerlink" title="声明两个临时环境变量"></a>声明两个临时环境变量</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export C_INCLUDE_PATH=/home/hadoop/app/hadoop/lzo/include     </span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export LIBRARY_PATH=/home/hadoop/app/hadoop/lzo/lib </span><br></pre></td></tr></table></figure></li>
-<li><h4 id="编译（不需要阿里云仓库）"><a href="#编译（不需要阿里云仓库）" class="headerlink" title="编译（不需要阿里云仓库）"></a>编译（不需要阿里云仓库）</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ mvn clean package -Dmaven.test.skip=true</span><br></pre></td></tr></table></figure>
-
-<p>查看编译后的jar，hadoop-lzo-0.4.21-SNAPSHOT.jar则为我们需要的jar</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ cd target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 444</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 antrun</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop   4096 Jan 11 22:03 apidocs</span><br><span class="line">drwxrwxr-x. 5 hadoop hadoop   4096 Jan 11 22:03 classes</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 generated-sources</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 180550 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 181006 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-javadoc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  52043 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-sources.jar</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 javadoc-bundle-options</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 maven-archiver</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 native</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 test-classes</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="上传jar包"><a href="#上传jar包" class="headerlink" title="上传jar包"></a>上传jar包</h4><p>将hadoop-lzo-0.4.21-SNAPSHOT.jar包复制到我们的hadoop的$HADOOP_HOME/share/hadoop/common/目录下才能被hadoop使用</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 target]$ cp hadoop-lzo-0.4.21-SNAPSHOT.jar ~/app/hadoop/share/hadoop/common/ </span><br></pre></td></tr></table></figure>
-
-<p>如果是集群，需要使用<code>xsync hadoop-lzo-0.4.21.jar</code>命令同步到集群中的其他机器</p>
-</li>
-<li><h4 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h4><p>core-site.xml</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codecs&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;</span><br><span class="line">		org.apache.hadoop.io.compress.GzipCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.DefaultCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.BZip2Codec,</span><br><span class="line">		org.apache.hadoop.io.compress.SnappyCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzoCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzopCodec</span><br><span class="line">	&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codec.lzo.class&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<p>mapred-site.xml（如果修改了，则默认输出格式为lzo）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.output.fileoutputformat.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.output.fileoutputformat.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzopCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
-<li><h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><ul>
-<li><p><strong>配置了mapred-site.xml</strong>:</p>
-<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount /input /output</p>
-</li>
-<li><p>没有配置mapred-site.xml(指定输出文件格式为lzo)：</p>
-<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount <strong>-Dmapreduce.output.fileoutputformat.compress=true</strong> <strong>-Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</strong> /input /output</p>
-</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.output.fileoutputformat.compress=true -Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec /wc/input/wc.data /output</span><br><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop fs -ls /output</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2022-01-11 22:18 /output/_SUCCESS</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         95 2022-01-11 22:18 /output/part-r-00000.lzo</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="3-LZO创建索引"><a href="#3-LZO创建索引" class="headerlink" title="3.LZO创建索引"></a>3.LZO创建索引</h3><ol>
-<li><h3 id="创建LZO文件的索引"><a href="#创建LZO文件的索引" class="headerlink" title="创建LZO文件的索引"></a>创建LZO文件的索引</h3><p>创建LZO文件的索引，LZO压缩文件的可切片特性依赖于其索引，故我们需要手动为LZO压缩文件创建索引。若无索引，则LZO文件的切片只有一个。</p>
-<p>命令：<code>hadoop jar $HADOOP_HOME/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.DistributedLzoIndexer XXX.lzo</code></p>
-</li>
-<li><h3 id="执行wc-没有创建索引"><a href="#执行wc-没有创建索引" class="headerlink" title="执行wc(没有创建索引)"></a>执行wc(没有创建索引)</h3><p>创建需要分片处理的bigwcneedspilt.data.lzo（203M）文件，并上传到hdfs上</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigwcneedspilt.data</span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigwc*</span><br><span class="line">157M	bigwc.data</span><br><span class="line">51M	bigwc.data.lzo</span><br><span class="line">625M	bigwcneedspilt.data</span><br><span class="line">203M	bigwcneedspilt.data.lzo</span><br><span class="line">18M	bigwc.txt</span><br><span class="line">[hadoop@hadoop001 data]$ hadoop fs -put bigwcneedspilt.data.lzo /user/hadoop/data/</span><br></pre></td></tr></table></figure>
-
-<p>执行wc(没有创建索引)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output1</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-1.png" alt="image-20220113175318333"></p>
-<p>可以看到此时切片并没有生效，依然只有一个</p>
-</li>
-<li><h3 id="对上传的LZO文件创建索引"><a href="#对上传的LZO文件创建索引" class="headerlink" title="对上传的LZO文件创建索引"></a>对上传的LZO文件创建索引</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar  com.hadoop.compression.lzo.DistributedLzoIndexer /user/hadoop/data/bigwcneedspilt.data.lzo</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220113183629075.png" alt="image-20220113183629075"></p>
-</li>
-<li><h3 id="执行wc-已经创建索引"><a href="#执行wc-已经创建索引" class="headerlink" title="执行wc(已经创建索引)"></a>执行wc(已经创建索引)</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output2</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-2.png" alt="image-20220113193027590"></p>
-<p>此时已经成功切片</p>
-</li>
-</ol>
-<h2 id="二、Hive支持处理LZO压缩格式的数据的统计查询"><a href="#二、Hive支持处理LZO压缩格式的数据的统计查询" class="headerlink" title="二、Hive支持处理LZO压缩格式的数据的统计查询"></a>二、Hive支持处理LZO压缩格式的数据的统计查询</h2><h3 id="开启压缩的方式"><a href="#开启压缩的方式" class="headerlink" title="开启压缩的方式"></a>开启压缩的方式</h3><ul>
-<li>在**<code>$HIVE_HOME/conf/hive-site.xml</code>**中设置</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!-- 设置hive语句执行输出文件是否开启压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.output&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether the final outputs of a query (to a local/HDFS file or a Hive table) </span><br><span class="line">        is compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables </span><br><span class="line">        mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;!-- 控制多个MR Job的中间结果文件是否启用压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.intermediate&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether intermediate files produced by Hive between multiple map-reduce jobs are compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>在hive中开启</p>
-<p>查看默认状态：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=false</span><br><span class="line">hive (hive)&gt; set mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure>
-
-<p>开启支持压缩，格式为lzop（lzo在文件构建索引后才会支持数据分片）：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h3 id="数据与环境准备"><a href="#数据与环境准备" class="headerlink" title="数据与环境准备"></a>数据与环境准备</h3><p>数据准备：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigemp.data </span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigemp*</span><br><span class="line">823M	bigemp.data</span><br><span class="line">206M	bigemp.data.lzo</span><br></pre></td></tr></table></figure>
-
-<p>为了方便测试分片，我重启了hadoop，修改了hdfs-site.xml设置了blocksize=10M。然后mapr-site.xml没有配置上面的4个值。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.blocksize&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;10485760&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="未开启（未添加索引）"><a href="#未开启（未添加索引）" class="headerlink" title="未开启（未添加索引）"></a>未开启（未添加索引）</h3><h4 id="建表"><a href="#建表" class="headerlink" title="建表"></a>建表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE big_emp (id int,name string,dept string)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br></pre></td></tr></table></figure>
-
-<h4 id="从本地load-LZO压缩数据bigemp-data-lzo到表big-emp"><a href="#从本地load-LZO压缩数据bigemp-data-lzo到表big-emp" class="headerlink" title="从本地load LZO压缩数据bigemp.data.lzo到表big_emp"></a>从本地load LZO压缩数据<code>bigemp.data.lzo</code>到表<code>big_emp</code></h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">LOAD DATA LOCAL INPATH &#x27;/home/hadoop/data/bigemp.data.lzo&#x27; OVERWRITE INTO TABLE big_emp</span><br></pre></td></tr></table></figure>
-
-<h4 id="查看大小"><a href="#查看大小" class="headerlink" title="查看大小"></a>查看大小</h4><p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114164409879.png" alt="image-20220114164409879"></p>
-<h4 id="查询统计测试"><a href="#查询统计测试" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select count(1) from big_emp;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-3.png" alt="image-20220114045505294"></p>
-<p>因为我们的块大小是默认的128M，而bigemp.data.lzo这个lzo压缩文件的大小远远大于128M*1.1，但是我们可以看见Map只有一个，可见lzo是不支持分片的。</p>
-<h3 id="已开启（已添加索引）"><a href="#已开启（已添加索引）" class="headerlink" title="已开启（已添加索引）"></a><strong>已开启（已添加索引）</strong></h3><h4 id="开启压缩"><a href="#开启压缩" class="headerlink" title="开启压缩"></a>开启压缩</h4><p>生成的压缩文件格式必须为设置为<strong>LzopCodec</strong>，lzoCode的压缩文件格式后缀为<code>.lzo_deflate</code>是无法创建索引的。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=true</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</span><br></pre></td></tr></table></figure>
-
-<h4 id="建表，并插入big-emp的数据"><a href="#建表，并插入big-emp的数据" class="headerlink" title="建表，并插入big_emp的数据"></a>建表，并插入big_emp的数据</h4><p>（若不是直接load的lzo文件，需要开启压缩，且压缩格式为LzopCodec，load数据并不能改变文件格式和压缩格式。）：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE big_emp_split ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br><span class="line">as select * from big_emp;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114171956115.png" alt="image-20220114171956115"></p>
-<h4 id="构建LZO文件索引"><a href="#构建LZO文件索引" class="headerlink" title="构建LZO文件索引"></a>构建LZO文件索引</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114172032219.png" alt="image-20220114172032219"></p>
-<h4 id="查询统计测试-1"><a href="#查询统计测试-1" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select count(1) from big_emp_split;</span><br></pre></td></tr></table></figure>
-
-<p><strong>当做到这步，遇到好几个问题：</strong></p>
-<ol>
-<li><p>直接返回结果，没有启动MR</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select count(1) from big_emp_split;</span><br><span class="line">OK</span><br><span class="line">_c0</span><br><span class="line">39999996</span><br><span class="line">Time taken: 0.27 seconds, Fetched: 1 row(s)</span><br></pre></td></tr></table></figure>
-
-<p>可能是有缓存，添加where条件可以运行MR程序。</p>
-</li>
-<li><p>当设置<code>SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</code>后，count(1)报错。</p>
-<p>设置成<code>SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec;</code>可以运行成功。</p>
-<p>参考：<a href="https://www.cnblogs.com/blfshiye/p/5424097.html">https://www.cnblogs.com/blfshiye/p/5424097.html</a></p>
-</li>
-<li><p>但结果比未生成索引时的多了几条，map数量仍然为1，即生成索引后仍然没有分片成功。推断是把索引文件作为输入了，所以数据变多。网上查阅，应该是因为把索引文件当成小文件合并了，所以map数量为1，且数据变多。解决办法：修改<code>CombineHiveInputFormat</code>为<code>HiveInputFormat</code>。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure>
-
-<p>参考：<a href="https://blog.csdn.net/weixin_43589563/article/details/122353909">https://blog.csdn.net/weixin_43589563/article/details/122353909</a></p>
-</li>
-<li><p>问题解决，分片成功。</p>
-<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-4.png" alt="image-20220114163716493"></p>
-<p>这里我们可以看到map数量是21，也就是说lzo压缩文件构建索引以后是支持分片的。</p>
-</li>
-</ol>
-<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><p>这个开启压缩，在生成表的时候需要（生成lzo文件），在做统计的时候不需要设置。lzo文件生成索引后，索引不被合并掉，就支持分片。</p>
-<h3 id="Hive支持处理LZO压缩格式分片步骤"><a href="#Hive支持处理LZO压缩格式分片步骤" class="headerlink" title="Hive支持处理LZO压缩格式分片步骤"></a>Hive支持处理LZO压缩格式分片步骤</h3><ol>
-<li><p>默认设置即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SET hive.exec.compress.output=false;</span><br><span class="line">SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure></li>
-<li><p>更改hive.input.format，防止索引被合并</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure></li>
-<li><p>为lzo文件创建索引</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure></li>
-<li><p>统计查询</p>
-</li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop基础知识</title>
     <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
     <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
@@ -1313,6 +1178,141 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hadoop支持LZO压缩</title>
+    <url>/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/</url>
+    <content><![CDATA[<h2 id="一、Hadoop支持LZO压缩"><a href="#一、Hadoop支持LZO压缩" class="headerlink" title="一、Hadoop支持LZO压缩"></a>一、Hadoop支持LZO压缩</h2><h3 id="1-lzop"><a href="#1-lzop" class="headerlink" title="1.lzop"></a>1.lzop</h3><p>lzo格式文件压缩解压需要用到服务器的lzop工具，hadoop 的<a href="https://so.csdn.net/so/search?q=native&spm=1001.2101.3001.7020">native</a>库（hadoop checknative是没有的lzo,zip相关信息）并不支持</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#安装以前先执行以下命令</span><br><span class="line">[hadoop@hadoop001 ~]$ which lzop</span><br><span class="line">/usr/bin/lzop</span><br></pre></td></tr></table></figure>
+
+<p> 【<em><strong>注意</strong></em>】这代表你已经有lzop，如果找不到，就执行以下命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#若没有执行如下安装命令【这些命令一定要在root用户下安装，否则没有权限】</span><br><span class="line">[root@hadoop001 ~]# yum install -y svn ncurses-devel</span><br><span class="line">[root@hadoop001 ~]# yum install -y gcc gcc-c++ make cmake</span><br><span class="line">[root@hadoop001 ~]# yum install -y openssl openssl-devel svn ncurses-devel zlib-devel libtool</span><br><span class="line">[root@hadoop001 ~]# yum install -y lzo lzo-devel lzop autoconf automake cmake </span><br><span class="line">[root@hadoop001 ~]# yum -y install lzo-devel zlib-devel gcc autoconf automake libtool</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-安装hadoop-lzo"><a href="#2-安装hadoop-lzo" class="headerlink" title="2.安装hadoop-lzo"></a>2.安装hadoop-lzo</h3><ol>
+<li><h4 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://github.com/twitter/hadoop-lzo/archive/master.zip</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="解压"><a href="#解压" class="headerlink" title="解压"></a>解压</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br><span class="line">[hadoop@hadoop001 source]$ unzip master</span><br><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">drwxrwxr-x.  5 hadoop hadoop    4096 Jan 11 22:03 hadoop-lzo-master</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="修改pom-xml"><a href="#修改pom-xml" class="headerlink" title="修改pom.xml"></a>修改pom.xml</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 source]cd hadoop-lzo-master</span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ vi pom.xml </span><br><span class="line">&lt;hadoop.current.version&gt;3.2.2&lt;/hadoop.current.version&gt;</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="声明两个临时环境变量"><a href="#声明两个临时环境变量" class="headerlink" title="声明两个临时环境变量"></a>声明两个临时环境变量</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export C_INCLUDE_PATH=/home/hadoop/app/hadoop/lzo/include     </span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export LIBRARY_PATH=/home/hadoop/app/hadoop/lzo/lib </span><br></pre></td></tr></table></figure></li>
+<li><h4 id="编译（不需要阿里云仓库）"><a href="#编译（不需要阿里云仓库）" class="headerlink" title="编译（不需要阿里云仓库）"></a>编译（不需要阿里云仓库）</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ mvn clean package -Dmaven.test.skip=true</span><br></pre></td></tr></table></figure>
+
+<p>查看编译后的jar，hadoop-lzo-0.4.21-SNAPSHOT.jar则为我们需要的jar</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ cd target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 444</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 antrun</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop   4096 Jan 11 22:03 apidocs</span><br><span class="line">drwxrwxr-x. 5 hadoop hadoop   4096 Jan 11 22:03 classes</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 generated-sources</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 180550 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 181006 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-javadoc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  52043 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-sources.jar</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 javadoc-bundle-options</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 maven-archiver</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 native</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 test-classes</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="上传jar包"><a href="#上传jar包" class="headerlink" title="上传jar包"></a>上传jar包</h4><p>将hadoop-lzo-0.4.21-SNAPSHOT.jar包复制到我们的hadoop的$HADOOP_HOME/share/hadoop/common/目录下才能被hadoop使用</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 target]$ cp hadoop-lzo-0.4.21-SNAPSHOT.jar ~/app/hadoop/share/hadoop/common/ </span><br></pre></td></tr></table></figure>
+
+<p>如果是集群，需要使用<code>xsync hadoop-lzo-0.4.21.jar</code>命令同步到集群中的其他机器</p>
+</li>
+<li><h4 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h4><p>core-site.xml</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codecs&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;</span><br><span class="line">		org.apache.hadoop.io.compress.GzipCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.DefaultCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.BZip2Codec,</span><br><span class="line">		org.apache.hadoop.io.compress.SnappyCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzoCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzopCodec</span><br><span class="line">	&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codec.lzo.class&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>mapred-site.xml（如果修改了，则默认输出格式为lzo）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.output.fileoutputformat.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.output.fileoutputformat.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzopCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><ul>
+<li><p><strong>配置了mapred-site.xml</strong>:</p>
+<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount /input /output</p>
+</li>
+<li><p>没有配置mapred-site.xml(指定输出文件格式为lzo)：</p>
+<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount <strong>-Dmapreduce.output.fileoutputformat.compress=true</strong> <strong>-Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</strong> /input /output</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.output.fileoutputformat.compress=true -Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec /wc/input/wc.data /output</span><br><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop fs -ls /output</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2022-01-11 22:18 /output/_SUCCESS</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         95 2022-01-11 22:18 /output/part-r-00000.lzo</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="3-LZO创建索引"><a href="#3-LZO创建索引" class="headerlink" title="3.LZO创建索引"></a>3.LZO创建索引</h3><ol>
+<li><h3 id="创建LZO文件的索引"><a href="#创建LZO文件的索引" class="headerlink" title="创建LZO文件的索引"></a>创建LZO文件的索引</h3><p>创建LZO文件的索引，LZO压缩文件的可切片特性依赖于其索引，故我们需要手动为LZO压缩文件创建索引。若无索引，则LZO文件的切片只有一个。</p>
+<p>命令：<code>hadoop jar $HADOOP_HOME/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.DistributedLzoIndexer XXX.lzo</code></p>
+</li>
+<li><h3 id="执行wc-没有创建索引"><a href="#执行wc-没有创建索引" class="headerlink" title="执行wc(没有创建索引)"></a>执行wc(没有创建索引)</h3><p>创建需要分片处理的bigwcneedspilt.data.lzo（203M）文件，并上传到hdfs上</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigwcneedspilt.data</span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigwc*</span><br><span class="line">157M	bigwc.data</span><br><span class="line">51M	bigwc.data.lzo</span><br><span class="line">625M	bigwcneedspilt.data</span><br><span class="line">203M	bigwcneedspilt.data.lzo</span><br><span class="line">18M	bigwc.txt</span><br><span class="line">[hadoop@hadoop001 data]$ hadoop fs -put bigwcneedspilt.data.lzo /user/hadoop/data/</span><br></pre></td></tr></table></figure>
+
+<p>执行wc(没有创建索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output1</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-1.png" alt="image-20220113175318333"></p>
+<p>可以看到此时切片并没有生效，依然只有一个</p>
+</li>
+<li><h3 id="对上传的LZO文件创建索引"><a href="#对上传的LZO文件创建索引" class="headerlink" title="对上传的LZO文件创建索引"></a>对上传的LZO文件创建索引</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar  com.hadoop.compression.lzo.DistributedLzoIndexer /user/hadoop/data/bigwcneedspilt.data.lzo</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220113183629075.png" alt="image-20220113183629075"></p>
+</li>
+<li><h3 id="执行wc-已经创建索引"><a href="#执行wc-已经创建索引" class="headerlink" title="执行wc(已经创建索引)"></a>执行wc(已经创建索引)</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output2</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-2.png" alt="image-20220113193027590"></p>
+<p>此时已经成功切片</p>
+</li>
+</ol>
+<h2 id="二、Hive支持处理LZO压缩格式的数据的统计查询"><a href="#二、Hive支持处理LZO压缩格式的数据的统计查询" class="headerlink" title="二、Hive支持处理LZO压缩格式的数据的统计查询"></a>二、Hive支持处理LZO压缩格式的数据的统计查询</h2><h3 id="开启压缩的方式"><a href="#开启压缩的方式" class="headerlink" title="开启压缩的方式"></a>开启压缩的方式</h3><ul>
+<li>在**<code>$HIVE_HOME/conf/hive-site.xml</code>**中设置</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;!-- 设置hive语句执行输出文件是否开启压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.output&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether the final outputs of a query (to a local/HDFS file or a Hive table) </span><br><span class="line">        is compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables </span><br><span class="line">        mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;!-- 控制多个MR Job的中间结果文件是否启用压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.intermediate&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether intermediate files produced by Hive between multiple map-reduce jobs are compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>在hive中开启</p>
+<p>查看默认状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=false</span><br><span class="line">hive (hive)&gt; set mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure>
+
+<p>开启支持压缩，格式为lzop（lzo在文件构建索引后才会支持数据分片）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="数据与环境准备"><a href="#数据与环境准备" class="headerlink" title="数据与环境准备"></a>数据与环境准备</h3><p>数据准备：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigemp.data </span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigemp*</span><br><span class="line">823M	bigemp.data</span><br><span class="line">206M	bigemp.data.lzo</span><br></pre></td></tr></table></figure>
+
+<p>为了方便测试分片，我重启了hadoop，修改了hdfs-site.xml设置了blocksize=10M。然后mapr-site.xml没有配置上面的4个值。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.blocksize&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;10485760&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="未开启（未添加索引）"><a href="#未开启（未添加索引）" class="headerlink" title="未开启（未添加索引）"></a>未开启（未添加索引）</h3><h4 id="建表"><a href="#建表" class="headerlink" title="建表"></a>建表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE big_emp (id int,name string,dept string)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br></pre></td></tr></table></figure>
+
+<h4 id="从本地load-LZO压缩数据bigemp-data-lzo到表big-emp"><a href="#从本地load-LZO压缩数据bigemp-data-lzo到表big-emp" class="headerlink" title="从本地load LZO压缩数据bigemp.data.lzo到表big_emp"></a>从本地load LZO压缩数据<code>bigemp.data.lzo</code>到表<code>big_emp</code></h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">LOAD DATA LOCAL INPATH &#x27;/home/hadoop/data/bigemp.data.lzo&#x27; OVERWRITE INTO TABLE big_emp</span><br></pre></td></tr></table></figure>
+
+<h4 id="查看大小"><a href="#查看大小" class="headerlink" title="查看大小"></a>查看大小</h4><p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114164409879.png" alt="image-20220114164409879"></p>
+<h4 id="查询统计测试"><a href="#查询统计测试" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select count(1) from big_emp;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-3.png" alt="image-20220114045505294"></p>
+<p>因为我们的块大小是默认的128M，而bigemp.data.lzo这个lzo压缩文件的大小远远大于128M*1.1，但是我们可以看见Map只有一个，可见lzo是不支持分片的。</p>
+<h3 id="已开启（已添加索引）"><a href="#已开启（已添加索引）" class="headerlink" title="已开启（已添加索引）"></a><strong>已开启（已添加索引）</strong></h3><h4 id="开启压缩"><a href="#开启压缩" class="headerlink" title="开启压缩"></a>开启压缩</h4><p>生成的压缩文件格式必须为设置为<strong>LzopCodec</strong>，lzoCode的压缩文件格式后缀为<code>.lzo_deflate</code>是无法创建索引的。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=true</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</span><br></pre></td></tr></table></figure>
+
+<h4 id="建表，并插入big-emp的数据"><a href="#建表，并插入big-emp的数据" class="headerlink" title="建表，并插入big_emp的数据"></a>建表，并插入big_emp的数据</h4><p>（若不是直接load的lzo文件，需要开启压缩，且压缩格式为LzopCodec，load数据并不能改变文件格式和压缩格式。）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE TABLE big_emp_split ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br><span class="line">as select * from big_emp;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114171956115.png" alt="image-20220114171956115"></p>
+<h4 id="构建LZO文件索引"><a href="#构建LZO文件索引" class="headerlink" title="构建LZO文件索引"></a>构建LZO文件索引</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114172032219.png" alt="image-20220114172032219"></p>
+<h4 id="查询统计测试-1"><a href="#查询统计测试-1" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select count(1) from big_emp_split;</span><br></pre></td></tr></table></figure>
+
+<p><strong>当做到这步，遇到好几个问题：</strong></p>
+<ol>
+<li><p>直接返回结果，没有启动MR</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hive (hive)&gt; select count(1) from big_emp_split;</span><br><span class="line">OK</span><br><span class="line">_c0</span><br><span class="line">39999996</span><br><span class="line">Time taken: 0.27 seconds, Fetched: 1 row(s)</span><br></pre></td></tr></table></figure>
+
+<p>可能是有缓存，添加where条件可以运行MR程序。</p>
+</li>
+<li><p>当设置<code>SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</code>后，count(1)报错。</p>
+<p>设置成<code>SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec;</code>可以运行成功。</p>
+<p>参考：<a href="https://www.cnblogs.com/blfshiye/p/5424097.html">https://www.cnblogs.com/blfshiye/p/5424097.html</a></p>
+</li>
+<li><p>但结果比未生成索引时的多了几条，map数量仍然为1，即生成索引后仍然没有分片成功。推断是把索引文件作为输入了，所以数据变多。网上查阅，应该是因为把索引文件当成小文件合并了，所以map数量为1，且数据变多。解决办法：修改<code>CombineHiveInputFormat</code>为<code>HiveInputFormat</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure>
+
+<p>参考：<a href="https://blog.csdn.net/weixin_43589563/article/details/122353909">https://blog.csdn.net/weixin_43589563/article/details/122353909</a></p>
+</li>
+<li><p>问题解决，分片成功。</p>
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-4.png" alt="image-20220114163716493"></p>
+<p>这里我们可以看到map数量是21，也就是说lzo压缩文件构建索引以后是支持分片的。</p>
+</li>
+</ol>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><p>这个开启压缩，在生成表的时候需要（生成lzo文件），在做统计的时候不需要设置。lzo文件生成索引后，索引不被合并掉，就支持分片。</p>
+<h3 id="Hive支持处理LZO压缩格式分片步骤"><a href="#Hive支持处理LZO压缩格式分片步骤" class="headerlink" title="Hive支持处理LZO压缩格式分片步骤"></a>Hive支持处理LZO压缩格式分片步骤</h3><ol>
+<li><p>默认设置即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SET hive.exec.compress.output=false;</span><br><span class="line">SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure></li>
+<li><p>更改hive.input.format，防止索引被合并</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure></li>
+<li><p>为lzo文件创建索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure></li>
+<li><p>统计查询</p>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
     <title>Hive：内部表与外部表</title>
     <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
     <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
@@ -1369,60 +1369,6 @@
 <p>参考链接：</p>
 <p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
 <p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hive：加载数据到表的方式</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
-<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
-
-<p>适用于建（外部）表时，数据文件已经存在的情况</p>
-<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
-
-<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
-
-<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
-<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
-<li>用来复制表的结构</li>
-<li>需要外部表的话，通过create external table as …指定</li>
-<li>不CTAS语句会填充数据</li>
-</ul>
-<p>创建表并加载数据（as select）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
-
-<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
-<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
-<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
-<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
-<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
-<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
-<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
-<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
-<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
-
-<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
-<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1510,6 +1456,60 @@
 <p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
 <p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
 <p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hive：加载数据到表的方式</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
+<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
+
+<p>适用于建（外部）表时，数据文件已经存在的情况</p>
+<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
+
+<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
+
+<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
+<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
+<li>用来复制表的结构</li>
+<li>需要外部表的话，通过create external table as …指定</li>
+<li>不CTAS语句会填充数据</li>
+</ul>
+<p>创建表并加载数据（as select）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
+
+<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
+<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
+<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
+<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
+<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
+<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
+<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
+<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
+<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
+
+<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
+<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1874,31 +1874,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MR作业的迭代：JobControl设计及用法</title>
-    <url>/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/</url>
-    <content><![CDATA[<h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
-<p><img src="/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo\k12blog\source_posts\MR作业的迭代：JobControl设计及用法\JobControl.jpg" alt="img"></p>
-<p>​    JobControl 封装了一系列 MapReduce 作业及其对应的依赖关系。 它将处于不同状态的作业放入不同的哈希表中，并按照图所示的状态转移作业，直到所有作业运行完成。在实现的时候，JobControl 包含一个线程用于周期性地监控和更新各个作业的运行状态，调度依赖作业运行完成的作业，提交处于 READY 状态的作业等。同时，它还提供了一些API 用于挂起、恢复和暂停该线程。</p>
-<h2 id="JobControl代码实现"><a href="#JobControl代码实现" class="headerlink" title="JobControl代码实现"></a>JobControl代码实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.HashSet;</span><br><span class="line"> </span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;</span><br><span class="line">import org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"> </span><br><span class="line">import mapreduce.SegmentUtil;</span><br><span class="line"> </span><br><span class="line">public class JobControlDemo &#123;</span><br><span class="line">	public static int main(String[] args) throws IOException, ClassNotFoundException, InterruptedException &#123;</span><br><span class="line">		Configuration conf = new Configuration();</span><br><span class="line">		String[] otherargs = new GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">		if (otherargs.length != 3) &#123;</span><br><span class="line">			System.err.println(&quot;Usage JobControlDemo &lt;InputPath1&gt; &lt;InputPath1&gt; &lt;OutPath&gt;&quot;);</span><br><span class="line">			System.exit(2);</span><br><span class="line">		&#125;</span><br><span class="line"> </span><br><span class="line">		// 创建基础作业</span><br><span class="line">		Job job1 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;1&quot;);</span><br><span class="line">		Job job2 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;2&quot;);</span><br><span class="line">		Job job3 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;3&quot;);</span><br><span class="line"> </span><br><span class="line">		// Job1作业参数配置</span><br><span class="line">		job1.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job1.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job1.setMapOutputValueClass(Text.class);</span><br><span class="line">		job1.setOutputKeyClass(Text.class);</span><br><span class="line">		job1.setOutputValueClass(Text.class);</span><br><span class="line">		job1.setMapperClass(MyMapper1.class);</span><br><span class="line">		job1.setReducerClass(MyReducer1.class);</span><br><span class="line">		job1.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job1.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job1, new Path(otherargs[0]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job1, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job2作业参数配置</span><br><span class="line">		job2.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job2.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job2.setMapOutputValueClass(Text.class);</span><br><span class="line">		job2.setOutputKeyClass(Text.class);</span><br><span class="line">		job2.setOutputValueClass(Text.class);</span><br><span class="line">		job2.setMapperClass(MyMapper2.class);</span><br><span class="line">		job2.setReducerClass(MyReducer2.class);</span><br><span class="line">		job2.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job2.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job2, new Path(otherargs[1]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job2, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job3作业参数配置</span><br><span class="line">		job3.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job3.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job3.setMapOutputValueClass(Text.class);</span><br><span class="line">		job3.setOutputKeyClass(Text.class);</span><br><span class="line">		job3.setOutputValueClass(Text.class);</span><br><span class="line">		job3.setMapperClass(MyMapper3.class);</span><br><span class="line">		job3.setReducerClass(MyReducer3.class);</span><br><span class="line">		job3.setInputFormatClass(KeyValueTextInputFormat.class);</span><br><span class="line">		job3.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line">		FileOutputFormat.setOutputPath(job3, new Path(otherargs[2]+File.separator+&quot;result&quot;));</span><br><span class="line"> </span><br><span class="line">		// 创建受控作业</span><br><span class="line">		ControlledJob cjob1 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob2 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob3 = new ControlledJob(conf);</span><br><span class="line"> </span><br><span class="line">		// 将普通作业包装成受控作业</span><br><span class="line">		cjob1.setJob(job1);</span><br><span class="line">		cjob2.setJob(job2);</span><br><span class="line">		cjob3.setJob(job3);</span><br><span class="line"> </span><br><span class="line">		// 设置依赖关系</span><br><span class="line">		//cjob2.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob2);</span><br><span class="line"> </span><br><span class="line">		// 新建作业控制器</span><br><span class="line">		JobControl jc = new JobControl(&quot;My control job&quot;);</span><br><span class="line"> </span><br><span class="line">		// 将受控作业添加到控制器中</span><br><span class="line">		jc.addJob(cjob1);</span><br><span class="line">		jc.addJob(cjob2);</span><br><span class="line">		jc.addJob(cjob3);</span><br><span class="line"> </span><br><span class="line">		/**</span><br><span class="line">		 * hadoop的JobControl类实现了线程Runnable接口。我们需要实例化一个线程来让它启动。直接调用JobControl的run()方法，线程将无法结束。</span><br><span class="line">		 */</span><br><span class="line">		//jc.run();</span><br><span class="line">		</span><br><span class="line">        Thread jcThread = new Thread(jc);  </span><br><span class="line">        jcThread.start();  </span><br><span class="line">        while(true)&#123;  </span><br><span class="line">            if(jc.allFinished())&#123;  </span><br><span class="line">                System.out.println(jc.getSuccessfulJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 0;  </span><br><span class="line">            &#125;  </span><br><span class="line">            if(jc.getFailedJobList().size() &gt; 0)&#123;  </span><br><span class="line">                System.out.println(jc.getFailedJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 1;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125; </span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第一个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper1 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl1=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl1.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl1[0].trim()), new Text(spl1[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer1 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k2, Iterable&lt;Text&gt; v2s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v2 : v2s) &#123;</span><br><span class="line">				context.write(k2, v2);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第二个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper2 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl2=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl2.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl2[0].trim()), new Text(spl2[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer2 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k3, Iterable&lt;Text&gt; v3s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v3 : v3s) &#123;</span><br><span class="line">				context.write(k3, v3);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第三个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper3 extends Mapper&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(Text key, Text value, Mapper&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			context.write(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer3 extends Reducer&lt;Text,Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k4, Iterable&lt;Text&gt; v4s,Reducer&lt;Text, Text, Text, Text&gt;.Context context) </span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			HashSet&lt;String&gt; hashSet=new HashSet&lt;String&gt;();</span><br><span class="line">			for (Text v4 : v4s) &#123;</span><br><span class="line">				hashSet.add(v4.toString().trim());</span><br><span class="line">			&#125;</span><br><span class="line">			if(hashSet.size()&gt;=2)&#123;</span><br><span class="line">				context.write(k4, new Text(&quot;OK&quot;));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试输入数据：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath1.txt</span><br><span class="line">hadoop  a</span><br><span class="line">spark   a</span><br><span class="line">hive    a</span><br><span class="line">hbase   a</span><br><span class="line">tachyon a</span><br><span class="line">storm   a</span><br><span class="line">redis   a</span><br><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath2.txt</span><br><span class="line">hadoop  b</span><br><span class="line">spark   b</span><br><span class="line">kafka   b</span><br><span class="line">tachyon b</span><br><span class="line">oozie   b</span><br><span class="line">flume   b</span><br><span class="line">sqoop   b</span><br><span class="line">solr    b</span><br></pre></td></tr></table></figure>
-
-<p>测试输出数据：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpathmerge2.txt/result/*</span><br><span class="line">hadoop  OK</span><br><span class="line">spark   OK</span><br><span class="line">tachyon OK</span><br></pre></td></tr></table></figure>
-
-<p>运行输出信息：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[sshexec] cmd : bash -c &#x27;source  /home/jiuqian/.bashrc; /home/hduser/hadoop/bin/hadoop jar  /home/jiuqian/blb/JobControlDemo.jar -D mapreduce.map.java.opts=-Xmx2048m -D mapreduce.input.fileinputformat.split.minsize=1 -Dmapreduce.input.fileinputformat.split.maxsize=512000000 -D mapred.linerecordreader.maxlength=32768 /user/jiuqian/libin/input/inputpath1.txt /user/jiuqian/libin/input/inputpath2.txt /user/jiuqian/libin/input/inputpathmerge2.txt&#x27;</span><br><span class="line">16/02/27 12:37:45 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/192.168.1.2:8032</span><br><span class="line">16/02/27 12:37:46 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:46 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:46 INFO Configuration.deprecation: mapred.linerecordreader.maxlength is deprecated. Instead, use mapreduce.input.linerecordreader.line.maxlength</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17037/</span><br><span class="line">16/02/27 12:37:47 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:37:47 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17038/</span><br><span class="line">16/02/27 12:38:13 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:38:13 INFO input.FileInputFormat: Total input paths to process : 2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17039/</span><br><span class="line">[job name:	JobControlDemo1</span><br><span class="line">job id:	My control job0</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17037</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo2</span><br><span class="line">job id:	My control job1</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17038</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo3</span><br><span class="line">job id:	My control job2</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17039</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has 2 dependeng jobs:</span><br><span class="line">	 depending job 0:	JobControlDemo1</span><br><span class="line">	 depending job 1:	JobControlDemo2</span><br><span class="line">]</span><br><span class="line">[INFO] Executed tasks</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br><span class="line">[INFO] BUILD SUCCESS</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html</a></p>
-<p><a href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
-<p><a href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>MR设置输出压缩算法Lzop，LzoCodec vs LzopCodec</title>
     <url>/2022/01/13/MR%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%87%BA%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95Lzop%EF%BC%8CLzoCodec%20vs%20LzopCodec/</url>
     <content><![CDATA[<h1 id="hadoop-MapReduce的输出压缩算法的设置（四种方法）"><a href="#hadoop-MapReduce的输出压缩算法的设置（四种方法）" class="headerlink" title="hadoop MapReduce的输出压缩算法的设置（四种方法）"></a>hadoop MapReduce的输出压缩算法的设置（四种方法）</h1><h2 id="1、FileOutputFormat设置"><a href="#1、FileOutputFormat设置" class="headerlink" title="1、FileOutputFormat设置"></a>1、FileOutputFormat设置</h2><pre><code>    // 优化措施一：压缩MapReduce的输出结果--&gt;使用Lzop压缩--&gt;输出空间占比小
@@ -1930,6 +1905,31 @@
 <p>参考链接：</p>
 <p><a href="https://blog.csdn.net/zhu_xun/article/details/21874293">https://blog.csdn.net/zhu_xun/article/details/21874293</a></p>
 <p><a href="https://blog.csdn.net/leys123/article/details/51982592/">https://blog.csdn.net/leys123/article/details/51982592/</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>MR作业的迭代：JobControl设计及用法</title>
+    <url>/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/</url>
+    <content><![CDATA[<h2 id="JobControl设计原理分析"><a href="#JobControl设计原理分析" class="headerlink" title="JobControl设计原理分析"></a>JobControl设计原理分析</h2><p>​    JobControl 由两个类组成：Job 和 JobControl。其中，Job 类封装了一个 MapReduce 作业及其对应的依赖关系，主要负责监控各个依赖作业的运行状态，以此更新自己的状态，其状态转移图如图所示。作业刚开始处于 WAITING 状态。如果没有依赖作业或者所有依赖作业均已运行完成，则进入READY 状态。一旦进入 READY 状态，则作业可被提交到 Hadoop 集群上运行，并进入 RUNNING 状态。在 RUNNING 状态下，根据作业运行情况，可能进入 SUCCESS 或者 FAILED 状态。需要注意的是，如果一个作业的依赖作业失败，则该作业也会失败，于是形成“多米诺骨牌效应”， 后续所有作业均会失败。</p>
+<p><img src="/2021/12/21/MR%E4%BD%9C%E4%B8%9A%E7%9A%84%E8%BF%AD%E4%BB%A3%EF%BC%9AJobControl%E8%AE%BE%E8%AE%A1%E5%8F%8A%E7%94%A8%E6%B3%95/hexo\k12blog\source_posts\MR作业的迭代：JobControl设计及用法\JobControl.jpg" alt="img"></p>
+<p>​    JobControl 封装了一系列 MapReduce 作业及其对应的依赖关系。 它将处于不同状态的作业放入不同的哈希表中，并按照图所示的状态转移作业，直到所有作业运行完成。在实现的时候，JobControl 包含一个线程用于周期性地监控和更新各个作业的运行状态，调度依赖作业运行完成的作业，提交处于 READY 状态的作业等。同时，它还提供了一些API 用于挂起、恢复和暂停该线程。</p>
+<h2 id="JobControl代码实现"><a href="#JobControl代码实现" class="headerlink" title="JobControl代码实现"></a>JobControl代码实现</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import java.io.File;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.util.HashSet;</span><br><span class="line"> </span><br><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br><span class="line">import org.apache.hadoop.io.LongWritable;</span><br><span class="line">import org.apache.hadoop.io.Text;</span><br><span class="line">import org.apache.hadoop.mapreduce.Job;</span><br><span class="line">import org.apache.hadoop.mapreduce.Mapper;</span><br><span class="line">import org.apache.hadoop.mapreduce.Reducer;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;</span><br><span class="line">import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;</span><br><span class="line">import org.apache.hadoop.util.GenericOptionsParser;</span><br><span class="line"> </span><br><span class="line">import mapreduce.SegmentUtil;</span><br><span class="line"> </span><br><span class="line">public class JobControlDemo &#123;</span><br><span class="line">	public static int main(String[] args) throws IOException, ClassNotFoundException, InterruptedException &#123;</span><br><span class="line">		Configuration conf = new Configuration();</span><br><span class="line">		String[] otherargs = new GenericOptionsParser(conf, args).getRemainingArgs();</span><br><span class="line">		if (otherargs.length != 3) &#123;</span><br><span class="line">			System.err.println(&quot;Usage JobControlDemo &lt;InputPath1&gt; &lt;InputPath1&gt; &lt;OutPath&gt;&quot;);</span><br><span class="line">			System.exit(2);</span><br><span class="line">		&#125;</span><br><span class="line"> </span><br><span class="line">		// 创建基础作业</span><br><span class="line">		Job job1 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;1&quot;);</span><br><span class="line">		Job job2 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;2&quot;);</span><br><span class="line">		Job job3 = Job.getInstance(conf, JobControlDemo.class.getSimpleName() + &quot;3&quot;);</span><br><span class="line"> </span><br><span class="line">		// Job1作业参数配置</span><br><span class="line">		job1.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job1.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job1.setMapOutputValueClass(Text.class);</span><br><span class="line">		job1.setOutputKeyClass(Text.class);</span><br><span class="line">		job1.setOutputValueClass(Text.class);</span><br><span class="line">		job1.setMapperClass(MyMapper1.class);</span><br><span class="line">		job1.setReducerClass(MyReducer1.class);</span><br><span class="line">		job1.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job1.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job1, new Path(otherargs[0]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job1, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job2作业参数配置</span><br><span class="line">		job2.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job2.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job2.setMapOutputValueClass(Text.class);</span><br><span class="line">		job2.setOutputKeyClass(Text.class);</span><br><span class="line">		job2.setOutputValueClass(Text.class);</span><br><span class="line">		job2.setMapperClass(MyMapper2.class);</span><br><span class="line">		job2.setReducerClass(MyReducer2.class);</span><br><span class="line">		job2.setInputFormatClass(TextInputFormat.class);</span><br><span class="line">		job2.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job2, new Path(otherargs[1]));</span><br><span class="line">		FileOutputFormat.setOutputPath(job2, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line"> </span><br><span class="line">		// Job3作业参数配置</span><br><span class="line">		job3.setJarByClass(JobControlDemo.class);</span><br><span class="line">		job3.setMapOutputKeyClass(Text.class);</span><br><span class="line">		job3.setMapOutputValueClass(Text.class);</span><br><span class="line">		job3.setOutputKeyClass(Text.class);</span><br><span class="line">		job3.setOutputValueClass(Text.class);</span><br><span class="line">		job3.setMapperClass(MyMapper3.class);</span><br><span class="line">		job3.setReducerClass(MyReducer3.class);</span><br><span class="line">		job3.setInputFormatClass(KeyValueTextInputFormat.class);</span><br><span class="line">		job3.setOutputFormatClass(TextOutputFormat.class);</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid1&quot;));</span><br><span class="line">		FileInputFormat.addInputPath(job3, new Path(otherargs[2]+File.separator+&quot;mid2&quot;));</span><br><span class="line">		FileOutputFormat.setOutputPath(job3, new Path(otherargs[2]+File.separator+&quot;result&quot;));</span><br><span class="line"> </span><br><span class="line">		// 创建受控作业</span><br><span class="line">		ControlledJob cjob1 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob2 = new ControlledJob(conf);</span><br><span class="line">		ControlledJob cjob3 = new ControlledJob(conf);</span><br><span class="line"> </span><br><span class="line">		// 将普通作业包装成受控作业</span><br><span class="line">		cjob1.setJob(job1);</span><br><span class="line">		cjob2.setJob(job2);</span><br><span class="line">		cjob3.setJob(job3);</span><br><span class="line"> </span><br><span class="line">		// 设置依赖关系</span><br><span class="line">		//cjob2.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob1);</span><br><span class="line">		cjob3.addDependingJob(cjob2);</span><br><span class="line"> </span><br><span class="line">		// 新建作业控制器</span><br><span class="line">		JobControl jc = new JobControl(&quot;My control job&quot;);</span><br><span class="line"> </span><br><span class="line">		// 将受控作业添加到控制器中</span><br><span class="line">		jc.addJob(cjob1);</span><br><span class="line">		jc.addJob(cjob2);</span><br><span class="line">		jc.addJob(cjob3);</span><br><span class="line"> </span><br><span class="line">		/**</span><br><span class="line">		 * hadoop的JobControl类实现了线程Runnable接口。我们需要实例化一个线程来让它启动。直接调用JobControl的run()方法，线程将无法结束。</span><br><span class="line">		 */</span><br><span class="line">		//jc.run();</span><br><span class="line">		</span><br><span class="line">        Thread jcThread = new Thread(jc);  </span><br><span class="line">        jcThread.start();  </span><br><span class="line">        while(true)&#123;  </span><br><span class="line">            if(jc.allFinished())&#123;  </span><br><span class="line">                System.out.println(jc.getSuccessfulJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 0;  </span><br><span class="line">            &#125;  </span><br><span class="line">            if(jc.getFailedJobList().size() &gt; 0)&#123;  </span><br><span class="line">                System.out.println(jc.getFailedJobList());  </span><br><span class="line">                jc.stop();  </span><br><span class="line">                return 1;  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125; </span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第一个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper1 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl1=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl1.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl1[0].trim()), new Text(spl1[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer1 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k2, Iterable&lt;Text&gt; v2s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v2 : v2s) &#123;</span><br><span class="line">				context.write(k2, v2);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第二个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper2 extends Mapper&lt;LongWritable, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(LongWritable key, Text value, Mapper&lt;LongWritable, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			String[] spl2=value.toString().split(&quot;\t&quot;);</span><br><span class="line">			if(spl2.length==2)&#123;</span><br><span class="line">				context.write(new Text(spl2[0].trim()), new Text(spl2[1].trim()));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer2 extends Reducer&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k3, Iterable&lt;Text&gt; v3s, Reducer&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			for (Text v3 : v3s) &#123;</span><br><span class="line">				context.write(k3, v3);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	/**</span><br><span class="line">	 * 第三个Job</span><br><span class="line">	 */</span><br><span class="line">	public static class MyMapper3 extends Mapper&lt;Text, Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void map(Text key, Text value, Mapper&lt;Text, Text, Text, Text&gt;.Context context)</span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			context.write(key, value);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	public static class MyReducer3 extends Reducer&lt;Text,Text, Text, Text&gt;&#123;</span><br><span class="line">		@Override</span><br><span class="line">		protected void reduce(Text k4, Iterable&lt;Text&gt; v4s,Reducer&lt;Text, Text, Text, Text&gt;.Context context) </span><br><span class="line">				throws IOException, InterruptedException &#123;</span><br><span class="line">			HashSet&lt;String&gt; hashSet=new HashSet&lt;String&gt;();</span><br><span class="line">			for (Text v4 : v4s) &#123;</span><br><span class="line">				hashSet.add(v4.toString().trim());</span><br><span class="line">			&#125;</span><br><span class="line">			if(hashSet.size()&gt;=2)&#123;</span><br><span class="line">				context.write(k4, new Text(&quot;OK&quot;));</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试输入数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath1.txt</span><br><span class="line">hadoop  a</span><br><span class="line">spark   a</span><br><span class="line">hive    a</span><br><span class="line">hbase   a</span><br><span class="line">tachyon a</span><br><span class="line">storm   a</span><br><span class="line">redis   a</span><br><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpath2.txt</span><br><span class="line">hadoop  b</span><br><span class="line">spark   b</span><br><span class="line">kafka   b</span><br><span class="line">tachyon b</span><br><span class="line">oozie   b</span><br><span class="line">flume   b</span><br><span class="line">sqoop   b</span><br><span class="line">solr    b</span><br></pre></td></tr></table></figure>
+
+<p>测试输出数据：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs dfs -text /user/jiuqian/libin/input/inputpathmerge2.txt/result/*</span><br><span class="line">hadoop  OK</span><br><span class="line">spark   OK</span><br><span class="line">tachyon OK</span><br></pre></td></tr></table></figure>
+
+<p>运行输出信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[sshexec] cmd : bash -c &#x27;source  /home/jiuqian/.bashrc; /home/hduser/hadoop/bin/hadoop jar  /home/jiuqian/blb/JobControlDemo.jar -D mapreduce.map.java.opts=-Xmx2048m -D mapreduce.input.fileinputformat.split.minsize=1 -Dmapreduce.input.fileinputformat.split.maxsize=512000000 -D mapred.linerecordreader.maxlength=32768 /user/jiuqian/libin/input/inputpath1.txt /user/jiuqian/libin/input/inputpath2.txt /user/jiuqian/libin/input/inputpathmerge2.txt&#x27;</span><br><span class="line">16/02/27 12:37:45 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/192.168.1.2:8032</span><br><span class="line">16/02/27 12:37:46 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:46 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:46 INFO Configuration.deprecation: mapred.linerecordreader.maxlength is deprecated. Instead, use mapreduce.input.linerecordreader.line.maxlength</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17037</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17037/</span><br><span class="line">16/02/27 12:37:47 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:37:47 INFO input.FileInputFormat: Total input paths to process : 1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: number of splits:1</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17038</span><br><span class="line">16/02/27 12:37:47 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17038/</span><br><span class="line">16/02/27 12:38:13 INFO client.RMProxy: Connecting to ResourceManager at sh-rslog1/27.115.29.102:8032</span><br><span class="line">16/02/27 12:38:13 INFO input.FileInputFormat: Total input paths to process : 2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO impl.YarnClientImpl: Submitted application application_1446086163035_17039</span><br><span class="line">16/02/27 12:38:13 INFO mapreduce.Job: The url to track the job: http://sh-rslog1:8088/proxy/application_1446086163035_17039/</span><br><span class="line">[job name:	JobControlDemo1</span><br><span class="line">job id:	My control job0</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17037</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo2</span><br><span class="line">job id:	My control job1</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17038</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has no depending job:	</span><br><span class="line">, job name:	JobControlDemo3</span><br><span class="line">job id:	My control job2</span><br><span class="line">job state:	SUCCESS</span><br><span class="line">job mapred id:	job_1446086163035_17039</span><br><span class="line">job message:	just initialized</span><br><span class="line">job has 2 dependeng jobs:</span><br><span class="line">	 depending job 0:	JobControlDemo1</span><br><span class="line">	 depending job 1:	JobControlDemo2</span><br><span class="line">]</span><br><span class="line">[INFO] Executed tasks</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br><span class="line">[INFO] BUILD SUCCESS</span><br><span class="line">[INFO] ------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/mapreduce/lib/jobcontrol/JobControl.html</a></p>
+<p><a href="https://blog.csdn.net/baolibin528/article/details/50754753">https://blog.csdn.net/baolibin528/article/details/50754753</a></p>
+<p><a href="https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html">https://www.cnblogs.com/wuyudong/p/hadoop-jobcontrol.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2313,24 +2313,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2021/09/18/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>MapReduceClass extends Configured implements Tool代码</title>
     <url>/2021/12/18/hadoop-Interface-Tool/</url>
     <content><![CDATA[<p>在hdfs上运行jar包执行MapReduce程序时，要实现Tool接口，记录实现接口的MR程序代码，方便自己使用：</p>
@@ -2350,6 +2332,24 @@
 </ol>
 <p>参考链接：</p>
 <p><a href="https://dzone.com/articles/using-libjars-option-hadoop">https://dzone.com/articles/using-libjars-option-hadoop</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2021/09/18/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -3076,6 +3076,37 @@
 ]]></content>
   </entry>
   <entry>
+    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
+    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
+
+<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
+
+<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
+
+<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
+<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
+<ul>
+<li><p><strong>log4j-1.2.xx.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
+</li>
+<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
+</li>
+</ul>
+<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
+]]></content>
+  </entry>
+  <entry>
     <title>简明 VIM 练级攻略（转载）</title>
     <url>/2021/12/02/%E7%AE%80%E6%98%8E-VIM-%E7%BB%83%E7%BA%A7%E6%94%BB%E7%95%A5%EF%BC%88%E8%BD%AC%E8%BD%BD%EF%BC%89/</url>
     <content><![CDATA[<p>下面的文章翻译自《<a href="http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/">Learn Vim Progressively</a>》，我觉得这是给新手最好的VIM的升级教程了，没有列举所有的命令，只是列举了那些最有用的命令。非常不错。</p>
@@ -3368,37 +3399,6 @@
 </ul>
 <p>学习vim就像学弹钢琴一样，一旦学会，受益无穷。</p>
 <p>原文地址：<a href="https://coolshell.cn/articles/5426.html">https://coolshell.cn/articles/5426.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>（WINDOWS）解决IDEA运行MapReduce程序没有日志问题</title>
-    <url>/2021/12/16/%E8%A7%A3%E5%86%B3IDEA%E8%BF%90%E8%A1%8CMapReduce%E7%A8%8B%E5%BA%8F%E6%B2%A1%E6%9C%89%E6%97%A5%E5%BF%97%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p><strong>问题</strong>：MapReduce项目 可以运行成功，但是控制台只有几条信息，说明项目没有配置log4j，在开发的过程中，我们需要更详细的日志信息来定位问题和查看整个过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br><span class="line">log4j:WARN No appenders could be found for logger (org.apache.htrace.core.Tracer).</span><br><span class="line">log4j:WARN Please initialize the log4j system properly.</span><br><span class="line">log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.</span><br><span class="line"></span><br><span class="line">Process finished with exit code 0</span><br></pre></td></tr></table></figure>
-
-<p>项目打包成jar包，放到hdfs上运行，是有完整的日志信息的，可以看到整个MapRuduce的执行过程。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2021-12-16 15:39:45,000 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2021-12-16 15:39:46,374 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032</span><br><span class="line">2021-12-16 15:39:47,293 WARN mapreduce.JobResourceUploader: Hadoop command-line option parsing not performed. Implement the Tool interface and execute your application with ToolRunner to remedy this.</span><br><span class="line">2021-12-16 15:39:47,317 INFO mapreduce.JobResourceUploader: Disabling Erasure Coding for path: /tmp/hadoop-yarn/staging/hadoop/.staging/job_1639471863570_0002</span><br><span class="line">Thu Dec 16 15:39:48 CST 2021 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2021-12-16 15:39:48,301 INFO mapreduce.JobSubmitter: number of splits:2</span><br><span class="line">2021-12-16 15:39:48,601 INFO mapreduce.JobSubmitter: Submitting tokens for job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:48,603 INFO mapreduce.JobSubmitter: Executing with tokens: []</span><br><span class="line">2021-12-16 15:39:48,910 INFO conf.Configuration: resource-types.xml not found</span><br><span class="line">2021-12-16 15:39:48,910 INFO resource.ResourceUtils: Unable to find &#x27;resource-types.xml&#x27;.</span><br><span class="line">2021-12-16 15:39:49,056 INFO impl.YarnClientImpl: Submitted application application_1639471863570_0002</span><br><span class="line">2021-12-16 15:39:49,108 INFO mapreduce.Job: The url to track the job: http://hadoop001:8088/proxy/application_1639471863570_0002/</span><br><span class="line">2021-12-16 15:39:49,109 INFO mapreduce.Job: Running job: job_1639471863570_0002</span><br><span class="line">2021-12-16 15:40:00,420 INFO mapreduce.Job: Job job_1639471863570_0002 running in uber mode : false</span><br><span class="line">2021-12-16 15:40:00,424 INFO mapreduce.Job:  map 0% reduce 0%</span><br><span class="line">2021-12-16 15:40:15,639 INFO mapreduce.Job:  map 100% reduce 0%</span><br><span class="line">2021-12-16 15:40:23,706 INFO mapreduce.Job:  map 100% reduce 100%</span><br><span class="line">2021-12-16 15:40:23,717 INFO mapreduce.Job: Job job_1639471863570_0002 completed successfully</span><br><span class="line">2021-12-16 15:40:23,832 INFO mapreduce.Job: Counters: 54</span><br><span class="line">	File System Counters</span><br><span class="line">		FILE: Number of bytes read=106</span><br><span class="line">		FILE: Number of bytes written=705400</span><br><span class="line">		FILE: Number of read operations=0</span><br><span class="line">		FILE: Number of large read operations=0</span><br><span class="line">		FILE: Number of write operations=0</span><br><span class="line">		HDFS: Number of bytes read=156</span><br><span class="line">		HDFS: Number of bytes written=80</span><br><span class="line">		HDFS: Number of read operations=9</span><br><span class="line">		HDFS: Number of large read operations=0</span><br><span class="line">		HDFS: Number of write operations=2</span><br><span class="line">		HDFS: Number of bytes read erasure-coded=0</span><br><span class="line">	Job Counters </span><br><span class="line">		Launched map tasks=2</span><br><span class="line">		Launched reduce tasks=1</span><br><span class="line">		Other local map tasks=2</span><br><span class="line">		Total time spent by all maps in occupied slots (ms)=24451</span><br><span class="line">		Total time spent by all reduces in occupied slots (ms)=5384</span><br><span class="line">		Total time spent by all map tasks (ms)=24451</span><br><span class="line">		Total time spent by all reduce tasks (ms)=5384</span><br><span class="line">		Total vcore-milliseconds taken by all map tasks=24451</span><br><span class="line">		Total vcore-milliseconds taken by all reduce tasks=5384</span><br><span class="line">		Total megabyte-milliseconds taken by all map tasks=25037824</span><br><span class="line">		Total megabyte-milliseconds taken by all reduce tasks=5513216</span><br><span class="line">	Map-Reduce Framework</span><br><span class="line">		Map input records=4</span><br><span class="line">		Map output records=4</span><br><span class="line">		Map output bytes=92</span><br><span class="line">		Map output materialized bytes=112</span><br><span class="line">		Input split bytes=156</span><br><span class="line">		Combine input records=0</span><br><span class="line">		Combine output records=0</span><br><span class="line">		Reduce input groups=1</span><br><span class="line">		Reduce shuffle bytes=112</span><br><span class="line">		Reduce input records=4</span><br><span class="line">		Reduce output records=4</span><br><span class="line">		Spilled Records=8</span><br><span class="line">		Shuffled Maps =2</span><br><span class="line">		Failed Shuffles=0</span><br><span class="line">		Merged Map outputs=2</span><br><span class="line">		GC time elapsed (ms)=515</span><br><span class="line">		CPU time spent (ms)=3130</span><br><span class="line">		Physical memory (bytes) snapshot=507174912</span><br><span class="line">		Virtual memory (bytes) snapshot=8157011968</span><br><span class="line">		Total committed heap usage (bytes)=307437568</span><br><span class="line">		Peak Map Physical memory (bytes)=199159808</span><br><span class="line">		Peak Map Virtual memory (bytes)=2718306304</span><br><span class="line">		Peak Reduce Physical memory (bytes)=109441024</span><br><span class="line">		Peak Reduce Virtual memory (bytes)=2720411648</span><br><span class="line">	Shuffle Errors</span><br><span class="line">		BAD_ID=0</span><br><span class="line">		CONNECTION=0</span><br><span class="line">		IO_ERROR=0</span><br><span class="line">		WRONG_LENGTH=0</span><br><span class="line">		WRONG_MAP=0</span><br><span class="line">		WRONG_REDUCE=0</span><br><span class="line">	File Input Format Counters </span><br><span class="line">		Bytes Read=0</span><br><span class="line">	File Output Format Counters </span><br><span class="line">		Bytes Written=80</span><br></pre></td></tr></table></figure>
-
-<p>在此，我的项目有log4j依赖，但缺少log4j配置文件。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j-1.2-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.10.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加log4j配置文件"><a href="#添加log4j配置文件" class="headerlink" title="添加log4j配置文件"></a>添加log4j配置文件</h3><p>通过网上搜查得知，hadoop目录下<code>hadoop/etc/hadoop</code>是有自带的log4j.properties配置文件的。把log4j.properties 复制到project-&gt;src-&gt;main-&gt;resources下面，再执行程序。显示如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.</span><br><span class="line">SLF4J: Defaulting to no-operation (NOP) logger implementation</span><br><span class="line">SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.</span><br></pre></td></tr></table></figure>
-
-<p>大概意思就是需要SLF4J依赖，于是搜索如何添加SLF4J依赖：</p>
-<h3 id="slf4j打印日志必须的三个依赖包"><a href="#slf4j打印日志必须的三个依赖包" class="headerlink" title="slf4j打印日志必须的三个依赖包"></a>slf4j打印日志必须的三个依赖包</h3><p>slf4j假设使用log4j做为底层日志工具，运行以上程序需要三个包：</p>
-<ul>
-<li><p><strong>log4j-1.2.xx.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-api-x.x.x.jar、</strong></p>
-</li>
-<li><p><strong>slf4j-log4j12-x.x.x.jar</strong></p>
-</li>
-</ul>
-<p>经调试，直接把原来org.apache.logging.log4j依赖，替换成上面3个包的依赖：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
 ]]></content>
   </entry>
   <entry>
@@ -3792,6 +3792,338 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Linux快速整理</title>
+    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<p>环境搭建:</p>
+<p>vmware虚拟机+XShell登录虚拟机</p>
+<p>Linux快速整理：</p>
+<ol>
+<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
+</li>
+<li><p><code>pwd</code>查看当前所在目录路径地址</p>
+<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
+<span id="more"></span></li>
+<li><p>切换目录 <code>cd</code></p>
+<p>root用户的家目录：/root</p>
+<p>xxx用户的家目录：/home/xxx 默认</p>
+<p>家目录的修改：vi /etc/passwd 默认不修改</p>
+<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
+<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
+<p><code>cd -</code>回到上一次访问的目录</p>
+<p><code>cd ../</code> 回退上一层目录</p>
+<p><code>cd ../../</code> 回退上两层目录</p>
+</li>
+<li><p>目录 文件夹</p>
+<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
+<p>​                    写shell脚本时，路径要用绝对路径。</p>
+<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
+<p>查看当前文件夹下的内容 <code>ls</code></p>
+</li>
+<li><p>清空屏幕 <code>clear</code></p>
+</li>
+<li><p>ls查看当前光标所在的目录 文件有哪些</p>
+<p><code>ls -l</code>  等价于`ll``</p>
+<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
+<p><code>ll -h</code> 显示文件的大小</p>
+<p><code>ll -rt</code> 按时间排序</p>
+</li>
+<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
+</li>
+<li><p>创建文件夹 <code>mkdir</code> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
+
+<p>选项与参数：</p>
+<ul>
+<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
+<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
+</ul>
+<p>例如 </p>
+<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
+<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
+<p>删除空的目录：<code>rmdir</code></p>
+<p>选项与参数：</p>
+<ul>
+<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
+</ul>
+</li>
+<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
+<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
+<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
+<p><strong>思考：mv和cp哪个执行快？</strong></p>
+<ul>
+<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
+<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
+<li>都可修改名称。</li>
+</ul>
+</li>
+<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
+<ul>
+<li><p>touch rz.log 如何创建一个空文件</p>
+<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
+</li>
+<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
+</li>
+<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
+</li>
+</ul>
+</li>
+<li><p>查看文件内容</p>
+<ul>
+<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
+<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
+</li>
+<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
+<p>空白键（space）- 往下一页显示</p>
+<p>b  - 往回（back）一页显示</p>
+<p>q  - 退出more</p>
+</li>
+<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
+<p>/字符串：向下搜索”字符串”的功能</p>
+<p>?字符串：向上搜索”字符串”的功能</p>
+<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
+<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
+<p>G ：移动到最后一行</p>
+<p>g：移动到第一行</p>
+<p>q / ZZ ：-退出 less 命令</p>
+</li>
+</ul>
+<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
+<p><strong>log日志，内容较多，用tail命令</strong></p>
+<ul>
+<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
+<p>实时查看</p>
+<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
+<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
+<p>补充：flume exec source 切记使用 -F</p>
+<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
+<p>-c&lt;数目&gt; 显示的字节数</p>
+<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
+<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
+</li>
+</ul>
+</li>
+<li><p>文件上传下载工具</p>
+<p>安装： <code>yum install -y lrzsz</code></p>
+<p>文件下载到windows：<code>sz</code></p>
+<p>windows上传到linux: <code>rz</code></p>
+</li>
+<li><p>如何定位ERROR</p>
+<ul>
+<li><p>文件内容很小，几十兆</p>
+<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
+</li>
+<li><p>文件内容很大，几百兆 2G</p>
+<p>cat xxx.log | grep ERROR</p>
+<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
+</li>
+</ul>
+</li>
+<li><p>grep命令</p>
+<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
+<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
+<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
+<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
+<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
+<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
+</li>
+<li><p>环境变量$PATH</p>
+<p>打印环境变量：<code>echo $PATH</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
+
+<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
+
+<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
+<pre><code>                      ~/.bashrc       个人 不给其他人
+</code></pre>
+<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+<p>生效文件: <code>source xxxx</code></p>
+<pre><code>              `. ~/.bashrc`
+</code></pre>
+<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
+<p>配置环境变量:<code>vi /etc/profile</code></p>
+<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
+<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
+<p>export PATH=$JAVA_HOME/bin:$PATH</p>
+<p>新配置的变量在前面追加</p>
+<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
+
+<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
+</li>
+<li><p>别名alias</p>
+<p><code>alias</code> 命令用于设置指令的别名。</p>
+<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+</li>
+<li><p>查看历史命令history</p>
+<p>当前命令输入状态下：</p>
+<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
+
+*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
+</code></pre>
+<ul>
+<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
+<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
+</li>
+</ul>
+<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
+<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
+<p>使用! 执行历史命令。</p>
+<pre><code>* `!  [n]`  n为数字 执行第n条命令
+</code></pre>
+<ul>
+<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
+<li><code>!!</code> 执行上一条</li>
+</ul>
+<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
+<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
+</li>
+<li><p>删除<br>生成新文件:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
+
+<p>创建文件夹: <code>mkdir</code> </p>
+<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
+<ul>
+<li><p>-i 删除前逐一询问确认。</p>
+</li>
+<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
+</li>
+<li><p>-r 将目录及以下之档案亦逐一删除。</p>
+<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
+<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
+<p>K=’/home/jepson’</p>
+<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
+<li><p>用户 用户组</p>
+<p>创建用户：<code>useradd username</code></p>
+<p>查看用户信息：<code>id username</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
+
+<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
+<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
+<p>删除用户:<code>userdel username</code></p>
+<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
+<p>模拟切换用户丢失样式</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
+
+<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>创建用户组：<code>groupadd groupname</code></p>
+<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
+
+<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
+<p>切换用户：<code>su</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
+
+<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
+<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
+<p>用户权限问题：connection连接拒绝、Permission denied</p>
+<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
+
+<p>/etc/passwd:</p>
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
+</li>
+<li><p>权限：chown chmod</p>
+<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
+
+<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
+<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
+<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
+</li>
+<li><p>查看大小</p>
+<p>文件：</p>
+<ul>
+<li>ll</li>
+<li>du -sh </li>
+</ul>
+<p>文件夹：</p>
+<ul>
+<li>du -sh</li>
+<li>用ll看到的并不是文件夹大小</li>
+</ul>
+</li>
+<li><p>删除执行中的程序或工作:<code>kill</code></p>
+<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
+<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
+<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
+<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
+<ul>
+<li>1 (HUP)：重新加载进程。</li>
+<li>2（INT）：中断（同 Ctrl + C）</li>
+<li>3（QUIT）：退出（同 Ctrl + \）</li>
+<li>9 (KILL)：强制杀死一个进程。</li>
+<li>15 (TERM)：正常停止一个进程。</li>
+</ul>
+<p>杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
+
+<p>强制杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
+
+<p>发送SIGHUP信号，可以使用一下信号</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
+
+<p>杀死指定用户所有进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
+
+<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
+<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
+<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
+<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
+</li>
+<li><p>其他命令</p>
+<ul>
+<li><p>搜索 <code>find</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录中的所有文件列出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
+<li><p>查看进程：<code>ps -ef</code> </p>
+</li>
+<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
+</li>
+<li><p>查看ip通不通：ping ip地址</p>
+</li>
+<li><p>测试端口号连通性：telnet ip地址 端口号</p>
+</li>
+</ul>
+</li>
+</ol>
+]]></content>
+  </entry>
+  <entry>
     <title>Linux命令：sed与awk</title>
     <url>/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/</url>
     <content><![CDATA[<p>本文内容转自菜鸟教程(<a href="http://www.runoob.com/">www.runoob.com</a>)</p>
@@ -4177,338 +4509,6 @@
 <p>参考链接：</p>
 <p><a href="https://www.runoob.com/linux/linux-comm-sed.html">https://www.runoob.com/linux/linux-comm-sed.html</a></p>
 <p><a href="https://www.runoob.com/linux/linux-comm-awk.html">https://www.runoob.com/linux/linux-comm-awk.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Linux快速整理</title>
-    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<p>环境搭建:</p>
-<p>vmware虚拟机+XShell登录虚拟机</p>
-<p>Linux快速整理：</p>
-<ol>
-<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
-</li>
-<li><p><code>pwd</code>查看当前所在目录路径地址</p>
-<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
-<span id="more"></span></li>
-<li><p>切换目录 <code>cd</code></p>
-<p>root用户的家目录：/root</p>
-<p>xxx用户的家目录：/home/xxx 默认</p>
-<p>家目录的修改：vi /etc/passwd 默认不修改</p>
-<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
-<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
-<p><code>cd -</code>回到上一次访问的目录</p>
-<p><code>cd ../</code> 回退上一层目录</p>
-<p><code>cd ../../</code> 回退上两层目录</p>
-</li>
-<li><p>目录 文件夹</p>
-<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
-<p>​                    写shell脚本时，路径要用绝对路径。</p>
-<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
-<p>查看当前文件夹下的内容 <code>ls</code></p>
-</li>
-<li><p>清空屏幕 <code>clear</code></p>
-</li>
-<li><p>ls查看当前光标所在的目录 文件有哪些</p>
-<p><code>ls -l</code>  等价于`ll``</p>
-<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
-<p><code>ll -h</code> 显示文件的大小</p>
-<p><code>ll -rt</code> 按时间排序</p>
-</li>
-<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
-</li>
-<li><p>创建文件夹 <code>mkdir</code> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
-
-<p>选项与参数：</p>
-<ul>
-<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
-<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
-</ul>
-<p>例如 </p>
-<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
-<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
-<p>删除空的目录：<code>rmdir</code></p>
-<p>选项与参数：</p>
-<ul>
-<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
-</ul>
-</li>
-<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
-<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
-<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
-<p><strong>思考：mv和cp哪个执行快？</strong></p>
-<ul>
-<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
-<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
-<li>都可修改名称。</li>
-</ul>
-</li>
-<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
-<ul>
-<li><p>touch rz.log 如何创建一个空文件</p>
-<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
-</li>
-<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
-</li>
-<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
-</li>
-</ul>
-</li>
-<li><p>查看文件内容</p>
-<ul>
-<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
-<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
-</li>
-<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
-<p>空白键（space）- 往下一页显示</p>
-<p>b  - 往回（back）一页显示</p>
-<p>q  - 退出more</p>
-</li>
-<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
-<p>/字符串：向下搜索”字符串”的功能</p>
-<p>?字符串：向上搜索”字符串”的功能</p>
-<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
-<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
-<p>G ：移动到最后一行</p>
-<p>g：移动到第一行</p>
-<p>q / ZZ ：-退出 less 命令</p>
-</li>
-</ul>
-<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
-<p><strong>log日志，内容较多，用tail命令</strong></p>
-<ul>
-<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
-<p>实时查看</p>
-<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
-<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
-<p>补充：flume exec source 切记使用 -F</p>
-<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
-<p>-c&lt;数目&gt; 显示的字节数</p>
-<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
-<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
-</li>
-</ul>
-</li>
-<li><p>文件上传下载工具</p>
-<p>安装： <code>yum install -y lrzsz</code></p>
-<p>文件下载到windows：<code>sz</code></p>
-<p>windows上传到linux: <code>rz</code></p>
-</li>
-<li><p>如何定位ERROR</p>
-<ul>
-<li><p>文件内容很小，几十兆</p>
-<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
-</li>
-<li><p>文件内容很大，几百兆 2G</p>
-<p>cat xxx.log | grep ERROR</p>
-<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
-</li>
-</ul>
-</li>
-<li><p>grep命令</p>
-<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
-<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
-<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
-<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
-<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
-<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
-</li>
-<li><p>环境变量$PATH</p>
-<p>打印环境变量：<code>echo $PATH</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
-
-<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
-
-<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
-<pre><code>                      ~/.bashrc       个人 不给其他人
-</code></pre>
-<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-<p>生效文件: <code>source xxxx</code></p>
-<pre><code>              `. ~/.bashrc`
-</code></pre>
-<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
-<p>配置环境变量:<code>vi /etc/profile</code></p>
-<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
-<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
-<p>export PATH=$JAVA_HOME/bin:$PATH</p>
-<p>新配置的变量在前面追加</p>
-<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
-
-<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
-</li>
-<li><p>别名alias</p>
-<p><code>alias</code> 命令用于设置指令的别名。</p>
-<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
-
-<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-</li>
-<li><p>查看历史命令history</p>
-<p>当前命令输入状态下：</p>
-<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
-
-*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
-</code></pre>
-<ul>
-<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
-<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
-</li>
-</ul>
-<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
-<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
-<p>使用! 执行历史命令。</p>
-<pre><code>* `!  [n]`  n为数字 执行第n条命令
-</code></pre>
-<ul>
-<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
-<li><code>!!</code> 执行上一条</li>
-</ul>
-<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
-<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
-
-<p>拓展：</p>
-<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
-</li>
-<li><p>删除<br>生成新文件:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
-
-<p>创建文件夹: <code>mkdir</code> </p>
-<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
-<ul>
-<li><p>-i 删除前逐一询问确认。</p>
-</li>
-<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
-</li>
-<li><p>-r 将目录及以下之档案亦逐一删除。</p>
-<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
-<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
-<p>K=’/home/jepson’</p>
-<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
-<li><p>用户 用户组</p>
-<p>创建用户：<code>useradd username</code></p>
-<p>查看用户信息：<code>id username</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
-
-<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
-<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
-<p>删除用户:<code>userdel username</code></p>
-<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
-<p>模拟切换用户丢失样式</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
-
-<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p>创建用户组：<code>groupadd groupname</code></p>
-<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
-
-<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
-<p>切换用户：<code>su</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
-
-<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
-<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
-<p>用户权限问题：connection连接拒绝、Permission denied</p>
-<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
-
-<p>/etc/passwd:</p>
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
-</li>
-<li><p>权限：chown chmod</p>
-<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
-
-<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
-<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
-<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
-</li>
-<li><p>查看大小</p>
-<p>文件：</p>
-<ul>
-<li>ll</li>
-<li>du -sh </li>
-</ul>
-<p>文件夹：</p>
-<ul>
-<li>du -sh</li>
-<li>用ll看到的并不是文件夹大小</li>
-</ul>
-</li>
-<li><p>删除执行中的程序或工作:<code>kill</code></p>
-<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
-<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
-<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
-<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
-<ul>
-<li>1 (HUP)：重新加载进程。</li>
-<li>2（INT）：中断（同 Ctrl + C）</li>
-<li>3（QUIT）：退出（同 Ctrl + \）</li>
-<li>9 (KILL)：强制杀死一个进程。</li>
-<li>15 (TERM)：正常停止一个进程。</li>
-</ul>
-<p>杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
-
-<p>强制杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
-
-<p>发送SIGHUP信号，可以使用一下信号</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
-
-<p>杀死指定用户所有进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
-
-<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
-<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
-<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
-<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
-</li>
-<li><p>其他命令</p>
-<ul>
-<li><p>搜索 <code>find</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录中的所有文件列出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
-<li><p>查看进程：<code>ps -ef</code> </p>
-</li>
-<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
-</li>
-<li><p>查看ip通不通：ping ip地址</p>
-</li>
-<li><p>测试端口号连通性：telnet ip地址 端口号</p>
-</li>
-</ul>
-</li>
-</ol>
 ]]></content>
   </entry>
   <entry>
