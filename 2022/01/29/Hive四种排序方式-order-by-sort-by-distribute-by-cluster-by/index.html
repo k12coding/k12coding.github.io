@@ -1,37 +1,715 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next muse use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Order By1234colOrder: ( ASC | DESC )colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)orderBy: ORDER BY colName colOrder? colNullOrder? (&amp;#x27;,&amp;#x27; colN">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hive四种排序方式:order by,sort by,distribute by,cluster by">
+<meta property="og:url" content="https://k12coding.github.io/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="Order By1234colOrder: ( ASC | DESC )colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)orderBy: ORDER BY colName colOrder? colNullOrder? (&amp;#x27;,&amp;#x27; colN">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-01-29T13:21:41.000Z">
+<meta property="article:modified_time" content="2022-01-29T17:40:21.258Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://k12coding.github.io/2022/01/29/Hive四种排序方式-order-by-sort-by-distribute-by-cluster-by/"/>
+
+
+
+
+
+  <title>Hive四种排序方式:order by,sort by,distribute by,cluster by | k12的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">k12的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">k12的笔记</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hive四种排序方式:order by,sort by,distribute by,cluster by</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-01-29T21:21:41+08:00">
+                2022-01-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
+
+<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
+<ul>
+<li>效率较低。</li>
+<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
+<li>ORDER BY 子句在SELECT 语句的结尾</li>
+</ul>
+<p>例：</p>
+<p>select * from emp order by sal desc;</p>
+<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
+
+<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
+<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
+<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
+<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
+
+<p>查询有2个reducer,它们的输出分别是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
+
+<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
+<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
+
+<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
+<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
+<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
+<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
+<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
+<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
+
+<p>和Distribute By的例子相比，具有排序功能。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
+
+<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/" rel="next" title="Hive介绍">
+                <i class="fa fa-chevron-left"></i> Hive介绍
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/" rel="prev" title="Hive：内部表与外部表">
+                Hive：内部表与外部表 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">62</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Order-By"><span class="nav-number">1.</span> <span class="nav-text">Order By</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sort-By"><span class="nav-number">2.</span> <span class="nav-text">Sort By</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Distribute-By"><span class="nav-number">3.</span> <span class="nav-text">Distribute By</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cluster-By"><span class="nav-number">4.</span> <span class="nav-text">Cluster By</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

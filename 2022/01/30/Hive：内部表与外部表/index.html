@@ -1,37 +1,712 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next muse use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="内部表&amp;外部表未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）； 可以使用命令DESCRIBE FORMATTED table_name标识托管表或外部表，该命令将根据表类型显示 MANAGED_TABLE 或 EXTERNAL_TABLE。 区别 内部表数据由Hive自身管理，外部表数据由HDFS管理； 导">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hive：内部表与外部表">
+<meta property="og:url" content="https://k12coding.github.io/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="内部表&amp;外部表未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）； 可以使用命令DESCRIBE FORMATTED table_name标识托管表或外部表，该命令将根据表类型显示 MANAGED_TABLE 或 EXTERNAL_TABLE。 区别 内部表数据由Hive自身管理，外部表数据由HDFS管理； 导">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-01-29T18:37:06.000Z">
+<meta property="article:modified_time" content="2022-01-29T20:26:40.214Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://k12coding.github.io/2022/01/30/Hive：内部表与外部表/"/>
+
+
+
+
+
+  <title>Hive：内部表与外部表 | k12的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">k12的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">k12的笔记</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hive：内部表与外部表</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-01-30T02:37:06+08:00">
+                2022-01-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
+</ul>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a target="_blank" rel="noopener" href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/" rel="next" title="Hive四种排序方式:order by,sort by,distribute by,cluster by">
+                <i class="fa fa-chevron-left"></i> Hive四种排序方式:order by,sort by,distribute by,cluster by
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/" rel="prev" title="Hive：加载数据到表的方式">
+                Hive：加载数据到表的方式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">62</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E8%A1%A8-amp-%E5%A4%96%E9%83%A8%E8%A1%A8"><span class="nav-number">1.</span> <span class="nav-text">内部表&amp;外部表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8C%BA%E5%88%AB"><span class="nav-number">2.</span> <span class="nav-text">区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%92%E7%9B%B8%E8%BD%AC%E6%8D%A2"><span class="nav-number">3.</span> <span class="nav-text">互相转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%98%E7%AE%A1%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8"><span class="nav-number">4.</span> <span class="nav-text">托管表与外部表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">4.1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Feature-comparison"><span class="nav-number">4.2.</span> <span class="nav-text">Feature comparison</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Managed-tables"><span class="nav-number">4.3.</span> <span class="nav-text">Managed tables</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#External-tables"><span class="nav-number">4.4.</span> <span class="nav-text">External tables</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

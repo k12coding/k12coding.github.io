@@ -1,37 +1,812 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next muse use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="介绍 Apache Sqoop(TM) is a tool designed for efficiently transferring bulk data between Apache Hadoop and structured datastores such as relational databases. https:&#x2F;&#x2F;sqoop.apache.org&#x2F;  ​    传统的应用管理系统，也就">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Sqoop：部署与使用">
+<meta property="og:url" content="https://k12coding.github.io/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="介绍 Apache Sqoop(TM) is a tool designed for efficiently transferring bulk data between Apache Hadoop and structured datastores such as relational databases. https:&#x2F;&#x2F;sqoop.apache.org&#x2F;  ​    传统的应用管理系统，也就">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://k12coding.github.io/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/sqoop1.jpg">
+<meta property="article:published_time" content="2022-02-27T22:57:07.000Z">
+<meta property="article:modified_time" content="2022-05-16T18:16:42.761Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://k12coding.github.io/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/sqoop1.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://k12coding.github.io/2022/02/28/Sqoop部署/"/>
+
+
+
+
+
+  <title>Sqoop：部署与使用 | k12的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">k12的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">k12的笔记</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Sqoop：部署与使用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-02-28T06:57:07+08:00">
+                2022-02-28
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><blockquote>
+<p>Apache Sqoop(TM) is a tool designed for efficiently transferring bulk data between Apache Hadoop and structured datastores such as relational databases.</p>
+<p><a target="_blank" rel="noopener" href="https://sqoop.apache.org/">https://sqoop.apache.org/</a></p>
+</blockquote>
+<p>​    传统的应用管理系统，也就是与关系型数据库的使用RDBMS应用程序的交互，是产生大数据的来源之一。这样大的数据，由关系数据库生成的，存储在关系数据库结构关系数据库服务器。</p>
+<p>​    当大数据存储器和分析器，如MapReduce, Hive, HBase, Cassandra, Pig等，Hadoop的生态系统等应运而生图片，它们需要一个工具来用的导入和导出的大数据驻留在其中的关系型数据库服务器进行交互。在这里，Sqoop占据着Hadoop生态系统提供关系数据库服务器和Hadoop HDFS之间的可行的互动。</p>
+<p>​    Sqoop是Hadoop和关系数据库服务器之间传送数据的一种工具。它是用来从关系数据库如MySQL，Oracle到Hadoop的HDFS从Hadoop文件系统导出数据到关系数据库。</p>
+<p><img src="/2022/02/28/Sqoop%E9%83%A8%E7%BD%B2/sqoop1.jpg" alt="Sqoop的工作流程"></p>
+<span id="more"></span>
+
+<h2 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h2><h3 id="下载tar包"><a href="#下载tar包" class="headerlink" title="下载tar包"></a>下载tar包</h3><p>地址：<a target="_blank" rel="noopener" href="http://archive.apache.org/dist/sqoop/">http://archive.apache.org/dist/sqoop/</a></p>
+<p><a target="_blank" rel="noopener" href="http://archive.apache.org/dist/sqoop/1.4.7/sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz">sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz</a></p>
+<h3 id="解压到相应目录"><a href="#解压到相应目录" class="headerlink" title="解压到相应目录"></a>解压到相应目录</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ mv sqoop-1.4.7.bin__hadoop-2.6.0 sqoop-1.4.7</span><br><span class="line">[hadoop@hadoop001 software]$ tar -xzvf sqoop-1.4.7.bin__hadoop-2.6.0.tar.gz </span><br><span class="line">[hadoop@hadoop001 app]$ ln -s /home/hadoop/software/sqoop-1.4.7 /home/hadoop/app/sqoop</span><br></pre></td></tr></table></figure>
+
+<h3 id="修改conf-sqoop-env-sh"><a href="#修改conf-sqoop-env-sh" class="headerlink" title="修改conf/sqoop-env.sh"></a>修改conf/sqoop-env.sh</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 sqoop]$ cd conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ cp sqoop-env-template.sh sqoop-env.sh</span><br><span class="line">[hadoop@hadoop001 conf]$ ll</span><br><span class="line">total 32</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 3895 Dec 18  2017 oraoop-site-template.xml</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Feb 27 23:04 sqoop-env.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 1404 Dec 18  2017 sqoop-env-template.cmd</span><br><span class="line">-rwxr-xr-x. 1 hadoop hadoop 1345 Dec 18  2017 sqoop-env-template.sh</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site-template.xml</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 6044 Dec 18  2017 sqoop-site.xml</span><br></pre></td></tr></table></figure>
+
+<p>配置相关变量(本机暂未部署hbase和zk)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># Set Hadoop-specific environment variables here.</span><br><span class="line"></span><br><span class="line">#Set path to where bin/hadoop is available</span><br><span class="line">export HADOOP_COMMON_HOME=/home/hadoop/app/hadoop</span><br><span class="line"></span><br><span class="line">#Set path to where hadoop-*-core.jar is available</span><br><span class="line">export HADOOP_MAPRED_HOME=/home/hadoop/app/hadoop</span><br><span class="line"></span><br><span class="line">#set the path to where bin/hbase is available</span><br><span class="line">#export HBASE_HOME=</span><br><span class="line"></span><br><span class="line">#Set the path to where bin/hive is available</span><br><span class="line">export HIVE_HOME=/home/hadoop/app/hive</span><br><span class="line"></span><br><span class="line">#Set the path for where zookeper config dir is</span><br><span class="line">#export ZOOCFGDIR=</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加环境变量"><a href="#添加环境变量" class="headerlink" title="添加环境变量"></a>添加环境变量</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ vi .bash_profile </span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export SQOOP_HOME=/home/hadoop/app/sqoop</span><br><span class="line">export PATH=$&#123;SQOOP_HOME&#125;/bin:$PATH</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ source .bash_profile </span><br></pre></td></tr></table></figure>
+
+<h3 id="拷贝mysql驱动包到sqoop的lib目录下"><a href="#拷贝mysql驱动包到sqoop的lib目录下" class="headerlink" title="拷贝mysql驱动包到sqoop的lib目录下"></a>拷贝mysql驱动包到sqoop的lib目录下</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cp lib/mysql-connector-java-5.1.47.jar app/sqoop/lib/</span><br></pre></td></tr></table></figure>
+
+<h3 id="测试Sqoop是否能够成功连接数据库"><a href="#测试Sqoop是否能够成功连接数据库" class="headerlink" title="测试Sqoop是否能够成功连接数据库"></a>测试Sqoop是否能够成功连接数据库</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password 123456</span><br></pre></td></tr></table></figure>
+
+<h3 id="成功访问"><a href="#成功访问" class="headerlink" title="成功访问"></a>成功访问</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 lib]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password &#x27;123456&#x27;</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-27 23:54:08,530 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-27 23:54:08,647 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-27 23:54:08,832 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Sun Feb 27 23:54:09 GMT 2022 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">information_schema</span><br><span class="line">mysql</span><br><span class="line">performance_schema</span><br><span class="line">sys</span><br></pre></td></tr></table></figure>
+
+<h3 id="问题小结"><a href="#问题小结" class="headerlink" title="问题小结"></a>问题小结</h3><ul>
+<li><p><code>Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306 --username root --password &#x27;123456&#x27;</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-27 23:25:34,723 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-27 23:25:34,838 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-27 23:25:35,007 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: org/apache/commons/lang/StringUtils</span><br><span class="line">	at org.apache.sqoop.manager.MySQLManager.initOptionDefaults(MySQLManager.java:73)</span><br><span class="line">	at org.apache.sqoop.manager.SqlManager.&lt;init&gt;(SqlManager.java:89)</span><br><span class="line">	at com.cloudera.sqoop.manager.SqlManager.&lt;init&gt;(SqlManager.java:33)</span><br><span class="line">	at org.apache.sqoop.manager.GenericJdbcManager.&lt;init&gt;(GenericJdbcManager.java:51)</span><br><span class="line">	at com.cloudera.sqoop.manager.GenericJdbcManager.&lt;init&gt;(GenericJdbcManager.java:30)</span><br><span class="line">	at org.apache.sqoop.manager.CatalogQueryManager.&lt;init&gt;(CatalogQueryManager.java:46)</span><br><span class="line">	at com.cloudera.sqoop.manager.CatalogQueryManager.&lt;init&gt;(CatalogQueryManager.java:31)</span><br><span class="line">	at org.apache.sqoop.manager.InformationSchemaManager.&lt;init&gt;(InformationSchemaManager.java:38)</span><br><span class="line">	at com.cloudera.sqoop.manager.InformationSchemaManager.&lt;init&gt;(InformationSchemaManager.java:31)</span><br><span class="line">	at org.apache.sqoop.manager.MySQLManager.&lt;init&gt;(MySQLManager.java:65)</span><br><span class="line">	at org.apache.sqoop.manager.DefaultManagerFactory.accept(DefaultManagerFactory.java:67)</span><br><span class="line">	at org.apache.sqoop.ConnFactory.getManager(ConnFactory.java:184)</span><br><span class="line">	at org.apache.sqoop.tool.BaseSqoopTool.init(BaseSqoopTool.java:272)</span><br><span class="line">	at org.apache.sqoop.tool.ListDatabasesTool.run(ListDatabasesTool.java:44)</span><br><span class="line">	at org.apache.sqoop.Sqoop.run(Sqoop.java:147)</span><br><span class="line">	at org.apache.hadoop.util.ToolRunner.run(ToolRunner.java:76)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runSqoop(Sqoop.java:183)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:234)</span><br><span class="line">	at org.apache.sqoop.Sqoop.runTool(Sqoop.java:243)</span><br><span class="line">	at org.apache.sqoop.Sqoop.main(Sqoop.java:252)</span><br><span class="line">Caused by: java.lang.ClassNotFoundException: org.apache.commons.lang.StringUtils</span><br><span class="line">	at java.net.URLClassLoader.findClass(URLClassLoader.java:381)</span><br><span class="line">	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)</span><br><span class="line">	at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:331)</span><br><span class="line">	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)</span><br><span class="line">	... 20 more</span><br><span class="line">[hadoop@hadoop001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p><strong>原因</strong>：Caused by: java.lang.ClassNotFoundException: org.apache.commons.lang.StringUtils</p>
+<p>Sqoop1.4.7默认只加载了commons-lang3-3.4.jar的jar包，里面的StringUtils类的package为：org/apache/commons/lang3/StringUtils，所以直接使用sqoop命令时报上述错误。</p>
+<p><strong>解决方法</strong>：</p>
+<p>将旧版的jar包下载并导入到sqoop目录下的lib目录下即可</p>
+<p>下载：<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/commons-lang/commons-lang/2.6/commons-lang-2.6.jar">commons-lang-2.6.jar</a></p>
+</li>
+<li><p>MySQL登录验证失败</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2022-02-27 23:45:27,936 ERROR sqoop.Sqoop: Got exception running Sqoop: java.lang.RuntimeException: java.sql.SQLException: Access denied for user &#x27;root&#x27;@&#x27;hadoop001&#x27; (using password: YES)</span><br><span class="line">java.lang.RuntimeException: java.sql.SQLException: Access denied for user &#x27;root&#x27;@&#x27;hadoop001&#x27; (using password: YES)</span><br></pre></td></tr></table></figure>
+
+<p>检查密码有没有输入出错，在<code>--password</code>选项建议添加单引号输入，如：<code>&#39;password&#39;</code></p>
+</li>
+</ul>
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop help</span><br><span class="line">2022-03-01 16:31:57,832 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">usage: sqoop COMMAND [ARGS]</span><br><span class="line"></span><br><span class="line">Available commands:</span><br><span class="line">  codegen            Generate code to interact with database records</span><br><span class="line">  create-hive-table  Import a table definition into Hive</span><br><span class="line">  eval               Evaluate a SQL statement and display the results</span><br><span class="line">  export             Export an HDFS directory to a database table</span><br><span class="line">  help               List available commands</span><br><span class="line">  import             Import a table from a database to HDFS</span><br><span class="line">  import-all-tables  Import tables from a database to HDFS</span><br><span class="line">  import-mainframe   Import datasets from a mainframe server to HDFS</span><br><span class="line">  job                Work with saved jobs</span><br><span class="line">  list-databases     List available databases on a server</span><br><span class="line">  list-tables        List available tables in a database</span><br><span class="line">  merge              Merge results of incremental imports</span><br><span class="line">  metastore          Run a standalone Sqoop metastore</span><br><span class="line">  version            Display version information</span><br><span class="line"></span><br><span class="line">See &#x27;sqoop help COMMAND&#x27; for information on a specific command.</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="列出数据库list-databases"><a href="#列出数据库list-databases" class="headerlink" title="列出数据库list-databases"></a>列出数据库list-databases</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop list-databases --connect jdbc:mysql://hadoop001:3306?useSSL=false --username root --password &#x27;123456&#x27;</span><br><span class="line">2022-02-28 10:35:17,817 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-28 10:35:17,972 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-28 10:35:18,212 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">information_schema</span><br><span class="line">azkaban</span><br><span class="line">hive</span><br><span class="line">hue</span><br><span class="line">mysql</span><br><span class="line">performance_schema</span><br><span class="line">ruozedata</span><br><span class="line">sys</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="列出所有表list-databases"><a href="#列出所有表list-databases" class="headerlink" title="列出所有表list-databases"></a>列出所有表list-databases</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop list-tables --connect jdbc:mysql://hadoop001:3306/mysql?useSSL=false --username root --password &#x27;123456&#x27;</span><br><span class="line">2022-02-28 10:38:45,712 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-02-28 10:38:45,823 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-02-28 10:38:46,000 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">columns_priv</span><br><span class="line">db</span><br><span class="line">engine_cost</span><br><span class="line">event</span><br><span class="line">func</span><br><span class="line">general_log</span><br><span class="line">gtid_executed</span><br><span class="line">help_category</span><br><span class="line">help_keyword</span><br><span class="line">help_relation</span><br><span class="line">help_topic</span><br><span class="line">innodb_index_stats</span><br><span class="line">innodb_table_stats</span><br><span class="line">ndb_binlog_index</span><br><span class="line">plugin</span><br><span class="line">proc</span><br><span class="line">procs_priv</span><br><span class="line">proxies_priv</span><br><span class="line">server_cost</span><br><span class="line">servers</span><br><span class="line">slave_master_info</span><br><span class="line">slave_relay_log_info</span><br><span class="line">slave_worker_info</span><br><span class="line">slow_log</span><br><span class="line">tables_priv</span><br><span class="line">time_zone</span><br><span class="line">time_zone_leap_second</span><br><span class="line">time_zone_name</span><br><span class="line">time_zone_transition</span><br><span class="line">time_zone_transition_type</span><br><span class="line">user</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="导入import"><a href="#导入import" class="headerlink" title="导入import"></a>导入import</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop help import</span><br><span class="line">usage: sqoop import [GENERIC-ARGS] [TOOL-ARGS]</span><br><span class="line"></span><br><span class="line">Common arguments:</span><br><span class="line">   --connect &lt;jdbc-uri&gt;                                       Specify JDBC connect string</span><br><span class="line">   --connection-manager &lt;class-name&gt;                          Specify connection manager class name</span><br><span class="line">   --connection-param-file &lt;properties-file&gt;                  Specify connection parameters file</span><br><span class="line">   --driver &lt;class-name&gt;                                      Manually specify JDBC driver class to use</span><br><span class="line">   --hadoop-home &lt;hdir&gt;                                       Override $HADOOP_MAPRED_HOME_ARG</span><br><span class="line">   --hadoop-mapred-home &lt;dir&gt;                                 Override $HADOOP_MAPRED_HOME_ARG</span><br><span class="line">   --help                                                     Print usage instructions</span><br><span class="line">   --metadata-transaction-isolation-level &lt;isolationlevel&gt;    Defines the transaction isolation level for metadata queries. </span><br><span class="line">                                                              For more details check java.sql.Connection javadoc </span><br><span class="line">                                                              or the JDBC specificaiton</span><br><span class="line">   --oracle-escaping-disabled &lt;boolean&gt;                       Disable the escaping mechanism of the Oracle/OraOop </span><br><span class="line">                                                              connection managers</span><br><span class="line">-P                                                            Read password from console</span><br><span class="line">   --password &lt;password&gt;                                      Set authentication password</span><br><span class="line">   --password-alias &lt;password-alias&gt;                          Credential provider passwor alias</span><br><span class="line">   --password-file &lt;password-file&gt;                            Set authentication password file path</span><br><span class="line">   --relaxed-isolation                                        Use read-uncommitted isolation for imports</span><br><span class="line">   --skip-dist-cache                                          Skip copying jars to distributed cache</span><br><span class="line">   --temporary-rootdir &lt;rootdir&gt;                              Defines the temporary root directory for the import</span><br><span class="line">   --throw-on-error                                           Rethrow a RuntimeException on error occurred during the job</span><br><span class="line">   --username &lt;username&gt;                                      Set authenticati on username</span><br><span class="line">   --verbose                                                  Print more information while working</span><br><span class="line"></span><br><span class="line">Import control arguments:</span><br><span class="line">   --append                                                   Imports data in append mode</span><br><span class="line">   --as-avrodatafile                                          Imports data to Avro data files</span><br><span class="line">   --as-parquetfile                                           Imports data to Parquet files</span><br><span class="line">   --as-sequencefile                                          Imports data to SequenceFiles</span><br><span class="line">   --as-textfile                                              Imports data as plain text (default)</span><br><span class="line">   --autoreset-to-one-mapper                                  Reset the number of mappers to one mapper </span><br><span class="line">                                                              if no split key available</span><br><span class="line">   --boundary-query &lt;statement&gt;                               Set boundary query for retrieving max and min value of </span><br><span class="line">                                                              the primary key</span><br><span class="line">   --columns &lt;col,col,col...&gt;                                 Columns to import from table</span><br><span class="line">   --compression-codec &lt;codec&gt;                                Compression codec to use for import</span><br><span class="line">   --delete-target-dir                                        Imports data in delete mode</span><br><span class="line">   --direct                                                   Use direct import fast path</span><br><span class="line">   --direct-split-size &lt;n&gt;                                    Split the input stream every &#x27;n&#x27; bytes when importing in                                                                         direct mode</span><br><span class="line">-e,--query &lt;statement&gt;                                        Import results of SQL &#x27;statement&#x27;</span><br><span class="line">   --fetch-size &lt;n&gt;                                           Set number &#x27;n&#x27; of rows to fetch from the database when                                                                           more rows are needed</span><br><span class="line">   --inline-lob-limit &lt;n&gt;                                     Set the maximum size for an inline LOB</span><br><span class="line">-m,--num-mappers &lt;n&gt;                                          Use &#x27;n&#x27; map tasks to import in parallel</span><br><span class="line">   --mapreduce-job-name &lt;name&gt;                                Set name for generated mapreduce job</span><br><span class="line">   --merge-key &lt;column&gt;                                       Key column to use to join results</span><br><span class="line">   --split-by &lt;column-name&gt;                                   Column of the table used to split work units</span><br><span class="line">   --split-limit &lt;size&gt;                                       Upper Limit of rows per split for split columns </span><br><span class="line">                                                              of Date/Time/Timestamp and integer types. For date or timestamp</span><br><span class="line">                                                              fields it is calculated in seconds. split-limit should be</span><br><span class="line">                                                              greater than 0</span><br><span class="line">   --table &lt;table-name&gt;                                       Table to read</span><br><span class="line">   --target-dir &lt;dir&gt;                                         HDFS plain table destination</span><br><span class="line">   --validate                                                 Validate the copy using the configured validator</span><br><span class="line">   --validation-failurehandler &lt;validation-failurehandler&gt;    Fully qualified class name for ValidationFailureHandler</span><br><span class="line">   --validation-threshold &lt;validation-threshold&gt;              Fully qualified class name for ValidationThreshold</span><br><span class="line">   --validator &lt;validator&gt;                                    Fully qualified class name for the Validator</span><br><span class="line">   --warehouse-dir &lt;dir&gt;                                      HDFS parent for table destination</span><br><span class="line">   --where &lt;where clause&gt;                                     WHERE clause to use during import</span><br><span class="line">-z,--compress                                                 Enable compression</span><br><span class="line"></span><br><span class="line">Incremental import arguments:</span><br><span class="line">   --check-column &lt;column&gt;        Source column to check for incremental change</span><br><span class="line">   --incremental &lt;import-type&gt;    Define an incremental import of type &#x27;append&#x27; or &#x27;lastmodified&#x27;</span><br><span class="line">   --last-value &lt;value&gt;           Last imported value in the incremental check column</span><br><span class="line"></span><br><span class="line">Output line formatting arguments:</span><br><span class="line">   --enclosed-by &lt;char&gt;               Sets a required field enclosing character</span><br><span class="line">   --escaped-by &lt;char&gt;                Sets the escape character</span><br><span class="line">   --fields-terminated-by &lt;char&gt;      Sets the field separator character</span><br><span class="line">   --lines-terminated-by &lt;char&gt;       Sets the end-of-line character</span><br><span class="line">   --mysql-delimiters                 Uses MySQL&#x27;s default delimiter set: fields: ,  lines: \n  escaped-by: \</span><br><span class="line">                                      optionally-enclosed-by: &#x27;</span><br><span class="line">   --optionally-enclosed-by &lt;char&gt;    Sets a field enclosing character</span><br><span class="line"></span><br><span class="line">Input parsing arguments:</span><br><span class="line">   --input-enclosed-by &lt;char&gt;               Sets a required field encloser</span><br><span class="line">   --input-escaped-by &lt;char&gt;                Sets the input escape character</span><br><span class="line">   --input-fields-terminated-by &lt;char&gt;      Sets the input field separator</span><br><span class="line">   --input-lines-terminated-by &lt;char&gt;       Sets the input end-of-line char</span><br><span class="line">   --input-optionally-enclosed-by &lt;char&gt;    Sets a field enclosing character</span><br><span class="line"></span><br><span class="line">Hive arguments:</span><br><span class="line">   --create-hive-table                         Fail if the target hive table exists</span><br><span class="line">   --external-table-dir &lt;hdfs path&gt;            Sets where the external table is in HDFS</span><br><span class="line">   --hive-database &lt;database-name&gt;             Sets the database name to use when importing to hive</span><br><span class="line">   --hive-delims-replacement &lt;arg&gt;             Replace Hive record \0x01 and row delimiters (\n\r)</span><br><span class="line">                                               from imported string fields with user-defined string</span><br><span class="line">   --hive-drop-import-delims                   Drop Hive record \0x01 and row delimiters (\n\r) from imported string fields</span><br><span class="line">   --hive-home &lt;dir&gt;                           Override $HIVE_HOME</span><br><span class="line">   --hive-import                               Import tables into Hive (Uses Hive&#x27;s default delimiters if none are set.)</span><br><span class="line">   --hive-overwrite                            Overwrite existing data in the Hive table</span><br><span class="line">   --hive-partition-key &lt;partition-key&gt;        Sets the partition key to use when importing to hive</span><br><span class="line">   --hive-partition-value &lt;partition-value&gt;    Sets the partition value to use when importing to hive</span><br><span class="line">   --hive-table &lt;table-name&gt;                   Sets the table name to use when importing to hive</span><br><span class="line">   --map-column-hive &lt;arg&gt;                     Override mapping for specific column to hive types.</span><br><span class="line"></span><br><span class="line">HBase arguments:</span><br><span class="line">   --column-family &lt;family&gt;    Sets the target column family for the import</span><br><span class="line">   --hbase-bulkload            Enables HBase bulk loading</span><br><span class="line">   --hbase-create-table        If specified, create missing HBase tables</span><br><span class="line">   --hbase-row-key &lt;col&gt;       Specifies which input column to use as the row key</span><br><span class="line">   --hbase-table &lt;table&gt;       Import to &lt;table&gt; in HBase</span><br><span class="line"></span><br><span class="line">HCatalog arguments:</span><br><span class="line">   --hcatalog-database &lt;arg&gt;                        HCatalog database name</span><br><span class="line">   --hcatalog-home &lt;hdir&gt;                           Override $HCAT_HOME</span><br><span class="line">   --hcatalog-partition-keys &lt;partition-key&gt;        Sets the partition keys to use when importing to hive</span><br><span class="line">   --hcatalog-partition-values &lt;partition-value&gt;    Sets the partition values to use when importing to hive</span><br><span class="line">   --hcatalog-table &lt;arg&gt;                           HCatalog table name</span><br><span class="line">   --hive-home &lt;dir&gt;                                Override $HIVE_HOME</span><br><span class="line">   --hive-partition-key &lt;partition-key&gt;             Sets the partition key to use when importing to hive</span><br><span class="line">   --hive-partition-value &lt;partition-value&gt;         Sets the partition value to use when importing to hive</span><br><span class="line">   --map-column-hive &lt;arg&gt;                          Override mapping for specific column to hive types.</span><br><span class="line"></span><br><span class="line">HCatalog import specific options:</span><br><span class="line">   --create-hcatalog-table             Create HCatalog before import</span><br><span class="line">   --drop-and-create-hcatalog-table    Drop and Create HCatalog before import</span><br><span class="line">   --hcatalog-storage-stanza &lt;arg&gt;     HCatalog storage stanza for table creation</span><br><span class="line"></span><br><span class="line">Accumulo arguments:</span><br><span class="line">   --accumulo-batch-size &lt;size&gt;          Batch size in bytes</span><br><span class="line">   --accumulo-column-family &lt;family&gt;     Sets the target column family for the import</span><br><span class="line">   --accumulo-create-table               If specified, create missing Accumulo tables</span><br><span class="line">   --accumulo-instance &lt;instance&gt;        Accumulo instance name.</span><br><span class="line">   --accumulo-max-latency &lt;latency&gt;      Max write latency in milliseconds</span><br><span class="line">   --accumulo-password &lt;password&gt;        Accumulo password.</span><br><span class="line">   --accumulo-row-key &lt;col&gt;              Specifies which input column to use as the row key</span><br><span class="line">   --accumulo-table &lt;table&gt;              Import to &lt;table&gt; in Accumulo</span><br><span class="line">   --accumulo-user &lt;user&gt;                Accumulo user name.</span><br><span class="line">   --accumulo-visibility &lt;vis&gt;           Visibility token to be applied to all rows imported</span><br><span class="line">   --accumulo-zookeepers &lt;zookeepers&gt;    Comma-separated list of zookeepers (host:port)</span><br><span class="line"></span><br><span class="line">Code generation arguments:</span><br><span class="line">   --bindir &lt;dir&gt;                             Output directory for compiled objects</span><br><span class="line">   --class-name &lt;name&gt;                        Sets the generated class name. This overrides --package-name.</span><br><span class="line">                                              When combined with --jar-file, sets the input class.</span><br><span class="line">   --escape-mapping-column-names &lt;boolean&gt;    Disable special characters escaping in column names</span><br><span class="line">   --input-null-non-string &lt;null-str&gt;         Input null non-string representation</span><br><span class="line">   --input-null-string &lt;null-str&gt;             Input null string representation</span><br><span class="line">   --jar-file &lt;file&gt;                          Disable code generation; use specified jar</span><br><span class="line">   --map-column-java &lt;arg&gt;                    Override mapping for specific columns to java types</span><br><span class="line">   --null-non-string &lt;null-str&gt;               Null non-string representation</span><br><span class="line">   --null-string &lt;null-str&gt;                   Null string representation</span><br><span class="line">   --outdir &lt;dir&gt;                             Output directory for generated code</span><br><span class="line">   --package-name &lt;name&gt;                      Put auto-generated classes in this package</span><br><span class="line"></span><br><span class="line">Generic Hadoop command-line arguments:</span><br><span class="line">(must preceed any tool-specific arguments)</span><br><span class="line">Generic options supported are:</span><br><span class="line">-conf &lt;configuration file&gt;        specify an application configuration file</span><br><span class="line">-D &lt;property=value&gt;               define a value for a given property</span><br><span class="line">-fs &lt;file:///|hdfs://namenode:port&gt; specify default filesystem URL to use, overrides &#x27;fs.defaultFS&#x27; property from configurations.</span><br><span class="line">-jt &lt;local|resourcemanager:port&gt;  specify a ResourceManager</span><br><span class="line">-files &lt;file1,...&gt;                specify a comma-separated list of files to be copied to the map reduce cluster</span><br><span class="line">-libjars &lt;jar1,...&gt;               specify a comma-separated list of jar files to be included in the classpath</span><br><span class="line">-archives &lt;archive1,...&gt;          specify a comma-separated list of archives to be unarchived on the compute machines</span><br><span class="line"></span><br><span class="line">The general command line syntax is:</span><br><span class="line">command [genericOptions] [commandOptions]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">At minimum, you must specify --connect and --table</span><br><span class="line">Arguments to mysqldump and other subprograms may be supplied</span><br><span class="line">after a &#x27;--&#x27; on the command line.</span><br></pre></td></tr></table></figure>
+
+<h4 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h4><ol>
+<li><p>导入路径默认是在/user/{username}/下，我的hadoop用户名为hadoop，所以导出路径是/user/hadoop/EMP_COLUMN</p>
+</li>
+<li><p>默认导入是4个文件，是同时4个task在运行的</p>
+</li>
+<li><p>当table没有设置primary key时，需要指定<code>--split-by</code>或者设置并行度为<code>-m 1</code>,因为如果并行度不为1，导出表是需要根据指定的字段或者主键计算分割到每个task任务的记录数量。</p>
+</li>
+<li><p>使用<code>-e</code>或者<code>--query</code>查询数据时，要在语句里where条件上加上<code>&#39;$CONDITIONS&#39;</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Import failed: java.io.IOException: Query [SELECT * FROM emp WHERE EMPNO&gt;=7900] must contain &#x27;$CONDITIONS&#x27; in WHERE clause.`</span><br><span class="line">-e &quot;SELECT * FROM emp WHERE EMPNO&gt;=7900&quot;</span><br><span class="line">应该写成：</span><br><span class="line">-e &quot;SELECT * FROM emp WHERE EMPNO&gt;=7900 AND \$CONDITIONS&quot;</span><br></pre></td></tr></table></figure>
+
+<p>同时，<code>-e</code>和<code>--query</code>不与<code>--where</code>、<code>--columns</code>、<code>--table</code>同时使用。</p>
+</li>
+</ol>
+<h4 id="hadoop案例"><a href="#hadoop案例" class="headerlink" title="hadoop案例"></a>hadoop案例</h4><p>MySQL表：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; use ruozedata;</span><br><span class="line">Database changed</span><br><span class="line">mysql&gt; select * from emp;</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">| empno | ename  | job       | mgr  | hiredate            | sal     | comm    | deptno |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">|  7369 | SMITH  | CLERK     | 7902 | 1980-12-17 00:00:00 |  800.00 |    NULL |     20 |</span><br><span class="line">|  7499 | ALLEN  | SALESMAN  | 7698 | 1981-02-20 00:00:00 | 1600.00 |  300.00 |     30 |</span><br><span class="line">|  7521 | WARD   | SALESMAN  | 7698 | 1981-02-22 00:00:00 | 1250.00 |  500.00 |     30 |</span><br><span class="line">|  7566 | JONES  | MANAGER   | 7839 | 1981-04-02 00:00:00 | 2975.00 |    NULL |     20 |</span><br><span class="line">|  7654 | MARTIN | SALESMAN  | 7698 | 1981-09-28 00:00:00 | 1250.00 | 1400.00 |     30 |</span><br><span class="line">|  7698 | BLAKE  | MANAGER   | 7839 | 1981-05-01 00:00:00 | 2850.00 |    NULL |     30 |</span><br><span class="line">|  7782 | CLARK  | MANAGER   | 7839 | 1981-06-09 00:00:00 | 2450.00 |    NULL |     10 |</span><br><span class="line">|  7788 | SCOTT  | ANALYST   | 7566 | 1982-12-09 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7839 | KING   | PRESIDENT | NULL | 1981-11-17 00:00:00 | 5000.00 |    NULL |     10 |</span><br><span class="line">|  7844 | TURNER | SALESMAN  | 7698 | 1981-09-08 00:00:00 | 1500.00 |    0.00 |     30 |</span><br><span class="line">|  7876 | ADAMS  | CLERK     | 7788 | 1983-01-12 00:00:00 | 1100.00 |    NULL |     20 |</span><br><span class="line">|  7900 | JAMES  | CLERK     | 7698 | 1981-12-03 00:00:00 |  950.00 |    NULL |     30 |</span><br><span class="line">|  7902 | FORD   | ANALYST   | 7566 | 1981-12-03 00:00:00 | 3000.00 |    NULL |     20 |</span><br><span class="line">|  7934 | MILLER | CLERK     | 7782 | 1982-01-23 00:00:00 | 1300.00 |    NULL |     10 |</span><br><span class="line">+-------+--------+-----------+------+---------------------+---------+---------+--------+</span><br><span class="line">14 rows in set (0.02 sec)</span><br></pre></td></tr></table></figure>
+
+<p>导出ruozedata数据库emp表到hadoop的/home/{username}下</p>
+<p>import语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">sqoop import \</span><br><span class="line">--connect jdbc:mysql://hadoop001:3306/ruozedata \</span><br><span class="line">--username root \</span><br><span class="line">--password &#x27;123456&#x27; \</span><br><span class="line">--delete-target-dir \</span><br><span class="line">--columns &quot;EMPNO,ENAME,JOB,SAL,COMM&quot; \</span><br><span class="line">--mapreduce-job-name EmpFromMySQL2HDFS \</span><br><span class="line">--table emp \</span><br><span class="line">--null-string &#x27;&#x27; \</span><br><span class="line">--null-non-string 0 \</span><br><span class="line">--fields-terminated-by &#x27;\t&#x27; \</span><br><span class="line">--where &#x27;SAL&gt;2000&#x27; \</span><br><span class="line">--target-dir EMP_COLUMN \</span><br><span class="line">-m 1 </span><br></pre></td></tr></table></figure>
+
+<p>说明：</p>
+<ul>
+<li>–connect：连接的数据库url</li>
+<li>–username：访问用户名</li>
+<li>–password：访问用户密码</li>
+<li>–delete-target-dir：先删除数据目录</li>
+<li>–columns：选择导出的字段，没有该选项则全部导出</li>
+<li>–mapreduce-job-name：重命名MapReduce作业名称</li>
+<li>–table emp：指定要导出的表</li>
+<li>–null-string：表中string类型字段为null时填充的值</li>
+<li>–null-non-string：表中非string类型字段为null时填充的值</li>
+<li>–fields-terminated-by：输出文件中字段分隔符</li>
+<li>–where：过滤条件</li>
+<li>–target-dir：输出目录</li>
+<li>-m：并行度，即MR的task数量</li>
+</ul>
+<h4 id="Hive案例"><a href="#Hive案例" class="headerlink" title="Hive案例"></a>Hive案例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">sqoop import \</span><br><span class="line">--connect jdbc:mysql://localhost:3306/ruozedata \</span><br><span class="line">--username root \</span><br><span class="line">--password &#x27;123456&#x27; \</span><br><span class="line">--delete-target-dir \</span><br><span class="line">--hive-database ruozedata_hive \</span><br><span class="line">--hive-import \</span><br><span class="line">--hive-overwrite \</span><br><span class="line">--hive-table emp_column \</span><br><span class="line">--columns &quot;EMPNO,ENAME,JOB,SAL,COMM&quot; \</span><br><span class="line">--mapreduce-job-name EmpFromMySQL2Hive \</span><br><span class="line">--table emp \</span><br><span class="line">--null-string &#x27;&#x27; \</span><br><span class="line">--null-non-string 0 \</span><br><span class="line">--fields-terminated-by &#x27;\t&#x27; </span><br><span class="line">--hive-partition-key &#x27;day&#x27; \</span><br><span class="line">--hive-partition-value &#x27;yyyyMMdd&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>说明：</p>
+<ul>
+<li><p>–hive-database：指定导入到的hive数据库</p>
+</li>
+<li><p>–hive-import：导入hive</p>
+</li>
+<li><p>–hive-overwrite：覆盖模式</p>
+</li>
+<li><p>–hive-table：导入的hive表名</p>
+<p>如果是分区表，还有以下2个选项</p>
+</li>
+<li><p>–hive-partition-key：分区字段key</p>
+</li>
+<li><p>–hive-partition-value：分区字段值value</p>
+</li>
+</ul>
+<h3 id="导出export"><a href="#导出export" class="headerlink" title="导出export"></a>导出export</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop help export</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-02-28 11:50:42,057 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">usage: sqoop export [GENERIC-ARGS] [TOOL-ARGS]</span><br><span class="line"></span><br><span class="line">Common arguments:</span><br><span class="line">   --connect &lt;jdbc-uri&gt;                                       Specify JDBC connect string</span><br><span class="line">   --connection-manager &lt;class-name&gt;                          Specify connection manager class name</span><br><span class="line">   --connection-param-file &lt;properties-file&gt;                  Specify connection parameters file</span><br><span class="line">   --driver &lt;class-name&gt;                                      Manually specify JDBC driver class to use</span><br><span class="line">   --hadoop-home &lt;hdir&gt;                                       Override $HADOOP_MAPRED_HOME_ARG</span><br><span class="line">   --hadoop-mapred-home &lt;dir&gt;                                 Override $HADOOP_MAPRED_HOME_ARG</span><br><span class="line">   --help                                                     Print usage instructions</span><br><span class="line">   --metadata-transaction-isolation-level &lt;isolationlevel&gt;    Defines the transaction isolation level for metadata queries. </span><br><span class="line">                                                              For more details check java.sql.Connection javadoc </span><br><span class="line">                                                              or the JDBC specificaiton</span><br><span class="line">   --oracle-escaping-disabled &lt;boolean&gt;                       Disable the escaping mechanism of the  Oracle/OraOop connection</span><br><span class="line">                                                              managers Read password from console</span><br><span class="line">   --password &lt;password&gt;                                      Set authenticati on password</span><br><span class="line">   --password-alias &lt;password-alias&gt;                          Credential provider password alias</span><br><span class="line">   --password-file &lt;password-file&gt;                            Set authentication password file path</span><br><span class="line">   --relaxed-isolation                                        Use read-uncommitted isolation for imports</span><br><span class="line">   --skip-dist-cache                                          Skip copying jars to distributed cache</span><br><span class="line">   --temporary-rootdir &lt;rootdir&gt;                              Defines the temporary root directory for the import</span><br><span class="line">   --throw-on-error                                           Rethrow a RuntimeException on error occurred during the job</span><br><span class="line">   --username &lt;username&gt;                                      Set authentication username</span><br><span class="line">   --verbose                                                  Print more information while working</span><br><span class="line">   </span><br><span class="line">Export control arguments:</span><br><span class="line">   --batch                                                    Indicates underlying statements to be executed in batch mode</span><br><span class="line">   --call &lt;arg&gt;                                               Populate the table using this stored procedure (one call per row)</span><br><span class="line">   --clear-staging-table                                      Indicates that any data in staging table can be deleted</span><br><span class="line">   --columns &lt;col,col,col...&gt;                                 Columns to export to table</span><br><span class="line">   --direct                                                   Use direct export fast path</span><br><span class="line">   --export-dir &lt;dir&gt;                                         HDFS source path for the export</span><br><span class="line">-m,--num-mappers &lt;n&gt;                                          Use &#x27;n&#x27; maptasks toexport in parallel</span><br><span class="line">   --mapreduce-job-name &lt;name&gt;                                Set name for generated mapreduce job</span><br><span class="line">   --staging-table &lt;table-name&gt;                               Intermediate staging table</span><br><span class="line">   --table &lt;table-name&gt;                                       Table to populate</span><br><span class="line">   --update-key &lt;key&gt;                                         Update records by specified key column</span><br><span class="line">   --update-mode &lt;mode&gt;                                       Specifies how updates are performed when new rows are</span><br><span class="line">                                                              found with non-matching keys in database</span><br><span class="line">   --validate                                                 Validate the copy using the configured validator</span><br><span class="line">   --validation-failurehandler &lt;validation-failurehandler&gt;    Fully qualified class name for ValidationFailureHandler</span><br><span class="line">   --validation-threshold &lt;validation-threshold&gt;              Fully qualified class name for ValidationThreshold</span><br><span class="line">   --validator &lt;validator&gt;                                    Fullyqualified class name for the Validator</span><br><span class="line"></span><br><span class="line">Input parsing arguments:</span><br><span class="line">   --input-enclosed-by &lt;char&gt;               Sets a required field encloser</span><br><span class="line">   --input-escaped-by &lt;char&gt;                Sets the input escape character</span><br><span class="line">   --input-fields-terminated-by &lt;char&gt;      Sets the input field separator</span><br><span class="line">   --input-lines-terminated-by &lt;char&gt;       Sets the input end-of-line char</span><br><span class="line">   --input-optionally-enclosed-by &lt;char&gt;    Sets a field enclosing character</span><br><span class="line"></span><br><span class="line">Output line formatting arguments:</span><br><span class="line">   --enclosed-by &lt;char&gt;               Sets a required field enclosing character</span><br><span class="line">   --escaped-by &lt;char&gt;                Sets the escape character</span><br><span class="line">   --fields-terminated-by &lt;char&gt;      Sets the field separator character</span><br><span class="line">   --lines-terminated-by &lt;char&gt;       Sets the end-of-line character</span><br><span class="line">   --mysql-delimiters                 Uses MySQL&#x27;s default delimiter set: fields: ,  lines: \n  escaped-by: \</span><br><span class="line">                                      optionally-enclosed-by: &#x27;</span><br><span class="line">   --optionally-enclosed-by &lt;char&gt;    Sets a field enclosing character</span><br><span class="line"></span><br><span class="line">Code generation arguments:</span><br><span class="line">   --bindir &lt;dir&gt;                             Output directory for compiled objects</span><br><span class="line">   --class-name &lt;name&gt;                        Sets the generated class name. This overrides --package-name. When</span><br><span class="line">                                              combined with --jar-file, sets the input class.</span><br><span class="line">   --escape-mapping-column-names &lt;boolean&gt;    Disable special characters escaping in column names</span><br><span class="line">   --input-null-non-string &lt;null-str&gt;         Input null non-string representation</span><br><span class="line">   --input-null-string &lt;null-str&gt;             Input null string representation</span><br><span class="line">   --jar-file &lt;file&gt;                          Disable code generation; use specified jar</span><br><span class="line">   --map-column-java &lt;arg&gt;                    Override mapping for specific columns to java types</span><br><span class="line">   --null-non-string &lt;null-str&gt;               Null non-string representation</span><br><span class="line">   --null-string &lt;null-str&gt;                   Null string representation</span><br><span class="line">   --outdir &lt;dir&gt;                             Output directory for generated code</span><br><span class="line">   --package-name &lt;name&gt;                      Put auto-generated classes in this package</span><br><span class="line"></span><br><span class="line">HCatalog arguments:</span><br><span class="line">   --hcatalog-database &lt;arg&gt;                        HCatalog database name</span><br><span class="line">   --hcatalog-home &lt;hdir&gt;                           Override $HCAT_HOME</span><br><span class="line">   --hcatalog-partition-keys &lt;partition-key&gt;        Sets the partition keys to use when importing to hive</span><br><span class="line">   --hcatalog-partition-values &lt;partition-value&gt;    Sets the partition values to use when importing to hive</span><br><span class="line">   --hcatalog-table &lt;arg&gt;                           HCatalog table name</span><br><span class="line">   --hive-home &lt;dir&gt;                                Override $HIVE_HOME</span><br><span class="line">   --hive-partition-key &lt;partition-key&gt;             Sets the partition key to use when importing to hive</span><br><span class="line">   --hive-partition-value &lt;partition-value&gt;         Sets the partition value to use when importing to hive</span><br><span class="line">   --map-column-hive &lt;arg&gt;                          Override mapping for specific column to hive types.</span><br><span class="line"></span><br><span class="line">Generic Hadoop command-line arguments:</span><br><span class="line">(must preceed any tool-specific arguments)</span><br><span class="line">Generic options supported are:</span><br><span class="line">-conf &lt;configuration file&gt;        specify an application configuration file</span><br><span class="line">-D &lt;property=value&gt;               define a value for a given property</span><br><span class="line">-fs &lt;file:///|hdfs://namenode:port&gt; specify default filesystem URL to use, overrides &#x27;fs.defaultFS&#x27; property from configurations.</span><br><span class="line">-jt &lt;local|resourcemanager:port&gt;  specify a ResourceManager</span><br><span class="line">-files &lt;file1,...&gt;                specify a comma-separated list of files to be copied to the map reduce cluster</span><br><span class="line">-libjars &lt;jar1,...&gt;               specify a comma-separated list of jar files to be included in the classpath</span><br><span class="line">-archives &lt;archive1,...&gt;          specify a comma-separated list of archives to be unarchived on the compute machines</span><br><span class="line"></span><br><span class="line">The general command line syntax is:</span><br><span class="line">command [genericOptions] [commandOptions]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">At minimum, you must specify --connect, --export-dir, and --table</span><br></pre></td></tr></table></figure>
+
+<p>导出emp2表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sqoop export \</span><br><span class="line">--connect jdbc:mysql://hadoop001:3306/ruozedata \</span><br><span class="line">--username root \</span><br><span class="line">--password &#x27;123456&#x27; \</span><br><span class="line">--table emp2 \</span><br><span class="line">--fields-terminated-by &#x27;\t&#x27; \</span><br><span class="line">--export-dir /user/hadoop/emp</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="作业job"><a href="#作业job" class="headerlink" title="作业job"></a>作业job</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop job --help</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hbase does not exist! HBase imports will fail.</span><br><span class="line">Please set $HBASE_HOME to the root of your HBase installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../hcatalog does not exist! HCatalog jobs will fail.</span><br><span class="line">Please set $HCAT_HOME to the root of your HCatalog installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../accumulo does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ACCUMULO_HOME to the root of your Accumulo installation.</span><br><span class="line">Warning: /home/hadoop/app/sqoop/../zookeeper does not exist! Accumulo imports will fail.</span><br><span class="line">Please set $ZOOKEEPER_HOME to the root of your Zookeeper installation.</span><br><span class="line">2022-03-01 15:55:19,426 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">usage: sqoop job [GENERIC-ARGS] [JOB-ARGS] [-- [&lt;tool-name&gt;] [TOOL-ARGS]]</span><br><span class="line"></span><br><span class="line">Job management arguments:</span><br><span class="line">   --create &lt;job-id&gt;            Create a new saved job</span><br><span class="line">   --delete &lt;job-id&gt;            Delete a saved job</span><br><span class="line">   --exec &lt;job-id&gt;              Run a saved job</span><br><span class="line">   --help                       Print usage instructions</span><br><span class="line">   --list                       List saved jobs</span><br><span class="line">   --meta-connect &lt;jdbc-uri&gt;    Specify JDBC connect string for the</span><br><span class="line">                                metastore</span><br><span class="line">   --show &lt;job-id&gt;              Show the parameters for a saved job</span><br><span class="line">   --verbose                    Print more information while working</span><br><span class="line"></span><br><span class="line">Generic Hadoop command-line arguments:</span><br><span class="line">(must preceed any tool-specific arguments)</span><br><span class="line">Generic options supported are:</span><br><span class="line">-conf &lt;configuration file&gt;        specify an application configuration file</span><br><span class="line">-D &lt;property=value&gt;               define a value for a given property</span><br><span class="line">-fs &lt;file:///|hdfs://namenode:port&gt; specify default filesystem URL to use, overrides &#x27;fs.defaultFS&#x27; property from configurations.</span><br><span class="line">-jt &lt;local|resourcemanager:port&gt;  specify a ResourceManager</span><br><span class="line">-files &lt;file1,...&gt;                specify a comma-separated list of files to be copied to the map reduce cluster</span><br><span class="line">-libjars &lt;jar1,...&gt;               specify a comma-separated list of jar files to be included in the classpath</span><br><span class="line">-archives &lt;archive1,...&gt;          specify a comma-separated list of archives to be unarchived on the compute machines</span><br><span class="line"></span><br><span class="line">The general command line syntax is:</span><br><span class="line">command [genericOptions] [commandOptions]</span><br></pre></td></tr></table></figure>
+
+<p>sqoop 作业的语法是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqoop job (generic-args) (job-args) [-- [subtool-name] (subtool-args)]</span><br></pre></td></tr></table></figure>
+
+<p>注意–后面和subtool-name之间有空格</p>
+<h4 id="创建job-–create"><a href="#创建job-–create" class="headerlink" title="创建job(–create)"></a>创建job(–create)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">sqoop job --create myjob  \</span><br><span class="line">--import \</span><br><span class="line">--connect jdbc:mysql://hadoop001:3306/ruozedata \</span><br><span class="line">--username root \</span><br><span class="line">--password &#x27;123456&#x27; \</span><br><span class="line">--delete-target-dir \</span><br><span class="line">--columns &quot;EMPNO,ENAME,JOB,SAL,COMM&quot; \</span><br><span class="line">--mapreduce-job-name EmpFromMySQL2HDFS \</span><br><span class="line">--table emp \</span><br><span class="line">--null-string &#x27;&#x27; \</span><br><span class="line">--null-non-string 0 \</span><br><span class="line">--fields-terminated-by &#x27;\t&#x27; \</span><br><span class="line">--where &#x27;SAL&gt;2000&#x27; \</span><br><span class="line">--target-dir EMP_COLUMN \</span><br><span class="line">-m 1</span><br></pre></td></tr></table></figure>
+
+<p>问题：</p>
+<p>报错：Exception in thread “main” java.lang.NoClassDefFoundError: org/json/JSONObject</p>
+<p>原因：sqoop缺少java-json.jar包.</p>
+<p>解决：这是因为sqoop缺少java-json.jar包，下载<a target="_blank" rel="noopener" href="http://www.java2s.com/Code/JarDownload/java-json/java-json.jar.zip">java-json.jar.zip</a>并添加到sqoop/lib目录下</p>
+<h4 id="验证作业-–list"><a href="#验证作业-–list" class="headerlink" title="验证作业 (–list)"></a>验证作业 (–list)</h4><p><code>--list</code> 参数是用来验证保存Sqoop作业的列表。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop job --list</span><br><span class="line">2022-03-01 16:20:34,767 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">Available jobs:</span><br><span class="line">  myjob</span><br></pre></td></tr></table></figure>
+
+<h4 id="检查作业-–show"><a href="#检查作业-–show" class="headerlink" title="检查作业(–show)"></a>检查作业(–show)</h4><p><code>--show</code> 参数用于检查或验证特定的工作，及其详细信息。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop job --show myjob</span><br><span class="line">2022-03-01 16:21:05,716 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">Enter password: </span><br><span class="line">Job: myjob</span><br><span class="line">Tool: import</span><br><span class="line">Options:</span><br><span class="line">----------------------------</span><br><span class="line">verbose = false</span><br><span class="line">hcatalog.drop.and.create.table = false</span><br><span class="line">db.connect.string = jdbc:mysql://hadoop001:3306/ruozedata</span><br><span class="line">codegen.output.delimiters.escape = 0</span><br><span class="line">codegen.output.delimiters.enclose.required = false</span><br><span class="line">codegen.input.delimiters.field = 0</span><br><span class="line">mainframe.input.dataset.type = p</span><br><span class="line">hbase.create.table = false</span><br><span class="line">split.limit = null</span><br><span class="line">null.string = </span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h4 id="执行作业-–exec"><a href="#执行作业-–exec" class="headerlink" title="执行作业 (–exec)"></a>执行作业 (–exec)</h4><p><code>--exec</code> 选项用于执行保存的作业。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqoop job --exec myjob</span><br></pre></td></tr></table></figure>
+
+<h4 id="删除作业-–delete"><a href="#删除作业-–delete" class="headerlink" title="删除作业 (–delete)"></a>删除作业 (–delete)</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sqoop job --delete myjob</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="eval工具"><a href="#eval工具" class="headerlink" title="eval工具"></a>eval工具</h3><p>它允许用户执行用户定义的查询，对各自的数据库服务器和预览结果在控制台中。这样，用户可以期望得到的表数据来导入。使用eval我们可以评估任何类型的SQL查询可以是DDL或DML语句。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop help eval</span><br><span class="line">2022-03-01 16:38:37,514 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">usage: sqoop eval [GENERIC-ARGS] [TOOL-ARGS]</span><br><span class="line"></span><br><span class="line">Common arguments:</span><br><span class="line">   --connect &lt;jdbc-uri&gt;                                       Specify JDBC connect string</span><br><span class="line">   --connection-manager &lt;class-name&gt;                          Specify connection manager class name</span><br><span class="line">   --connection-param-file &lt;properties-file&gt;                  Specify connection parameters file</span><br><span class="line">   --driver &lt;class-name&gt;                                      Manually specify JDBC driver class to use</span><br><span class="line">   --hadoop-home &lt;hdir&gt;                                       Override $HADOOP_MAPRED_HOME_ARG</span><br><span class="line">   --hadoop-mapred-home &lt;dir&gt;                                 Override $HADOOP_MAPRED_HOME_ARG</span><br><span class="line">   --help                                                     Print usage instructions</span><br><span class="line">   --metadata-transaction-isolation-level &lt;isolationlevel&gt;    Defines the transaction isolation level for metadata queries. </span><br><span class="line">   	                                                          For more details check java.sql.Connection javadoc or the JDBC</span><br><span class="line">                                                              specificaiton</span><br><span class="line">   --oracle-escaping-disabled &lt;boolean&gt;                       Disable the escaping mechanism of the Oracle/OraOop </span><br><span class="line">                                                              connection managers</span><br><span class="line">-P                                                            Read password from console</span><br><span class="line">   --password &lt;password&gt;                                      Set authenticati on password</span><br><span class="line">   --password-alias &lt;password-alias&gt;                          Credential provider password alias</span><br><span class="line">   --password-file &lt;password-file&gt;                            Set authentication password file path</span><br><span class="line">   --relaxed-isolation                                        Use read-uncommitted isolation for imports</span><br><span class="line">   --skip-dist-cache                                          Skip copying jars to distributed cache</span><br><span class="line">   --temporary-rootdir &lt;rootdir&gt;                              Defines the temporary root directory for the import</span><br><span class="line">   --throw-on-error                                           Rethrow a RuntimeExcep tion on error occurred during the job</span><br><span class="line">   --username &lt;username&gt;                                      Set authentication username</span><br><span class="line">   --verbose                                                  Print more information while working</span><br><span class="line"></span><br><span class="line">SQL evaluation arguments:</span><br><span class="line">-e,--query &lt;statement&gt;    Execute &#x27;statement&#x27; in SQL and exit</span><br><span class="line"></span><br><span class="line">Generic Hadoop command-line arguments:</span><br><span class="line">(must preceed any tool-specific arguments)</span><br><span class="line">Generic options supported are:</span><br><span class="line">-conf &lt;configuration file&gt;        specify an application configuration file</span><br><span class="line">-D &lt;property=value&gt;               define a value for a given property</span><br><span class="line">-fs &lt;file:///|hdfs://namenode:port&gt; specify default filesystem URL to use, overrides &#x27;fs.defaultFS&#x27; property from configurations.</span><br><span class="line">-jt &lt;local|resourcemanager:port&gt;  specify a ResourceManager</span><br><span class="line">-files &lt;file1,...&gt;                specify a comma-separated list of files to be copied to the map reduce cluster</span><br><span class="line">-libjars &lt;jar1,...&gt;               specify a comma-separated list of jar files to be included in the classpath</span><br><span class="line">-archives &lt;archive1,...&gt;          specify a comma-separated list of archives to be unarchived on the compute machines</span><br><span class="line"></span><br><span class="line">The general command line syntax is:</span><br><span class="line">command [genericOptions] [commandOptions]</span><br></pre></td></tr></table></figure>
+
+<h4 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ sqoop eval --connect jdbc:mysql://hadoop001:3306/ruozedata --username root --password &#x27;123456&#x27; --query &quot;SELECT * FROM emp where deptno=10&quot;</span><br><span class="line">2022-03-01 16:45:12,146 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-03-01 16:45:12,256 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-03-01 16:45:12,426 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Tue Mar 01 16:45:12 GMT 2022 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">----------------------------------------------------------------------------------------------</span><br><span class="line">| empno | ename      | job       | mgr   | hiredate            | sal       | comm      | deptno | </span><br><span class="line">----------------------------------------------------------------------------------------------</span><br><span class="line">| 7782  | CLARK      | MANAGER   | 7839  | 1981-06-09 00:00:00.0 | 2450.00   | (null)    | 10  | </span><br><span class="line">| 7839  | KING       | PRESIDENT | (null) | 1981-11-17 00:00:00.0 | 5000.00   | (null)    | 10  | </span><br><span class="line">| 7934  | MILLER     | CLERK     | 7782  | 1982-01-23 00:00:00.0 | 1300.00   | (null)    | 10  | </span><br><span class="line">----------------------------------------------------------------------------------------------</span><br><span class="line">[hadoop@hadoop001 ~]$ sqoop eval --connect jdbc:mysql://hadoop001:3306/ruozedata --username root --password &#x27;ruozedata001&#x27; --query &quot;INSERT INTO emp VALUES(7934,&#x27;KKK&#x27;,&#x27;CLERK&#x27;,7782,&#x27;1985-01-20 00:00:00.0&#x27;,1400,200,10)&quot;</span><br><span class="line">2022-03-01 16:49:02,886 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-03-01 16:49:03,001 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-03-01 16:49:03,169 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Tue Mar 01 16:49:03 GMT 2022 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">2022-03-01 16:49:03,566 INFO tool.EvalSqlTool: 1 row(s) updated.</span><br><span class="line">[hadoop@hadoop001 ~]$ sqoop eval --connect jdbc:mysql://hadoop001:3306/ruozedata --username root --password &#x27;ruozedata001&#x27; --query &quot;SELECT * FROM emp where deptno=10&quot;</span><br><span class="line">2022-03-01 16:49:28,104 INFO sqoop.Sqoop: Running Sqoop version: 1.4.7</span><br><span class="line">2022-03-01 16:49:28,239 WARN tool.BaseSqoopTool: Setting your password on the command-line is insecure. Consider using -P instead.</span><br><span class="line">2022-03-01 16:49:28,391 INFO manager.MySQLManager: Preparing to use a MySQL streaming resultset.</span><br><span class="line">Tue Mar 01 16:49:28 GMT 2022 WARN: Establishing SSL connection without server&#x27;s identity verification is not recommended. According to MySQL 5.5.45+, 5.6.26+ and 5.7.6+ requirements SSL connection must be established by default if explicit option isn&#x27;t set. For compliance with existing applications not using SSL the verifyServerCertificate property is set to &#x27;false&#x27;. You need either to explicitly disable SSL by setting useSSL=false, or set useSSL=true and provide truststore for server certificate verification.</span><br><span class="line">----------------------------------------------------------------------------------------------</span><br><span class="line">| empno | ename      | job       | mgr   | hiredate            | sal       | comm      | deptno | </span><br><span class="line">----------------------------------------------------------------------------------------------</span><br><span class="line">| 7782  | CLARK      | MANAGER   | 7839  | 1981-06-09 00:00:00.0 | 2450.00   | (null)    | 10  | </span><br><span class="line">| 7839  | KING       | PRESIDENT | (null) | 1981-11-17 00:00:00.0 | 5000.00   | (null)    | 10  | </span><br><span class="line">| 7934  | MILLER     | CLERK     | 7782  | 1982-01-23 00:00:00.0 | 1300.00   | (null)    | 10  | </span><br><span class="line">| 7934  | KKK        | CLERK     | 7782  | 1985-01-20 00:00:00.0 | 1400.00   | 200.00    | 10  | </span><br><span class="line">----------------------------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/" rel="next" title="Spark DF/DS API：行列转换">
+                <i class="fa fa-chevron-left"></i> Spark DF/DS API：行列转换
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/" rel="prev" title="我的mysql笔记">
+                我的mysql笔记 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">62</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2"><span class="nav-number">2.</span> <span class="nav-text">部署</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BDtar%E5%8C%85"><span class="nav-number">2.1.</span> <span class="nav-text">下载tar包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%8E%8B%E5%88%B0%E7%9B%B8%E5%BA%94%E7%9B%AE%E5%BD%95"><span class="nav-number">2.2.</span> <span class="nav-text">解压到相应目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9conf-sqoop-env-sh"><span class="nav-number">2.3.</span> <span class="nav-text">修改conf&#x2F;sqoop-env.sh</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="nav-number">2.4.</span> <span class="nav-text">添加环境变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8B%B7%E8%B4%9Dmysql%E9%A9%B1%E5%8A%A8%E5%8C%85%E5%88%B0sqoop%E7%9A%84lib%E7%9B%AE%E5%BD%95%E4%B8%8B"><span class="nav-number">2.5.</span> <span class="nav-text">拷贝mysql驱动包到sqoop的lib目录下</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95Sqoop%E6%98%AF%E5%90%A6%E8%83%BD%E5%A4%9F%E6%88%90%E5%8A%9F%E8%BF%9E%E6%8E%A5%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">2.6.</span> <span class="nav-text">测试Sqoop是否能够成功连接数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%88%90%E5%8A%9F%E8%AE%BF%E9%97%AE"><span class="nav-number">2.7.</span> <span class="nav-text">成功访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E5%B0%8F%E7%BB%93"><span class="nav-number">2.8.</span> <span class="nav-text">问题小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%97%E5%87%BA%E6%95%B0%E6%8D%AE%E5%BA%93list-databases"><span class="nav-number">3.1.</span> <span class="nav-text">列出数据库list-databases</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%97%E5%87%BA%E6%89%80%E6%9C%89%E8%A1%A8list-databases"><span class="nav-number">3.2.</span> <span class="nav-text">列出所有表list-databases</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%BC%E5%85%A5import"><span class="nav-number">3.3.</span> <span class="nav-text">导入import</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F"><span class="nav-number">3.3.1.</span> <span class="nav-text">注意</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#hadoop%E6%A1%88%E4%BE%8B"><span class="nav-number">3.3.2.</span> <span class="nav-text">hadoop案例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hive%E6%A1%88%E4%BE%8B"><span class="nav-number">3.3.3.</span> <span class="nav-text">Hive案例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%BC%E5%87%BAexport"><span class="nav-number">3.4.</span> <span class="nav-text">导出export</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%9C%E4%B8%9Ajob"><span class="nav-number">3.5.</span> <span class="nav-text">作业job</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BAjob-%E2%80%93create"><span class="nav-number">3.5.1.</span> <span class="nav-text">创建job(–create)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%AA%8C%E8%AF%81%E4%BD%9C%E4%B8%9A-%E2%80%93list"><span class="nav-number">3.5.2.</span> <span class="nav-text">验证作业 (–list)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E4%BD%9C%E4%B8%9A-%E2%80%93show"><span class="nav-number">3.5.3.</span> <span class="nav-text">检查作业(–show)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E4%BD%9C%E4%B8%9A-%E2%80%93exec"><span class="nav-number">3.5.4.</span> <span class="nav-text">执行作业 (–exec)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E4%BD%9C%E4%B8%9A-%E2%80%93delete"><span class="nav-number">3.5.5.</span> <span class="nav-text">删除作业 (–delete)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#eval%E5%B7%A5%E5%85%B7"><span class="nav-number">3.6.</span> <span class="nav-text">eval工具</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B"><span class="nav-number">3.6.1.</span> <span class="nav-text">案例</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

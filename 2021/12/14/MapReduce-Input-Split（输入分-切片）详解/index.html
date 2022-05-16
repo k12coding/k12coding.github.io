@@ -1,37 +1,1243 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next muse use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MapReduce Input Split与map task数量">
+<meta property="og:url" content="https://k12coding.github.io/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="Hadoop中的block Size和split Size是什么关系问题 hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
+<meta property="article:published_time" content="2021-12-14T12:09:56.000Z">
+<meta property="article:modified_time" content="2022-01-26T13:04:37.633Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://k12coding.github.io/2021/12/14/MapReduce-Input-Split（输入分-切片）详解/"/>
+
+
+
+
+
+  <title>MapReduce Input Split与map task数量 | k12的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">k12的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">k12的笔记</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2021/12/14/MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MapReduce Input Split与map task数量</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-12-14T20:09:56+08:00">
+                2021-12-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="Hadoop中的block-Size和split-Size是什么关系"><a href="#Hadoop中的block-Size和split-Size是什么关系" class="headerlink" title="Hadoop中的block Size和split Size是什么关系"></a>Hadoop中的block Size和split Size是什么关系</h2><p><strong>问题</strong></p>
+<p>hadoop的split size 和 block size 是什么关系？ 是否 split size 应该 n倍于 block size ?</p>
+<span id="more"></span>
+
+<p><strong>概念</strong></p>
+<p>在 hdfs 架构中，存在 blocks 的概念。 通常来说，hdfs中的一个block 是 64MB 。 当我们把一个大文件导入hdfs中的时候，文件会按 64MB 每个block来分割（版本不同，默认配置可能不同）。 如果你有1GB的文件要存入HDFS中， 1GB/64MB = 1024MB / 64MB = 16 个blocks 会被分割到不同的datanode上。</p>
+<p><strong>目的</strong></p>
+<p>数据分割(data splitting )策略是基于文件偏移进行的。文件分割的目的是有利于数据并行处理 ，以及便于数据容灾恢复。</p>
+<p><strong>区别</strong></p>
+<p>split 是逻辑意义上的split。 输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。</p>
+<p>通常在 M/R 程序或者其他数据处理技术上用到。根据你处理的数据量的情况，split size是允许用户自定义的。</p>
+<p>split size 定义好了之后，可以控制 M/R 中 Mapper 的数量。如果M/R中没有定义 split size ， 就用默认的HDFS配置作为 input split。<br>其中有俩个配置文件（如下）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">--minsize   默认大小为1</span><br><span class="line">mapreduce.input.fileinputformat.split.minsize  </span><br><span class="line"></span><br><span class="line">--maxsize   默认大小为Long.MAXValue </span><br><span class="line">mapreduce.input.fileinputformat.split.maxsize</span><br></pre></td></tr></table></figure>
+
+<p>1.如果blockSize小于maxSize &amp;&amp; blockSize 大于 minSize之间，那么split就是blockSize；</p>
+<p>2.如果blockSize小于maxSize &amp;&amp; blockSize 小于 minSize之间，那么split就是minSize；</p>
+<p>3.如果blockSize大于maxSize &amp;&amp; blockSize 大于 minSize之间，那么split就是maxSize；</p>
+<p><strong>举例</strong></p>
+<p>案例1：</p>
+<p>你有个100MB的文件，block size 是 64MB ， 那么就会被split成 2 块。这时如果你你没有指定 input split ， 你的M/R程序就会按2个input split 来处理 ， 并分配两个mapper来完成这个job。</p>
+<p>但如果你把 split size 指定为 100MB（split.minsize=100MB），那么M/R程序就会把数据处理成一个 split，这时只用分配一个mapper 就可以了。</p>
+<p>但如果你把 split size 指定为 25MB（split.maxsize=25MB），M/R就会将数据分成4个split，分配4个mapper来处理这个job。</p>
+<p>案例2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[test@dw01 ~]$ hadoop fs -dus -h /tmp/wordcount/input/*</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00000 246.32M</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00002 106.95M</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00003 7.09M</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-0004 0</span><br></pre></td></tr></table></figure>
+
+<p>在本例子中，mapreduce.input.fileinputformat.split.maxsize=104857440 （100MB），mapred.split.zero.file.skip=true，所有文件的blockSize 大小都是256MB，故splitSize=100MB</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00000 	划分成3个split</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00002 	划分成1个split</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-00003 	划分成1个split</span><br><span class="line">hdfs://namenode.test.net:9000/tmp/wordcount/input/part-r-0004 	不划分split</span><br></pre></td></tr></table></figure>
+
+<p><strong>总结</strong></p>
+<ol>
+<li>block是物理上的数据分割，而split是逻辑上的分割。split是mapreduce中的概念，而block是hdfs中切块的大小。</li>
+<li>如果没有特别指定，split size 就等于 HDFS 的 block size 。</li>
+<li>用户可以在M/R 程序中自定义split size。</li>
+<li>一个split 可以包含多个blocks，也可以把一个block应用多个split操作。</li>
+<li>一个split不会包含两个File的Block,不会跨越File边界</li>
+<li>有多少个split，就有多少个mapper。</li>
+</ol>
+<p><strong>补充</strong></p>
+<p><strong>性能</strong></p>
+<p>一般来说，block size 和 split size 设置成一致，性能较好。</p>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. 所以 hadoop处理大文件比处理小文件来得效率高得多。</p>
+<p><strong>如何避免切片：</strong></p>
+<p>将切片的最小值设置为大于文件的大小</p>
+<p>使用FileInputFormat的具体子类，重写isSplitable()方法，将返回值设置为false。</p>
+<p>参考：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_20641565/article/details/53457622">https://blog.csdn.net/qq_20641565/article/details/53457622</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/wisgood/article/details/79178663">https://blog.csdn.net/wisgood/article/details/79178663</a></p>
+<h2 id="MapReduce-Input-Split（输入分-切片）详解"><a href="#MapReduce-Input-Split（输入分-切片）详解" class="headerlink" title="MapReduce Input Split（输入分/切片）详解"></a>MapReduce Input Split（输入分/切片）详解</h2><p><strong><img src="http://images.cnitblog.com/blog/306623/201306/23175247-1cff38de2f154503bccd89a5d057f696.x-png" alt="img"></strong></p>
+<p><strong>输入分片（Input Split）</strong>：在进行map计算之前，mapreduce会根据输入文件计算输入分片（input split），每个输入分片（input split）针对一个map任务，输入分片（input split）存储的并非数据本身，而是一个分片长度和一个记录数据的位置的数组。</p>
+<p>分片大小范围可以在mapred-site.xml中设置，mapred.min.split.size mapred.max.split.size，</p>
+<p>minSplitSize大小默认为1B，maxSplitSize大小默认为Long.MAX_VALUE = 9223372036854775807</p>
+<p><strong>那么分片到底是多大呢？</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">long minSize = Math.max(this.getFormatMinSplitSize(), getMinSplitSize(job));</span><br><span class="line">long maxSize = getMaxSplitSize(job);</span><br><span class="line">long blockSize = file.getBlockSize();</span><br><span class="line">long splitSize = this.computeSplitSize(blockSize, minSize, maxSize);</span><br><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">        return Math.max(minSize, Math.min(maxSize, blockSize));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>*<em>所以在我们没有设置分片的范围的时候，分片大小是由block块大小决定的，和它的大小一样。比如把一个258MB的文件上传到HDFS上，假设block块大小是128MB，那么它就会被分成三个block块，与之对应产生三个split</em>***，所以最终会产生三个map task。我又发现了另一个问题，第三个block块里存的文件大小只有2MB，而它的block块大小是128MB，那它实际占用Linux file system的多大空间？</p>
+<p>答案是实际的文件大小，而非一个块的大小。有大神已经验证这个答案了：<a target="_blank" rel="noopener" href="http://blog.csdn.net/samhacker/article/details/23089157">http://blog.csdn.net/samhacker/article/details/23089157</a></p>
+<p>如果hdfs占用Linux file system的磁盘空间按实际文件大小算，那么这个”块大小“有必要存在吗？</p>
+<p>其实块大小还是必要的，一个显而易见的作用就是当文件通过append操作不断增长的过程中，可以通过来block size决定何时split文件。以下是Hadoop Community的专家给我的回复： </p>
+<p><em>“The block size is a meta attribute. If you append tothe file later, it still needs to know when to split further - so it keeps that value as a mere metadata it can use to advise itself on write boundaries.”</em> </p>
+<p><strong>补充：</strong></p>
+<p>一个split的大小是由goalSize, minSize, blockSize这三个值决定的。computeSplitSize的逻辑是，先从goalSize和blockSize两个值中选出最小的那个（比如一般不设置map数，这时blockSize为当前文件的块size，而goalSize是“InputFile大小”/“我们在配置文件中定义的mapred.map.tasks”值，如果没设置的话，默认是1）。</p>
+<p>goalSize这个计算意味着：</p>
+<ul>
+<li>拆分不会小于文件中的剩余数据或<code>minSize</code>。</li>
+<li>分割不会大于<code>goalSize</code>和<code>blockSize</code>中的较小者。</li>
+</ul>
+<p>（个人疑问，好像自己翻源码没有<em>goalSize</em>这个参数，都是用maxSize的表示的）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(maxSize, blockSize));</span><br><span class="line">&#125;</span><br><span class="line">protected long computeSplitSize(long blockSize, long minSize, long maxSize) &#123;</span><br><span class="line">    return Math.max(minSize, Math.min(goalSize, blockSize));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>hadooop提供了一个设置map个数的参数mapred.map.tasks，我们可以通过这个参数来控制map的个数。但是通过这种方式设置map的个数，并不是每次都有效的。原因是mapred.map.tasks只是一个hadoop的参考数值，最终map的个数，还取决于其他的因素。</p>
+<p>为了方便介绍，先来看几个名词：</p>
+<p><strong>block_size</strong> : hdfs的文件块大小，默认为64M，可以通过参数dfs.block.size设置</p>
+<p><strong>total_size</strong> : 输入文件整体的大小</p>
+<p><strong>input_file_num</strong> : 输入文件的个数</p>
+<ol>
+<li><p><strong>默认map个数</strong></p>
+<p>如果不进行任何设置，默认的map个数是和blcok_size相关的。</p>
+<p>default_num = total_size / block_size;</p>
+</li>
+<li><p><strong>期望大小</strong></p>
+<p>可以通过参数 mapred.map.tasks来设置程序员期望的map个数，但是这个个数只有在大于default_num的时候，才会生效。</p>
+<p>goal_num = mapred.map.tasks;</p>
+</li>
+<li><p><strong>设置处理的文件大小</strong></p>
+<p>可以通过mapred.min.split.size 设置每个task处理的文件大小，但是这个大小只有在大于 block_size的时候才会生效。</p>
+<p>split_size = max( mapred.min.split.size, block_size );</p>
+<p>split_num = total_size / split_size;</p>
+</li>
+<li><p><strong>计算的map个数</strong></p>
+<p>compute_map_num = min(split_num,  max(default_num, goal_num))</p>
+</li>
+</ol>
+<p>除了这些配置以外，mapreduce还要遵循一些原则。 mapreduce的每一个map处理的数据是不能跨越文件的，也就是说min_map_num &gt;= input_file_num。 所以，最终的map个数应该为：</p>
+<p>   final_map_num = max(compute_map_num, input_file_num)</p>
+<p>   经过以上的分析，在设置map个数的时候，可以简单的总结为以下几点：</p>
+<p>（1）如果想增加map个数，则设置mapred.map.tasks 为一个较大的值。</p>
+<p>（2）如果想减小map个数，则设置mapred.min.split.size 为一个较大的值。</p>
+<p>（3）如果输入中有很多小文件，依然想减少map个数，则需要将小文件merger为大文件，然后使用准则2。</p>
+<p>参考：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Dr_Guo/article/details/51150278">https://blog.csdn.net/Dr_Guo/article/details/51150278</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lylcore/article/details/9136555">https://blog.csdn.net/lylcore/article/details/9136555</a></p>
+<h2 id="mapreduce中split划分分析（新版api）"><a href="#mapreduce中split划分分析（新版api）" class="headerlink" title="mapreduce中split划分分析（新版api）"></a>mapreduce中split划分分析（新版api）</h2><h3 id="计算splitsize"><a href="#计算splitsize" class="headerlink" title="计算splitsize"></a>计算splitsize</h3><ul>
+<li><p>minSize :每个split的最小值，默认为1.getFormatMinSplitSize()为代码中写死，固定返回1，除非修改了hadoop的源代码.getMinSplitSize(job)取决于参数mapreduce.input.fileinputformat.split.minsize，如果没有设置该参数，返回1.故minSize默认为1.</p>
+</li>
+<li><p>maxSize：每个split的最大值，如果设置了mapreduce.input.fileinputformat.split.maxsize，则为该值，否则为Long的最大值。</p>
+</li>
+<li><p>blockSize ：默认为HDFS设置的文件存储BLOCK大小。注意：该值并不一定是唯一固定不变的。HDFS上不同的文件该值可能不同。故将文件划分成split的时候，对于每个不同的文件，需要获取该文件的blocksize。</p>
+</li>
+<li><p>splitSize ：根据公式，默认为blockSize 。</p>
+</li>
+</ul>
+<h3 id="getSplits-方法在-FileInputFormat-addInputPath-job-path-中"><a href="#getSplits-方法在-FileInputFormat-addInputPath-job-path-中" class="headerlink" title="getSplits()方法在 FileInputFormat.addInputPath(job, path)中"></a>getSplits()方法在 FileInputFormat.addInputPath(job, path)中</h3><ol>
+<li><p>遍历输入目录中的每个文件，拿到该文件</p>
+</li>
+<li><p>计算文件长度，A:如果文件长度为0，如果mapred.split.zero.file.skip=true，则不划分split ; 如果mapred.split.zero.file.skip为false，生成一个length=0的split .B:如果长度不为0，跳到步骤3</p>
+</li>
+<li><p>判断该文件是否支持split :如果支持，跳到步骤4;如果不支持，该文件不切分，生成1个split，split的length等于文件长度。</p>
+</li>
+<li><p>根据当前文件，计算splitSize，本文中为100M</p>
+</li>
+<li><p>判断剩余待切分文件大小/splitsize是否大于SPLIT_SLOP(该值为1.1，代码中写死了) 如果true，切分成一个split，待切分文件大小更新为当前值-splitsize ，再次切分。生成的split的length等于splitsize； 如果false 将剩余的切到一个split里，生成的split length等于剩余待切分的文件大小。之所以需要判断剩余待切分文件大小/splitsize,主要是为了避免过多的小的split。比如文件中有100个109M大小的文件，如果splitSize=100M，如果不判断剩余待切分文件大小/splitsize，将会生成200个split，其中100个split的size为100M，而其中100个只有9M，存在100个过小的split。MapReduce首选的是处理大文件，过多的小split会影响性能。</p>
+<pre><code> /** 
+  * Generate the list of files and make them into FileSplits.
+  * @param job the job context
+  * @throws IOException
+  */
+ public List&lt;InputSplit&gt; getSplits(JobContext job) throws IOException &#123;
+     //用于记录分片开始的时间，最后会得到一个分片总用时，时间单位是纳秒
+   StopWatch sw = new StopWatch().start();
+   //用来计算分片大小
+   //minSize 就是 1
+   //maxSize 追到最下面可以发现其实就是long的最大值
+   long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
+   long maxSize = getMaxSplitSize(job);
+
+   //存放切片对象
+   List&lt;InputSplit&gt; splits = new ArrayList&lt;InputSplit&gt;();
+   //得到路径下的所有文件
+   List&lt;FileStatus&gt; files = listStatus(job);
+   //遍历得到的文件
+   for (FileStatus file: files) &#123;
+     //得到文件路径
+     Path path = file.getPath();
+     //获取文件大小
+     long length = file.getLen();
+     //如果文件大小不为0的话
+     if (length != 0) &#123;
+         //定义块数组，存放块在datanode上的位置
+       BlockLocation[] blkLocations;
+       if (file instanceof LocatedFileStatus) &#123;
+         blkLocations = ((LocatedFileStatus) file).getBlockLocations();
+       &#125; else &#123;
+         FileSystem fs = path.getFileSystem(job.getConfiguration());
+         blkLocations = fs.getFileBlockLocations(file, 0, length);
+       //如果这个文件可以分片的话进行分片，zip、视频等不能进行分片
+       if (isSplitable(job, path)) &#123;
+         //获取块大小，hadoop1默认是64M  hadoop2默认是128M  hadoop3默认是256M
+         long blockSize = file.getBlockSize();
+         //得到片大小
+         //--&gt; 最终决定出切片的大小(128M) --&gt; blockSize值
+           //Math.max(minSize, Math.min(max, blockSize));这是实现
+         long splitSize = computeSplitSize(blockSize, minSize, maxSize);
+         //获取文件大小
+         long bytesRemaining = length;
+         //文件大小/片大小&gt;1.1 开始分片
+         //例如  文件大小为260M  260/128=2.03&gt;1.1 进入循环开始分片
+         //132/128 &lt;1.1  不再进行分片，循环结束
+         while (((double) bytesRemaining)/splitSize &gt; SPLIT_SLOP) &#123;
+           int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+           splits.add(makeSplit(path, length-bytesRemaining, splitSize,
+                       blkLocations[blkIndex].getHosts(),
+                        blkLocations[blkIndex].getCachedHosts()));
+           //文件大小 = 原文件大小 - 当前分片大小
+           //260 -128 = 132 现在文件大小是132 MB
+           bytesRemaining -= splitSize;
+         &#125;
+          //循环结束之后,只要文件大小不等于0 此时也会在切一个片
+         if (bytesRemaining != 0) &#123;
+           int blkIndex = getBlockIndex(blkLocations, length-bytesRemaining);
+           splits.add(makeSplit(path, length-bytesRemaining, bytesRemaining,
+                      blkLocations[blkIndex].getHosts(),
+                      blkLocations[blkIndex].getCachedHosts()));
+         &#125;
+       &#125; else &#123; // not splitable
+         splits.add(makeSplit(path, 0, length, blkLocations[0].getHosts(),
+                     blkLocations[0].getCachedHosts()));
+       &#125;
+     &#125; else &#123; 
+       //为零长度文件创建空主机数组
+       splits.add(makeSplit(path, 0, length, new String[0]));
+     &#125;
+   &#125;
+   // 保存文件数
+   job.getConfiguration().setLong(NUM_INPUT_FILES, files.size());
+   sw.stop();
+   //返回携带着切片文件的集合
+   return splits;
+ &#125;
+</code></pre>
+</li>
+</ol>
+<h2 id="Hadoop-map和reduce数量估算"><a href="#Hadoop-map和reduce数量估算" class="headerlink" title="Hadoop map和reduce数量估算"></a>Hadoop map和reduce数量估算</h2><p>Hadoop在运行一个mapreduce job之前，需要估算这个job的maptask数和reducetask数。</p>
+<h3 id="map-task数量"><a href="#map-task数量" class="headerlink" title="map task数量"></a>map task数量</h3><p>首先分析一下job的maptask数，当一个job提交时，jobclient首先分析job被拆分的split数量，然后吧job.split文件放置在HDFS中，一个job的MapTask数量就等于split的个数。</p>
+<p>job.split中包含split的个数由FileInputFormat.getSplits计算出，方法的逻辑如下：</p>
+<ol>
+<li><p>读取参数mapred.map.tasks，这个参数默认设置为0，生产系统中很少修改。</p>
+</li>
+<li><p>计算input文件的总字节数，总字节数/(mapred.map.tasks==0 ? 1: mapred.map.tasks )=goalsize</p>
+</li>
+<li><p>每个split的最小值minSize由mapred.min.split.size参数设置，这个参数默认设置为0，生产系统中很少修改。</p>
+</li>
+<li><p>调用computeSplitSize方法，计算出splitsize= Math.max(minSize, Math.min(goalSize, blockSize)),通常这个值=blockSize，输入的文件较小，文件字节数之和小于blocksize时，splitsize=输入文件字节数之和。</p>
+</li>
+<li><p>对于input的每个文件，计算split的个数。</p>
+<p>a) 文件大小/splitsize&gt;1.1，创建一个split，这个split的字节数=splitsize，文件剩余字节数=文件大小-splitsize</p>
+<p>b) 文件剩余字节数/splitsize&lt;1.1，剩余的部分作为一个split</p>
+</li>
+</ol>
+<p>举例说明：</p>
+<ol>
+<li><p>input只有一个文件，大小为100M,splitsize=blocksize,则split数为2，第一个split为64M,第二个为36M</p>
+</li>
+<li><p>input只有一个文件，大小为65M,splitsize=blocksize，则split数为1，split大小为65M</p>
+</li>
+<li><p>input只有一个文件，大小为129M,splitsize=blocksize，则split数为2，第一个split为64M,第二个为65M(最后一个split的大小可能超过splitsize)</p>
+</li>
+<li><p>input只有一个文件，大小为20M ,splitsize=blocksize，则split数为1，split大小为20M</p>
+</li>
+<li><p>input有两个文件，大小为100M和20M,splitsize=blocksize,则split数为3，第一个文件分为两个split，第一个split为64M,第二个为36M，第二个文件为一个split，大小为20M</p>
+</li>
+<li><p>input有两个文件，大小为25M和20M,splitsize=blocksize,则split数为2，第一个文件为一个split，大小为25M，第二个文件为一个split，大小为20M</p>
+</li>
+</ol>
+<p>假设一个job的input大小固定为100M,当只包含一个文件时，split个数为2，maptask数为2，但当包含10个10M的文件时，maptask数为10。</p>
+<h3 id="reduce-task数量"><a href="#reduce-task数量" class="headerlink" title="reduce task数量"></a>reduce task数量</h3><p>下面来分析reducetask，纯粹的mapreduce task的reduce task数很简单，就是参数mapred.reduce.tasks的值，hadoop-site.xml文件中和mapreduce job运行时不设置的话默认为1。</p>
+<p>在HIVE中运行sql的情况又不同，hive会估算reduce task的数量，估算方法如下：</p>
+<p>通常是<code>ceil(input文件大小/1024*1024*1024)</code>，每1GB大小的输入文件对应一个reduce task。</p>
+<p>特殊的情况是当sql只查询count(*)时，reduce task数被设置成1。</p>
+<h3 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h3><p>通过map和reduce task数量的分析可以看出，hadoop/hive估算的map和reduce task数可能和实际情况相差甚远。假定某个job的input数据量庞大，reduce task数量也会随之变大，而通过join和group by，实际output的数据可能不多，但reduce会输出大量的小文件，这个job的下游任务将会启动同样多的map来处理前面reduce产生的大量文件。在生产环境中每个user group有一个map task数的限额，一个job启动大量的map task很显然会造成其他job等待释放资源。</p>
+<p>Hive对于上面描述的情况有一种补救措施，参数hive.merge.smallfiles.avgsize控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于hive.merge.smallfiles.avgsize-默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过hive.merge.size.per.task-默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+<h3 id="map数据计算示例"><a href="#map数据计算示例" class="headerlink" title="map数据计算示例"></a>map数据计算示例</h3><p>hive&gt; set dfs.block.size;<br>dfs.block.size=268435456<br>hive&gt; set mapred.map.tasks;<br>mapred.map.tasks=2</p>
+<p>文件块大小为256MB,map.tasks为2</p>
+<p>查看文件大小和文件数：（共4539.059804MB,18个文件）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">[dwapp@dw-yuntigw-63 hadoop]$ hadoop dfs -ls /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25;</span><br><span class="line">Found 18 items</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 290700555 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000000_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 290695945 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000001_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 290182606 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000002_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 271979933 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000003_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258448208 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000004_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258440338 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000005_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258419852 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000006_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258347423 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000007_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258349480 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000008_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258301657 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000009_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258270954 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000010_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258266805 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000011_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258253133 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000012_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258236047 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000013_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258239072 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000014_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258170671 2012-11-26 19:00 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000015_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258160711 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000016_0</span><br><span class="line">-rw-r-----  3 alidwicbu cug-alibaba-dw-icbu 258085783 2012-11-26 18:59 /group/alibaba-dw-icbu/hive/bdl_en12_pageview_fatdt0_d/hp_stat_date=2012-11-25/attempt_201211151327_1675393_m_000017_0</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>文件：</th>
+<th>大小Bytes</th>
+<th>大小MB</th>
+<th></th>
+<th>splitsize(MB)</th>
+<th>每个文件需要的map数量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件1</td>
+<td>290700555</td>
+<td>277.2336531</td>
+<td></td>
+<td>256</td>
+<td>1.082943957</td>
+</tr>
+<tr>
+<td>文件2</td>
+<td>290695945</td>
+<td>277.2292566</td>
+<td></td>
+<td>256</td>
+<td>1.082926784</td>
+</tr>
+<tr>
+<td>文件3</td>
+<td>290182606</td>
+<td>276.7396984</td>
+<td></td>
+<td>256</td>
+<td>1.081014447</td>
+</tr>
+<tr>
+<td>文件4</td>
+<td>271979933</td>
+<td>259.3802767</td>
+<td></td>
+<td>256</td>
+<td>1.013204206</td>
+</tr>
+<tr>
+<td>文件5</td>
+<td>258448208</td>
+<td>246.4754181</td>
+<td></td>
+<td>256</td>
+<td>0.962794602</td>
+</tr>
+<tr>
+<td>文件6</td>
+<td>258440338</td>
+<td>246.4679127</td>
+<td></td>
+<td>256</td>
+<td>0.962765284</td>
+</tr>
+<tr>
+<td>文件7</td>
+<td>258419852</td>
+<td>246.4483757</td>
+<td></td>
+<td>256</td>
+<td>0.962688968</td>
+</tr>
+<tr>
+<td>文件8</td>
+<td>258347423</td>
+<td>246.379302</td>
+<td></td>
+<td>256</td>
+<td>0.962419149</td>
+</tr>
+<tr>
+<td>文件9</td>
+<td>258349480</td>
+<td>246.3812637</td>
+<td></td>
+<td>256</td>
+<td>0.962426811</td>
+</tr>
+<tr>
+<td>文件10</td>
+<td>258301657</td>
+<td>246.3356562</td>
+<td></td>
+<td>256</td>
+<td>0.962248657</td>
+</tr>
+<tr>
+<td>文件11</td>
+<td>258270954</td>
+<td>246.3063755</td>
+<td></td>
+<td>256</td>
+<td>0.962134279</td>
+</tr>
+<tr>
+<td>文件12</td>
+<td>258266805</td>
+<td>246.3024187</td>
+<td></td>
+<td>256</td>
+<td>0.962118823</td>
+</tr>
+<tr>
+<td>文件13</td>
+<td>258253133</td>
+<td>246.2893801</td>
+<td></td>
+<td>256</td>
+<td>0.962067891</td>
+</tr>
+<tr>
+<td>文件14</td>
+<td>258236047</td>
+<td>246.2730856</td>
+<td></td>
+<td>256</td>
+<td>0.962004241</td>
+</tr>
+<tr>
+<td>文件15</td>
+<td>258239072</td>
+<td>246.2759705</td>
+<td></td>
+<td>256</td>
+<td>0.96201551</td>
+</tr>
+<tr>
+<td>文件16</td>
+<td>258170671</td>
+<td>246.2107382</td>
+<td></td>
+<td>256</td>
+<td>0.961760696</td>
+</tr>
+<tr>
+<td>文件17</td>
+<td>258160711</td>
+<td>246.2012396</td>
+<td></td>
+<td>256</td>
+<td>0.961723592</td>
+</tr>
+<tr>
+<td>文件18</td>
+<td>258085783</td>
+<td>246.1297827</td>
+<td></td>
+<td>256</td>
+<td>0.961444464</td>
+</tr>
+<tr>
+<td>总文件大小：</td>
+<td>4759549173</td>
+<td>4539.059804</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>goalSize = 4539.059804 （文件总大小）/ mapred.map.tasks(2) = 2269.529902MB。</p>
+<p>分片大小：Math.max(minSize, Math.min(goalSize, blockSize))：blockSize</p>
+<p>因此splitsize取值为256MB，所以一共分配18个map。</p>
+<p>修改map.tasks参数为32<br>set mapred.map.tasks = 32;</p>
+<table>
+<thead>
+<tr>
+<th>文件：</th>
+<th>大小Bytes</th>
+<th>大小MB</th>
+<th></th>
+<th>splitsize(MB)</th>
+<th>每个文件需要的map数量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件1</td>
+<td>290700555</td>
+<td>277.2336531</td>
+<td></td>
+<td>141.8</td>
+<td>1.955103336</td>
+</tr>
+<tr>
+<td>文件2</td>
+<td>290695945</td>
+<td>277.2292566</td>
+<td></td>
+<td>141.8</td>
+<td>1.955072332</td>
+</tr>
+<tr>
+<td>文件3</td>
+<td>290182606</td>
+<td>276.7396984</td>
+<td></td>
+<td>141.8</td>
+<td>1.951619876</td>
+</tr>
+<tr>
+<td>文件4</td>
+<td>271979933</td>
+<td>259.3802767</td>
+<td></td>
+<td>141.8</td>
+<td>1.829198002</td>
+</tr>
+<tr>
+<td>文件5</td>
+<td>258448208</td>
+<td>246.4754181</td>
+<td></td>
+<td>141.8</td>
+<td>1.738190537</td>
+</tr>
+<tr>
+<td>文件6</td>
+<td>258440338</td>
+<td>246.4679127</td>
+<td></td>
+<td>141.8</td>
+<td>1.738137607</td>
+</tr>
+<tr>
+<td>文件7</td>
+<td>258419852</td>
+<td>246.4483757</td>
+<td></td>
+<td>141.8</td>
+<td>1.737999829</td>
+</tr>
+<tr>
+<td>文件8</td>
+<td>258347423</td>
+<td>246.379302</td>
+<td></td>
+<td>141.8</td>
+<td>1.737512708</td>
+</tr>
+<tr>
+<td>文件9</td>
+<td>258349480</td>
+<td>246.3812637</td>
+<td></td>
+<td>141.8</td>
+<td>1.737526543</td>
+</tr>
+<tr>
+<td>文件10</td>
+<td>258301657</td>
+<td>246.3356562</td>
+<td></td>
+<td>141.8</td>
+<td>1.737204909</td>
+</tr>
+<tr>
+<td>文件11</td>
+<td>258270954</td>
+<td>246.3063755</td>
+<td></td>
+<td>141.8</td>
+<td>1.736998417</td>
+</tr>
+<tr>
+<td>文件12</td>
+<td>258266805</td>
+<td>246.3024187</td>
+<td></td>
+<td>141.8</td>
+<td>1.736970513</td>
+</tr>
+<tr>
+<td>文件13</td>
+<td>258253133</td>
+<td>246.2893801</td>
+<td></td>
+<td>141.8</td>
+<td>1.736878562</td>
+</tr>
+<tr>
+<td>文件14</td>
+<td>258236047</td>
+<td>246.2730856</td>
+<td></td>
+<td>141.8</td>
+<td>1.73676365</td>
+</tr>
+<tr>
+<td>文件15</td>
+<td>258239072</td>
+<td>246.2759705</td>
+<td></td>
+<td>141.8</td>
+<td>1.736783995</td>
+</tr>
+<tr>
+<td>文件16</td>
+<td>258170671</td>
+<td>246.2107382</td>
+<td></td>
+<td>141.8</td>
+<td>1.736323965</td>
+</tr>
+<tr>
+<td>文件17</td>
+<td>258160711</td>
+<td>246.2012396</td>
+<td></td>
+<td>141.8</td>
+<td>1.736256979</td>
+</tr>
+<tr>
+<td>文件18</td>
+<td>258085783</td>
+<td>246.1297827</td>
+<td></td>
+<td>141.8</td>
+<td>1.735753051</td>
+</tr>
+<tr>
+<td>总文件大小：</td>
+<td>4759549173</td>
+<td>4539.059804</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>goalSize = 4539.059804 / mapred.map.tasks(32) = 141.8456189</p>
+<p>分片大小：Math.max(minSize, Math.min(goalSize, blockSize))：goalSize </p>
+<p>因此splitsize取值为141.8MB，所以一共分配36个map。</p>
+<p>原文地址：</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/ibook360/p/4137592.html">https://www.cnblogs.com/ibook360/p/4137592.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/12/13/HDFS-API/" rel="next" title="HDFS API">
+                <i class="fa fa-chevron-left"></i> HDFS API
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/12/15/YARN-and-MapReduce%E7%9A%84%E3%80%90%E5%86%85%E5%AD%98%E3%80%91%E4%BC%98%E5%8C%96%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3/" rel="prev" title="YARN and MapReduce的【内存】优化配置详解">
+                YARN and MapReduce的【内存】优化配置详解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">62</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop%E4%B8%AD%E7%9A%84block-Size%E5%92%8Csplit-Size%E6%98%AF%E4%BB%80%E4%B9%88%E5%85%B3%E7%B3%BB"><span class="nav-number">1.</span> <span class="nav-text">Hadoop中的block Size和split Size是什么关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MapReduce-Input-Split%EF%BC%88%E8%BE%93%E5%85%A5%E5%88%86-%E5%88%87%E7%89%87%EF%BC%89%E8%AF%A6%E8%A7%A3"><span class="nav-number">2.</span> <span class="nav-text">MapReduce Input Split（输入分&#x2F;切片）详解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mapreduce%E4%B8%ADsplit%E5%88%92%E5%88%86%E5%88%86%E6%9E%90%EF%BC%88%E6%96%B0%E7%89%88api%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">mapreduce中split划分分析（新版api）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97splitsize"><span class="nav-number">3.1.</span> <span class="nav-text">计算splitsize</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#getSplits-%E6%96%B9%E6%B3%95%E5%9C%A8-FileInputFormat-addInputPath-job-path-%E4%B8%AD"><span class="nav-number">3.2.</span> <span class="nav-text">getSplits()方法在 FileInputFormat.addInputPath(job, path)中</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hadoop-map%E5%92%8Creduce%E6%95%B0%E9%87%8F%E4%BC%B0%E7%AE%97"><span class="nav-number">4.</span> <span class="nav-text">Hadoop map和reduce数量估算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#map-task%E6%95%B0%E9%87%8F"><span class="nav-number">4.1.</span> <span class="nav-text">map task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reduce-task%E6%95%B0%E9%87%8F"><span class="nav-number">4.2.</span> <span class="nav-text">reduce task数量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-number">4.3.</span> <span class="nav-text">总结：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#map%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.4.</span> <span class="nav-text">map数据计算示例</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

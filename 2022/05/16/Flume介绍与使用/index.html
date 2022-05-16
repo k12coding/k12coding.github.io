@@ -1,37 +1,800 @@
-{% extends '_layout.swig' %}
-{% import '_macro/post.swig' as post_template %}
-{% import '_macro/sidebar.swig' as sidebar_template %}
+<!DOCTYPE html>
 
 
-{% block title %}{{ page.title }} | {{ config.title }}{% endblock %}
 
-{% block page_class %}page-post-detail{% endblock %}
+  
 
 
-{% block content %}
+<html class="theme-next muse use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="一、Flume介绍与原理Flume简介​    Flume 作为 cloudera 开发的实时日志收集系统，受到了业界的认可与广泛应用。Flume 初始的发行版本目前被统称为 Flume OG（original generation），属于 cloudera。但随着 FLume 功能的扩展，Flume OG 代码工程臃肿、核心组件设计不合理、核心配置不标准等缺点暴露出来，尤其是在 Flume OG">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Flume介绍与使用">
+<meta property="og:url" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="k12的博客">
+<meta property="og:description" content="一、Flume介绍与原理Flume简介​    Flume 作为 cloudera 开发的实时日志收集系统，受到了业界的认可与广泛应用。Flume 初始的发行版本目前被统称为 Flume OG（original generation），属于 cloudera。但随着 FLume 功能的扩展，Flume OG 代码工程臃肿、核心组件设计不合理、核心配置不标准等缺点暴露出来，尤其是在 Flume OG">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F02.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F14.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F04.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F15.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F16.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F07.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F08.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F09.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F17.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F18.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F19.png">
+<meta property="og:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F20.png">
+<meta property="article:published_time" content="2022-05-16T09:47:05.000Z">
+<meta property="article:modified_time" content="2022-05-16T18:16:35.768Z">
+<meta property="article:author" content="k12">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://k12coding.github.io/2022/05/16/Flume介绍与使用/"/>
+
+
+
+
+
+  <title>Flume介绍与使用 | k12的博客</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">k12的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">k12的笔记</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
 
   <div id="posts" class="posts-expand">
-    {{ post_template.render(page) }}
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Flume介绍与使用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-05-16T17:47:05+08:00">
+                2022-05-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="一、Flume介绍与原理"><a href="#一、Flume介绍与原理" class="headerlink" title="一、Flume介绍与原理"></a>一、Flume介绍与原理</h1><h2 id="Flume简介"><a href="#Flume简介" class="headerlink" title="Flume简介"></a>Flume简介</h2><p>​    Flume 作为 cloudera 开发的实时日志收集系统，受到了业界的认可与广泛应用。Flume 初始的发行版本目前被统称为 Flume OG（original generation），属于 cloudera。但随着 FLume 功能的扩展，Flume OG 代码工程臃肿、核心组件设计不合理、核心配置不标准等缺点暴露出来，尤其是在 Flume OG 的最后一个发行版本 0.9.4. 中，日志传输不稳定的现象尤为严重，为了解决这些问题，2011 年 10 月 22 号，cloudera 完成了 Flume-728，对 Flume 进行了里程碑式的改动：重构核心组件、核心配置以及代码架构，重构后的版本统称为 Flume NG（next generation）；改动的另一原因是将 Flume 纳入 apache 旗下，cloudera Flume 改名为 Apache Flume。</p>
+<p>​    Flume 在0.9.x and 1.x之间有较大的架构调整，1.x版本之后的改称Flume NG，0.9.x的称为Flume OG。</p>
+<p>​    Flume目前只有Linux系统的启动脚本，没有Windows环境的启动脚本。</p>
+<p>　Flume是Apache的顶级项目，官方网站：<a target="_blank" rel="noopener" href="http://flume.apache.org/">http://flume.apache.org/</a></p>
+<span id="more"></span>
+
+<h2 id="Flume-NG的介绍"><a href="#Flume-NG的介绍" class="headerlink" title="Flume NG的介绍"></a>Flume NG的介绍</h2><blockquote>
+<p>Flume is a distributed, reliable, and available service for efficiently collecting, aggregating, and moving large amounts of log data. It has a simple and flexible architecture based on streaming data flows. It is robust and fault tolerant with tunable reliability mechanisms and many failover and recovery mechanisms. It uses a simple extensible data model that allows for online analytic application.</p>
+<p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png" alt="img"></p>
+</blockquote>
+<h3 id="特点"><a href="#特点" class="headerlink" title="特点"></a>特点</h3><p>​    flume是一个分布式、可靠、和高可用的海量日志采集、聚合和传输的系统。支持在日志系统中定制各类数据发送方，用于收集数据;同时，Flume提供对数据进行简单处理，并写到各种数据接受方(比如文本、HDFS、Hbase等)的能力 。</p>
+<p>​    flume的数据流由事件(Event)贯穿始终。事件是Flume的基本数据单位，它携带日志数据(字节数组形式)并且携带有头信息，这些Event由Agent外部的Source生成，当Source捕获事件后会进行特定的格式化，然后Source会把事件推入(单个或多个)Channel中。你可以把Channel看作是一个缓冲区，它将保存事件直到Sink处理完该事件。Sink负责持久化日志或者把事件推向另一个Source。</p>
+<p><strong>flume的可靠性</strong> </p>
+<p>Flume 使用事务性的方式保证传送Event整个过程的可靠性。 Sink 必须在Event 被存入 Channel 后，或者，已经被传达到下一站agent里，又或者，已经被存入外部数据目的地之后，才能把 Event 从 Channel 中 remove 掉。这样数据流里的 event 无论是在一个 agent 里还是多个 agent 之间流转，都能保证可靠，因为以上的事务保证了 event 会被成功存储起来。比如 Flume支持在本地保存一份文件 channel 作为备份，而memory channel 将event存在内存 queue 里，速度快，但丢失的话无法恢复。</p>
+<p>当节点出现故障时，日志能够被传送到其他节点上而不会丢失。Flume提供了三种级别的可靠性保障，从强到弱依次分别为：</p>
+<ul>
+<li>end-to-end（收到数据agent首先将event写到磁盘上，当数据传送成功后，再删除；如果数据发送失败，可以重新发送。）</li>
+<li>Store on failure（这也是scribe采用的策略，当数据接收方crash时，将数据写到本地，待恢复后，继续发送）</li>
+<li>Besteffort（数据发送到接收方后，不会进行确认）。</li>
+</ul>
+<p><strong>flume的可恢复性</strong></p>
+<p>还是靠Channel。推荐使用FileChannel，事件持久化在本地文件系统里(性能较差)。</p>
+<h3 id="Flume的一些核心概念"><a href="#Flume的一些核心概念" class="headerlink" title="Flume的一些核心概念"></a>Flume的一些核心概念</h3><ul>
+<li>Client：Client生产数据，运行在一个独立的线程。</li>
+<li>Event： Flume当中对数据的一种封装。是一个数据单元。flume传输数据最基本的单元，由消息头和消息体组成。（事务的基本单位，Events可以是日志记录、 avro 对象等。）</li>
+<li>Flow： Event从源点到达目的点的迁移的抽象。</li>
+<li>Agent： 一个独立的Flume进程，包含组件Source、 Channel、 Sink。（Agent使用JVM 运行Flume。每台机器运行一个agent，但是可以在一个agent中包含多个sources和sinks。）</li>
+<li>Source： 数据收集组件。（source从Client收集数据，传递给Channel）</li>
+<li>Channel： 中转Event的一个临时存储，保存由Source组件传递过来的Event。（Channel连接 sources 和 sinks ，这个有点像一个队列。）</li>
+<li>Sink： 从Channel中读取并移除Event， 将Event传递到FlowPipeline中的下一个Agent（如果有的话）（Sink从Channel收集数据，运行在一个独立线程。）</li>
+<li>Channel Selector： 通道选择器，主要作用是根据用户配置将数据放到不同的Channel当中。</li>
+<li>Sink Processor：主要策略有，负载均衡，故障转移以及直通。</li>
+<li> Interceptor：拦截器，主要作用是将采集到的数据根据用户的配置进行过滤和修饰。</li>
+</ul>
+<h3 id="Flume-NG的体系结构"><a href="#Flume-NG的体系结构" class="headerlink" title="Flume NG的体系结构"></a>Flume NG的体系结构</h3><p>Flume 运行的核心是 Agent。Flume以agent为最小的独立运行单位。一个agent就是一个JVM。它是一个完整的数据收集工具，含有三个核心组件，分别source、 channel、 sink。通过这些组件， Event 可以从一个地方流向另一个地方，如下图所示。</p>
+<p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F01.png" alt="img"></p>
+<h4 id="Source"><a href="#Source" class="headerlink" title="Source"></a>Source</h4><p>Source是数据的收集端，负责将数据捕获后进行特殊的格式化，将数据封装到事件（event） 里，然后将事件推入Channel中。 Flume提供了很多内置的Source， 支持 Avro， log4j， syslog 和 http post(body为json格式)。可以让应用程序同已有的Source直接打交道，如AvroSource，SyslogTcpSource。 如果内置的Source无法满足需要， Flume还支持自定义Source。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F02.png" alt="img" style="zoom: 80%;">
+
+<p>Source类型：</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F14.png" alt="img" style="zoom: 80%;">
+
+
+
+<h4 id="Channel"><a href="#Channel" class="headerlink" title="Channel"></a>Channel</h4><p>Channel是连接Source和Sink的组件，大家可以将它看做一个数据的缓冲区（数据队列），它可以将事件暂存到内存中也可以持久化到本地磁盘上， 直到Sink处理完该事件。介绍两个较为常用的Channel， MemoryChannel和FileChannel。</p>
+<ul>
+<li>MemoryChannel可以实现高速的吞吐， 但是无法保证数据完整性</li>
+<li>FileChannel保证数据的完整性与一致性。在具体配置不现的FileChannel时，建议FileChannel设置的目录和程序日志文件保存的目录设成不同的磁盘，以便提高效率。</li>
+</ul>
+<p>Channel类型：</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F04.png" alt="img" style="zoom: 67%;">
+
+<h4 id="Sink"><a href="#Sink" class="headerlink" title="Sink"></a>Sink</h4><p>Sink从Channel中取出事件，然后将数据发到别处，可以向文件系统、数据库、 hadoop存数据， 也可以是其他agent的Source。在日志数据较少时，可以将数据存储在文件系统中，并且设定一定的时间间隔保存数据。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F15.png" alt="img" style="zoom: 67%;">
+
+<p>Sink类型：</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F16.png" alt="img" style="zoom:67%;">
+
+
+
+<h3 id="flume执行流程与事务"><a href="#flume执行流程与事务" class="headerlink" title="flume执行流程与事务"></a>flume执行流程与事务</h3><h4 id="Flume-传输流程"><a href="#Flume-传输流程" class="headerlink" title="Flume 传输流程"></a>Flume 传输流程</h4><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F07.png" alt="img" style="zoom: 50%;">
+
+<ol>
+<li>Source 接受数据</li>
+<li>Channel Processor 处理 Event</li>
+<li>Channel Processor 将 Event 传递给 interceptor链对 Event 进行过滤操作</li>
+<li>过滤完之后再把 Event 发送回 Channel Prodessor</li>
+<li>Channel Processor把 Event 发送给Channel selectors</li>
+<li>Channel selector返回Event 属于哪个Channel</li>
+<li>根据第6步返回的结果，将Event发送到指定的Channel</li>
+<li>SinkProcessor从Channel中拉去数据</li>
+<li>最后把数据Sink出去</li>
+</ol>
+<p><strong>重要组件：</strong></p>
+<ul>
+<li><p>Channel Selector</p>
+<p>Channel Selector 的作用就是选出 Event 将要被发往哪个 Channel。共有两种类型，分别是 **Replicating Channel Selector (default)**（复制）和 <strong>Multiplexing Channel Selector</strong>（多路复用）。</p>
+<p>Replicating Selector 会将 source 过来的每一个 Event 发往所有的 Channel，Multiplexing 会根据相应的原则，将不同的 Event 发往不同的 Channel。</p>
+</li>
+<li><p>Sink Processor</p>
+<p>Sink Processor 共有三种类型，分别是 <strong>Default Sink Processor</strong>、<strong>Load Balancing Sink Processor</strong> 和 <strong>Failover Sink Processor</strong>。</p>
+<p>Default Sink Processor 对应的是单个的 Sink，Load Balancing Sink Processor 和 Failover Sink Processor 对应的是 Sink Group。</p>
+<p>Load Balancing Sink Processor 可以实现负载均衡的功能，Failover Sink Processor 可以实现故障转移的功能。</p>
+</li>
+</ul>
+<h4 id="Flume-事务"><a href="#Flume-事务" class="headerlink" title="Flume 事务"></a>Flume 事务</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F08.png" alt="img"></p>
+<p><strong>Put 事务流程</strong></p>
+<p>doPut：将批数据先写入临时缓冲区 putList</p>
+<p>doCommit：检查 channel 内存队列是否足够合并</p>
+<p>doRollback：channel 内存队列空间不足，回滚数据</p>
+<p><strong>Take 事务流程</strong></p>
+<p>doTake：将数据取到临时缓冲区 takeList，并将数据发送到 HDFS</p>
+<p>doCommit：如果数据全部发送成功，则清除临时缓冲区 takeList</p>
+<p>doRollback：数据发送过程中如果出现异常，rollback 将临时缓冲区 takeList 中的数据归还给 channel 内存队列</p>
+<h3 id="Flume的部署类型"><a href="#Flume的部署类型" class="headerlink" title="Flume的部署类型"></a>Flume的部署类型</h3><h4 id="单一流程"><a href="#单一流程" class="headerlink" title="单一流程"></a>单一流程</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F09.png" alt="img"></p>
+<h4 id="多代理流程（多个agent顺序连接）"><a href="#多代理流程（多个agent顺序连接）" class="headerlink" title="多代理流程（多个agent顺序连接）"></a>多代理流程（多个agent顺序连接）</h4><p><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F17.png" alt="img" style="zoom: 80%;">　　</p>
+<p>　　可以将多个Agent顺序连接起来，将最初的数据源经过收集，存储到最终的存储系统中。这是最简单的情况，一般情况下，应该控制这种顺序连接的Agent 的数量，因为数据流经的路径变长了，如果不考虑failover的话，出现故障将影响整个Flow上的Agent收集服务。 </p>
+<h4 id="流的合并（多个Agent的数据汇聚到同一个Agent-）"><a href="#流的合并（多个Agent的数据汇聚到同一个Agent-）" class="headerlink" title="流的合并（多个Agent的数据汇聚到同一个Agent ）"></a>流的合并（多个Agent的数据汇聚到同一个Agent ）</h4><img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F18.png" alt="img" style="zoom: 80%;">
+
+<p>　　这种情况应用的场景比较多，比如要收集Web网站的用户行为日志， Web网站为了可用性使用的负载集群模式，每个节点都产生用户行为日志，可以为每 个节点都配置一个Agent来单独收集日志数据，然后多个Agent将数据最终汇聚到一个用来存储数据存储系统，如HDFS上。</p>
+<h4 id="多路复用流（多级流）"><a href="#多路复用流（多级流）" class="headerlink" title="多路复用流（多级流）"></a>多路复用流（多级流）</h4><p>Flume还支持多级流，什么多级流？来举个例子，当syslog， java， nginx、 tomcat等混合在一起的日志流开始流入一个agent后，可以agent中将混杂的日志流分开，然后给每种日志建立一个自己的传输通道。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F19.png" alt="img" style="zoom: 67%;">
+
+<h4 id="load-balance功能"><a href="#load-balance功能" class="headerlink" title="load balance功能"></a>load balance功能</h4><p>下图Agent1是一个路由节点，负责将Channel暂存的Event均衡到对应的多个Sink组件上，而每个Sink组件分别连接到一个独立的Agent上 。</p>
+<img src="/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/F20.png" alt="img" style="zoom:67%;">
+
+
+
+<h2 id="个人笔记"><a href="#个人笔记" class="headerlink" title="个人笔记"></a>个人笔记</h2><p><strong>Spooling Directory Source 如何使用？</strong></p>
+<p>Spooling Directory Source 监控文件夹中的日志信息。</p>
+<p>在实际使用的过程中，可以结合log4j使用，使用log4j的时候，将log4j的文件分割机制设为1分钟一次，将文件拷贝到spool的监控目录。log4j有一个TimeRolling的插件，可以把log4j分割的文件到spool目录。基本实现了实时的监控。 Flume在传完文件之后，将会修改文件的后缀.tmp变为.COMPLETED（后缀也可以在配置文件中灵活指定）</p>
+<p>但是有一定的问题，对于已经处理完的文件，后续再次处理或者重名则会报错。</p>
+<p><strong>Exec Source 和 Spooling Directory Source 比较</strong></p>
+<p>1） ExecSource可以实现对日志的实时收集，但是存在Flume不运行或者指令执行出错时，将无法收集到日志数据，无法何证日志数据的完整性。（不太可靠，不建议使用）</p>
+<p>2） Spooling Directory Source 虽然无法实现实时的收集数据，但是可以使用以分钟的方式分割文件，趋近于实时。</p>
+<p>3）总结：如果应用无法实现以分钟切割日志文件的话，可以两种收集方式结合使用。</p>
+<p><strong>Taildir Source</strong></p>
+<p>可以实现断点续传。</p>
+<p><strong>hdfs sink</strong></p>
+<p>会一直刷新文件。可以使用roll，设置hdfs.rollInterval、hdfs.rollSize、hdfs.rollCount参数避免小文件问题。一个批次中，没有数据输入不产生文件。</p>
+<p>在</p>
+<p><strong>Avro client</strong> </p>
+<p>An Avro client included in the Flume distribution can send a given file to Flume Avro source using avro RPC mechanism:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ bin/flume-ng avro-client -H localhost -p 41414 -F /usr/logs/log.10</span><br></pre></td></tr></table></figure>
+
+<p>The above command will send the contents of /usr/logs/log.10 to to the Flume source listening on that ports.</p>
+<p>但是，Avro client 不适用于增量数据，对于增量数据，要采用avro sink到avro source的方式。</p>
+<h1 id="二、Flume的安装与使用"><a href="#二、Flume的安装与使用" class="headerlink" title="二、Flume的安装与使用"></a>二、Flume的安装与使用</h1><h2 id="Flume的安装"><a href="#Flume的安装" class="headerlink" title="Flume的安装"></a>Flume的安装</h2><p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0">https://www.cnblogs.com/zhangyinhua/p/7803486.html#_label0</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010452388/article/details/101697570">https://blog.csdn.net/u010452388/article/details/101697570</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jhxxb/p/11574494.html">https://www.cnblogs.com/jhxxb/p/11574494.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/05/13/Kafka%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB/" rel="next" title="Kafka为什么能那么快">
+                <i class="fa fa-chevron-left"></i> Kafka为什么能那么快
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
 
     <div class="post-spread">
-      {% if theme.jiathis %}
-        {% include '_partials/share/jiathis.swig' %}
-      {% elseif theme.baidushare %}
-        {% include '_partials/share/baidushare.swig' %}
-      {% elseif theme.add_this_id %}
-        {% include '_partials/share/add-this.swig' %}
-      {% elseif theme.duoshuo_shortname and theme.duoshuo_share %}
-        {% include '_partials/share/duoshuo_share.swig' %}
-      {% endif %}
+      
     </div>
   </div>
 
-{% endblock %}
 
-{% block sidebar %}
-  {{ sidebar_template.render(true) }}
-{% endblock %}
+          </div>
+          
 
-{% block script_extra %}
-  {% include '_scripts/pages/post-details.swig' %}
-{% endblock %}
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">62</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">一、Flume介绍与原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%AE%80%E4%BB%8B"><span class="nav-number">1.1.</span> <span class="nav-text">Flume简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume-NG%E7%9A%84%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.2.</span> <span class="nav-text">Flume NG的介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E7%82%B9"><span class="nav-number">1.2.1.</span> <span class="nav-text">特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume%E7%9A%84%E4%B8%80%E4%BA%9B%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="nav-number">1.2.2.</span> <span class="nav-text">Flume的一些核心概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume-NG%E7%9A%84%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="nav-number">1.2.3.</span> <span class="nav-text">Flume NG的体系结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Source"><span class="nav-number">1.2.3.1.</span> <span class="nav-text">Source</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Channel"><span class="nav-number">1.2.3.2.</span> <span class="nav-text">Channel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Sink"><span class="nav-number">1.2.3.3.</span> <span class="nav-text">Sink</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flume%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E4%B8%8E%E4%BA%8B%E5%8A%A1"><span class="nav-number">1.2.4.</span> <span class="nav-text">flume执行流程与事务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Flume-%E4%BC%A0%E8%BE%93%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.4.1.</span> <span class="nav-text">Flume 传输流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Flume-%E4%BA%8B%E5%8A%A1"><span class="nav-number">1.2.4.2.</span> <span class="nav-text">Flume 事务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume%E7%9A%84%E9%83%A8%E7%BD%B2%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.2.5.</span> <span class="nav-text">Flume的部署类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%95%E4%B8%80%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.5.1.</span> <span class="nav-text">单一流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E4%BB%A3%E7%90%86%E6%B5%81%E7%A8%8B%EF%BC%88%E5%A4%9A%E4%B8%AAagent%E9%A1%BA%E5%BA%8F%E8%BF%9E%E6%8E%A5%EF%BC%89"><span class="nav-number">1.2.5.2.</span> <span class="nav-text">多代理流程（多个agent顺序连接）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E7%9A%84%E5%90%88%E5%B9%B6%EF%BC%88%E5%A4%9A%E4%B8%AAAgent%E7%9A%84%E6%95%B0%E6%8D%AE%E6%B1%87%E8%81%9A%E5%88%B0%E5%90%8C%E4%B8%80%E4%B8%AAAgent-%EF%BC%89"><span class="nav-number">1.2.5.3.</span> <span class="nav-text">流的合并（多个Agent的数据汇聚到同一个Agent ）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%B5%81%EF%BC%88%E5%A4%9A%E7%BA%A7%E6%B5%81%EF%BC%89"><span class="nav-number">1.2.5.4.</span> <span class="nav-text">多路复用流（多级流）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#load-balance%E5%8A%9F%E8%83%BD"><span class="nav-number">1.2.5.5.</span> <span class="nav-text">load balance功能</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%AA%E4%BA%BA%E7%AC%94%E8%AE%B0"><span class="nav-number">1.3.</span> <span class="nav-text">个人笔记</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Flume%E7%9A%84%E5%AE%89%E8%A3%85%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">二、Flume的安装与使用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%9A%84%E5%AE%89%E8%A3%85"><span class="nav-number">2.1.</span> <span class="nav-text">Flume的安装</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">k12</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
