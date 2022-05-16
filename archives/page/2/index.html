@@ -35,10 +35,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"archives/page/2/index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"archives/page/2/index.html","title":""}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>归档 | k12的博客</title>
+<title>k12的博客</title>
   
 
 
@@ -178,230 +178,1816 @@
 </noscript>
 
 
-    <div class="main-inner archive posts-collapse">
+    <div class="main-inner index posts-expand">
+
+    
 
 
+<div class="post-block">
   
   
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/" class="post-title-link" itemprop="url">Hive：分区</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-01-30 17:21:12" itemprop="dateCreated datePublished" datetime="2022-01-30T17:21:12+08:00">2022-01-30</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-02-06 21:29:28" itemprop="dateModified" datetime="2022-02-06T21:29:28+08:00">2022-02-06</time>
+      </span>
+
   
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        
-        <span class="collection-header">不错! 目前共计 62 篇日志。 继续努力。</span>
-      </div>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Hive分区的概念与传统关系型数据库分区不同。</p>
+<p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
+<p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
+</blockquote>
+<h1 id="静态分区"><a href="#静态分区" class="headerlink" title="静态分区"></a>静态分区</h1><h2 id="一级分区"><a href="#一级分区" class="headerlink" title="一级分区"></a>一级分区</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p>Hive分区是在创建表的时候用Partitioned by 关键字定义的，但要注意，Partitioned by子句中定义的列是表中正式的列，但是Hive下的数据文件中并不包含这些列，因为它们是目录名。注意：分区字段不能和表中的字段重复。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]</span><br><span class="line">一级分区：一个目录</span><br><span class="line">多级分区：多个目录</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `emp_partition`(</span><br><span class="line">`empno` int, </span><br><span class="line">`ename` string, </span><br><span class="line">`job` string, </span><br><span class="line">`mgr` int, </span><br><span class="line">`hiredate` string, </span><br><span class="line">`sal` double, </span><br><span class="line">`comm` double</span><br><span class="line">) partitioned by (deptno string)</span><br><span class="line">row format delimited fields terminated by &#x27;\t&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>通过desc查看的表结构如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; desc emp_partition;</span><br><span class="line">OK</span><br><span class="line">col_name	data_type	comment</span><br><span class="line">empno               	int</span><br><span class="line">ename               	string</span><br><span class="line">job                 	string</span><br><span class="line">mgr                 	int</span><br><span class="line">hiredate            	string</span><br><span class="line">sal                 	double</span><br><span class="line">comm                	double</span><br><span class="line">deptno              	string</span><br><span class="line">	 	 </span><br><span class="line"># Partition Information	 	 </span><br><span class="line"># col_name            	data_type           	comment             </span><br><span class="line">deptno              	string              	                    </span><br><span class="line">Time taken: 0.546 seconds, Fetched: 12 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">格式1:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row …];</span><br><span class="line">格式2：</span><br><span class="line">load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<p>从其他表中插入数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.269 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; insert into emp_partition partition(deptno=30) select empno,ename,job,mgr,hiredate,sal,comm from emp where deptno=10;</span><br></pre></td></tr></table></figure>
+
+<p>从文件加载数据到表中（不包含分区列字段）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ cat emp_10.txt </span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000	500</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看数据"><a href="#查看数据" class="headerlink" title="查看数据"></a>查看数据</h3><p>利用分区表查询：(一般分区表都是利用where语句查询的)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp_partition where deptno=10;</span><br><span class="line">OK</span><br><span class="line">emp_partition.empno	emp_partition.ename	emp_partition.job	emp_partition.mgr	emp_partition.hiredate	emp_partition.sal	emp_partition.comm	emp_partition.deptno</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000.0	500.0	10</span><br><span class="line">Time taken: 0.25 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<p>查看hdfs上emp_partition表目录结构，可以看到在以表名目录下，有以deptno=10（分区名）的子目录存放着真实的数据文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br></pre></td></tr></table></figure>
+
+<p>同理，插入deptno为20，30的数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10/emp_10.txt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        214 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20/000000_0</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30/000000_0</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看分区"><a href="#查看分区" class="headerlink" title="查看分区"></a>查看分区</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">Time taken: 0.152 seconds, Fetched: 3 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加分区"><a href="#添加分区" class="headerlink" title="添加分区"></a>添加分区</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; alter table emp_partition  add partition (deptno=40);</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.282 seconds</span><br><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">deptno=40</span><br><span class="line">Time taken: 0.127 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除分区-删除相应分区文件"><a href="#删除分区-删除相应分区文件" class="headerlink" title="删除分区(删除相应分区文件)"></a>删除分区(删除相应分区文件)</h3><p>注意，对于外表进行drop partition并不会删除hdfs上的文件，并且可以通过<code>msck repair table table_name</code>同步hdfs上的分区。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table emp_partition drop partition (deptno = 40);</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复分区"><a href="#修复分区" class="headerlink" title="修复分区"></a>修复分区</h3><p>修复分区就是重新同步hdfs上的分区信息。（外部表在hdfs目录上添加文件后使用）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msck repair table table_name  [ADD/DROP/SYNC PARTITIONS];</span><br></pre></td></tr></table></figure>
+
+<p>在hive3.0中msck命令支持删除partition信息。</p>
+<h2 id="多级分区"><a href="#多级分区" class="headerlink" title="多级分区"></a>多级分区</h2><p>多分区表装载数据时，分区字段必须都要加。如果只有一个，会报错。</p>
+<p>下面创建一张静态分区表par_tab_muilt，多个分区（性别+日期）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; create table par_tab_muilt (name string, nation string) partitioned by (sex string,dt string) row format delimited fields terminated by &#x27;,&#x27; ;</span><br><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/files/par_tab.txt&#x27; into table par_tab_muilt partition (sex=&#x27;man&#x27;,dt=&#x27;2021-12-28&#x27;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 files]$ hadoop fs -ls -R /user/hive/warehouse/par_tab_muilt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28</span><br><span class="line">-rwxr-xr-x   1 hadoop supergroup         71 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28/par_tab.txt</span><br></pre></td></tr></table></figure>
+
+<p>可见，新建表的时候定义的分区顺序，决定了文件目录顺序（谁是父目录谁是子目录），正因为有了这个层级关系，当我们查询所有man的时候，man以下的所有日期下的数据都会被查出来。如果只查询日期分区，但父目录sex=man和sex=woman都有该日期的数据，那么Hive会对输入路径进行修剪，从而只扫描日期分区，性别分区不作过滤（即查询结果包含了所有性别）。</p>
+<h1 id="动态分区"><a href="#动态分区" class="headerlink" title="动态分区"></a>动态分区</h1><p>为什么要使用动态分区呢，我们举个例子，假如中国有50个省，每个省有50个市，每个市都有100个区，那我们都要使用静态分区要使用多久才能搞完。所有我们要使用动态分区。</p>
+<blockquote>
+<p>注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区。</p>
+<p>动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode</p>
+</blockquote>
+<p>动态分区默认是没有开启。开启后默认是以严格模式执行的，在这种模式下需要至少一个分区字段是静态的。这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。这有助于阻止因设计错误导致导致查询差生大量的分区。列如：用户可能错误使用时间戳作为分区表字段。然后导致每秒都对应一个分区！这样我们也可以采用相应的措施:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">关闭严格分区模式		set hive.exec.dynamic.partition.mode=nonstrict	//分区模式，默认strict（至少有一个分区列是静态分区）</span><br><span class="line">开启支持动态分区		set hive.exec.dynamic.partition=true			//开启动态分区,默认true</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">其他相关参数 ：</span><br><span class="line">set hive.exec.max.dynamic.partitions.pernode; #每一个执行mr节点上，允许创建的动态分区的最大数量(100) </span><br><span class="line">set hive.exec.max.dynamic.partitions;         #所有执行mr节点上，允许创建的所有动态分区的最大数量(1000) </span><br><span class="line">set hive.exec.max.created.files;              #所有的mr job允许创建的文件的最大数量(100000)</span><br></pre></td></tr></table></figure>
+
+<p>利用动态分区，我们可以一次完成插入上面例子中deptno不同的数据的操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert overwrite table emp_partition partition(deptno) select empno,ename,job,mgr,hiredate,sal,comm,deptno from emp;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>hive的分区使用的表外字段，分区字段是一个伪列但是可以查询过滤。</li>
+<li>分区字段不建议使用中文.</li>
+<li>不太建议使用动态分区。因为动态分区将会使用mapreduce来查询数据，如果分区数量过多将导致namenode和yarn的资源瓶颈。所以建议动态分区前也尽可能之前预知分区数量。</li>
+<li>分区属性的修改均可以使用手动元数据和hdfs的数据内容</li>
+</ol>
+<h2 id="外部分区表"><a href="#外部分区表" class="headerlink" title="外部分区表"></a>外部分区表</h2><p>外部表同样可以使用分区，事实上，用户会发现，只是管理大型生产数据集最常见的情况，这种结合给用户提供一个和其他工具共享数据的方式，同时也可以优化查询性能。这样我们就可以把数据路径改变而不影响数据的丢失，这是内部分区表远远不能做的事情:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">1,(因为我们创建的是外部表)所有我们可以把表数据放到hdfs上的随便一个地方这里自动数据加载到/user/had/data/下(当然我们之前在外部表上指定了路径)</span><br><span class="line">load data local inpath &#x27;/home/had/data.txt&#x27; into table employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br><span class="line">2,如果我们加载的数据要分离一些旧数据的时候就可以hadoop的distcp命令来copy数据到某个路径</span><br><span class="line">hadoop distcp /user/had/data/country=china/state=Asia /user/had/data_old/country=china/state=Asia</span><br><span class="line">3,修改表，把移走的数据的路径在hive里修改</span><br><span class="line">alter table employees partition(country=&quot;china&quot;,state=&quot;Asia&quot;) set location &#x27;/user/had/data_old/country=china/state=Asia&#x27;</span><br><span class="line">4,使用hdfs的rm命令删除之前路径的数据</span><br><span class="line">hdfs dfs -rmr /user/had/data/country=china/state=Asia</span><br><span class="line">这样我们就完成一次数据迁移</span><br><span class="line"></span><br><span class="line">如果觉得突然忘记了数据的位置使用使用下面的方式查看</span><br><span class="line">describe extend employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="众多的修改语句"><a href="#众多的修改语句" class="headerlink" title="众多的修改语句"></a>众多的修改语句</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">1，把一个分区打包成一个har包</span><br><span class="line">  alter table employees archive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">2, 把一个分区har包还原成原来的分区</span><br><span class="line">  alter table employees unarchive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">3, 保护分区防止被删除</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable no_drop</span><br><span class="line">4,保护分区防止被查询</span><br><span class="line">    alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable offline</span><br><span class="line">5，允许分区删除和查询</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable no_drop</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable offline</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
 
       
-    <div class="collection-year">
-      <span class="collection-header">2022</span>
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-30T17:21:12+08:00"
-              content="2022-01-30">
-          01-30
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/" itemprop="url">
-            <span itemprop="name">Hive：分区</span>
-          </a>
-      </div>
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/" class="post-title-link" itemprop="url">Hive：加载数据到表的方式</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-30 04:27:50 / 修改时间：05:30:03" itemprop="dateCreated datePublished" datetime="2022-01-30T04:27:50+08:00">2022-01-30</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
+<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
+
+<p>适用于建（外部）表时，数据文件已经存在的情况</p>
+<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
+
+<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
+
+<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
+<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
+<li>用来复制表的结构</li>
+<li>需要外部表的话，通过create external table as …指定</li>
+<li>不CTAS语句会填充数据</li>
+</ul>
+<p>创建表并加载数据（as select）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
+
+<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
+<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
+<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
+<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
+<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
+<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
+<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
+<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
+<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
+
+<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
 
       
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-30T04:27:50+08:00"
-              content="2022-01-30">
-          01-30
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/" itemprop="url">
-            <span itemprop="name">Hive：加载数据到表的方式</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-30T02:37:06+08:00"
-              content="2022-01-30">
-          01-30
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/" itemprop="url">
-            <span itemprop="name">Hive：内部表与外部表</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-29T21:21:41+08:00"
-              content="2022-01-29">
-          01-29
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/" itemprop="url">
-            <span itemprop="name">Hive四种排序方式:order by,sort by,distribute by,cluster by</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-29T02:50:45+08:00"
-              content="2022-01-29">
-          01-29
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/" itemprop="url">
-            <span itemprop="name">Hive介绍</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-27T15:47:02+08:00"
-              content="2022-01-27">
-          01-27
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/" itemprop="url">
-            <span itemprop="name">Linux命令：sed与awk</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-26T20:30:19+08:00"
-              content="2022-01-26">
-          01-26
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/" itemprop="url">
-            <span itemprop="name">HDFS小文件问题</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-26T19:26:36+08:00"
-              content="2022-01-26">
-          01-26
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/" itemprop="url">
-            <span itemprop="name">mapreduce执行速度慢的原因</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-26T14:33:46+08:00"
-              content="2022-01-26">
-          01-26
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/26/Hadoop-HA/" itemprop="url">
-            <span itemprop="name">Hadoop HA</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-26T11:02:11+08:00"
-              content="2022-01-26">
-          01-26
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/" itemprop="url">
-            <span itemprop="name">Secondary NameNode:它究竟有什么作用？</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-
     </div>
-  </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/" class="post-title-link" itemprop="url">Hive：内部表与外部表</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-30 02:37:06 / 修改时间：04:26:40" itemprop="dateCreated datePublished" datetime="2022-01-30T02:37:06+08:00">2022-01-30</time>
+    </span>
+
   
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
+</ul>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a target="_blank" rel="noopener" href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/" class="post-title-link" itemprop="url">Hive四种排序方式:order by,sort by,distribute by,cluster by</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-01-29 21:21:41" itemprop="dateCreated datePublished" datetime="2022-01-29T21:21:41+08:00">2022-01-29</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-01-30 01:40:21" itemprop="dateModified" datetime="2022-01-30T01:40:21+08:00">2022-01-30</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
+
+<p>Order By：全局排序。只有一个 Reducer，无论将reducer设置为几，实际都只有一个。如果指定了hive.mapred.mode=strict（默认值是nonstrict）,这时就必须指定limit来限制输出条数，原因是：所有的数据都会在同一个reducer端进行，数据量大的情况下可能不能出结果，那么在这样的严格模式下，必须指定输出的条数。</p>
+<ul>
+<li>效率较低。</li>
+<li>两种排序方式。ASC: 升序（默认） ；DESC: 降序。</li>
+<li>ORDER BY 子句在SELECT 语句的结尾</li>
+</ul>
+<p>例：</p>
+<p>select * from emp order by sal desc;</p>
+<h2 id="Sort-By"><a href="#Sort-By" class="headerlink" title="Sort By"></a>Sort By</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">sortBy: SORT BY colName colOrder? (&#x27;,&#x27; colName colOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src sortBy</span><br></pre></td></tr></table></figure>
+
+<p>Sort By：分区排序，即每个 Reduce 内部排序。对于大规模的数据集 order by 的效率非常低。在很多情况下，并不需要全局排序，此时可以使用 sort by。</p>
+<p>Sort by 会在数据进入reduce之前为每个reducer都产生一个排序后的文件。因此，如果用sort by进行排序，并且设置mapreduce.job.reduces&gt;1，则sort by只保证每个reducer的输出有序，不保证全局有序。</p>
+<p>单独使用sort by时随机划分数据所在区，往往和distribute by联用。</p>
+<p>CLUSTER BY会根据字段分区，如果有多个reducer， SORT BY会随机分区。</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT key, value FROM src SORT BY key ASC, value DESC</span><br></pre></td></tr></table></figure>
+
+<p>查询有2个reducer,它们的输出分别是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   5</span><br><span class="line">0   3</span><br><span class="line">3   6</span><br><span class="line">9   1</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">0   4</span><br><span class="line">0   3</span><br><span class="line">1   1</span><br><span class="line">2   5</span><br></pre></td></tr></table></figure>
+
+<h2 id="Distribute-By"><a href="#Distribute-By" class="headerlink" title="Distribute By"></a>Distribute By</h2><p>Distribute By：分区操作。 在有些情况下，为了进行后续的聚集操作，我们需要控制某个特定行应该到哪个 reducer。distribute by 类似 MR 中 partition（自定义分区）进行分区，结合 sort by 使用。hive会根据distribute by后面列，将数据分发给对应的reducer，默认是采用hash算法+取余数的方式。Distribute By不保证distributed keys是聚集和有序的。</p>
+<p>例：For example, we are <em>Distributing By x</em> on the following 5 rows to 2 reducer:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x4</span><br><span class="line">x3</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x2</span><br><span class="line">x1</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x4</span><br><span class="line">x3</span><br></pre></td></tr></table></figure>
+
+<p>注意，键值为x1的所有行被分到同一个reducer中，但它们并不是邻近的。</p>
+<p>注意：<br>➢ distribute by 的分区规则是根据分区字段的 hash 码与 reduce 的个数进行模除后， 余数相同的分到一个区。<br>➢ Hive 要求 DISTRIBUTE BY 语句要写在 SORT BY 语句之前。</p>
+<h2 id="Cluster-By"><a href="#Cluster-By" class="headerlink" title="Cluster By"></a>Cluster By</h2><p>官方定义：<em>Cluster By</em> is a short-cut for both <em>Distribute By</em> and <em>Sort By</em>.</p>
+<p>当 distribute by 和 sorts by 字段相同时，可以使用 cluster by 方式。cluster by 除了具有 distribute by 的功能外还兼具 sort by 的功能。</p>
+<p>注意：排序只能是升序排序，不能指定排序规则为 ASC 或者 DESC。</p>
+<p>例：In contrast, if we use <em>Cluster By x</em>, the two reducers will further sort rows on x:</p>
+<p>Reducer 1 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">x1</span><br><span class="line">x1</span><br><span class="line">x2</span><br></pre></td></tr></table></figure>
+
+<p>Reducer 2 got</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">x3</span><br><span class="line">x4</span><br></pre></td></tr></table></figure>
+
+<p>和Distribute By的例子相比，具有排序功能。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 CLUSTER BY col1</span><br></pre></td></tr></table></figure>
+
+<p>Instead of specifying <em>Cluster By</em>, the user can specify <em>Distribute By</em> and <em>Sort By</em>, so the partition columns and sort columns can be different. The usual case is that the partition columns are a prefix of sort columns, but that is not required.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT col1, col2 FROM t1 DISTRIBUTE BY col1 SORT BY col1 ASC, col2 DESC</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy">https://cwiki.apache.org/confluence/display/Hive/LanguageManual+SortBy</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/m0_46568930/article/details/113738659">https://blog.csdn.net/m0_46568930/article/details/113738659</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/" class="post-title-link" itemprop="url">Hive介绍</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-01-29 02:50:45" itemprop="dateCreated datePublished" datetime="2022-01-29T02:50:45+08:00">2022-01-29</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-01-30 03:33:02" itemprop="dateModified" datetime="2022-01-30T03:33:02+08:00">2022-01-30</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive01.png" alt="img" style="zoom:33%;">
+
+<p>Hive起源于Facebook（一个美国的社交服务网络）。Facebook有着大量的数据，而Hadoop是一个开源的MapReduce实现，可以轻松处理大量的数据。但是MapReduce程序对于Java程序员来说比较容易写，但是对于其他语言使用者来说不太方便。此时Facebook最早地开始研发Hive，它让对Hadoop使用SQL查询（实际上SQL后台转化为了MapReduce）成为可能，那些非Java程序员也可以更方便地使用。hive最早的目的也就是为了分析处理海量的日志。</p>
+<h2 id="什么是-Hive？"><a href="#什么是-Hive？" class="headerlink" title="什么是 Hive？"></a>什么是 Hive？</h2><p>Hive是基于Hadoop的一个<strong>数据仓库工具</strong>。可以将结构化的数据文件映射为一张表，并提供完整的sql查询功能，<strong>可以将sql语句转换为MapReduce任务进行运行</strong>。其优点是学习成本低，可以通过<strong>类SQL</strong>语句快速实现MapReduce统计，不必开发专门的MapReduce应用，十分适合数据仓库的统计分析。</p>
+<p>Hive是建立在 Hadoop 上的数据仓库基础构架。它提供了一系列的工具，可以用来进行<strong>数据提取、转化、加载（ETL Extract-Transform-Load）</strong>,也可以叫做<strong>数据清洗</strong>，这是一种可以存储、查询和分析存储在 Hadoop 中的大规模数据的机制。Hive 定义了简单的类 SQL 查询语言，称为 <strong>HiveQL</strong>，它允许熟悉 SQL 的用户查询数据。</p>
+<h3 id="Hive-不是"><a href="#Hive-不是" class="headerlink" title="Hive 不是"></a>Hive 不是</h3><ul>
+<li>一个关系数据库</li>
+<li>一个设计用于联机事务处理（OLTP）</li>
+<li>实时查询和行级更新的语言</li>
+</ul>
+<h3 id="Hive特点"><a href="#Hive特点" class="headerlink" title="Hive特点"></a>Hive特点</h3><ul>
+<li>它存储架构在一个数据库中并处理数据到HDFS。</li>
+<li>它是专为联机分析处理（OLAP）设计。</li>
+<li>它提供SQL类型语言查询叫HiveQL或HQL。</li>
+<li>它是低学习成本，快速和可扩展的。</li>
+</ul>
+<h2 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h2><p>Hive在Hadoop中扮演数据仓库的角色，主要用于静态的结构以及需要经常分析的工作。</p>
+<p>​    Hive 构建在基于静态（离线）批处理的Hadoop 之上，Hadoop 通常都有较高的延迟并且在作业提交和调度的时候需要大量的开销。<strong>因此，****Hive</strong> <strong>并不能够在大规模数据集上实现低延迟快速的查询</strong>，例如，Hive 在几百MB 的数据集上执行查询一般有分钟级的时间延迟。</p>
+<p>​    因此，Hive 并不适合那些需要低延迟的应用，例如，联机事务处理(OLTP)。Hive 查询操作过程严格遵守Hadoop MapReduce 的作业执行模型，Hive 将用户的HiveQL 语句通过解释器转换为MapReduce 作业提交到Hadoop 集群上，Hadoop 监控作业执行过程，然后返回作业执行结果给用户。Hive 并非为联机事务处理而设计，Hive 并不提供实时的查询和基于行级的数据更新操作。<strong>Hive</strong> <strong>的最佳使用场合是大数据集的离线批处理作业，例如，网络日志分析</strong>。</p>
+<h2 id="Hive架构"><a href="#Hive架构" class="headerlink" title="Hive架构"></a>Hive架构</h2><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive09.png" alt="img"></p>
+<p>由上图可知，hadoop和mapreduce是hive架构的根基。Hive架构包括如下组件：CLI（command line interface）、JDBC/ODBC、Thrift Server、WEB GUI、metastore和Driver(Complier、Optimizer和Executor)，这些组件我可以分为两大类：服务端组件和客户端组件。</p>
+<h3 id="2-1服务端组件："><a href="#2-1服务端组件：" class="headerlink" title="2.1服务端组件："></a>2.1服务端组件：</h3><p>　　<strong>Driver组件</strong>：该组件包括Complier、Optimizer和Executor，它的作用是将我们写的HiveQL（类SQL）语句进行解析、编译优化，生成执行计划，然后调用底层的mapreduce计算框架。</p>
+<p>　　<strong>Metastore组件</strong>：元数据服务组件，这个组件存储hive的元数据，hive的元数据存储在关系数据库里，hive支持的关系数据库有derby、mysql。元数据对于hive十分重要，因此hive支持把metastore服务独立出来，安装到远程的服务器集群里，从而解耦hive服务和metastore服务，保证hive运行的健壮性.</p>
+<p>　　<strong>Thrift服务</strong>：thrift是facebook开发的一个软件框架，它用来进行可扩展且跨语言的服务的开发，hive集成了该服务，能让不同的编程语言调用hive的接口。</p>
+<h3 id="2-2客户端组件："><a href="#2-2客户端组件：" class="headerlink" title="2.2客户端组件："></a>2.2客户端组件：</h3><p>　　<strong>CLI</strong>：command line interface，命令行接口。</p>
+<p>　　<strong>Thrift客户端</strong>：上面的架构图里没有写上Thrift客户端，但是hive架构的许多客户端接口是建立在thrift客户端之上，包括JDBC和ODBC接口。</p>
+<p>　　<strong>WEBGUI</strong>：hive客户端提供了一种通过网页的方式访问hive所提供的服务。这个接口对应hive的hwi组件（hive web interface），使用前要启动hwi服务。</p>
+<p><strong>详解metastore：</strong></p>
+<p>Hive的metastore组件是hive元数据集中存放地。Metastore组件包括两个部分：metastore服务和后台数据的存储。后台数据存储的介质就是关系数据库，例如hive默认的嵌入式磁盘数据库derby，还有mysql数据库。Metastore服务是建立在后台数据存储介质之上，并且可以和hive服务进行交互的服务组件，默认情况下，metastore服务和hive服务是安装在一起的，运行在同一个进程当中。我也可以把metastore服务从hive服务里剥离出来，metastore独立安装在一个集群里，hive远程调用metastore服务，这样我们可以把元数据这一层放到防火墙之后，客户端访问hive服务，就可以连接到元数据这一层，从而提供了更好的管理性和安全保障。使用远程的metastore服务，可以让metastore服务和hive服务运行在不同的进程里，这样也保证了hive的稳定性，提升了hive服务的效率。</p>
+<h2 id="Hive详细运行架构"><a href="#Hive详细运行架构" class="headerlink" title="Hive详细运行架构"></a>Hive详细运行架构</h2><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive03.png" alt="img"></p>
+<p>工作流程步骤：</p>
+<ol>
+<li><p>ExecuteQuery（执行查询操作）：命令行或Web UI之类的Hive接口将查询发送给Driver（任何数据驱动程序，如JDBC、ODBC等）执行；</p>
+</li>
+<li><p>GetPlan（获取计划任务）：Driver借助编译器解析查询，检查语法和查询计划或查询需求；</p>
+</li>
+<li><p>GetMetaData（获取元数据信息）：编译器将元数据请求发送到Metastore（任何数据库）；</p>
+</li>
+<li><p> SendMetaData（发送元数据）：MetaStore将元数据作为对编译器的响应发送出去；</p>
+</li>
+<li><p> SendPlan（发送计划任务）：编译器检查需求并将计划重新发送给Driver。到目前为止，查询的解析和编译已经完成；</p>
+</li>
+<li><p>ExecutePlan（执行计划任务）：Driver将执行计划发送到执行引擎；</p>
+<p>6.1 ExecuteJob（执行Job任务）：在内部，执行任务的过程是MapReduce Job。执行引擎将Job发送到ResourceManager，ResourceManager位于Name节点中，并将job分配给datanode中的NodeManager。在这里，查询执行MapReduce任务；</p>
+<p>6.1 Metadata Ops（元数据操作）：在执行的同时，执行引擎可以使用Metastore执行元数据操作；</p>
+<p>6.2 jobDone（完成任务）：完成MapReduce Job；</p>
+<p>6.3 dfs operations（dfs操作记录）：向namenode获取操作数据；</p>
+</li>
+<li><p>FetchResult（拉取结果集）：执行引擎将从datanode上获取结果集；</p>
+</li>
+<li><p>SendResults（发送结果集至driver）：执行引擎将这些结果值发送给Driver；</p>
+</li>
+<li><p>SendResults （driver将result发送至interface）：Driver将结果发送到Hive接口（即UI）；</p>
+</li>
+</ol>
+<h2 id="Driver端的Hive编译流程"><a href="#Driver端的Hive编译流程" class="headerlink" title="Driver端的Hive编译流程"></a>Driver端的Hive编译流程</h2><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive04.png" alt="img"></p>
+<p>Hive是如何将SQL转化成MapReduce任务的，整个编辑过程分为六个阶段：</p>
+<ol>
+<li>词法分析/语法分析：使用Antlr定义SQL的语法规则，完成SQL词法，语法解析，将SQL语句解析成抽象语法树（AST Tree）；</li>
+<li>语义分析：遍历AST Tree，抽象出查询的基本组成单元QueryBlock，并从Metastore获取模式信息，验证SQL语句中队表名、列名，以及数据类型（即QueryBlock）的检查和隐式转换，以及Hive提供的函数和用户自定义的函数（UDF/UAF）；</li>
+<li>逻辑计划生成：遍历QueryBlock，翻译生成执行操作树Operator Tree（即逻辑计划）；</li>
+<li>逻辑计划优化：逻辑层优化器对Operator Tree进行变换优化，合并不必要的ReduceSinkOperator，减少shuffle数据量；</li>
+<li>物理计划生成：将Operator Tree（逻辑计划）生成包含由MapReduce任务组成的DAG的物理计划——任务树；</li>
+<li>物理计划优化：物理层优化器对MapReduce任务树进行优化，并进行MapReduce任务的变换，生成最终的执行计划；</li>
+</ol>
+<h2 id="Hive的元数据存储"><a href="#Hive的元数据存储" class="headerlink" title="Hive的元数据存储"></a>Hive的元数据存储</h2><p>　对于数据存储，Hive没有专门的数据存储格式，也没有为数据建立索引，用户可以非常自由的组织Hive中的表，只需要在创建表的时候告诉Hive数据中的列分隔符和行分隔符，Hive就可以解析数据。Hive中所有的数据都存储在HDFS中，存储结构主要包括数据库、文件、表和视图。Hive中包含以下数据模型：Table内部表，External Table外部表，Partition分区，Bucket桶。Hive默认可以直接加载文本文件，还支持sequence file、RCFile。</p>
+<p>　　Hive将元数据存储在RDBMS中，有三种模式可以连接到数据库：</p>
+<h3 id="元数据内嵌模式（Embedded-Metastore-Database）"><a href="#元数据内嵌模式（Embedded-Metastore-Database）" class="headerlink" title="元数据内嵌模式（Embedded Metastore Database）"></a>元数据内嵌模式（Embedded Metastore Database）</h3><p>此模式连接到一个本地内嵌In-memory的数据库Derby，一般用于Unit Test，内嵌的derby数据库每次只能访问一个数据文件，也就意味着它不支持多会话连接。</p>
+<p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive05.png" alt="img"></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+<th>用例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>javax.jdo.option.ConnectionURL</td>
+<td>JDBC连接url</td>
+<td>jdbc:derby:databaseName=metastore_db;create=true</td>
+</tr>
+<tr>
+<td>javax.jdo.option.ConnectionDriverName</td>
+<td>JDBC driver名称</td>
+<td>org.apache.derby.jdbc.EmbeddedDriver</td>
+</tr>
+<tr>
+<td>javax.jdo.option.ConnectionUserName</td>
+<td>用户名</td>
+<td>xxx</td>
+</tr>
+<tr>
+<td>javax.jdo.option.ConnectionPassword</td>
+<td>密码</td>
+<td>xxxx</td>
+</tr>
+</tbody></table>
+<h3 id="本地元数据存储模式（Local-Metastore-Server）"><a href="#本地元数据存储模式（Local-Metastore-Server）" class="headerlink" title="本地元数据存储模式（Local Metastore Server）"></a>本地元数据存储模式（Local Metastore Server）</h3><p> 　通过网络连接到一个数据库中，是最经常使用到的模式。</p>
+<p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive06.png" alt="img"></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+<th>用例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>javax.jdo.option.ConnectionURL</td>
+<td>JDBC连接url</td>
+<td>jdbc:mysql://<host name>/databaseName?createDatabaseIfNotExist=true</host></td>
+</tr>
+<tr>
+<td>javax.jdo.option.ConnectionDriverName</td>
+<td>JDBC driver名称</td>
+<td>com.mysql.jdbc.Driver</td>
+</tr>
+<tr>
+<td>javax.jdo.option.ConnectionUserName</td>
+<td>用户名</td>
+<td>xxx</td>
+</tr>
+<tr>
+<td>javax.jdo.option.ConnectionPassword</td>
+<td>密码</td>
+<td>xxxx</td>
+</tr>
+</tbody></table>
+<h3 id="远程访问元数据模式（Remote-Metastore-Server）"><a href="#远程访问元数据模式（Remote-Metastore-Server）" class="headerlink" title="远程访问元数据模式（Remote Metastore Server）"></a>远程访问元数据模式（Remote Metastore Server）</h3><p>　　用于非Java客户端访问元数据库，在服务端启动MetaServer，客户端利用Thrift协议通过MetaStoreServer访问元数据库。</p>
+<p>   <img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive07.png" alt="img"></p>
+<ul>
+<li><p>服务端启动HiveMetaStore</p>
+<p>第一种方式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hive --service metastore -p 9083 &amp;</span><br></pre></td></tr></table></figure>
+
+<p>第二种方式：</p>
+<p>如果在hive-site.xml里指定了hive.metastore.uris的port，就可以不指定端口启动了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;hive.metastore.uris&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;thrift://node1:9083&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hive --service metastore</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ul>
+<li>客户端配置</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+<th>用例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>hive.metastore.uris</td>
+<td>metastore server的url</td>
+<td>thrift://<host_name>:9083</host_name></td>
+</tr>
+<tr>
+<td>hive.metastore.local</td>
+<td>metastore server的位置</td>
+<td>false表示远程</td>
+</tr>
+</tbody></table>
+<h3 id="三种模式汇总"><a href="#三种模式汇总" class="headerlink" title="三种模式汇总"></a>三种模式汇总</h3><p><img src="/2022/01/29/Hive%E4%BB%8B%E7%BB%8D/Hive08.png" alt="img"></p>
+<h2 id="与RDBMS对比"><a href="#与RDBMS对比" class="headerlink" title="与RDBMS对比"></a>与RDBMS对比</h2><h3 id="RDBMS是什么"><a href="#RDBMS是什么" class="headerlink" title="RDBMS是什么"></a>RDBMS是什么</h3><p>RDBMS 是 <strong>R</strong>elational <strong>D</strong>ata<strong>b</strong>ase <strong>M</strong>anagement <strong>S</strong>ystem 的缩写，中文译为“关系数据库管理系统”，它是 SQL 语言以及所有现代数据库系统（例如 SQL Server、DB2、Oracle、MySQL 和 Microsoft Access）的基础。</p>
+<p>在 RDBMS 中，数据被存储在一种称为表（Table）的数据库对象中，它和 Excel 表格类似，都由许多行（Row）和列（Column）构成。每一行都是一条数据，每一列都是数据的一个属性，整个表就是若干条相关数据的集合。</p>
+<h3 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h3><table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>Hive</th>
+<th>RDBMS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>查询语言</td>
+<td>HQL</td>
+<td>SQL</td>
+</tr>
+<tr>
+<td>数据存储</td>
+<td>HDFS</td>
+<td>Row Device or Local FS</td>
+</tr>
+<tr>
+<td>执行器</td>
+<td>MapReduce</td>
+<td>Executor</td>
+</tr>
+<tr>
+<td>数据插入</td>
+<td>支持批量导入/单挑插入</td>
+<td>支持单条或批量导入</td>
+</tr>
+<tr>
+<td>数据更新</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>处理数据规模</td>
+<td>大</td>
+<td>小</td>
+</tr>
+<tr>
+<td>执行延迟</td>
+<td>高（构建在HDFS和MR之上）</td>
+<td>低</td>
+</tr>
+<tr>
+<td>分区</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>索引</td>
+<td>0.8版本之后加入索引</td>
+<td>有复杂的索引</td>
+</tr>
+<tr>
+<td>扩展性</td>
+<td>高（好）</td>
+<td>有限（差）</td>
+</tr>
+<tr>
+<td>事务</td>
+<td>不支持（插件下支持，不推荐）</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>应用场景</td>
+<td>海量数据查询</td>
+<td>实时查询</td>
+</tr>
+</tbody></table>
+<p><strong>Below are the key features of Hive that differ from RDBMS.</strong></p>
+<ul>
+<li><p><strong>Hive</strong> resembles a traditional database by supporting SQL interface but it <strong>is not a full database</strong>. Hive can be better called as <strong>data warehouse</strong> instead of <strong>database</strong>.</p>
+</li>
+<li><p>Hive enforces <strong>schema on read</strong> time whereas RDBMS enforces <strong>schema on write time.</strong> </p>
+<p><strong>In RDBMS</strong>, a table’s schema is enforced at data load time, If the data being<br>loaded doesn’t conform to the schema, then it is rejected. This design is called <strong>schema on write.</strong> </p>
+<p>But <strong>Hive</strong> doesn’t verify the data when it is loaded, but rather when a<br>it is retrieved. This is called <strong>schema on read.</strong></p>
+<p><strong>Schema on read</strong> makes for a <strong>very fast initial load</strong>, since the data does not have to be read, parsed, and serialized to disk in the database’s internal format. The load operation is just a file copy or move.</p>
+<p><strong>Schema on write</strong> makes <strong>query time performance faster</strong>, since the database can index columns and perform compression on the data but it takes <strong>longer to load data</strong> into the database.</p>
+</li>
+<li><p>Hive is based on the notion of <strong>Write once, Read many times</strong> but RDBMS is designed for <strong>Read and Write many times.</strong> </p>
+</li>
+<li><p>In <strong>RDBMS</strong>, <strong>record level updates, insertions and deletes, transactions and indexes</strong> are <strong>possible</strong>. Whereas these are not allowed in Hive because Hive was built to operate over HDFS data using MapReduce, where full-table scans are the norm and a table update is achieved by transforming the data into a new table.</p>
+</li>
+<li><p>In RDBMS, maximum data size allowed will be in 10’s of <strong>Terabytes</strong> but whereas Hive can 100’s <strong>Petabytes</strong> very easily.</p>
+</li>
+<li><p>As Hadoop is a batch-oriented system, Hive <strong>doesn’t support OLTP</strong> (Online Transaction Processing) but it is <strong>closer to OLAP</strong> (Online Analytical Processing) <strong>but not ideal</strong> since there is significant latency between issuing a query and receiving a reply, due to the overhead of Mapreduce jobs and due to the size of the data sets Hadoop was designed to serve.</p>
+</li>
+<li><p><strong>RDBMS</strong> is best suited for dynamic data analysis and where fast responses are expected but Hive is suited for data warehouse applications, where relatively static data is analyzed, fast response times are not required, and when the data is not changing rapidly.</p>
+</li>
+<li><p>To overcome the limitations of Hive, <strong>HBase</strong> is being integrated with Hive to support <strong>record level operations</strong> and <strong>OLAP</strong>.</p>
+</li>
+<li><p>Hive is very easily <strong>scalable</strong> at <strong>low cost</strong> but RDBMS is not that much scalable that too it is very costly scale up.</p>
+</li>
+</ul>
+<p>总结：</p>
+<p>Hive并非为联机事务处理而设计，Hive并不提供实时的查询和基于行级的数据更新操作。Hive是建立在Hadoop之上的数据仓库软件工具，它提供了一系列的工具，帮助用户对大规模的数据进行提取、转换和加载，即通常所称的ETL(Extraction，Transformation，and Loading)操作。Hive可以直接访问存储在HDFS或者其他存储系统(如Hbase)中的数据，然后将这些数据组织成表的形式，在其上执行ETL操作。 Hive的最佳使用场合是大数据集的批处理作业，例如，网络日志分析。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/swordfall/p/13426569.html">https://www.cnblogs.com/swordfall/p/13426569.html</a></p>
+<p><a target="_blank" rel="noopener" href="http://hadooptutorial.info/hive-vs-rdbms/#:~:text=Hive%20can%20be%20better%20called%20as%20data%20warehouseinstead,enforced%20at%20data%20load%20time%2C%C2%A0If%20the%20data%20being">http://hadooptutorial.info/hive-vs-rdbms/#:~:text=Hive%20can%20be%20better%20called%20as%20data%20warehouseinstead,enforced%20at%20data%20load%20time%2C%C2%A0If%20the%20data%20being</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15072778/3994524">https://blog.51cto.com/u_15072778/3994524</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/benjamin77/p/10232561.html">https://www.cnblogs.com/benjamin77/p/10232561.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/" class="post-title-link" itemprop="url">Linux命令：sed与awk</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-27 15:47:02 / 修改时间：16:19:44" itemprop="dateCreated datePublished" datetime="2022-01-27T15:47:02+08:00">2022-01-27</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本文内容转自菜鸟教程(<a target="_blank" rel="noopener" href="http://www.runoob.com/">www.runoob.com</a>)</p>
+<p>其他相关教程：</p>
+<p><a target="_blank" rel="noopener" href="https://coolshell.cn/articles/9104.html">SED 简明教程</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.ruanyifeng.com/blog/2018/11/awk.html">awk 入门教程</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/along21/p/10366886.html">Linux文本三剑客超详细教程—grep、sed、awk </a></p>
+<p>awk、grep、sed是linux操作文本的三大利器，合称文本三剑客，也是必须掌握的linux命令之一。三者的功能都是处理文本，但侧重点各不相同，其中属awk功能最强大，但也最复杂。grep更适合单纯的查找或匹配文本，sed更适合编辑匹配到的文本，awk更适合格式化文本，对文本进行较复杂格式处理。</p>
+<h2 id="Linux-sed-命令"><a href="#Linux-sed-命令" class="headerlink" title="Linux sed 命令"></a>Linux sed 命令</h2><p>Linux sed 命令是利用脚本来处理文本文件。</p>
+<p>sed 可依照脚本的指令来处理、编辑文本文件。</p>
+<p>Sed 主要用来自动编辑一个或多个文件、简化对文件的反复操作、编写转换程序等。</p>
+<h3 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sed [-hnV][-e&lt;script&gt;][-f&lt;script文件&gt;][文本文件]</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong>：</p>
+<ul>
+<li>-e&lt;script&gt;或–expression=&lt;script&gt; 以选项中指定的script来处理输入的文本文件。</li>
+<li>-f&lt;script文件&gt;或–file=&lt;script文件&gt; 以选项中指定的script文件来处理输入的文本文件。</li>
+<li>-h或–help 显示帮助。</li>
+<li>-n或–quiet或–silent 仅显示script处理后的结果。</li>
+<li>-V或–version 显示版本信息。</li>
+</ul>
+<p><strong>动作说明</strong>：</p>
+<ul>
+<li>a ：新增， a 的后面可以接字串，而这些字串会在新的一行出现(目前的下一行)～</li>
+<li>c ：取代， c 的后面可以接字串，这些字串可以取代 n1,n2 之间的行！</li>
+<li>d ：删除，因为是删除啊，所以 d 后面通常不接任何东东；</li>
+<li>i ：插入， i 的后面可以接字串，而这些字串会在新的一行出现(目前的上一行)；</li>
+<li>p ：打印，亦即将某个选择的数据印出。通常 p 会与参数 sed -n 一起运行～</li>
+<li>s ：取代，可以直接进行取代的工作哩！通常这个 s 的动作可以搭配正规表示法！例如 1,20s/old/new/g 就是啦！</li>
+</ul>
+<h3 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h3><p>在testfile文件的第四行后添加一行，并将结果输出到标准输出，在命令行提示符下输入如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sed -e 4a\newLine testfile </span><br></pre></td></tr></table></figure>
+
+<p>首先查看testfile中的内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ cat testfile #查看testfile 中的内容  </span><br><span class="line">HELLO LINUX!  </span><br><span class="line">Linux is a free unix-type opterating system.  </span><br><span class="line">This is a linux testfile!  </span><br><span class="line">Linux test </span><br></pre></td></tr></table></figure>
+
+<p>使用sed命令后，输出结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ sed -e 4a\newline testfile #使用sed 在第四行后添加新字符串  </span><br><span class="line">HELLO LINUX! #testfile文件原有的内容  </span><br><span class="line">Linux is a free unix-type opterating system.  </span><br><span class="line">This is a linux testfile!  </span><br><span class="line">Linux test  </span><br><span class="line">newline </span><br></pre></td></tr></table></figure>
+
+<h3 id="以行为单位的新增-删除"><a href="#以行为单位的新增-删除" class="headerlink" title="以行为单位的新增/删除"></a>以行为单位的新增/删除</h3><p>将 /etc/passwd 的内容列出并且列印行号，同时，请将第 2~5 行删除！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2,5d&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">6 sync:x:5:0:sync:/sbin:/bin/sync</span><br><span class="line">7 shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>sed 的动作为 ‘2,5d’ ，那个 d 就是删除！因为 2-5 行给他删除了，所以显示的数据就没有 2-5 行罗～ 另外，注意一下，原本应该是要下达 sed -e 才对，没有 -e 也行啦！同时也要注意的是， sed 后面接的动作，请务必以 ‘’ 两个单引号括住喔！</p>
+<p>只要删除第 2 行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;2d&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>要删除第 3 到最后一行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;3,$d&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>在第二行后(亦即是加在第三行)加上『drink tea?』字样！</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2a drink tea&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">2 bin:x:1:1:bin:/bin:/sbin/nologin</span><br><span class="line">drink tea</span><br><span class="line">3 daemon:x:2:2:daemon:/sbin:/sbin/nologin</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>那如果是要在第二行前</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;2i drink tea&#x27; </span><br></pre></td></tr></table></figure>
+
+<p>如果是要增加两行以上，在第二行后面加入两行字，例如 <strong>Drink tea or …..</strong> 与 <strong>drink beer?</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2a Drink tea or ......\</span><br><span class="line">&gt; drink beer ?&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">2 bin:x:1:1:bin:/bin:/sbin/nologin</span><br><span class="line">Drink tea or ......</span><br><span class="line">drink beer ?</span><br><span class="line">3 daemon:x:2:2:daemon:/sbin:/sbin/nologin</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>每一行之间都必须要以反斜杠『 \ 』来进行新行的添加喔！所以，上面的例子中，我们可以发现在第一行的最后面就有 \ 存在。</p>
+<h3 id="以行为单位的替换与显示"><a href="#以行为单位的替换与显示" class="headerlink" title="以行为单位的替换与显示"></a>以行为单位的替换与显示</h3><p>将第2-5行的内容取代成为『No 2-5 number』呢？</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed &#x27;2,5c No 2-5 number&#x27;</span><br><span class="line">1 root:x:0:0:root:/root:/bin/bash</span><br><span class="line">No 2-5 number</span><br><span class="line">6 sync:x:5:0:sync:/sbin:/bin/sync</span><br><span class="line">.....(后面省略).....</span><br></pre></td></tr></table></figure>
+
+<p>透过这个方法我们就能够将数据整行取代了！</p>
+<p>仅列出 /etc/passwd 文件内的第 5-7 行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# nl /etc/passwd | sed -n &#x27;5,7p&#x27;</span><br><span class="line">5 lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin</span><br><span class="line">6 sync:x:5:0:sync:/sbin:/bin/sync</span><br><span class="line">7 shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown</span><br></pre></td></tr></table></figure>
+
+<p>可以透过这个 sed 的以行为单位的显示功能， 就能够将某一个文件内的某些行号选择出来显示。</p>
+<h3 id="数据的搜寻并显示"><a href="#数据的搜寻并显示" class="headerlink" title="数据的搜寻并显示"></a>数据的搜寻并显示</h3><p>搜索 /etc/passwd有root关键字的行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed &#x27;/root/p&#x27;</span><br><span class="line">1  root:x:0:0:root:/root:/bin/bash</span><br><span class="line">1  root:x:0:0:root:/root:/bin/bash</span><br><span class="line">2  daemon:x:1:1:daemon:/usr/sbin:/bin/sh</span><br><span class="line">3  bin:x:2:2:bin:/bin:/bin/sh</span><br><span class="line">4  sys:x:3:3:sys:/dev:/bin/sh</span><br><span class="line">5  sync:x:4:65534:sync:/bin:/bin/sync</span><br><span class="line">....下面忽略 </span><br></pre></td></tr></table></figure>
+
+<p>如果root找到，除了输出所有行，还会输出匹配行。</p>
+<p>使用-n的时候将只打印包含模板的行。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed -n &#x27;/root/p&#x27;</span><br><span class="line">1  root:x:0:0:root:/root:/bin/bash</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据的搜寻并删除"><a href="#数据的搜寻并删除" class="headerlink" title="数据的搜寻并删除"></a>数据的搜寻并删除</h3><p>删除/etc/passwd所有包含root的行，其他行输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed  &#x27;/root/d&#x27;</span><br><span class="line">2  daemon:x:1:1:daemon:/usr/sbin:/bin/sh</span><br><span class="line">3  bin:x:2:2:bin:/bin:/bin/sh</span><br><span class="line">....下面忽略</span><br><span class="line">#第一行的匹配root已经删除了</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据的搜寻并执行命令"><a href="#数据的搜寻并执行命令" class="headerlink" title="数据的搜寻并执行命令"></a>数据的搜寻并执行命令</h3><p>搜索/etc/passwd,找到root对应的行，执行后面花括号中的一组命令，每个命令之间用分号分隔，这里把bash替换为blueshell，再输出这行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed -n &#x27;/root/&#123;s/bash/blueshell/;p;q&#125;&#x27;    </span><br><span class="line">1  root:x:0:0:root:/root:/bin/blueshell</span><br></pre></td></tr></table></figure>
+
+<p>最后的q是退出。</p>
+<h3 id="数据的搜寻并替换"><a href="#数据的搜寻并替换" class="headerlink" title="数据的搜寻并替换"></a>数据的搜寻并替换</h3><p>除了整行的处理模式之外， sed 还可以用行为单位进行部分数据的搜寻并取代。基本上 sed 的搜寻与替代的与 vi 相当的类似！他有点像这样：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sed &#x27;s/要被取代的字串/新的字串/g&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>先观察原始信息，利用 /sbin/ifconfig 查询 IP</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# /sbin/ifconfig eth0</span><br><span class="line">eth0 Link encap:Ethernet HWaddr 00:90:CC:A6:34:84</span><br><span class="line">inet addr:192.168.1.100 Bcast:192.168.1.255 Mask:255.255.255.0</span><br><span class="line">inet6 addr: fe80::290:ccff:fea6:3484/64 Scope:Link</span><br><span class="line">UP BROADCAST RUNNING MULTICAST MTU:1500 Metric:1</span><br><span class="line">.....(以下省略).....</span><br></pre></td></tr></table></figure>
+
+<p>本机的ip是192.168.1.100。</p>
+<p>将 IP 前面的部分予以删除</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# /sbin/ifconfig eth0 | grep &#x27;inet addr&#x27; | sed &#x27;s/^.*addr://g&#x27;</span><br><span class="line">192.168.1.100 Bcast:192.168.1.255 Mask:255.255.255.0</span><br></pre></td></tr></table></figure>
+
+<p>接下来则是删除后续的部分，亦即： 192.168.1.100 Bcast:192.168.1.255 Mask:255.255.255.0</p>
+<p>将 IP 后面的部分予以删除</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# /sbin/ifconfig eth0 | grep &#x27;inet addr&#x27; | sed &#x27;s/^.*addr://g&#x27; | sed &#x27;s/Bcast.*$//g&#x27;</span><br><span class="line">192.168.1.100</span><br></pre></td></tr></table></figure>
+
+<h3 id="多点编辑"><a href="#多点编辑" class="headerlink" title="多点编辑"></a>多点编辑</h3><p>一条sed命令，删除/etc/passwd第三行到末尾的数据，并把bash替换为blueshell</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nl /etc/passwd | sed -e &#x27;3,$d&#x27; -e &#x27;s/bash/blueshell/&#x27;</span><br><span class="line">1  root:x:0:0:root:/root:/bin/blueshell</span><br><span class="line">2  daemon:x:1:1:daemon:/usr/sbin:/bin/sh</span><br></pre></td></tr></table></figure>
+
+<p>-e表示多点编辑，第一个编辑命令删除/etc/passwd第三行到末尾的数据，第二条命令搜索bash替换为blueshell。</p>
+<h3 id="直接修改文件内容-危险动作"><a href="#直接修改文件内容-危险动作" class="headerlink" title="直接修改文件内容(危险动作)"></a>直接修改文件内容(危险动作)</h3><p>sed 可以直接修改文件的内容，不必使用管道命令或数据流重导向！ 不过，由於这个动作会直接修改到原始的文件，所以请你千万不要随便拿系统配置来测试！ 我们还是使用文件 regular_express.txt 文件来测试看看吧！</p>
+<p>regular_express.txt 文件内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# cat regular_express.txt </span><br><span class="line">runoob.</span><br><span class="line">google.</span><br><span class="line">taobao.</span><br><span class="line">facebook.</span><br><span class="line">zhihu-</span><br><span class="line">weibo-</span><br></pre></td></tr></table></figure>
+
+<p>利用 sed 将 regular_express.txt 内每一行结尾若为 . 则换成 !</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# sed -i &#x27;s/\.$/\!/g&#x27; regular_express.txt</span><br><span class="line">[root@www ~]# cat regular_express.txt </span><br><span class="line">runoob!</span><br><span class="line">google!</span><br><span class="line">taobao!</span><br><span class="line">facebook!</span><br><span class="line">zhihu-</span><br><span class="line">weibo-</span><br></pre></td></tr></table></figure>
+
+<p>:q:q</p>
+<p>利用 sed 直接在 regular_express.txt 最后一行加入 <strong># This is a test</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@www ~]# sed -i &#x27;$a # This is a test&#x27; regular_express.txt</span><br><span class="line">[root@www ~]# cat regular_express.txt </span><br><span class="line">runoob!</span><br><span class="line">google!</span><br><span class="line">taobao!</span><br><span class="line">facebook!</span><br><span class="line">zhihu-</span><br><span class="line">weibo-</span><br><span class="line"># This is a test</span><br></pre></td></tr></table></figure>
+
+<p>由於 $ 代表的是最后一行，而 a 的动作是新增，因此该文件最后新增 <strong># This is a test</strong>！</p>
+<p>sed 的 <strong>-i</strong> 选项可以直接修改文件内容，这功能非常有帮助！举例来说，如果你有一个 100 万行的文件，你要在第 100 行加某些文字，此时使用 vim 可能会疯掉！因为文件太大了！那怎办？就利用 sed 啊！透过 sed 直接修改/取代的功能，你甚至不需要使用 vim 去修订！</p>
+<h2 id="Linux-awk-命令"><a href="#Linux-awk-命令" class="headerlink" title="Linux awk 命令"></a>Linux awk 命令</h2><p>AWK 是一种处理文本文件的语言，是一个强大的文本分析工具。</p>
+<p>之所以叫 AWK 是因为其取了三位创始人 Alfred Aho，Peter Weinberger, 和 Brian Kernighan 的 Family Name 的首字符。</p>
+<h3 id="语法-1"><a href="#语法-1" class="headerlink" title="语法"></a>语法</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">awk [选项参数] &#x27;script&#x27; var=value file(s)</span><br><span class="line">或</span><br><span class="line">awk [选项参数] -f scriptfile var=value file(s)</span><br></pre></td></tr></table></figure>
+
+<p><strong>选项参数说明：</strong></p>
+<ul>
+<li>-F fs or –field-separator fs<br>指定输入文件折分隔符，fs是一个字符串或者是一个正则表达式，如-F:。</li>
+<li>-v var=value or –asign var=value<br>赋值一个用户定义变量。</li>
+<li>-f scripfile or –file scriptfile<br>从脚本文件中读取awk命令。</li>
+<li>-mf nnn and -mr nnn<br>对nnn值设置内在限制，-mf选项限制分配给nnn的最大块数目；-mr选项限制记录的最大数目。这两个功能是Bell实验室版awk的扩展功能，在标准awk中不适用。</li>
+<li>-W compact or –compat, -W traditional or –traditional<br>在兼容模式下运行awk。所以gawk的行为和标准的awk完全一样，所有的awk扩展都被忽略。</li>
+<li>-W copyleft or –copyleft, -W copyright or –copyright<br>打印简短的版权信息。</li>
+<li>-W help or –help, -W usage or –usage<br>打印全部awk选项和每个选项的简短说明。</li>
+<li>-W lint or –lint<br>打印不能向传统unix平台移植的结构的警告。</li>
+<li>-W lint-old or –lint-old<br>打印关于不能向传统unix平台移植的结构的警告。</li>
+<li>-W posix<br>打开兼容模式。但有以下限制，不识别：/x、函数关键字、func、换码序列以及当fs是一个空格时，将新行作为一个域分隔符；操作符<strong>和</strong>=不能代替^和^=；fflush无效。</li>
+<li>-W re-interval or –re-inerval<br>允许间隔正则表达式的使用，参考(grep中的Posix字符类)，如括号表达式[[:alpha:]]。</li>
+<li>-W source program-text or –source program-text<br>使用program-text作为源代码，可与-f命令混用。</li>
+<li>-W version or –version<br>打印bug报告信息的版本。</li>
+</ul>
+<hr>
+<h3 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h3><p>log.txt文本内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">2 this is a test</span><br><span class="line">3 Are you like awk</span><br><span class="line">This&#x27;s a test</span><br><span class="line">10 There are orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<p>用法一：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">awk &#x27;&#123;[pattern] action&#125;&#x27; &#123;filenames&#125;   # 行匹配语句 awk &#x27;&#x27; 只能用单引号</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># 每行按空格或TAB分割，输出文本中的1、4项</span><br><span class="line"> $ awk &#x27;&#123;print $1,$4&#125;&#x27; log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 a</span><br><span class="line"> 3 like</span><br><span class="line"> This&#x27;s</span><br><span class="line"> 10 orange,apple,mongo</span><br><span class="line"> # 格式化输出</span><br><span class="line"> $ awk &#x27;&#123;printf &quot;%-8s %-10s\n&quot;,$1,$4&#125;&#x27; log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2        a</span><br><span class="line"> 3        like</span><br><span class="line"> This&#x27;s</span><br><span class="line"> 10       orange,apple,mongo</span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+
+<p>用法二：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">awk -F  #-F相当于内置变量FS, 指定分割字符</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"># 使用&quot;,&quot;分割</span><br><span class="line"> $  awk -F, &#x27;&#123;print $1,$2&#125;&#x27;   log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 this is a test</span><br><span class="line"> 3 Are you like awk</span><br><span class="line"> This&#x27;s a test</span><br><span class="line"> 10 There are orange apple</span><br><span class="line"> # 或者使用内建变量</span><br><span class="line"> $ awk &#x27;BEGIN&#123;FS=&quot;,&quot;&#125; &#123;print $1,$2&#125;&#x27;     log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 this is a test</span><br><span class="line"> 3 Are you like awk</span><br><span class="line"> This&#x27;s a test</span><br><span class="line"> 10 There are orange apple</span><br><span class="line"> # 使用多个分隔符.先使用空格分割，然后对分割结果再使用&quot;,&quot;分割</span><br><span class="line"> $ awk -F &#x27;[ ,]&#x27;  &#x27;&#123;print $1,$2,$5&#125;&#x27;   log.txt</span><br><span class="line"> ---------------------------------------------</span><br><span class="line"> 2 this test</span><br><span class="line"> 3 Are awk</span><br><span class="line"> This&#x27;s a</span><br><span class="line"> 10 There apple</span><br></pre></td></tr></table></figure>
+
+<p>用法三：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">awk -v  # 设置变量</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ awk -va=1 &#x27;&#123;print $1,$1+a&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 3</span><br><span class="line">3 4</span><br><span class="line">This&#x27;s 1</span><br><span class="line">10 11</span><br><span class="line">$ awk -va=1 -vb=s &#x27;&#123;print $1,$1+a,$1b&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 3 2s</span><br><span class="line">3 4 3s</span><br><span class="line">This&#x27;s 1 This&#x27;ss</span><br><span class="line">10 11 10s</span><br></pre></td></tr></table></figure>
+
+<p>用法四：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">awk -f &#123;awk脚本&#125; &#123;文件名&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ awk -f cal.awk log.txt</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="运算符"><a href="#运算符" class="headerlink" title="运算符"></a>运算符</h3><table>
+<thead>
+<tr>
+<th align="left">运算符</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">= += -= *= /= %= ^= **=</td>
+<td align="left">赋值</td>
+</tr>
+<tr>
+<td align="left">?:</td>
+<td align="left">C条件表达式</td>
+</tr>
+<tr>
+<td align="left">||</td>
+<td align="left">逻辑或</td>
+</tr>
+<tr>
+<td align="left">&amp;&amp;</td>
+<td align="left">逻辑与</td>
+</tr>
+<tr>
+<td align="left">~ 和 !~</td>
+<td align="left">匹配正则表达式和不匹配正则表达式</td>
+</tr>
+<tr>
+<td align="left">&lt; &lt;= &gt; &gt;= != ==</td>
+<td align="left">关系运算符</td>
+</tr>
+<tr>
+<td align="left">空格</td>
+<td align="left">连接</td>
+</tr>
+<tr>
+<td align="left">+ -</td>
+<td align="left">加，减</td>
+</tr>
+<tr>
+<td align="left">* / %</td>
+<td align="left">乘，除与求余</td>
+</tr>
+<tr>
+<td align="left">+ - !</td>
+<td align="left">一元加，减和逻辑非</td>
+</tr>
+<tr>
+<td align="left">^ ***</td>
+<td align="left">求幂</td>
+</tr>
+<tr>
+<td align="left">++ –</td>
+<td align="left">增加或减少，作为前缀或后缀</td>
+</tr>
+<tr>
+<td align="left">$</td>
+<td align="left">字段引用</td>
+</tr>
+<tr>
+<td align="left">in</td>
+<td align="left">数组成员</td>
+</tr>
+</tbody></table>
+<p>过滤第一列大于2的行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ awk &#x27;$1&gt;2&#x27; log.txt    #命令</span><br><span class="line">#输出</span><br><span class="line">3 Are you like awk</span><br><span class="line">This&#x27;s a test</span><br><span class="line">10 There are orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<p>过滤第一列等于2的行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ awk &#x27;$1==2 &#123;print $1,$3&#125;&#x27; log.txt    #命令</span><br><span class="line">#输出</span><br><span class="line">2 is</span><br></pre></td></tr></table></figure>
+
+<p>过滤第一列大于2并且第二列等于’Are’的行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ awk &#x27;$1&gt;2 &amp;&amp; $2==&quot;Are&quot; &#123;print $1,$2,$3&#125;&#x27; log.txt    #命令</span><br><span class="line">#输出</span><br><span class="line">3 Are you</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="内建变量"><a href="#内建变量" class="headerlink" title="内建变量"></a>内建变量</h3><table>
+<thead>
+<tr>
+<th align="left">变量</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">$n</td>
+<td align="left">当前记录的第n个字段，字段间由FS分隔</td>
+</tr>
+<tr>
+<td align="left">$0</td>
+<td align="left">完整的输入记录</td>
+</tr>
+<tr>
+<td align="left">ARGC</td>
+<td align="left">命令行参数的数目</td>
+</tr>
+<tr>
+<td align="left">ARGIND</td>
+<td align="left">命令行中当前文件的位置(从0开始算)</td>
+</tr>
+<tr>
+<td align="left">ARGV</td>
+<td align="left">包含命令行参数的数组</td>
+</tr>
+<tr>
+<td align="left">CONVFMT</td>
+<td align="left">数字转换格式(默认值为%.6g)ENVIRON环境变量关联数组</td>
+</tr>
+<tr>
+<td align="left">ERRNO</td>
+<td align="left">最后一个系统错误的描述</td>
+</tr>
+<tr>
+<td align="left">FIELDWIDTHS</td>
+<td align="left">字段宽度列表(用空格键分隔)</td>
+</tr>
+<tr>
+<td align="left">FILENAME</td>
+<td align="left">当前文件名</td>
+</tr>
+<tr>
+<td align="left">FNR</td>
+<td align="left">各文件分别计数的行号</td>
+</tr>
+<tr>
+<td align="left">FS</td>
+<td align="left">字段分隔符(默认是任何空格)</td>
+</tr>
+<tr>
+<td align="left">IGNORECASE</td>
+<td align="left">如果为真，则进行忽略大小写的匹配</td>
+</tr>
+<tr>
+<td align="left">NF</td>
+<td align="left">一条记录的字段的数目</td>
+</tr>
+<tr>
+<td align="left">NR</td>
+<td align="left">已经读出的记录数，就是行号，从1开始</td>
+</tr>
+<tr>
+<td align="left">OFMT</td>
+<td align="left">数字的输出格式(默认值是%.6g)</td>
+</tr>
+<tr>
+<td align="left">OFS</td>
+<td align="left">输出字段分隔符，默认值与输入字段分隔符一致。</td>
+</tr>
+<tr>
+<td align="left">ORS</td>
+<td align="left">输出记录分隔符(默认值是一个换行符)</td>
+</tr>
+<tr>
+<td align="left">RLENGTH</td>
+<td align="left">由match函数所匹配的字符串的长度</td>
+</tr>
+<tr>
+<td align="left">RS</td>
+<td align="left">记录分隔符(默认是一个换行符)</td>
+</tr>
+<tr>
+<td align="left">RSTART</td>
+<td align="left">由match函数所匹配的字符串的第一个位置</td>
+</tr>
+<tr>
+<td align="left">SUBSEP</td>
+<td align="left">数组下标分隔符(默认值是/034)</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">$ awk &#x27;BEGIN&#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,&quot;FILENAME&quot;,&quot;ARGC&quot;,&quot;FNR&quot;,&quot;FS&quot;,&quot;NF&quot;,&quot;NR&quot;,&quot;OFS&quot;,&quot;ORS&quot;,&quot;RS&quot;;printf &quot;---------------------------------------------\n&quot;&#125; &#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,FILENAME,ARGC,FNR,FS,NF,NR,OFS,ORS,RS&#125;&#x27;  log.txt</span><br><span class="line">FILENAME ARGC  FNR   FS   NF   NR  OFS  ORS   RS</span><br><span class="line">---------------------------------------------</span><br><span class="line">log.txt    2    1         5    1</span><br><span class="line">log.txt    2    2         5    2</span><br><span class="line">log.txt    2    3         3    3</span><br><span class="line">log.txt    2    4         4    4</span><br><span class="line">$ awk -F\&#x27; &#x27;BEGIN&#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,&quot;FILENAME&quot;,&quot;ARGC&quot;,&quot;FNR&quot;,&quot;FS&quot;,&quot;NF&quot;,&quot;NR&quot;,&quot;OFS&quot;,&quot;ORS&quot;,&quot;RS&quot;;printf &quot;---------------------------------------------\n&quot;&#125; &#123;printf &quot;%4s %4s %4s %4s %4s %4s %4s %4s %4s\n&quot;,FILENAME,ARGC,FNR,FS,NF,NR,OFS,ORS,RS&#125;&#x27;  log.txt</span><br><span class="line">FILENAME ARGC  FNR   FS   NF   NR  OFS  ORS   RS</span><br><span class="line">---------------------------------------------</span><br><span class="line">log.txt    2    1    &#x27;    1    1</span><br><span class="line">log.txt    2    2    &#x27;    1    2</span><br><span class="line">log.txt    2    3    &#x27;    2    3</span><br><span class="line">log.txt    2    4    &#x27;    1    4</span><br><span class="line"># 输出顺序号 NR, 匹配文本行号</span><br><span class="line">$ awk &#x27;&#123;print NR,FNR,$1,$2,$3&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">1 1 2 this is</span><br><span class="line">2 2 3 Are you</span><br><span class="line">3 3 This&#x27;s a test</span><br><span class="line">4 4 10 There are</span><br><span class="line"># 指定输出分割符</span><br><span class="line">$  awk &#x27;&#123;print $1,$2,$5&#125;&#x27; OFS=&quot; $ &quot;  log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 $ this $ test</span><br><span class="line">3 $ Are $ awk</span><br><span class="line">This&#x27;s $ a $</span><br><span class="line">10 $ There $</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="使用正则，字符串匹配"><a href="#使用正则，字符串匹配" class="headerlink" title="使用正则，字符串匹配"></a>使用正则，字符串匹配</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 输出第二列包含 &quot;th&quot;，并打印第二列与第四列</span><br><span class="line">$ awk &#x27;$2 ~ /th/ &#123;print $2,$4&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">this a</span><br></pre></td></tr></table></figure>
+
+<p><strong>~ 表示模式开始。// 中是模式。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 输出包含 &quot;re&quot; 的行</span><br><span class="line">$ awk &#x27;/re/ &#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">3 Are you like awk</span><br><span class="line">10 There are orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="忽略大小写"><a href="#忽略大小写" class="headerlink" title="忽略大小写"></a>忽略大小写</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ awk &#x27;BEGIN&#123;IGNORECASE=1&#125; /this/&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">2 this is a test</span><br><span class="line">This&#x27;s a test</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="模式取反"><a href="#模式取反" class="headerlink" title="模式取反"></a>模式取反</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ awk &#x27;$2 !~ /th/ &#123;print $2,$4&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">Are like</span><br><span class="line">a</span><br><span class="line">There orange,apple,mongo</span><br><span class="line">$ awk &#x27;!/th/ &#123;print $2,$4&#125;&#x27; log.txt</span><br><span class="line">---------------------------------------------</span><br><span class="line">Are like</span><br><span class="line">a</span><br><span class="line">There orange,apple,mongo</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="awk脚本"><a href="#awk脚本" class="headerlink" title="awk脚本"></a>awk脚本</h3><p>关于 awk 脚本，我们需要注意两个关键词 BEGIN 和 END。</p>
+<ul>
+<li>BEGIN{ 这里面放的是执行前的语句 }</li>
+<li>END {这里面放的是处理完所有的行后要执行的语句 }</li>
+<li>{这里面放的是处理每一行时要执行的语句}</li>
+</ul>
+<p>假设有这么一个文件（学生成绩表）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ cat score.txt</span><br><span class="line">Marry   2143 78 84 77</span><br><span class="line">Jack    2321 66 78 45</span><br><span class="line">Tom     2122 48 77 71</span><br><span class="line">Mike    2537 87 97 95</span><br><span class="line">Bob     2415 40 57 62</span><br></pre></td></tr></table></figure>
+
+<p>我们的 awk 脚本如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">$ cat cal.awk</span><br><span class="line">#!/bin/awk -f</span><br><span class="line">#运行前</span><br><span class="line">BEGIN &#123;</span><br><span class="line">    math = 0</span><br><span class="line">    english = 0</span><br><span class="line">    computer = 0</span><br><span class="line"> </span><br><span class="line">    printf &quot;NAME    NO.   MATH  ENGLISH  COMPUTER   TOTAL\n&quot;</span><br><span class="line">    printf &quot;---------------------------------------------\n&quot;</span><br><span class="line">&#125;</span><br><span class="line">#运行中</span><br><span class="line">&#123;</span><br><span class="line">    math+=$3</span><br><span class="line">    english+=$4</span><br><span class="line">    computer+=$5</span><br><span class="line">    printf &quot;%-6s %-6s %4d %8d %8d %8d\n&quot;, $1, $2, $3,$4,$5, $3+$4+$5</span><br><span class="line">&#125;</span><br><span class="line">#运行后</span><br><span class="line">END &#123;</span><br><span class="line">    printf &quot;---------------------------------------------\n&quot;</span><br><span class="line">    printf &quot;  TOTAL:%10d %8d %8d \n&quot;, math, english, computer</span><br><span class="line">    printf &quot;AVERAGE:%10.2f %8.2f %8.2f\n&quot;, math/NR, english/NR, computer/NR</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们来看一下执行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ awk -f cal.awk score.txt</span><br><span class="line">NAME    NO.   MATH  ENGLISH  COMPUTER   TOTAL</span><br><span class="line">---------------------------------------------</span><br><span class="line">Marry  2143     78       84       77      239</span><br><span class="line">Jack   2321     66       78       45      189</span><br><span class="line">Tom    2122     48       77       71      196</span><br><span class="line">Mike   2537     87       97       95      279</span><br><span class="line">Bob    2415     40       57       62      159</span><br><span class="line">---------------------------------------------</span><br><span class="line">  TOTAL:       319      393      350</span><br><span class="line">AVERAGE:     63.80    78.60    70.00</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="另外一些实例"><a href="#另外一些实例" class="headerlink" title="另外一些实例"></a>另外一些实例</h3><p>AWK 的 hello world 程序为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BEGIN &#123; print &quot;Hello, world!&quot; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>计算文件大小</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ ls -l *.txt | awk &#x27;&#123;sum+=$5&#125; END &#123;print sum&#125;&#x27;</span><br><span class="line">--------------------------------------------------</span><br><span class="line">666581</span><br></pre></td></tr></table></figure>
+
+<p>从文件中找出长度大于 80 的行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">awk &#x27;length&gt;80&#x27; log.txt</span><br></pre></td></tr></table></figure>
+
+<p>打印九九乘法表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">seq 9 | sed &#x27;H;g&#x27; | awk -v RS=&#x27;&#x27; &#x27;&#123;for(i=1;i&lt;=NF;i++)printf(&quot;%dx%d=%d%s&quot;, i, NR, i*NR, i==NR?&quot;\n&quot;:&quot;\t&quot;)&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>更多内容：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/awk-work-principle.html">AWK 工作原理</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/awk-arrays.html">AWK 数组</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/awk-if-loop.html">AWK 条件语句与循环</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/awk-user-defined-functions.html">AWK 用户自定义函数</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/awk-built-in-functions.html">AWK 内置函数</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/8-awesome-awk-built-in-variables.html">8 个有力的 Awk 内建变量</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.gnu.org/software/gawk/manual/gawk.html">AWK 官方手册</a></li>
+</ul>
+</blockquote>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.runoob.com/linux/linux-comm-sed.html">https://www.runoob.com/linux/linux-comm-sed.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.runoob.com/linux/linux-comm-awk.html">https://www.runoob.com/linux/linux-comm-awk.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/HDFS%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">HDFS小文件问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 20:30:19 / 修改时间：21:08:10" itemprop="dateCreated datePublished" datetime="2022-01-26T20:30:19+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h2><ol>
+<li><p>hadoop</p>
+<p>无法高效的对大量小文件进行存储</p>
+<ul>
+<li>因为每个文件最少占用一个block，每个block的元数据都会在namenode节点占用内存。存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的,NameNode的内存溢出会导致文件无法写入。</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标。</li>
+</ul>
+</li>
+<li><p>mapreduce</p>
+<blockquote>
+<p>FileInputFormat generates splits in such a way that each split is all or part of a single file. </p>
+</blockquote>
+<p>一个小文件在map输入时就是一个分片，分片的数量等于启动的MapTask的数量。Map Task数量过多的话，会产生大量的小文件, 过多的Mapper创建和初始化都会消耗大量的硬件资源 。（Map Task数量过少，就会导致并发度过小，Job执行时间过长，无法充分利用分布式硬件资源。）</p>
+</li>
+<li><p>hive</p>
+<ul>
+<li><p>虽然map阶段都设置了小文件合并，<code>set hive.input.format=org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;</code>，太多小文件导致合并时间较长，查询缓慢；</p>
+</li>
+<li><p>Hive对于小文件有一种补救措施，参数<code>hive.merge.smallfiles.avgsize</code>控制hive对output小文件的合并，当hiveoutput的文件的平均大小小于<code>hive.merge.smallfiles.avgsize</code>默认为16MB左右，hive启动一个附加的mapreducejob合并小文件，合并后文件大小不超过<code>hive.merge.size.per.task</code>默认为256MB。</p>
+<p>尽管Hive可以启动小文件合并的过程，但会消耗掉额外的计算资源，控制单个reduce task的输出大小&gt;64MB才是最好的解决办法。</p>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="小文件对HDFS的危害"><a href="#小文件对HDFS的危害" class="headerlink" title="小文件对HDFS的危害"></a>小文件对HDFS的危害</h2><p>在大数据环境，很多组件都是基于HDFS，例如HDFS直接放文件环境、以及HBase、Hive等上层<a target="_blank" rel="noopener" href="https://cloud.tencent.com/solution/database?from=10680">数据库</a>环境。如果对HDFS环境未进行优化，小文件可能会造成HDFS系统的崩溃。今天我们来看一下。</p>
+<h3 id="一、究竟会出什么问题"><a href="#一、究竟会出什么问题" class="headerlink" title="一、究竟会出什么问题"></a>一、究竟会出什么问题</h3><p>因为HDFS为了加速数据的存储速度，将文件的存放位置数据（元数据）存在了NameNode的内存，而NameNode又是单机部署，如果小文件过多，将直接导致NameNode的内存溢出，而文件无法写入。</p>
+<p>为此在HDFS中放小文件必须进行优化，不能将小文件（类似1MB的若干小文件）直接放到HDFS中。</p>
+<h3 id="二、数据在DataNode中如何存储？"><a href="#二、数据在DataNode中如何存储？" class="headerlink" title="二、数据在DataNode中如何存储？"></a>二、数据在DataNode中如何存储？</h3><p>HDFS默认的数据存储块是64MB，现在新版本的hadoop环境（2.7.3版本后），默认的数据存储块是128MB。</p>
+<p>一个文件如果小于128MB，则按照真实的文件大小独占一个数据存储块，存放到DataNode节点中。同时 DataNode一般默认存三份副本，以保障数据安全。同时该文件所存放的位置也写入到NameNode的内存中，如果有Secondary NameNode高可用节点，也可同时复制一份过去。NameNode的内存数据将会存放到硬盘中，如果HDFS发生重启，将产生较长时间的元数据从硬盘读到内存的过程。</p>
+<p>如果一个文件大于128MB，则HDFS自动将其拆分为128MB大小，存放到HDFS中，并在NameNode内存中留下其数据存放的路径。<strong>不同的数据块将存放到可能不同的DataNode中。</strong></p>
+<h3 id="三、如何解决小文件需要存放到HDFS的需求？"><a href="#三、如何解决小文件需要存放到HDFS的需求？" class="headerlink" title="三、如何解决小文件需要存放到HDFS的需求？"></a>三、如何解决小文件需要存放到HDFS的需求？</h3><p><strong>1.合并小文件，</strong>数据未落地到HDFS之前合并或者数据已经落到HDFS，用spark service服务或其它程序每天调度去合并。Apache官方也提供了官方工具，<strong>Hadoop Archive</strong>或者<strong>HAR</strong>，是一个高效地将小文件放入HDFS块中的文件存档工具，它能够将多个小文件打包成一个HAR文件，这样在减少namenode内存使用的同时，仍然允许对文件进行透明的访问。（但对于MapReduce 来说起不到任何作用，因为har文件就相当一个目录，仍然不能讲小文件合并到一个split中去，一个小文件一个split）</p>
+<p><strong>2.多Master设计，</strong>让元数据分散存放到不同的NameNode中。</p>
+<p>也许还有同学会提到增大NameNode的内存、甚至将元数据直接从硬盘中读取，但这些方法都是治标不治本，不适用。</p>
+<h3 id="四、小文件的其它危害"><a href="#四、小文件的其它危害" class="headerlink" title="四、小文件的其它危害"></a>四、小文件的其它危害</h3><p>小文件除了可能会撑爆NameNode。另一个是hive或者spark计算的时候会影响它的速度，因为spark计算时会将数据从硬盘读到内存，零碎的文件将产生较多的寻道过程。</p>
+<h3 id="五、题外话：HDFS为什么将Block块设置为128M"><a href="#五、题外话：HDFS为什么将Block块设置为128M" class="headerlink" title="五、题外话：HDFS为什么将Block块设置为128M"></a>五、题外话：HDFS为什么将Block块设置为128M</h3><p>1、如果低于128M，甚至过小。一方面会造成NameNode内存占用率高的问题，另一方面会造成数据的寻址时间较多。</p>
+<p>2、如果于高于128M，甚至更大。会造成无法利用多DataNode的优势，数据只能从从一个DN中读取，无法实现多DN同时读取的速率优势。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1512285">https://cloud.tencent.com/developer/article/1512285</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/" class="post-title-link" itemprop="url">mapreduce执行速度慢的原因</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 19:26:36 / 修改时间：20:08:06" itemprop="dateCreated datePublished" datetime="2022-01-26T19:26:36+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
+<li>CPU、内存小、网络不好都有可能导致运行速度慢</li>
+<li>出现数据倾斜</li>
+<li>map和reduce数设置不合理</li>
+<li>小文件过多</li>
+<li>大量的不可分块的超大文件</li>
+<li>spilt次数过多</li>
+</ol>
+<p>优化方案：</p>
+<ol>
+<li>解决数据倾斜：数据倾斜可能是partition不合理，导致部分partition中的数据过多，部分过少。可通过分析数据，自定义分区器解决。</li>
+<li>合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、 reduce 任务间竞争资源，造成处理超时等错误。</li>
+<li>设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少 reduce 的等待时间。</li>
+<li>合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致 mr 运行较慢。</li>
+<li>减少spill次数（环形缓冲区，调大环形缓冲区的内存，从而接收更多数据）：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill 次数，从而减少磁盘 IO。</li>
+<li>减少merge次数（mapreduce两端的合并文件的数目）：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。</li>
+</ol>
+<h2 id="相比Spark执行速度慢的原因"><a href="#相比Spark执行速度慢的原因" class="headerlink" title="相比Spark执行速度慢的原因"></a>相比Spark执行速度慢的原因</h2><h3 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h3><p>其实Spark和MapReduce的计算都发生在内存中，区别在于：</p>
+<ul>
+<li>MapReduce通常需要将计算的中间结果写入磁盘，然后还要读取磁盘，从而导致了频繁的磁盘IO。</li>
+<li>Spark则不需要将计算的中间结果写入磁盘，这得益于Spark的RDD（弹性分布式数据集，很强大）和DAG（有向无环图），其中DAG记录了job的stage以及在job执行过程中父RDD和子RDD之间的依赖关系。中间结果能够以RDD的形式存放在内存中，且能够从DAG中恢复，大大减少了磁盘IO。</li>
+</ul>
+<h3 id="Shuffle的不同"><a href="#Shuffle的不同" class="headerlink" title="Shuffle的不同"></a>Shuffle的不同</h3><p>Spark和MapReduce在计算过程中通常都不可避免的会进行Shuffle，两者至少有一点不同：</p>
+<ul>
+<li>MapReduce在Shuffle时需要花费大量时间进行排序，排序在MapReduce的Shuffle中似乎是不可避免的；</li>
+<li>Spark在Shuffle时则只有部分场景才需要排序，支持基于Hash的分布式聚合，更加省时；</li>
+</ul>
+<h3 id="多进程模型-vs-多线程模型的区别"><a href="#多进程模型-vs-多线程模型的区别" class="headerlink" title="多进程模型 vs 多线程模型的区别"></a>多进程模型 vs 多线程模型的区别</h3><p>MapReduce采用了多进程模型，而Spark采用了多线程模型。多进程模型的好处是便于细粒度控制每个任务占用的资源，但每次任务的启动都会消耗一定的启动时间。就是说MapReduce的Map Task和Reduce Task是进程级别的，而Spark Task则是基于线程模型的，就是说mapreduce 中的 map 和 reduce 都是 jvm 进程，每次启动都需要重新申请资源，消耗了不必要的时间（假设容器启动时间大概1s，如果有1200个block，那么单独启动<a target="_blank" rel="noopener" href="https://www.zhihu.com/search?q=map%E8%BF%9B%E7%A8%8B%E4%BA%8B%E4%BB%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22:%22answer%22,%22sourceId%22:1247877997%7D">map进程事件</a>就需要20分钟）</p>
+<p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/Hadoop-HA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/Hadoop-HA/" class="post-title-link" itemprop="url">Hadoop HA</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 14:33:46 / 修改时间：16:20:13" itemprop="dateCreated datePublished" datetime="2022-01-26T14:33:46+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="什么是HA？"><a href="#什么是HA？" class="headerlink" title="什么是HA？"></a>什么是HA？</h1><p>   HA的意思是High Availability高可用，指当当前工作中的机器宕机后，会自动处理这个异常，并将工作无缝地转移到其他备用机器上去，以来保证服务的高可用。</p>
+<p>   HA方式安装部署才是最常见的生产环境上的安装部署方式。Hadoop HA是Hadoop 2.x中新添加的特性，包括NameNode HA 和 ResourceManager HA。因为DataNode和NodeManager本身就是被设计为高可用的，所以不用对他们进行特殊的高可用处理。</p>
+<h2 id="NameNode-HA"><a href="#NameNode-HA" class="headerlink" title="NameNode HA"></a>NameNode HA</h2><p>​    在Hadoop2.0之前，NameNode只有一个，存在单点问题（虽然Hadoop1.0有SecondaryNameNode，CheckPointNode，BackupNode这些，但是单点问题依然存在），在hadoop2.0引入了HA机制。Hadoop2.0的HA机制官方介绍了有2种方式，一种是NFS（Network File System）方式，另外一种是QJM（Quorum Journal Manager）方式。</p>
+<p>​    Hadoop2.0的HA 机制有两个NameNode，一个是Active状态，另一个是Standby状态。两者的状态可以切换，但同时最多只有1个是Active状态。只有Active Namenode提供对外的服务。Active NameNode和Standby NameNode之间通过<strong>NFS</strong>或者<strong>JN（JournalNode，QJM方式）</strong>来同步数据。</p>
+<p>​    Active NameNode会把最近的操作记录写到本地的一个edits文件中（edits file），并传输到NFS或者JN中。Standby NameNode定期的检查，从NFS或者JN把最近的edit文件读过来，然后把edits文件和fsimage文件合并成一个新的fsimage，合并完成之后会通知Active NameNode获取这个新fsimage。Active NameNode获得这个新的fsimage文件之后，替换原来旧的fsimage文件。</p>
+<p>​    这样，保持了Active NameNode和Standby NameNode的数据实时同步，Standby NameNode可以随时切换成Active NameNode（譬如Active NameNode挂了）。而且还有一个原来Hadoop1.0的SecondaryNameNode，CheckpointNode，BackupNode的功能：合并edits文件和fsimage文件，使fsimage文件一直保持更新。所以启动了hadoop2.0的HA机制之后，SecondaryNameNode，CheckpointNode，BackupNode这些都不需要了。</p>
+<h3 id="数据同步方式：NFS与-QJM（Quorum-Journal-Manager-）"><a href="#数据同步方式：NFS与-QJM（Quorum-Journal-Manager-）" class="headerlink" title="数据同步方式：NFS与 QJM（Quorum Journal Manager ）"></a>数据同步方式：NFS与 QJM（Quorum Journal Manager ）</h3><h4 id="NFS"><a href="#NFS" class="headerlink" title="NFS"></a>NFS</h4><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-01.png" alt="img"></p>
+<p>NFS作为Active NameNode和Standby NameNode之间数据共享的存储。Active NameNode会把最近的edits文件写到NFS，而Standby NameNode从NFS中把数据读过来。这个方式的缺点是，如果Active NameNode或者Standby Namenode有一个和NFS之间网络有问题，则会造成他们之前数据的同步出问题。</p>
+<h4 id="QJM（Quorum-Journal-Manager-）"><a href="#QJM（Quorum-Journal-Manager-）" class="headerlink" title="QJM（Quorum Journal Manager ）"></a>QJM（Quorum Journal Manager ）</h4><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-02.png" alt="img"></p>
+<p>QJM的方式可以解决上述NFS容错机制不足的问题。Active NameNode和Standby NameNode之间是通过一组JournalNode（数量是奇数，可以是3,5,7…,2n+1）来共享数据。Active NameNode把最近的edits文件写到2n+1个JournalNode上，只要有n+1个写入成功就认为这次写入操作成功了，然后Standby NameNode就可以从JournalNode上读取了。可以看到，QJM方式有容错机制，可以容忍n个JournalNode的失败。</p>
+<p>Active和Standby两个NameNode之间的数据交互流程为：</p>
+<p>1）NameNode在启动后，会先加载FSImage文件和共享目录上的EditLog Segment文件；</p>
+<p>2）Standby NameNode会启动EditLogTailer线程和StandbyCheckpointer线程，正式进入Standby模式；</p>
+<p>3）Active NameNode把EditLog提交到JournalNode集群；</p>
+<p>4）Standby NameNode上的EditLogTailer 线程定时从JournalNode集群上同步EditLog；</p>
+<p>5）Standby NameNode上的StandbyCheckpointer线程定时进行Checkpoint，并将Checkpoint之后的FSImage文件上传到Active NameNode。（在Hadoop 2.0中不再有Secondary NameNode这个角色了，StandbyCheckpointer线程的作用其实是为了替代 Hadoop 1.0版本中的Secondary NameNode的功能。）</p>
+<p>QJM方式有明显的优点，一是本身就有fencing的功能，二是通过多个Journal节点增强了系统的健壮性，所以建议在生产环境中采用QJM的方式。JournalNode消耗的资源很少，不需要额外的机器专门来启动JournalNode，可以从Hadoop集群中选几台机器同时作为JournalNode。</p>
+<h3 id="主备NameNode切换"><a href="#主备NameNode切换" class="headerlink" title="主备NameNode切换"></a>主备NameNode切换</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-03.png" alt="img"></p>
+<p>Active NameNode和Standby NameNode可以随时切换，可以人工和自动。人工切换是通过执行HA管理命令来改变NameNode的状态，从Standby到Active，或从Active到Standby。自动切换则在Active NameNode挂掉的时候，Standby NameNode自动切换成Active状态。</p>
+<p>主备NameNode的自动切换需要配置Zookeeper。Active NameNode和Standby NameNode把他们的状态实时记录到Zookeeper中，Zookeeper监视他们的状态变化。当Zookeeper发现Active NameNode挂掉后，会自动把Standby NameNode切换成Active NameNode。</p>
+<h3 id="HDFS-HA-原理"><a href="#HDFS-HA-原理" class="headerlink" title="HDFS HA 原理"></a>HDFS HA 原理</h3><p>单NameNode的缺陷存在单点故障的问题，如果NameNode不可用，则会导致整个HDFS文件系统不可用。所以需要设计高可用的HDFS（Hadoop HA）来解决NameNode单点故障的问题。解决的方法是在HDFS集群中设置多个NameNode节点。但是一旦引入多个NameNode，就有一些问题需要解决。</p>
+<p>HDFS HA需要保证的四个问题：</p>
+<ol>
+<li>保证NameNode内存中元数据数据一致，并保证编辑日志文件的安全性；</li>
+<li>多个NameNode如何协作；</li>
+<li>客户端如何能正确地访问到可用的那个NameNode；</li>
+<li>怎么保证任意时刻只能有一个NameNode处于对外服务状态。</li>
+</ol>
+<p><strong>解决方法</strong></p>
+<p>对于保证NameNode元数据的一致性和编辑日志的安全性，采用Zookeeper来存储编辑日志文件。</p>
+<p>两个NameNode一个是Active状态的，一个是Standby状态的，一个时间点只能有一个Active状态的。</p>
+<p>NameNode提供服务,两个NameNode上存储的元数据是实时同步的，当Active的NameNode出现问题时，通过Zookeeper实时切换到Standby的NameNode上，并将Standby改为Active状态。</p>
+<p>客户端通过连接一个Zookeeper的代理来确定当时哪个NameNode处于服务状态。</p>
+<h3 id="HDFS-HA架构"><a href="#HDFS-HA架构" class="headerlink" title="HDFS HA架构"></a>HDFS HA架构</h3><p><img src="/2022/01/26/Hadoop-HA/HadoopHA-004.png" alt="img"></p>
+<ol>
+<li>Active NameNode 和 Standby NameNode：两台 NameNode 形成互备，一台处于 Active 状态，为主 NameNode，另外一台处于 Standby 状态，为备 NameNode，只有主 NameNode 才能对外提供读写服务；</li>
+<li>ZKFailoverController（主备切换控制器，FC）：ZKFailoverController 作为独立的进程运行，对 NameNode 的主备切换进行总体控制。ZKFailoverController 能及时检测到 NameNode 的健康状况，在主 NameNode 故障时借助 Zookeeper 实现自动的主备选举和切换（当然 NameNode 目前也支持不依赖于 Zookeeper 的手动主备切换）；</li>
+<li>Zookeeper 集群：为主备切换控制器提供主备选举支持；</li>
+<li>共享存储系统：共享存储系统是实现 NameNode 的高可用最为关键的部分，共享存储系统保存了 NameNode 在运行过程中所产生的 HDFS 的元数据。主 NameNode 和备 NameNode 通过共享存储系统实现元数据同步。在进行主备切换的时候，新的主 NameNode 在<strong>确认元数据完全同步之后才能继续对外提供服务</strong>。</li>
+<li>DataNode 节点：因为主 NameNode 和备 NameNode 需要共享 HDFS 的数据块和 DataNode 之间的映射关系，为了使故障切换能够快速进行，DataNode 会同时向主 NameNode 和备 NameNode 上报数据块的位置信息。</li>
+</ol>
+<h3 id="FailoverController"><a href="#FailoverController" class="headerlink" title="FailoverController"></a>FailoverController</h3><p>FC 最初的目的是为了实现 SNN 和 ANN 之间故障自动切换，FC 是独立与 NN 之外的故障切换控制器，ZKFC 作为 NameNode 机器上一个独立的进程启动 ，它启动的时候会创建 HealthMonitor 和 ActiveStandbyElector 这两个主要的内部组件，其中：</p>
+<ol>
+<li>HealthMonitor：主要负责检测 NameNode 的健康状态，如果检测到 NameNode 的状态发生变化，会回调 ZKFailoverController 的相应方法进行自动的主备选举；</li>
+<li>ActiveStandbyElector：主要负责完成自动的主备选举，内部封装了 Zookeeper 的处理逻辑，一旦 Zookeeper 主备选举完成，会回调 ZKFailoverController 的相应方法来进行 NameNode 的主备状态切换。</li>
+</ol>
+<h3 id="自动触发主备选举"><a href="#自动触发主备选举" class="headerlink" title="自动触发主备选举"></a>自动触发主备选举</h3><p>NameNode 在选举成功后，会在 zk 上创建了一个 <code>/hadoop-ha/$&#123;dfs.nameservices&#125;/ActiveStandbyElectorLock</code> 节点，而没有选举成功的备 NameNode 会监控这个节点，通过 Watcher 来监听这个节点的状态变化事件，ZKFC 的 ActiveStandbyElector 主要关注这个节点的 NodeDeleted 事件（这部分实现跟 Kafka 中 Controller 的选举一样）。</p>
+<p>如果 Active NameNode 对应的 HealthMonitor 检测到 NameNode 的状态异常时， ZKFailoverController 会主动删除当前在 Zookeeper 上建立的临时节点 /hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock，这样处于 Standby 状态的 NameNode 的 ActiveStandbyElector 注册的监听器就会收到这个节点的 NodeDeleted 事件。收到这个事件之后，会马上再次进入到创建 /hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock 节点的流程，如果创建成功，这个本来处于 Standby 状态的 NameNode 就选举为主 NameNode 并随后开始切换为 Active 状态。</p>
+<p>当然，如果是 Active 状态的 NameNode 所在的机器整个宕掉的话，那么根据 Zookeeper 的临时节点特性，/hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock 节点会自动被删除，从而也会自动进行一次主备切换。</p>
+<h3 id="HDFS-脑裂问题"><a href="#HDFS-脑裂问题" class="headerlink" title="HDFS 脑裂问题"></a>HDFS 脑裂问题</h3><p>在实际中，NameNode 可能会出现这种情况，NameNode 在垃圾回收（GC）时，可能会在长时间内整个系统无响应，因此，也就无法向 zk 写入心跳信息，这样的话可能会导致临时节点掉线，备 NameNode 会切换到 Active 状态，这种情况，可能会导致整个集群会有同时有两个 NameNode，这就是脑裂问题。</p>
+<p>脑裂问题的解决方案是隔离（Fencing），主要是在以下三处采用隔离措施：</p>
+<ol>
+<li>第三方共享存储：任一时刻，只有一个 NN 可以写入；</li>
+<li>DataNode：需要保证只有一个 NN 发出与管理数据副本有关的删除命令；</li>
+<li>Client：需要保证同一时刻只有一个 NN 能够对 Client 的请求发出正确的响应。</li>
+</ol>
+<p>关于这个问题目前解决方案的实现如下：</p>
+<ol>
+<li>ActiveStandbyElector 为了实现 fencing，会在成功创建 Zookeeper 节点 hadoop-ha/${dfs.nameservices}/ActiveStandbyElectorLock 从而成为 Active NameNode 之后，创建另外一个路径为 <strong>/hadoop-ha/${dfs.nameservices}/ActiveBreadCrumb</strong> 的持久节点，这个节点里面保存了这个 Active NameNode 的地址信息；</li>
+<li>Active NameNode 的 ActiveStandbyElector 在正常的状态下关闭 Zookeeper Session 的时候，会一起删除这个持久节点；</li>
+<li>但如果 ActiveStandbyElector 在异常的状态下 Zookeeper Session 关闭 (比如前述的 Zookeeper 假死)，那么由于 /hadoop-ha/${dfs.nameservices}/ActiveBreadCrumb 是持久节点，会一直保留下来，后面当另一个 NameNode 选主成功之后，会注意到上一个 Active NameNode 遗留下来的这个节点，从而会回调 ZKFailoverController 的方法对旧的 Active NameNode 进行 fencing。</li>
+</ol>
+<p>在进行 fencing 的时候，会执行以下的操作：</p>
+<ol>
+<li>首先尝试调用这个旧 Active NameNode 的 HAServiceProtocol RPC 接口的 <code>transitionToStandby</code> 方法，看能不能把它转换为 Standby 状态；</li>
+<li>如果 <code>transitionToStandby</code> 方法调用失败，那么就执行 Hadoop 配置文件之中预定义的隔离措施。</li>
+</ol>
+<p>Hadoop 目前主要提供两种隔离措施，通常会选择第一种：</p>
+<ol>
+<li>sshfence：通过 SSH 登录到目标机器上，执行命令 fuser 将对应的进程杀死；</li>
+<li>shellfence：执行一个用户自定义的 shell 脚本来将对应的进程隔离。</li>
+</ol>
+<p>只有在成功地执行完成 fencing 之后，选主成功的 ActiveStandbyElector 才会回调 ZKFailoverController 的 <code>becomeActive</code> 方法将对应的 NameNode 转换为 Active 状态，开始对外提供服务。</p>
+<p>NameNode 选举的实现机制与 Kafka 的 Controller 类似，那么 Kafka 是如何避免脑裂问题的呢？</p>
+<ol>
+<li>Controller 给 Broker 发送的请求中，都会携带 controller epoch 信息，如果 broker 发现当前请求的 epoch 小于缓存中的值，那么就证明这是来自旧 Controller 的请求，就会决绝这个请求，正常情况下是没什么问题的；</li>
+<li>但是异常情况下呢？如果 Broker 先收到异常 Controller 的请求进行处理呢？现在看 Kafka 在这一部分并没有适合的方案；</li>
+<li>正常情况下，Kafka 新的 Controller 选举出来之后，Controller 会向全局所有 broker 发送一个 metadata 请求，这样全局所有 Broker 都可以知道当前最新的 controller epoch，但是并不能保证可以完全避免上面这个问题，还是有出现这个问题的几率的，只不过非常小，而且即使出现了由于 Kafka 的高可靠架构，影响也非常有限，至少从目前看，这个问题并不是严重的问题。</li>
+</ol>
+<h3 id="第三方存储（共享存储）"><a href="#第三方存储（共享存储）" class="headerlink" title="第三方存储（共享存储）"></a>第三方存储（共享存储）</h3><p>上述 HA 方案还有一个明显缺点，那就是第三方存储节点有可能失效，之前有很多共享存储的实现方案，目前社区已经把由 Clouderea 公司实现的基于 QJM 的方案合并到 HDFS 的 trunk 之中并且作为默认的共享存储实现，本部分只针对基于 QJM 的共享存储方案的内部实现原理进行分析。</p>
+<p>QJM（Quorum Journal Manager）本质上是利用 Paxos 协议来实现的，QJM 在 <code>2F+1</code> 个 JournalNode 上存储 NN 的 editlog，每次写入操作都通过 Paxos 保证写入的一致性，它最多可以允许有 F 个 JournalNode 节点同时故障，其实现如下：</p>
+<p><img src="/2022/01/26/Hadoop-HA/HadoopHA-05.png" alt="基于 QJM 的共享存储的数据同步机制"></p>
+<p>基于 QJM 的共享存储的数据同步机制</p>
+<p>Active NameNode 首先把 EditLog 提交到 JournalNode 集群，然后 Standby NameNode 再从 JournalNode 集群定时同步 EditLog。</p>
+<p>还有一点需要注意的是，在 2.0 中不再有 SNN 这个角色了，NameNode 在启动后，会先加载 FSImage 文件和共享目录上的 EditLog Segment 文件，之后 NameNode 会启动 EditLogTailer 线程和 StandbyCheckpointer 线程，正式进入 Standby 模式，其中：</p>
+<ol>
+<li>EditLogTailer 线程的作用是定时从 JournalNode 集群上同步 EditLog；</li>
+<li>StandbyCheckpointer 线程的作用其实是为了替代 Hadoop 1.x 版本之中的 Secondary NameNode 的功能，StandbyCheckpointer 线程会在 Standby NameNode 节点上定期进行 Checkpoint，将 Checkpoint 之后的 FSImage 文件上传到 Active NameNode 节点。</li>
+</ol>
+<h2 id="YARN-HA-ResourceManager-HA"><a href="#YARN-HA-ResourceManager-HA" class="headerlink" title="YARN HA(ResourceManager HA)"></a>YARN HA(ResourceManager HA)</h2><p>Hadoop2.4版本之前，ResourceManager也存在单点故障的问题，也需要实现HA来保证ResourceManger的高可也用性。</p>
+<p>ResouceManager从记录着当前集群的资源分配情况和JOB的运行状态，YRAN HA 利用Zookeeper等共享存储介质来存储这些信息来达到高可用。另外利用Zookeeper来实现ResourceManager自动故障转移。</p>
+<p><img src="/2022/01/26/Hadoop-HA/YARNHA.png" alt="img"></p>
+<p>如果大家理解HDFS的HA，那么ResourceManager的HA与之是相同道理的：也是Active/Standby架构，任意时刻，都一个是Active，其余处于Standby状态的ResourceManager可以随时转换成Active状态。状态转换可以手工完成，也可以自动完成。手工完成时通过命令行的管理命令(命令是“yarn rmadmin”)。自动完成是通过配置自动故障转移(automatic-failover)，使用集成的failover-controller完成状态的自动切换。</p>
+<p>自动故障转移是依赖于ZooKeeper集群，依赖ZooKeeper的ActiveStandbyElector会嵌入到ResourceManager中，当Active状态的ResourceManager失效时，处于 Standby状态的ResourceManager就会被选举为Active状态的，实现切换。注意：这里没有ZooKeeperFailoverController进程，这点和HDFS的HA不同。</p>
+<p>对于客户端而言，必须知道所有的ResourceManager中。因此，需要在yarn-site.xml中配置所有的ResourceManager。那么，当一个Active状态的ResourceManager失效时，客户端怎么办哪？客户端会采用轮询机制，轮询配置在yarn-site.xml中的ResourceManager，直到找到一个active状态的ResourceManager。如果我们想修改这种寻找ResourceManager的机制，可以继承类<code>org.apache.hadoop.yarn.client.RMFailoverProxyProvider，实现</code>自己的逻辑。然后把类的名字配置到yarn-site.xml的配置项<code>yarn.client.failover-proxy-provider</code>中。</p>
+<p><strong>配置</strong></p>
+<p>在yarn-site.xml中配置如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.ha.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.cluster-id&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;cluster1&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.ha.rm-ids&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;rm1,rm2&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.hostname.rm1&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master1&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.hostname.rm2&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master2&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.webapp.address.rm1&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master1:8088&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;yarn.resourcemanager.webapp.address.rm2&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;master2:8088&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.zk.address&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;zk1:2181,zk2:2181,zk3:2181&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>命令</strong></p>
+<p>查看状态的命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn rmadmin –getServiceState rm1</span><br></pre></td></tr></table></figure>
+
+<p>状态切换的命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn rmadmin –transitionToStandby rm1</span><br></pre></td></tr></table></figure>
+
+
+
+<p>原文链接：</p>
+<p><a target="_blank" rel="noopener" href="http://matt33.com/2018/07/15/hdfs-architecture-learn/">http://matt33.com/2018/07/15/hdfs-architecture-learn/</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/andyguan01_2/article/details/88696239">https://blog.csdn.net/andyguan01_2/article/details/88696239</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/mlj5288/p/4449848.html">https://www.cnblogs.com/mlj5288/p/4449848.html</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/" class="post-title-link" itemprop="url">Secondary NameNode:它究竟有什么作用？</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-26 11:02:11 / 修改时间：11:32:06" itemprop="dateCreated datePublished" datetime="2022-01-26T11:02:11+08:00">2022-01-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>英文原文：<a target="_blank" rel="noopener" href="http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/">http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/</a></p>
+<h2 id="Secondary-NameNode-它究竟有什么作用？"><a href="#Secondary-NameNode-它究竟有什么作用？" class="headerlink" title="Secondary NameNode:它究竟有什么作用？"></a>Secondary NameNode:它究竟有什么作用？</h2><p>在Hadoop中，有一些命名不好的模块，Secondary NameNode是其中之一。从它的名字上看，它给人的感觉就像是NameNode的备份。但它实际上却不是。很多Hadoop的初学者都很疑惑，Secondary NameNode究竟是做什么的，而且它为什么会出现在HDFS中。因此，在这篇文章中，我想要解释下Secondary NameNode在HDFS中所扮演的角色。</p>
+<p>从它的名字来看，你可能认为它跟NameNode有点关系。没错，你猜对了。因此在我们深入了解Secondary NameNode之前，我们先来看看NameNode是做什么的。</p>
+<h3 id="NameNode"><a href="#NameNode" class="headerlink" title="NameNode"></a>NameNode</h3><p>NameNode主要是用来保存HDFS的元数据信息，比如命名空间信息，块信息等。当它运行的时候，这些信息是存在内存中的。但是这些信息也可以持久化到磁盘上。</p>
+<p><img src="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/snn-01.png" alt="img"></p>
+<p>上面的这张图片展示了NameNode怎么把元数据保存到磁盘上的。这里有两个不同的文件：</p>
+<ol>
+<li>fsimage - 它是在NameNode启动时对整个文件系统的快照</li>
+<li>edit logs - 它是在NameNode启动后，对文件系统的改动序列</li>
+</ol>
+<p>只有在NameNode重启时，edit logs才会合并到fsimage文件中，从而得到一个文件系统的最新快照。但是在产品集群中NameNode是很少重启的，这也意味着当NameNode运行了很长时间后，edit logs文件会变得很大。在这种情况下就会出现下面一些问题：</p>
+<ol>
+<li>edit logs文件会变的很大，怎么去管理这个文件是一个挑战。</li>
+<li>NameNode的重启会花费很长时间，因为有很多改动[笔者注:在edit logs中]要合并到fsimage文件上。</li>
+<li>如果NameNode挂掉了，那我们就丢失了很多改动因为此时的fsimage文件非常旧。[笔者注: 笔者认为在这个情况下丢失的改动不会很多, 因为丢失的改动应该是还在内存中但是没有写到edit logs的这部分。]</li>
+</ol>
+<p>因此为了克服这个问题，我们需要一个易于管理的机制来帮助我们减小edit logs文件的大小和得到一个最新的fsimage文件，这样也会减小在NameNode上的压力。这跟Windows的恢复点是非常像的，Windows的恢复点机制允许我们对OS进行快照，这样当系统发生问题时，我们能够回滚到最新的一次恢复点上。</p>
+<p>现在我们明白了NameNode的功能和所面临的挑战 - 保持文件系统最新的元数据。那么，这些跟Secondary NameNode又有什么关系呢？</p>
+<h3 id="Secondary-NameNode"><a href="#Secondary-NameNode" class="headerlink" title="Secondary NameNode"></a>Secondary NameNode</h3><p>SecondaryNameNode就是来帮助解决上述问题的，它的职责是合并NameNode的edit logs到fsimage文件中。</p>
+<p><img src="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/snn-02.png" alt="img"></p>
+<p>上面的图片展示了Secondary NameNode是怎么工作的。</p>
+<ol>
+<li>首先，它定时到NameNode去获取edit logs，并更新到fsimage上。[笔者注：Secondary NameNode自己的fsimage]</li>
+<li>一旦它有了新的fsimage文件，它将其拷贝回NameNode中。</li>
+<li>NameNode在下次重启时会使用这个新的fsimage文件，从而减少重启的时间。</li>
+</ol>
+<p>Secondary NameNode的整个目的是在HDFS中提供一个检查点。它只是NameNode的一个助手节点。这也是它在社区内被认为是检查点节点的原因。</p>
+<p>现在，我们明白了Secondary NameNode所做的不过是在文件系统中设置一个检查点来帮助NameNode更好的工作。它不是要取代掉NameNode也不是NameNode的备份。所以从现在起，让我们养成一个习惯，称呼它为检查点节点吧。</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><h3 id="NameNode是什么时候将改动写到edit-logs中的？"><a href="#NameNode是什么时候将改动写到edit-logs中的？" class="headerlink" title="NameNode是什么时候将改动写到edit logs中的？"></a>NameNode是什么时候将改动写到edit logs中的？</h3><p>这个操作实际上是由DataNode的写操作触发的，当我们往DataNode写文件时，DataNode会跟NameNode通信，告诉NameNode什么文件的第几个block放在它那里，NameNode这个时候会将这些元数据信息写到edit logs文件中。</p>
+<h3 id="Secondarynamenode作用"><a href="#Secondarynamenode作用" class="headerlink" title="Secondarynamenode作用"></a>Secondarynamenode作用</h3><p>SecondaryNameNode有两个作用，一是镜像备份，二是日志与镜像的定期合并。两个过程同时进行，称为checkpoint. 镜像备份的作用:备份fsimage(fsimage是元数据发送检查点时写入文件);日志与镜像的定期合并的作用:将Namenode中edits日志和fsimage合并,防止(如果Namenode节点故障，namenode下次启动的时候，会把fsimage加载到内存中，应用edit log,edit log往往很大，导致操作往往很耗时。)</p>
+<h3 id="Secondarynamenode工作原理"><a href="#Secondarynamenode工作原理" class="headerlink" title="Secondarynamenode工作原理"></a>Secondarynamenode工作原理</h3><p><img src="/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/snn-03.png" alt="img"></p>
+<p>日志与镜像的定期合并总共分五步：</p>
+<ol>
+<li><p>SecondaryNameNode通知NameNode准备提交edits文件，此时主节点产生edits.new</p>
+</li>
+<li><p>SecondaryNameNode通过http get方式获取NameNode的fsimage与edits文件（在SecondaryNameNode的current同级目录下可见到 temp.check-point或者previous-checkpoint目录，这些目录中存储着从namenode拷贝来的镜像文件）</p>
+</li>
+<li><p>SecondaryNameNode开始合并获取的上述两个文件，产生一个新的fsimage文件fsimage.ckpt</p>
+</li>
+<li><p>SecondaryNameNode用http post方式发送fsimage.ckpt至NameNode</p>
+</li>
+<li><p>NameNode将fsimage.ckpt与edits.new文件分别重命名为fsimage与edits，然后更新fstime，整个checkpoint过程到此结束。</p>
+<p>在新版本的hadoop中（hadoop0.21.0）,SecondaryNameNode两个作用被两个节点替换， checkpoint node与backup node. </p>
+<p>SecondaryNameNode备份由三个参数控制fs.checkpoint.period控制周期，fs.checkpoint.size控制日志文件超过多少大小时合并， dfs.http.address表示http地址，这个参数在SecondaryNameNode为单独节点时需要设置。</p>
+</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop     219 Nov 26 22:01 VERSION</span><br><span class="line">[hadoop@hadoop001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/hadoop-hadoop/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="相关配置文件"><a href="#相关配置文件" class="headerlink" title="相关配置文件"></a>相关配置文件</h3><p>core-site.xml：这里有2个参数可配置，但一般来说我们不做修改。fs.checkpoint.period表示多长时间记录一次hdfs的镜像。默认是1小时。fs.checkpoint.size表示一次记录多大的size，默认64M。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;fs.checkpoint.period&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;3600&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;The number of seconds between two periodic checkpoints.&lt;/description&gt;</span><br><span class="line">&lt;/property&gt; </span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;fs.checkpoint.size&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;67108864&lt;/value&gt;</span><br><span class="line">	&lt;description&gt;The size of the current edit log (in bytes) that triggersa periodic checkpoint even if the fs.checkpoint.period hasn’t expired.&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">　　　　&lt;name&gt;fs.checkpoint.dir&lt;/name&gt;</span><br><span class="line">　　　　&lt;value&gt;/app/user/hdfs/namesecondary&lt;/value&gt;</span><br><span class="line">　　　　&lt;description&gt;Determines where on the local filesystem the DFS secondary namenode should store the temporary images to merge.If this is a comma-delimited list of directories then the image is replicated in all of the directories for redundancy.&lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>镜像备份的周期时间是可以修改的，如果不想一个小时备份一次，可以改的时间短点。core-site.xml中的fs.checkpoint.period值</p>
+<h3 id="Import-Checkpoint（恢复数据）"><a href="#Import-Checkpoint（恢复数据）" class="headerlink" title="Import Checkpoint（恢复数据）"></a>Import Checkpoint（恢复数据）</h3><p>如果主节点namenode挂掉了，硬盘数据需要时间恢复或者不能恢复了，现在又想立刻恢复HDFS，这个时候就可以import checkpoint。步骤如下：</p>
+<ol>
+<li>准备原来机器一样的机器，包括配置和文件</li>
+<li>创建一个空的文件夹，该文件夹就是配置文件中dfs.name.dir所指向的文件夹。</li>
+<li>拷贝你的secondary NameNode checkpoint出来的文件，到某个文件夹，该文件夹为fs.checkpoint.dir指向的文件夹（例如：/home/hadadm/clusterdir/tmp/dfs/namesecondary）</li>
+<li>执行命令bin/hadoop namenode –importCheckpoint</li>
+<li>这样NameNode会读取checkpoint文件，保存到dfs.name.dir。但是如果你的dfs.name.dir包含合法的 fsimage，是会执行失败的。因为NameNode会检查fs.checkpoint.dir目录下镜像的一致性，但是不会去改动它。</li>
+</ol>
+<p>一般建议给maste配置多台机器，让namesecondary与namenode不在同一台机器上值得推荐的是，你要注意备份你的dfs.name.dir和 ${hadoop.tmp.dir}/dfs/namesecondary。</p>
+<h3 id="后续版本中的backupnode"><a href="#后续版本中的backupnode" class="headerlink" title="后续版本中的backupnode"></a>后续版本中的backupnode</h3><p>Checkpoint Node和 Backup Node在后续版本中hadoop-0.21.0，还提供了另外的方法来做checkpoint：Checkpoint Node 和 Backup Node。这两种方式要比secondary NameNode好很多。所以 The Secondary NameNode has been deprecated. Instead, consider using the Checkpoint Node or Backup Node. Checkpoint Node像是secondary NameNode的改进替代版，Backup Node提供更大的便利，这里就不再介绍了。</p>
+<p>BackupNode ： 备份结点。这个结点的模式有点像 mysql 中的主从结点复制功能， NN 可以实时的将日志传送给 BN ，而 SNN 是每隔一段时间去 NN 下载 fsimage 和 edits 文件，而 BN 是实时的得到操作日志，然后将操作合并到 fsimage 里。在 NN 里提供了二个日志流接口： EditLogOutputStream 和 EditLogInputStream 。即当 NN 有日志时，不仅会写一份到本地 edits 的日志文件，同时会向 BN 的网络流中写一份，当流缓冲达到阀值时，将会写入到 BN 结点上， BN 收到后就会进行合并操作，这样来完成低延迟的日志复制功能。总结：当前的备份结点都是冷备份，所以还需要实现热备份，使得 NN 挂了后，从结点自动的升为主结点来提供服务。主 NN 的效率问题： NN 的文件过多导致内存消耗问题， NN 中文件锁问题， NN 的启动时间。</p>
+<p>因为Secondarynamenaode不是实施备份和同步,所以SNN会丢掉当前namenode的edit log数据,应该来说Backup Node可以解决这个问题</p>
+<h3 id="关于NN的补充"><a href="#关于NN的补充" class="headerlink" title="关于NN的补充"></a>关于NN的补充</h3><p>在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</p>
+<p>中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</p>
+<p>后期就取消SNN，新建一个实时NN，作为高可靠 HA。</p>
+<ul>
+<li>NN Active</li>
+<li>NN Standby:实时的等待active </li>
+</ul>
+<p>NN挂了，瞬间启动Standby–&gt;Active，对外提供读写服务。</p>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xh16319/article/details/31375197">https://blog.csdn.net/xh16319/article/details/31375197</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
   <nav class="pagination">
     <a class="extend prev" rel="prev" href="/archives/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/archives/">1</a><span class="page-number current">2</span><a class="page-number" href="/archives/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/archives/page/7/">7</a><a class="extend next" rel="next" href="/archives/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>

@@ -35,10 +35,10 @@
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"archives/page/3/index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"archives/page/3/index.html","title":""}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>归档 | k12的博客</title>
+<title>k12的博客</title>
   
 
 
@@ -178,230 +178,1112 @@
 </noscript>
 
 
-    <div class="main-inner archive posts-collapse">
+    <div class="main-inner index posts-expand">
+
+    
 
 
+<div class="post-block">
   
   
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">spark读取GBK编码文件乱码问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-22 21:36:25 / 修改时间：21:44:23" itemprop="dateCreated datePublished" datetime="2022-01-22T21:36:25+08:00">2022-01-22</time>
+    </span>
+
   
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        
-        <span class="collection-header">不错! 目前共计 62 篇日志。 继续努力。</span>
-      </div>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
+<li><p>SPARK 常用的textFile方法默认是写死了读UTF－8格式的文件，其他编码格式文件会显示乱码</p>
+</li>
+<li><p>查看textFile方法的实现</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">def textFile(</span><br><span class="line">    path: String,</span><br><span class="line">    minPartitions: Int = defaultMinPartitions): RDD[String] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>读文件的时候用到了hadoopFile方法，读取的文件时调用<strong>TextInputformat</strong>类来解析文本文件，输出K V键值对。继续查看TextInputformat方法读取文件的实现，其中读记录生成K V键值对的方法的实现如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public RecordReader&lt;LongWritable, Text&gt; getRecordReader(InputSplit genericSplit, JobConf job, Reporter reporter) throws IOException &#123;</span><br><span class="line">    reporter.setStatus(genericSplit.toString());</span><br><span class="line">    String delimiter = job.get(&quot;textinputformat.record.delimiter&quot;);</span><br><span class="line">    byte[] recordDelimiterBytes = null;</span><br><span class="line">    if (null != delimiter) &#123;</span><br><span class="line">        recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    return new LineRecordReader(job, (FileSplit)genericSplit, recordDelimiterBytes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>虽然代码中有<code>delimiter.getBytes(Charsets.UTF_8)</code>，但并不是最后输出的关键，这里是指定分隔符用UTF-8解码，并设置分隔符。继续往下看，最后发现LineRecordReader–&gt;readLine–&gt;Text，返回指定的字符集UTF-8。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class Text extends BinaryComparable implements WritableComparable&lt;BinaryComparable&gt; &#123;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetEncoder&gt; ENCODER_FACTORY = new ThreadLocal&lt;CharsetEncoder&gt;() &#123;</span><br><span class="line">        protected CharsetEncoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newEncoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetDecoder&gt; DECODER_FACTORY = new ThreadLocal&lt;CharsetDecoder&gt;() &#123;</span><br><span class="line">        protected CharsetDecoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+
+<p>所以hadoopFile返回的HadoopRDD，其中输入TextInputformat和输出valueClass均为Text，返回的是字符集UTF-8，而我们输入的是GBK编码，用UTF-8解码就会造成乱码。所以HadoopRDD中的value也是乱码的。</p>
+</li>
+<li><p>如果我们想要读取GBK文件避免乱码，可以通过对HadoopRDD进行操作：</p>
+<p>对HadoopRDD中的value按照GBK的方式读取变成字符串，运行之后能够正常显示:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HadoopRDD.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)</span><br></pre></td></tr></table></figure>
+
+<p>说明：关于String类：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">String.getBytes(Charset charset)。</span><br><span class="line">	返回值：byte[]  返回的是一个 字节数组。</span><br><span class="line">	方法的作用：将String以指定的编码格式(既参数charset)进行解码，然后以字节数组的形式存储这些解码后的字节。</span><br><span class="line">String(byte[] bytes,Charset charset)</span><br><span class="line">	返回值：String  返回的是一串字符串。</span><br><span class="line">	方法的作用：将字节数组bytes以charset的编码格式进行解码。</span><br></pre></td></tr></table></figure></li>
+<li><p>案例</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">package com.ruozedata.spark.job</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.io.&#123;LongWritable, Text&#125;</span><br><span class="line">import org.apache.hadoop.mapred.TextInputFormat</span><br><span class="line">import org.apache.spark.&#123;SparkConf, SparkContext&#125;</span><br><span class="line">import java.io.&#123;File, FileOutputStream, OutputStreamWriter&#125;</span><br><span class="line"></span><br><span class="line">object jobApp &#123;</span><br><span class="line">	def main(args: Array[String]): Unit = &#123;</span><br><span class="line">		val sparkConf = new SparkConf().setMaster(&quot;local[2]&quot;).setAppName(this.getClass.getCanonicalName)</span><br><span class="line">		val sc = new SparkContext(sparkConf)</span><br><span class="line"></span><br><span class="line">		val GBKPATH = &quot;data/GBKtext.txt&quot;</span><br><span class="line">		val UTF8PATH = &quot;data/UTF8text.txt&quot;</span><br><span class="line">		val GBKFile = new File(GBKPATH)</span><br><span class="line">		val UTF8File = new File(UTF8PATH)</span><br><span class="line">		UTF8File</span><br><span class="line">		if(GBKFile.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line">		if(UTF8File.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		val GBKwriter = new OutputStreamWriter(new FileOutputStream(GBKFile), &quot;GBK&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第一行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第二行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第三行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.flush()</span><br><span class="line">		GBKwriter.close()</span><br><span class="line"></span><br><span class="line">		val UTF8writer = new OutputStreamWriter(new FileOutputStream(UTF8File), &quot;UTF-8&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第一行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第二行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第三行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.flush()</span><br><span class="line">		UTF8writer.close()</span><br><span class="line"></span><br><span class="line">    	//val UTF8rdd = sc.textFile(UTF8PATH).collect().foreach(println)</span><br><span class="line">    	/**textFile读UTF-8文件，显示如下：</span><br><span class="line">    	*这是第一行GBK数据</span><br><span class="line">		*这是第二行GBK数据</span><br><span class="line">		*这是第三行GBK数据</span><br><span class="line">		*/</span><br><span class="line">		//val GBKrdd1 = sc.textFile(GBKPATH).collect().foreach(println)</span><br><span class="line">		/**textFile读GBK文件，显示如下：</span><br><span class="line">		 *���ǵ�һ��GBK����</span><br><span class="line">		 *���ǵڶ���GBK����</span><br><span class="line">		 *���ǵ�����GBK����</span><br><span class="line">		 */</span><br><span class="line">		 //textFile实现方法：</span><br><span class="line">		 //hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">		 //	minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">		</span><br><span class="line">		val GBKrdd2 = sc.hadoopFile(GBKPATH, classOf[TextInputFormat], classOf[LongWritable], classOf[Text])</span><br><span class="line">			.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)).collect.foreach(println)</span><br><span class="line"></span><br><span class="line">		sc.stop()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
+<p><a target="_blank" rel="noopener" href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
 
       
-    <div class="collection-year">
-      <span class="collection-header">2022</span>
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-22T21:36:25+08:00"
-              content="2022-01-22">
-          01-22
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/" itemprop="url">
-            <span itemprop="name">spark读取GBK编码文件乱码问题</span>
-          </a>
-      </div>
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">关于服务器上测试自定义编译的spark没反应问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-22 03:11:40 / 修改时间：03:57:34" itemprop="dateCreated datePublished" datetime="2022-01-22T03:11:40+08:00">2022-01-22</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
+<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>S2的位置：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
+
+<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
+<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
+<p>尝试以绝对路径的方式启动S2：</p>
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
+<p>结果一样，启动的是S1。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
+<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
+<p>删除环境变量：</p>
+<ul>
+<li>unset VAL：暂时的，只会在当前环境有效</li>
+<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
+<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
+</ul>
+<p>再次测试：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
+
 
       
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-22T03:11:40+08:00"
-              content="2022-01-22">
-          01-22
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/" itemprop="url">
-            <span itemprop="name">关于服务器上测试自定义编译的spark没反应问题</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-21T17:36:16+08:00"
-              content="2022-01-21">
-          01-21
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/" itemprop="url">
-            <span itemprop="name">spark-sql启动参数</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-21T04:26:18+08:00"
-              content="2022-01-21">
-          01-21
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/" itemprop="url">
-            <span itemprop="name">IDEA编译Spark3.2.0测试SparkSQL</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-19T00:59:04+08:00"
-              content="2022-01-19">
-          01-19
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/" itemprop="url">
-            <span itemprop="name">更新CentOS6.5的yum源</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-19T00:40:25+08:00"
-              content="2022-01-19">
-          01-19
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/" itemprop="url">
-            <span itemprop="name">CentOS6.5安装NodeJS14.18.3</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-18T23:17:28+08:00"
-              content="2022-01-18">
-          01-18
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/" itemprop="url">
-            <span itemprop="name">Hadoop支持LZO压缩</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-18T21:21:36+08:00"
-              content="2022-01-18">
-          01-18
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/" itemprop="url">
-            <span itemprop="name">搭建HUE，集成hdfs,Hive,MySQL</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-15T17:23:33+08:00"
-              content="2022-01-15">
-          01-15
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/" itemprop="url">
-            <span itemprop="name">CentOS 6.5下安装python3.7</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-13T21:04:44+08:00"
-              content="2022-01-13">
-          01-13
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/13/MR%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%87%BA%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95Lzop%EF%BC%8CLzoCodec%20vs%20LzopCodec/" itemprop="url">
-            <span itemprop="name">MR设置输出压缩算法Lzop，LzoCodec vs LzopCodec</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-
     </div>
-  </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
   
   
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/" class="post-title-link" itemprop="url">spark-sql启动参数</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-21 17:36:16 / 修改时间：17:38:06" itemprop="dateCreated datePublished" datetime="2022-01-21T17:36:16+08:00">2022-01-21</time>
+    </span>
+
   
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>不带参数，直接启动，报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
+
+<p>带参数启动成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/" class="post-title-link" itemprop="url">IDEA编译Spark3.2.0测试SparkSQL</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-21 04:26:18 / 修改时间：04:39:26" itemprop="dateCreated datePublished" datetime="2022-01-21T04:26:18+08:00">2022-01-21</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p><a target="_blank" rel="noopener" href="https://spark.apache.org/docs/latest/building-spark.html">https://spark.apache.org/docs/latest/building-spark.html</a></p>
+<p>本机环境：</p>
+<p>hadoop:3.2.2</p>
+<p>jdk:1.8+</p>
+<p>scala:2.12.14</p>
+<p>hive:2.3.9（spark中默认版本）</p>
+<h2 id="一、下载"><a href="#一、下载" class="headerlink" title="一、下载"></a>一、下载</h2><p><a target="_blank" rel="noopener" href="https://spark.apache.org/downloads.html">https://spark.apache.org/downloads.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://dlcdn.apache.org/spark/spark-3.2.0/spark-3.2.0.tgz"><strong>spark-3.2.0.tgz</strong></a></p>
+<h2 id="二、解压并导入IDEA"><a href="#二、解压并导入IDEA" class="headerlink" title="二、解压并导入IDEA"></a>二、解压并导入IDEA</h2><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-01.png" alt="image-20220119102329144" style="zoom: 50%;">
+
+<h2 id="三、编译"><a href="#三、编译" class="headerlink" title="三、编译"></a>三、编译</h2><ol>
+<li><h3 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h3><ul>
+<li><p>通过Add Frameworks Support添加Scala2.12支持。</p>
+</li>
+<li><p>执行命令配置Maven：<code>export MAVEN_OPTS=&quot;-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g&quot;</code></p>
+</li>
+<li><p>修改pom.xml</p>
+<p>版本参数</p>
+<p>scala:2.12.14【2处】</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;scala.version&gt;2.12.14&lt;/scala.version&gt;</span><br></pre></td></tr></table></figure>
+
+<p>hadoop : 3.2.2【1处】</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;hadoop.version&gt;3.2.2&lt;/hadoop.version&gt;</span><br></pre></td></tr></table></figure>
+
+<p>hive:默认，不指定hive版本</p>
+<p>其他（否则报错）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;net.alchim31.maven&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;scala-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;3.2.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></li>
+<li><p>修改make-distribution.sh</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">#VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SCALA_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=scala.binary.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HADOOP_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=hadoop.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HIVE=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | fgrep --count &quot;&lt;id&gt;hive&lt;/id&gt;&quot;;\</span><br><span class="line">#    # Reset exit status to 0, otherwise the script stops here if the last grep finds nothing\</span><br><span class="line">#    # because we use &quot;set -o pipefail&quot;</span><br><span class="line">#    echo -n)</span><br><span class="line">VERSION=3.2.0 # spark 版本</span><br><span class="line">SCALA_VERSION=2.12 # scala 版本</span><br><span class="line">SPARK_HADOOP_VERSION=3.2.2 #对应的hadoop 版本</span><br><span class="line">SPARK_HIVE=1 # 支持的hive</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dev/make-distribution.sh --name custom-spark --pip --r --tgz  -Psparkr -Pyarn -Phadoop-3.2.2 -Phive -Phive-thriftserver -Pmesos -Dhadoop.version=3.2.2 </span><br></pre></td></tr></table></figure>
+
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-02.png" alt="image-20220120032650715" style="zoom:50%;"></li>
+<li><h3 id="添加jar包和Scala-SDK依赖，导入模块"><a href="#添加jar包和Scala-SDK依赖，导入模块" class="headerlink" title="添加jar包和Scala SDK依赖，导入模块"></a>添加jar包和Scala SDK依赖，导入模块</h3><p>jar包位置:<code>./assembly/target/scala-2.12</code>（这个包包含了Spark编译得到的jar包，以及编译过程中所依赖的包。）</p>
+<p>添加依赖：</p>
+<ul>
+<li><p>使用MAVEN的Generate Sources and Update Folders For All Projects</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-08.png" alt="image-20220121043339679" style="zoom:50%;"></li>
+<li><p>Project Structure–&gt;Libraries–&gt; 添加Scala SDK</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-03.png" alt="image-20220121041816355" style="zoom:50%;"></li>
+<li><p>Project Structure–&gt;Libraries–&gt; 添加jar包</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-04.png" alt="image-20220121041654274" style="zoom:50%;"></li>
+</ul>
+</li>
+<li><h3 id="SparkSQL和Hive集成"><a href="#SparkSQL和Hive集成" class="headerlink" title="SparkSQL和Hive集成"></a>SparkSQL和Hive集成</h3><p>SparkSQL需要的是Hive表的元数据，将hive的hive-site.xml文件复制到spark的conf文件夹中。hadoop的配置文件也一并放到conf文件夹中</p>
+</li>
+<li><h3 id="启动hadoop和hive的metastore服务"><a href="#启动hadoop和hive的metastore服务" class="headerlink" title="启动hadoop和hive的metastore服务"></a>启动hadoop和hive的metastore服务</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start-all.sh</span><br><span class="line">hive --service metastore &amp;</span><br></pre></td></tr></table></figure></li>
+<li><h3 id="找到spark-sql的入口程序："><a href="#找到spark-sql的入口程序：" class="headerlink" title="找到spark-sql的入口程序："></a>找到spark-sql的入口程序：</h3><p><code>org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver</code></p>
+</li>
+<li><h3 id="配置VM-options"><a href="#配置VM-options" class="headerlink" title="配置VM options"></a>配置VM options</h3><p>VM options:</p>
+<p>-Dscala.usejavacp=true </p>
+<p>-Dspark.master=local[2] </p>
+<p>-Djline.WindowsTerminal.directConsole=false</p>
+<p>启动程序：</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-05.png" alt="image-20220120054854489" style="zoom:50%;"></li>
+<li><h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>执行查询</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">use hive;</span><br><span class="line">select e.empno,e.ename,e.deptno,d.dname from emp e join dept d on e.deptno=d.deptno;</span><br></pre></td></tr></table></figure>
+
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-06.png" alt="image-20220121004018782" style="zoom:50%;"></li>
+</ol>
+<h2 id="四、期间遇到的问题"><a href="#四、期间遇到的问题" class="headerlink" title="四、期间遇到的问题"></a>四、期间遇到的问题</h2><ul>
+<li><p>Classnotfound</p>
+<p>解决方法：导入jar包</p>
+</li>
+<li><p>运行，报错：</p>
+<p><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-09.png" alt="image-20220119230542973"></p>
+<p>解决方法：配置VM options：<code>-Dscala.usejavacp=true</code></p>
+</li>
+<li><p>运行，报错：</p>
+<p><code>org.apache.spark.SparkException: A master URL must be set in your configuration</code></p>
+<p>解决方法：配置VM options：<code>-Dspark.master=local[2]</code></p>
+</li>
+<li><p>spark-sql启动成功，但输入命令后没反应</p>
+<p>以下提示信息可忽略，主要是程序阻塞了导致没反应。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.</span><br></pre></td></tr></table></figure>
+
+<p>解决方法：配置VM options：<code>-Djline.WindowsTerminal.directConsole=false</code></p>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/" class="post-title-link" itemprop="url">更新CentOS6.5的yum源</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-19 00:59:04 / 修改时间：01:06:15" itemprop="dateCreated datePublished" datetime="2022-01-19T00:59:04+08:00">2022-01-19</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>原文地址：<a target="_blank" rel="noopener" href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/" class="post-title-link" itemprop="url">CentOS6.5安装NodeJS14.18.3</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-19 00:40:25 / 修改时间：00:57:52" itemprop="dateCreated datePublished" datetime="2022-01-19T00:40:25+08:00">2022-01-19</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
+<li><p>tar包下载</p>
+<p><a target="_blank" rel="noopener" href="https://nodejs.org/download/release/v14.18.3">https://nodejs.org/download/release/v14.18.3</a></p>
+<p>点击下载：<a target="_blank" rel="noopener" href="https://nodejs.org/download/release/v14.18.3/node-v14.18.3-linux-x64.tar.gz">node-v14.18.3-linux-x64.tar.gz</a></p>
+</li>
+<li><p>查看GLIBCXX版本,node需要 GLIBCXX_3.4.18版本以上，如果版本过低需要升级libstdc++.so.6.0.26 否则直接跳过 这一步</p>
+<p>点击下载：<a target="_blank" rel="noopener" href="http://www.xiaosongit.com/Public/Upload/file/20200729/1596002876890478.zip">libstdc.so_.6.0.26.zip</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">strings /usr/lib64/libstdc++.so.6 | grep GLIBC</span><br><span class="line"></span><br><span class="line">1.下载libstdc++.so.6.0.26 </span><br><span class="line">2.解压并且把解压的文件复制到 /usr/lib64/目录下</span><br><span class="line">    cp libstdc++.so.6.0.26 /usr/lib64/</span><br><span class="line">    </span><br><span class="line">3. 进入到/usr/lib64/ 目录下删除软连接</span><br><span class="line">    cd /usr/lib64/</span><br><span class="line">    rm libstdc++.so.6</span><br><span class="line">    </span><br><span class="line">4.新建软连接</span><br><span class="line">    ln -s libstdc++.so.6.0.26 libstdc++.so.6</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# ll /usr/lib64/libstdc++.so.6*</span><br><span class="line">lrwxrwxrwx. 1 root root       19 Jan 15 22:13 /usr/lib64/libstdc++.so.6 -&gt; libstdc++.so.6.0.26</span><br><span class="line">-rwxr-xr-x. 1 root root   987096 Jun 19  2018 /usr/lib64/libstdc++.so.6.0.13</span><br><span class="line">-rwxr-xr-x. 1 root root 13176408 Jan 15 13:30 /usr/lib64/libstdc++.so.6.0.26</span><br></pre></td></tr></table></figure></li>
+<li><p>查看glibc，node需要GLIBC_2.17 ，如果版本过低需要升级。否则跳过这一步。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">strings /lib64/libc.so.6 |grep GLIBC_</span><br><span class="line">1.升级glibc至 2.17版本 下载7个包</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-utils-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-static-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-common-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-devel-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/glibc-headers-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">wget http://copr-be.cloud.fedoraproject.org/results/mosquito/myrepo-el6/epel-6-x86_64/glibc-2.17-55.fc20/nscd-2.17-55.el6.x86_64.rpm &amp;</span><br><span class="line">3.执行升级命令</span><br><span class="line">  rpm -Uvh *-2.17-55.el6.x86_64.rpm --force --nodeps</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装NodeJs"><a href="#二、安装NodeJs" class="headerlink" title="二、安装NodeJs"></a>二、安装NodeJs</h2><ol>
+<li><p>下载并解压</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https://nodejs.org/download/release/v14.18.3/ node-v14.18.3-linux-x64.tar.gz</span><br><span class="line">tar -xzvf node-v14.18.3-linux-x64.tar.gz</span><br></pre></td></tr></table></figure></li>
+<li><p>修改环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export NODE_HOME=/usr/node</span><br><span class="line">export PATH=$&#123;NODE_HOME&#125;:/bin:$PATH</span><br></pre></td></tr></table></figure></li>
+<li><p>刷新配置，查看版本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/" class="post-title-link" itemprop="url">Hadoop支持LZO压缩</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-01-18 23:17:28" itemprop="dateCreated datePublished" datetime="2022-01-18T23:17:28+08:00">2022-01-18</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-01-19 01:39:13" itemprop="dateModified" datetime="2022-01-19T01:39:13+08:00">2022-01-19</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="一、Hadoop支持LZO压缩"><a href="#一、Hadoop支持LZO压缩" class="headerlink" title="一、Hadoop支持LZO压缩"></a>一、Hadoop支持LZO压缩</h2><h3 id="1-lzop"><a href="#1-lzop" class="headerlink" title="1.lzop"></a>1.lzop</h3><p>lzo格式文件压缩解压需要用到服务器的lzop工具，hadoop 的<a target="_blank" rel="noopener" href="https://so.csdn.net/so/search?q=native&spm=1001.2101.3001.7020">native</a>库（hadoop checknative是没有的lzo,zip相关信息）并不支持</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#安装以前先执行以下命令</span><br><span class="line">[hadoop@hadoop001 ~]$ which lzop</span><br><span class="line">/usr/bin/lzop</span><br></pre></td></tr></table></figure>
+
+<p> 【<em><strong>注意</strong></em>】这代表你已经有lzop，如果找不到，就执行以下命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#若没有执行如下安装命令【这些命令一定要在root用户下安装，否则没有权限】</span><br><span class="line">[root@hadoop001 ~]# yum install -y svn ncurses-devel</span><br><span class="line">[root@hadoop001 ~]# yum install -y gcc gcc-c++ make cmake</span><br><span class="line">[root@hadoop001 ~]# yum install -y openssl openssl-devel svn ncurses-devel zlib-devel libtool</span><br><span class="line">[root@hadoop001 ~]# yum install -y lzo lzo-devel lzop autoconf automake cmake </span><br><span class="line">[root@hadoop001 ~]# yum -y install lzo-devel zlib-devel gcc autoconf automake libtool</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-安装hadoop-lzo"><a href="#2-安装hadoop-lzo" class="headerlink" title="2.安装hadoop-lzo"></a>2.安装hadoop-lzo</h3><ol>
+<li><h4 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/twitter/hadoop-lzo/archive/master.zip</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="解压"><a href="#解压" class="headerlink" title="解压"></a>解压</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br><span class="line">[hadoop@hadoop001 source]$ unzip master</span><br><span class="line">[hadoop@hadoop001 source]$ ll</span><br><span class="line">total 1028</span><br><span class="line">drwxrwxr-x. 18 hadoop hadoop    4096 Oct 13 20:53 hadoop-2.6.0-cdh5.7.0</span><br><span class="line">drwxr-xr-x. 18 hadoop hadoop    4096 Jan  3  2021 hadoop-3.2.2-src</span><br><span class="line">drwxrwxr-x.  5 hadoop hadoop    4096 Jan 11 22:03 hadoop-lzo-master</span><br><span class="line">-rw-rw-r--.  1 hadoop hadoop 1040294 Jan 11 21:57 master</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="修改pom-xml"><a href="#修改pom-xml" class="headerlink" title="修改pom.xml"></a>修改pom.xml</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 source]cd hadoop-lzo-master</span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ vi pom.xml </span><br><span class="line">&lt;hadoop.current.version&gt;3.2.2&lt;/hadoop.current.version&gt;</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="声明两个临时环境变量"><a href="#声明两个临时环境变量" class="headerlink" title="声明两个临时环境变量"></a>声明两个临时环境变量</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export C_INCLUDE_PATH=/home/hadoop/app/hadoop/lzo/include     </span><br><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ </span><br><span class="line">export LIBRARY_PATH=/home/hadoop/app/hadoop/lzo/lib </span><br></pre></td></tr></table></figure></li>
+<li><h4 id="编译（不需要阿里云仓库）"><a href="#编译（不需要阿里云仓库）" class="headerlink" title="编译（不需要阿里云仓库）"></a>编译（不需要阿里云仓库）</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ mvn clean package -Dmaven.test.skip=true</span><br></pre></td></tr></table></figure>
+
+<p>查看编译后的jar，hadoop-lzo-0.4.21-SNAPSHOT.jar则为我们需要的jar</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hadoop-lzo-master]$ cd target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 444</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 antrun</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop   4096 Jan 11 22:03 apidocs</span><br><span class="line">drwxrwxr-x. 5 hadoop hadoop   4096 Jan 11 22:03 classes</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 generated-sources</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 180550 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 181006 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-javadoc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  52043 Jan 11 22:03 hadoop-lzo-0.4.21-SNAPSHOT-sources.jar</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 javadoc-bundle-options</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop   4096 Jan 11 22:03 maven-archiver</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 native</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop   4096 Jan 11 22:03 test-classes</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="上传jar包"><a href="#上传jar包" class="headerlink" title="上传jar包"></a>上传jar包</h4><p>将hadoop-lzo-0.4.21-SNAPSHOT.jar包复制到我们的hadoop的$HADOOP_HOME/share/hadoop/common/目录下才能被hadoop使用</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 target]$ cp hadoop-lzo-0.4.21-SNAPSHOT.jar ~/app/hadoop/share/hadoop/common/ </span><br></pre></td></tr></table></figure>
+
+<p>如果是集群，需要使用<code>xsync hadoop-lzo-0.4.21.jar</code>命令同步到集群中的其他机器</p>
+</li>
+<li><h4 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h4><p>core-site.xml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codecs&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;</span><br><span class="line">		org.apache.hadoop.io.compress.GzipCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.DefaultCodec,</span><br><span class="line">		org.apache.hadoop.io.compress.BZip2Codec,</span><br><span class="line">		org.apache.hadoop.io.compress.SnappyCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzoCodec,</span><br><span class="line">		com.hadoop.compression.lzo.LzopCodec</span><br><span class="line">	&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;io.compression.codec.lzo.class&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<p>mapred-site.xml（如果修改了，则默认输出格式为lzo）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.map.output.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;mapreduce.output.fileoutputformat.compress&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.output.fileoutputformat.compress.codec&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;com.hadoop.compression.lzo.LzopCodec&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+<li><h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><ul>
+<li><p><strong>配置了mapred-site.xml</strong>:</p>
+<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount /input /output</p>
+</li>
+<li><p>没有配置mapred-site.xml(指定输出文件格式为lzo)：</p>
+<p>hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount <strong>-Dmapreduce.output.fileoutputformat.compress=true</strong> <strong>-Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</strong> /input /output</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.output.fileoutputformat.compress=true -Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec /wc/input/wc.data /output</span><br><span class="line">[hadoop@hadoop001 mapreduce]$ hadoop fs -ls /output</span><br><span class="line">-rw-r--r--   1 hadoop supergroup          0 2022-01-11 22:18 /output/_SUCCESS</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         95 2022-01-11 22:18 /output/part-r-00000.lzo</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="3-LZO创建索引"><a href="#3-LZO创建索引" class="headerlink" title="3.LZO创建索引"></a>3.LZO创建索引</h3><ol>
+<li><h3 id="创建LZO文件的索引"><a href="#创建LZO文件的索引" class="headerlink" title="创建LZO文件的索引"></a>创建LZO文件的索引</h3><p>创建LZO文件的索引，LZO压缩文件的可切片特性依赖于其索引，故我们需要手动为LZO压缩文件创建索引。若无索引，则LZO文件的切片只有一个。</p>
+<p>命令：<code>hadoop jar $HADOOP_HOME/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.DistributedLzoIndexer XXX.lzo</code></p>
+</li>
+<li><h3 id="执行wc-没有创建索引"><a href="#执行wc-没有创建索引" class="headerlink" title="执行wc(没有创建索引)"></a>执行wc(没有创建索引)</h3><p>创建需要分片处理的bigwcneedspilt.data.lzo（203M）文件，并上传到hdfs上</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigwcneedspilt.data</span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigwc*</span><br><span class="line">157M	bigwc.data</span><br><span class="line">51M	bigwc.data.lzo</span><br><span class="line">625M	bigwcneedspilt.data</span><br><span class="line">203M	bigwcneedspilt.data.lzo</span><br><span class="line">18M	bigwc.txt</span><br><span class="line">[hadoop@hadoop001 data]$ hadoop fs -put bigwcneedspilt.data.lzo /user/hadoop/data/</span><br></pre></td></tr></table></figure>
+
+<p>执行wc(没有创建索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output1</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-1.png" alt="image-20220113175318333"></p>
+<p>可以看到此时切片并没有生效，依然只有一个</p>
+</li>
+<li><h3 id="对上传的LZO文件创建索引"><a href="#对上传的LZO文件创建索引" class="headerlink" title="对上传的LZO文件创建索引"></a>对上传的LZO文件创建索引</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar  com.hadoop.compression.lzo.DistributedLzoIndexer /user/hadoop/data/bigwcneedspilt.data.lzo</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220113183629075.png" alt="image-20220113183629075"></p>
+</li>
+<li><h3 id="执行wc-已经创建索引"><a href="#执行wc-已经创建索引" class="headerlink" title="执行wc(已经创建索引)"></a>执行wc(已经创建索引)</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop jar /home/hadoop/app/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.2.2.jar wordcount -Dmapreduce.job.inputformat.class=com.hadoop.mapreduce.LzoTextInputFormat /user/hadoop/data/bigwcneedspilt.data.lzo /output2</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-2.png" alt="image-20220113193027590"></p>
+<p>此时已经成功切片</p>
+</li>
+</ol>
+<h2 id="二、Hive支持处理LZO压缩格式的数据的统计查询"><a href="#二、Hive支持处理LZO压缩格式的数据的统计查询" class="headerlink" title="二、Hive支持处理LZO压缩格式的数据的统计查询"></a>二、Hive支持处理LZO压缩格式的数据的统计查询</h2><h3 id="开启压缩的方式"><a href="#开启压缩的方式" class="headerlink" title="开启压缩的方式"></a>开启压缩的方式</h3><ul>
+<li>在**<code>$HIVE_HOME/conf/hive-site.xml</code>**中设置</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- 设置hive语句执行输出文件是否开启压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.output&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether the final outputs of a query (to a local/HDFS file or a Hive table) </span><br><span class="line">        is compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables </span><br><span class="line">        mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;!-- 控制多个MR Job的中间结果文件是否启用压缩,具体的压缩算法和压缩格式取决于hadoop中</span><br><span class="line">设置的相关参数 --&gt;</span><br><span class="line">&lt;!-- 默认值:false --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">    &lt;name&gt;hive.exec.compress.intermediate&lt;/name&gt;</span><br><span class="line">    &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">    &lt;description&gt;</span><br><span class="line">        This controls whether intermediate files produced by Hive between multiple map-reduce jobs are compressed. </span><br><span class="line">        The compression codec and other options are determined from Hadoop config variables mapred.output.compress*</span><br><span class="line">    &lt;/description&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>在hive中开启</p>
+<p>查看默认状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=false</span><br><span class="line">hive (hive)&gt; set mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure>
+
+<p>开启支持压缩，格式为lzop（lzo在文件构建索引后才会支持数据分片）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="数据与环境准备"><a href="#数据与环境准备" class="headerlink" title="数据与环境准备"></a>数据与环境准备</h3><p>数据准备：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ lzop bigemp.data </span><br><span class="line">[hadoop@hadoop001 data]$ du -sh bigemp*</span><br><span class="line">823M	bigemp.data</span><br><span class="line">206M	bigemp.data.lzo</span><br></pre></td></tr></table></figure>
+
+<p>为了方便测试分片，我重启了hadoop，修改了hdfs-site.xml设置了blocksize=10M。然后mapr-site.xml没有配置上面的4个值。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;dfs.blocksize&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;10485760&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="未开启（未添加索引）"><a href="#未开启（未添加索引）" class="headerlink" title="未开启（未添加索引）"></a>未开启（未添加索引）</h3><h4 id="建表"><a href="#建表" class="headerlink" title="建表"></a>建表</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE big_emp (id int,name string,dept string)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br></pre></td></tr></table></figure>
+
+<h4 id="从本地load-LZO压缩数据bigemp-data-lzo到表big-emp"><a href="#从本地load-LZO压缩数据bigemp-data-lzo到表big-emp" class="headerlink" title="从本地load LZO压缩数据bigemp.data.lzo到表big_emp"></a>从本地load LZO压缩数据<code>bigemp.data.lzo</code>到表<code>big_emp</code></h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LOAD DATA LOCAL INPATH &#x27;/home/hadoop/data/bigemp.data.lzo&#x27; OVERWRITE INTO TABLE big_emp</span><br></pre></td></tr></table></figure>
+
+<h4 id="查看大小"><a href="#查看大小" class="headerlink" title="查看大小"></a>查看大小</h4><p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114164409879.png" alt="image-20220114164409879"></p>
+<h4 id="查询统计测试"><a href="#查询统计测试" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select count(1) from big_emp;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-3.png" alt="image-20220114045505294"></p>
+<p>因为我们的块大小是默认的128M，而bigemp.data.lzo这个lzo压缩文件的大小远远大于128M*1.1，但是我们可以看见Map只有一个，可见lzo是不支持分片的。</p>
+<h3 id="已开启（已添加索引）"><a href="#已开启（已添加索引）" class="headerlink" title="已开启（已添加索引）"></a><strong>已开启（已添加索引）</strong></h3><h4 id="开启压缩"><a href="#开启压缩" class="headerlink" title="开启压缩"></a>开启压缩</h4><p>生成的压缩文件格式必须为设置为<strong>LzopCodec</strong>，lzoCode的压缩文件格式后缀为<code>.lzo_deflate</code>是无法创建索引的。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; SET hive.exec.compress.output=true;</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</span><br><span class="line">hive (hive)&gt; SET hive.exec.compress.output;</span><br><span class="line">hive.exec.compress.output=true</span><br><span class="line">hive (hive)&gt; SET mapreduce.output.fileoutputformat.compress.codec;</span><br><span class="line">mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec</span><br></pre></td></tr></table></figure>
+
+<h4 id="建表，并插入big-emp的数据"><a href="#建表，并插入big-emp的数据" class="headerlink" title="建表，并插入big_emp的数据"></a>建表，并插入big_emp的数据</h4><p>（若不是直接load的lzo文件，需要开启压缩，且压缩格式为LzopCodec，load数据并不能改变文件格式和压缩格式。）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE big_emp_split ROW FORMAT DELIMITED FIELDS TERMINATED BY &#x27;\t&#x27;</span><br><span class="line">STORED AS INPUTFORMAT &quot;com.hadoop.mapred.DeprecatedLzoTextInputFormat&quot;</span><br><span class="line">OUTPUTFORMAT &quot;org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat&quot;</span><br><span class="line">as select * from big_emp;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114171956115.png" alt="image-20220114171956115"></p>
+<h4 id="构建LZO文件索引"><a href="#构建LZO文件索引" class="headerlink" title="构建LZO文件索引"></a>构建LZO文件索引</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/image-20220114172032219.png" alt="image-20220114172032219"></p>
+<h4 id="查询统计测试-1"><a href="#查询统计测试-1" class="headerlink" title="查询统计测试"></a>查询统计测试</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select count(1) from big_emp_split;</span><br></pre></td></tr></table></figure>
+
+<p><strong>当做到这步，遇到好几个问题：</strong></p>
+<ol>
+<li><p>直接返回结果，没有启动MR</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; select count(1) from big_emp_split;</span><br><span class="line">OK</span><br><span class="line">_c0</span><br><span class="line">39999996</span><br><span class="line">Time taken: 0.27 seconds, Fetched: 1 row(s)</span><br></pre></td></tr></table></figure>
+
+<p>可能是有缓存，添加where条件可以运行MR程序。</p>
+</li>
+<li><p>当设置<code>SET mapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec;</code>后，count(1)报错。</p>
+<p>设置成<code>SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec;</code>可以运行成功。</p>
+<p>参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/blfshiye/p/5424097.html">https://www.cnblogs.com/blfshiye/p/5424097.html</a></p>
+</li>
+<li><p>但结果比未生成索引时的多了几条，map数量仍然为1，即生成索引后仍然没有分片成功。推断是把索引文件作为输入了，所以数据变多。网上查阅，应该是因为把索引文件当成小文件合并了，所以map数量为1，且数据变多。解决办法：修改<code>CombineHiveInputFormat</code>为<code>HiveInputFormat</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure>
+
+<p>参考：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43589563/article/details/122353909">https://blog.csdn.net/weixin_43589563/article/details/122353909</a></p>
+</li>
+<li><p>问题解决，分片成功。</p>
+<p><img src="/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/lzo-4.png" alt="image-20220114163716493"></p>
+<p>这里我们可以看到map数量是21，也就是说lzo压缩文件构建索引以后是支持分片的。</p>
+</li>
+</ol>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><p>这个开启压缩，在生成表的时候需要（生成lzo文件），在做统计的时候不需要设置。lzo文件生成索引后，索引不被合并掉，就支持分片。</p>
+<h3 id="Hive支持处理LZO压缩格式分片步骤"><a href="#Hive支持处理LZO压缩格式分片步骤" class="headerlink" title="Hive支持处理LZO压缩格式分片步骤"></a>Hive支持处理LZO压缩格式分片步骤</h3><ol>
+<li><p>默认设置即可</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SET hive.exec.compress.output=false;</span><br><span class="line">SET mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.DefaultCodec</span><br></pre></td></tr></table></figure></li>
+<li><p>更改hive.input.format，防止索引被合并</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set hive.input.format=org.apache.hadoop.hive.ql.io.HiveInputFormat;</span><br></pre></td></tr></table></figure></li>
+<li><p>为lzo文件创建索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar com.hadoop.compression.lzo.LzoIndexer /user/hive/warehouse/hive.db/big_emp_split</span><br></pre></td></tr></table></figure></li>
+<li><p>统计查询</p>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/" class="post-title-link" itemprop="url">搭建HUE，集成hdfs,Hive,MySQL</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-18 21:21:36 / 修改时间：23:11:57" itemprop="dateCreated datePublished" datetime="2022-01-18T21:21:36+08:00">2022-01-18</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>本机环境：</p>
+<ul>
+<li>hdfs伪分布式部署</li>
+<li>用户名：hadoop</li>
+<li>hostname:hadoop001</li>
+</ul>
+<h2 id="一、环境准备"><a href="#一、环境准备" class="headerlink" title="一、环境准备"></a>一、环境准备</h2><ol>
+<li><p>Python</p>
+<ul>
+<li>Python 2.7</li>
+<li>Python 3.6+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 local]# python -V</span><br><span class="line">Python 2.7.18</span><br></pre></td></tr></table></figure></li>
+<li><p>database</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mysql --version</span><br><span class="line">mysql  Ver 14.14 Distrib 5.7.11, for linux-glibc2.5 (x86_64) using  EditLine wrapper</span><br></pre></td></tr></table></figure></li>
+<li><p>OS Packages</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install ant asciidoc cyrus-sasl-devel cyrus-sasl-gssapi cyrus-sasl-plain gcc gcc-c++ krb5-devel libffi-devel libxml2-devel libxslt-devel make mysql mysql-devel openldap-devel python-devel sqlite-devel gmp-devel openssl-devel -y</span><br></pre></td></tr></table></figure></li>
+<li><p>mvn</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ mvn -v</span><br><span class="line">Apache Maven 3.8.3 (ff8e977a158738155dc465c6a97ffaf31982d739)</span><br><span class="line">Maven home: /home/hadoop/app/maven</span><br></pre></td></tr></table></figure></li>
+<li><p>NodeJs</p>
+<p>NodeJs版本须为14.X版本</p>
+<p><a target="_blank" rel="noopener" href="https://nodejs.org/download/release/v14.18.3/">https://nodejs.org/download/release/v14.18.3/</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dch0/p/14485924.html">https://www.cnblogs.com/dch0/p/14485924.html</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 glibc]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 glibc]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
+<li><p>java</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ java -version</span><br><span class="line">java version &quot;1.8.0_45&quot;</span><br><span class="line">Java(TM) SE Runtime Environment (build 1.8.0_45-b14)</span><br><span class="line">Java HotSpot(TM) 64-Bit Server VM (build 25.45-b02, mixed mode)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="二、安装"><a href="#二、安装" class="headerlink" title="二、安装"></a>二、安装</h2><ol>
+<li><h3 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h3><p>下载地址：<a target="_blank" rel="noopener" href="https://github.com/cloudera/hue">https://github.com/cloudera/hue</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ tar -zvxf hue-release-4.10.0.tar.gz </span><br></pre></td></tr></table></figure></li>
+<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 software]$ cd hue-release-4.10.0</span><br><span class="line">[hadoop@hadoop001 hue-release-4.10.0]$ PREFIX=/home/hadoop/software make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_01.png" alt="image-20220116020513926"></p>
+</li>
+<li><h3 id="初始化配置"><a href="#初始化配置" class="headerlink" title="初始化配置"></a>初始化配置</h3><p>hue.ini：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">[desktop]</span><br><span class="line">  # This is used for secure hashing in the session store.</span><br><span class="line">  secret_key=jFE93j;2[290-eiw.KEiwN2s3[&#x27;d;/.q[eIW^y#e=+Iei*@Mn&lt;qW5o</span><br><span class="line"></span><br><span class="line">  # Webserver listens on this address and port</span><br><span class="line">  http_host=hadoop001</span><br><span class="line">  http_port=8000</span><br><span class="line">  </span><br><span class="line">  # Time zone name</span><br><span class="line">  time_zone=Asia/Shanghai</span><br><span class="line"></span><br><span class="line">  #以下4项不设置，默认adminuser为hue，会在hue目录下创建hue:hue权限的文件，无权限操作</span><br><span class="line">  # Webserver runs as this user</span><br><span class="line">  server_user=hadoop</span><br><span class="line">  server_group=hadoop</span><br><span class="line"></span><br><span class="line">  # This should be the Hue admin and proxy user</span><br><span class="line">  default_user=hadoop</span><br><span class="line"></span><br><span class="line">  # This should be the hadoop cluster admin</span><br><span class="line">  ## default_hdfs_superuser=hadoop</span><br><span class="line"></span><br><span class="line">   </span><br><span class="line">[[database]]</span><br><span class="line">  # Note for MariaDB use the &#x27;mysql&#x27; engine.</span><br><span class="line">  engine=mysql</span><br><span class="line">  host=hadoop001</span><br><span class="line">  port=3306</span><br><span class="line">  user=root</span><br><span class="line">  password=123456</span><br><span class="line">  #保存hue信息的数据库名</span><br><span class="line">  name=hue</span><br></pre></td></tr></table></figure>
+
+<p>配置database这几个属性后，先在mysql中创建数据库hue</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; CREATE DATABASE `hue` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br></pre></td></tr></table></figure>
+
+<p>然后执行命令生成元数据，</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ ./build/env/bin/hue migrate</span><br></pre></td></tr></table></figure>
+
+<p>创建成功：</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_02.png" alt="image-20220117205609227"></p>
+<p>此时数据库hue下多了大量与hue信息相关的表。</p>
+</li>
+<li><h3 id="启动hue，第一次访问"><a href="#启动hue，第一次访问" class="headerlink" title="启动hue，第一次访问"></a>启动hue，第一次访问</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">build/env/bin/supervisor</span><br></pre></td></tr></table></figure>
+
+<p>浏览器访问<code>http://hadoop001:8000/</code></p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_03.png" alt="image-20220118010237926"></p>
+<p>第一次访问，提示创建超级管理员帐号。</p>
+<p>我们这里创建：用户：hadoop(与hdfs用户同名)；密码：123456；</p>
+<p>成功访问hue页面：</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_04.png" alt="image-20220118010553020"></p>
+</li>
+</ol>
+<h2 id="三、集成hdfs"><a href="#三、集成hdfs" class="headerlink" title="三、集成hdfs"></a>三、集成hdfs</h2><p>hue运行用户为hadoop</p>
+<ul>
+<li><p>hue.ini</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"># 211 行。 没有安装 Solr，禁用，否则一直报错</span><br><span class="line">app_blacklist=search</span><br><span class="line"></span><br><span class="line">##集成HDFS、YARN</span><br><span class="line">[[hdfs_clusters]]</span><br><span class="line">    # HA support by using HttpFs</span><br><span class="line"> </span><br><span class="line">    [[[default]]]</span><br><span class="line">	  # 211 行。 没有安装 Solr，禁用，否则一直报错</span><br><span class="line">	  app_blacklist=search</span><br><span class="line">	  </span><br><span class="line">      # Enter the filesystem uri</span><br><span class="line">      fs_defaultfs=hdfs://hadoop001:9000</span><br><span class="line">      </span><br><span class="line">      # Use WebHdfs/HttpFs as the communication mechanism.</span><br><span class="line">      # Domain should be the NameNode or HttpFs host.</span><br><span class="line">      # Default port is 14000 for HttpFs.</span><br><span class="line">      webhdfs_url=http://hadoop001:9870/webhdfs/v1</span><br><span class="line">      </span><br><span class="line">      # Directory of the Hadoop configuration</span><br><span class="line">      ## hadoop_conf_dir=$HADOOP_CONF_DIR when set or &#x27;/etc/hadoop/conf&#x27;</span><br><span class="line">      hadoop_conf_dir=$HADOOP_HOME/etc/hadoop</span><br><span class="line"></span><br><span class="line">[[yarn_clusters]]</span><br><span class="line"></span><br><span class="line">  [[[default]]]</span><br><span class="line">    # Enter the host on which you are running the ResourceManager</span><br><span class="line">    resourcemanager_host=hadoop001</span><br><span class="line"></span><br><span class="line">    # The port where the ResourceManager IPC listens on</span><br><span class="line">    resourcemanager_port=8032</span><br><span class="line">    </span><br><span class="line">    # Whether to submit jobs to this cluster</span><br><span class="line">    submit_to=True</span><br><span class="line">    </span><br><span class="line">    # URL of the ResourceManager API</span><br><span class="line">    resourcemanager_api_url=http://hadoop001:8088</span><br><span class="line"></span><br><span class="line">    # URL of the ProxyServer API</span><br><span class="line">    ## proxy_api_url=http://hadoop001:8088</span><br><span class="line"></span><br><span class="line">    # URL of the HistoryServer API</span><br><span class="line">    history_server_api_url=http://hadoop001:19888</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>hdfs-site.xml</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- HUE --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;dfs.webhdfs.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;dfs.permissions.enabled&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;false&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>core-site.xml</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- HUE --&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.proxyuser.hadoop.hosts&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;*&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br><span class="line">&lt;property&gt;</span><br><span class="line">  &lt;name&gt;hadoop.proxyuser.hadoop.groups&lt;/name&gt;</span><br><span class="line">  &lt;value&gt;*&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>重启hdfs集群，启动hdfs，historyserver</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ start-all.sh </span><br><span class="line">WARNING: Attempting to start all Apache Hadoop daemons as hadoop in 10 seconds.</span><br><span class="line">WARNING: This is not a recommended production deployment configuration.</span><br><span class="line">WARNING: Use CTRL-C to abort.</span><br><span class="line">Starting namenodes on [hadoop001]</span><br><span class="line">Starting datanodes</span><br><span class="line">Starting secondary namenodes [hadoop001]</span><br><span class="line">2022-01-17 17:32:37,771 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Starting resourcemanager</span><br><span class="line">Starting nodemanagers</span><br><span class="line">[hadoop@hadoop001 ~]$ mr-jobhistory-daemon.sh start historyserver</span><br><span class="line">WARNING: Use of this script to start the MR JobHistory daemon is deprecated.</span><br><span class="line">WARNING: Attempting to execute replacement &quot;mapred --daemon start&quot; instead.</span><br><span class="line">[hadoop@hadoop001 ~]$ jps</span><br><span class="line">12770 Jps</span><br><span class="line">12537 JobHistoryServer</span><br><span class="line">11706 SecondaryNameNode</span><br><span class="line">11547 DataNode</span><br><span class="line">11437 NameNode</span><br><span class="line">11934 ResourceManager</span><br><span class="line">12063 NodeManager</span><br></pre></td></tr></table></figure>
+
+<p>CART + C中止前端运行HUE，重启HUE。</p>
+<p>在HUE上浏览hdfs，并对hdfs上的文件进行操作：</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_05.png" alt="image-20220118015137535"></p>
+<h2 id="四、集成Hive"><a href="#四、集成Hive" class="headerlink" title="四、集成Hive"></a>四、集成Hive</h2><p>如果需要配置hue与hive的集成，启动hue前需要启动hiveserver2和metastore服务。</p>
+<p>hue.ini</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">[beeswax]</span><br><span class="line"></span><br><span class="line">  # Host where HiveServer2 is running.</span><br><span class="line">  # If Kerberos security is enabled, use fully-qualified domain name (FQDN).</span><br><span class="line">  hive_server_host=hadoop001</span><br><span class="line"></span><br><span class="line">  # Port where HiveServer2 Thrift server runs on.</span><br><span class="line">  hive_server_port=10000</span><br><span class="line">  </span><br><span class="line">  # Hive configuration directory, where hive-site.xml is located</span><br><span class="line">  hive_conf_dir=$HIVE_HOME/conf</span><br><span class="line"></span><br><span class="line">  # Timeout in seconds for thrift calls to Hive service</span><br><span class="line">  server_conn_timeout=120</span><br><span class="line">  </span><br><span class="line">  # Override the default desktop username and password of the hue user used for authentications with other services.</span><br><span class="line">  # e.g. Used for LDAP/PAM pass-through authentication.</span><br><span class="line">  auth_username=root</span><br><span class="line">  auth_password=123456</span><br><span class="line">  </span><br><span class="line">[metastore]</span><br><span class="line">  # Flag to turn on the new version of the create table wizard.</span><br><span class="line">  enable_new_create_table=true</span><br></pre></td></tr></table></figure>
+
+<p>启动hiveserver2和metastore服务。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ nohup hive --service metastore &amp;</span><br><span class="line">[1] 21686</span><br><span class="line">[hadoop@hadoop001 hue]$ nohup: ignoring input and appending output to `nohup.out&#x27;</span><br><span class="line"></span><br><span class="line">[hadoop@hadoop001 hue]$ nohup hive --service hiveserver2 &amp;</span><br><span class="line">[2] 21808</span><br><span class="line">[hadoop@hadoop001 hue]$ nohup: ignoring input and appending output to `nohup.out&#x27;</span><br><span class="line">[hadoop@hadoop001 hue]$ jps</span><br><span class="line">21808 RunJar</span><br><span class="line">16241 NameNode</span><br><span class="line">17333 JobHistoryServer</span><br><span class="line">21686 RunJar</span><br><span class="line">16855 NodeManager</span><br><span class="line">16504 SecondaryNameNode</span><br><span class="line">21913 Jps</span><br><span class="line">16729 ResourceManager</span><br><span class="line">16348 DataNode</span><br><span class="line">[hadoop@hadoop001 hue]$ </span><br></pre></td></tr></table></figure>
+
+<p>启动hue</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 hue]$ build/env/bin/supervisor</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_06.png" alt="image-20220118133116380"></p>
+<h2 id="五、集成MySQL"><a href="#五、集成MySQL" class="headerlink" title="五、集成MySQL"></a>五、集成MySQL</h2><p>hue.ini:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[[[mysql]]]</span><br><span class="line">   name = MySQL</span><br><span class="line">   interface=sqlalchemy</span><br><span class="line">#   ## https://docs.sqlalchemy.org/en/latest/dialects/mysql.html</span><br><span class="line">   options=&#x27;&#123;&quot;url&quot;: &quot;mysql://root:ruozedata001@hadoop001:3306/hue&quot;&#125;&#x27;</span><br><span class="line">#   ## options=&#x27;&#123;&quot;url&quot;: &quot;mysql://$&#123;USER&#125;:$&#123;PASSWORD&#125;@localhost:3306/hue&quot;&#125;&#x27;</span><br><span class="line"></span><br><span class="line">##以下不添加，则只显示mysql，不显示hive</span><br><span class="line">[[[hive]]]</span><br><span class="line">  name=Hive</span><br><span class="line">  interface=hiveserver2</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_07.png" alt="image-20220118175343069"></p>
+<h2 id="六、安装过程遇到问题"><a href="#六、安装过程遇到问题" class="headerlink" title="六、安装过程遇到问题"></a>六、安装过程遇到问题</h2><ol>
+<li><h3 id="编译过程中，npm超时"><a href="#编译过程中，npm超时" class="headerlink" title="编译过程中，npm超时"></a>编译过程中，npm超时</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_08.png" alt="image-20220116012941045"></p>
+<p>切换镜像源：<code>npm config set registry http://registry.npm.taobao.org</code>后解决。</p>
+</li>
+<li><h3 id="gcc版本过低报错"><a href="#gcc版本过低报错" class="headerlink" title="gcc版本过低报错"></a>gcc版本过低报错</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_09.png" alt="image-20220116032916057"></p>
+<p>升级了GCC版本</p>
+<p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_10.png" alt="image-20220116053308177"><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_11.png" alt="image-20220116053335715"></p>
+</li>
+<li><h3 id="mysqlclient-or-MySQL-python"><a href="#mysqlclient-or-MySQL-python" class="headerlink" title="mysqlclient or MySQL-python"></a>mysqlclient or MySQL-python</h3><p><img src="/2022/01/18/%E6%90%AD%E5%BB%BAHUE%EF%BC%8C%E9%9B%86%E6%88%90hdfs-Hive-MySql/hue_12.png" alt="image-20220116071838895"></p>
+<p>解决：</p>
+<p><a target="_blank" rel="noopener" href="https://pypi.org/project/mysqlclient/">https://pypi.org/project/mysqlclient/</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install python3-devel mysql-devel</span><br></pre></td></tr></table></figure>
+
+<p>install mysqlclient via pip now:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install mysqlclient</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 rh]# python get-pip.py</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting pip&lt;21.0</span><br><span class="line">  Using cached pip-20.3.4-py2.py3-none-any.whl (1.5 MB)</span><br><span class="line">Installing collected packages: pip</span><br><span class="line">  Attempting uninstall: pip</span><br><span class="line">    Found existing installation: pip 20.3.4</span><br><span class="line">    Uninstalling pip-20.3.4:</span><br><span class="line">      Successfully uninstalled pip-20.3.4</span><br><span class="line">Successfully installed pip-20.3.4</span><br><span class="line">[root@hadoop001 rh]# pip install mysqlclient</span><br><span class="line">DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality.</span><br><span class="line">Collecting mysqlclient</span><br><span class="line">  Downloading mysqlclient-1.4.6.tar.gz (85 kB)</span><br><span class="line">     |████████████████████████████████| 85 kB 879 kB/s </span><br><span class="line">Building wheels for collected packages: mysqlclient</span><br><span class="line">  Building wheel for mysqlclient (setup.py) ... done</span><br><span class="line">  Created wheel for mysqlclient: filename=mysqlclient-1.4.6-cp27-cp27m-linux_x86_64.whl size=93309 sha256=e8a53d4de8684dfdda60179f73cfb2f8083b3e3051412cdd6d5263782befd504</span><br><span class="line">  Stored in directory: /root/.cache/pip/wheels/04/5f/2b/e542c27913779611971f196081df58f969c742c01d93af1197</span><br><span class="line">Successfully built mysqlclient</span><br><span class="line">Installing collected packages: mysqlclient</span><br><span class="line">Successfully installed mysqlclient-1.4.6</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/" class="post-title-link" itemprop="url">CentOS 6.5下安装python3.7</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-15 17:23:33 / 修改时间：22:55:23" itemprop="dateCreated datePublished" datetime="2022-01-15T17:23:33+08:00">2022-01-15</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+
+<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
+<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+
+<p>把最上面的一行配置回python2.6.6就行了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+
+<p>有打印出相应信息就是成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/13/MR%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%87%BA%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95Lzop%EF%BC%8CLzoCodec%20vs%20LzopCodec/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/13/MR%E8%AE%BE%E7%BD%AE%E8%BE%93%E5%87%BA%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95Lzop%EF%BC%8CLzoCodec%20vs%20LzopCodec/" class="post-title-link" itemprop="url">MR设置输出压缩算法Lzop，LzoCodec vs LzopCodec</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2022-01-13 21:04:44 / 修改时间：21:34:36" itemprop="dateCreated datePublished" datetime="2022-01-13T21:04:44+08:00">2022-01-13</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="hadoop-MapReduce的输出压缩算法的设置（四种方法）"><a href="#hadoop-MapReduce的输出压缩算法的设置（四种方法）" class="headerlink" title="hadoop MapReduce的输出压缩算法的设置（四种方法）"></a>hadoop MapReduce的输出压缩算法的设置（四种方法）</h1><h2 id="1、FileOutputFormat设置"><a href="#1、FileOutputFormat设置" class="headerlink" title="1、FileOutputFormat设置"></a>1、FileOutputFormat设置</h2><pre><code>    // 优化措施一：压缩MapReduce的输出结果--&gt;使用Lzop压缩--&gt;输出空间占比小
+    FileOutputFormat.setCompressOutput(job, true);    //setOutputCompressorClass
+    // 使用输出文件压缩，设置reduce输出的压缩算法：Lzop压缩
+    FileOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
+</code></pre>
+<h2 id="2、Configuration对象设置"><a href="#2、Configuration对象设置" class="headerlink" title="2、Configuration对象设置"></a>2、Configuration对象设置</h2><pre><code>    // 获取job的实例
+    Job job = Job.getInstance();
+    // 1、配置文件获取
+    Configuration conf = this.getConf();
+    // 优化手段：：压缩输出文件
+    conf.set(FileOutputFormat.COMPRESS, &quot;true&quot;);
+    conf.set(&quot;mapreduce.output.fileoutputformat.compress.codec&quot;, LzopCodec.class.getName());
+</code></pre>
+<h2 id="3、mapred-site-xml文件配置"><a href="#3、mapred-site-xml文件配置" class="headerlink" title="3、mapred-site.xml文件配置"></a>3、mapred-site.xml文件配置</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot;?&gt;</span><br><span class="line">&lt;?xml-stylesheet type=&quot;text/xsl&quot; href=&quot;configuration.xsl&quot;?&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">	#中间阶段的压缩</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.map.output.compress&lt;/name&gt; </span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Map是否开启输出压缩&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;	</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.map.output.compress.codec&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.hadoop.compression.lzo.LzoCodec&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Map输出压缩算法：lzo&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;	</span><br><span class="line">	#最终阶段的压缩</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.output.fileoutputformat.compress&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Reduce是否启用输出压缩&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">	&lt;property&gt;</span><br><span class="line">		&lt;name&gt;mapreduce.output.fileoutputformat.compress.codec&lt;/name&gt;</span><br><span class="line">		&lt;value&gt;com.hadoop.compression.lzo.LzopCodec&lt;/value&gt;</span><br><span class="line">		&lt;description&gt;Reduce输出压缩算法:lzop&lt;/description&gt;</span><br><span class="line">	&lt;/property&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4、通过配置参数进行传值"><a href="#4、通过配置参数进行传值" class="headerlink" title="4、通过配置参数进行传值"></a>4、通过配置参数进行传值</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-Dmapreduce.output.fileoutputformat.compress=true </span><br><span class="line">-Dmapreduce.output.fileoutputformat.compress.codec=com.hadoop.compression.lzo.LzopCodec </span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="LzoCodec-与-LzopCodec-的区别"><a href="#LzoCodec-与-LzopCodec-的区别" class="headerlink" title="LzoCodec 与 LzopCodec 的区别"></a>LzoCodec 与 LzopCodec 的区别</h1><ol>
+<li>LzoCodec比LzopCodec更快， LzopCodec为了兼容LZOP程序添加了如 bytes signature, header等信息</li>
+<li>如果使用 LzoCodec作为Reduce输出，则输出文件扩展名为”.lzo_deflate”，它无法被lzop读取；如果使用LzopCodec作为Reduce输出，则扩展名为”.lzo”，它可以被lzop读取</li>
+<li>生成lzo index job的”DistributedLzoIndexer“无法为 LzoCodec，即 “.lzo_deflate”扩展名的文件创建index</li>
+<li>”.lzo_deflate“文件无法作为MapReduce输入，”.LZO”文件则可以。</li>
+<li>综上所述得出最佳实践：map输出的中间数据使用 LzoCodec，reduce输出使用 LzopCodec</li>
+</ol>
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/zhu_xun/article/details/21874293">https://blog.csdn.net/zhu_xun/article/details/21874293</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/leys123/article/details/51982592/">https://blog.csdn.net/leys123/article/details/51982592/</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
   <nav class="pagination">
     <a class="extend prev" rel="prev" href="/archives/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/archives/">1</a><a class="page-number" href="/archives/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/archives/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/archives/page/7/">7</a><a class="extend next" rel="next" href="/archives/page/4/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
