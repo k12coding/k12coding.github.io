@@ -149,7 +149,7 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">61</span>
+          <span class="site-state-item-count">62</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -179,6 +179,158 @@
 
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="k12">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="k12的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/" class="post-title-link" itemprop="url">Hive：分区</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-01-30 17:21:12" itemprop="dateCreated datePublished" datetime="2022-01-30T17:21:12+08:00">2022-01-30</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2022-02-06 21:29:28" itemprop="dateModified" datetime="2022-02-06T21:29:28+08:00">2022-02-06</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <blockquote>
+<p>Hive分区的概念与传统关系型数据库分区不同。</p>
+<p>传统数据库的分区方式：就oracle而言，分区独立存在于段里，里面存储真实的数据，在数据进行插入的时候自动分配分区。</p>
+<p>Hive的分区方式：由于Hive实际是存储在HDFS上的抽象，Hive的一个分区名对应一个目录名，子分区名就是子目录名，并不是一个实际字段。</p>
+</blockquote>
+<h1 id="静态分区"><a href="#静态分区" class="headerlink" title="静态分区"></a>静态分区</h1><h2 id="一级分区"><a href="#一级分区" class="headerlink" title="一级分区"></a>一级分区</h2><h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><p>Hive分区是在创建表的时候用Partitioned by 关键字定义的，但要注意，Partitioned by子句中定义的列是表中正式的列，但是Hive下的数据文件中并不包含这些列，因为它们是目录名。注意：分区字段不能和表中的字段重复。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]</span><br><span class="line">一级分区：一个目录</span><br><span class="line">多级分区：多个目录</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `emp_partition`(</span><br><span class="line">`empno` int, </span><br><span class="line">`ename` string, </span><br><span class="line">`job` string, </span><br><span class="line">`mgr` int, </span><br><span class="line">`hiredate` string, </span><br><span class="line">`sal` double, </span><br><span class="line">`comm` double</span><br><span class="line">) partitioned by (deptno string)</span><br><span class="line">row format delimited fields terminated by &#x27;\t&#x27;;</span><br></pre></td></tr></table></figure>
+
+<p>通过desc查看的表结构如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; desc emp_partition;</span><br><span class="line">OK</span><br><span class="line">col_name	data_type	comment</span><br><span class="line">empno               	int</span><br><span class="line">ename               	string</span><br><span class="line">job                 	string</span><br><span class="line">mgr                 	int</span><br><span class="line">hiredate            	string</span><br><span class="line">sal                 	double</span><br><span class="line">comm                	double</span><br><span class="line">deptno              	string</span><br><span class="line">	 	 </span><br><span class="line"># Partition Information	 	 </span><br><span class="line"># col_name            	data_type           	comment             </span><br><span class="line">deptno              	string              	                    </span><br><span class="line">Time taken: 0.546 seconds, Fetched: 12 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">格式1:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row …];</span><br><span class="line">格式2：</span><br><span class="line">load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<p>从其他表中插入数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp;</span><br><span class="line">OK</span><br><span class="line">emp.empno	emp.ename	emp.job	emp.mgr	emp.hiredate	emp.sal	emp.comm	emp.deptno</span><br><span class="line">7369	SMITH	CLERK	7902	1980-12-17	800.0	NULL	20</span><br><span class="line">7499	ALLEN	SALESMAN	7698	1981-2-20	1600.0	300.0	30</span><br><span class="line">7521	WARD	SALESMAN	7698	1981-2-22	1250.0	500.0	30</span><br><span class="line">7566	JONES	MANAGER	7839	1981-4-2	2975.0	NULL	20</span><br><span class="line">7654	MARTIN	SALESMAN	7698	1981-9-28	1250.0	1400.0	30</span><br><span class="line">7698	BLAKE	MANAGER	7839	1981-5-1	2850.0	NULL	30</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7788	SCOTT	ANALYST	7566	1987-4-19	3000.0	NULL	20</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7844	TURNER	SALESMAN	7698	1981-9-8	1500.0	0.0	30</span><br><span class="line">7876	ADAMS	CLERK	7788	1987-5-23	1100.0	NULL	20</span><br><span class="line">7900	JAMES	CLERK	7698	1981-12-3	950.0	NULL	30</span><br><span class="line">7902	FORD	ANALYST	7566	1981-12-3	3000.0	NULL	20</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">Time taken: 0.269 seconds, Fetched: 14 row(s)</span><br><span class="line">hive (hive)&gt; insert into emp_partition partition(deptno=30) select empno,ename,job,mgr,hiredate,sal,comm from emp where deptno=10;</span><br></pre></td></tr></table></figure>
+
+<p>从文件加载数据到表中（不包含分区列字段）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ cat emp_10.txt </span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000	500</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/data/emp_10.txt&#x27; into table emp_partition partition (deptno=10);</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看数据"><a href="#查看数据" class="headerlink" title="查看数据"></a>查看数据</h3><p>利用分区表查询：(一般分区表都是利用where语句查询的)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; select * from emp_partition where deptno=10;</span><br><span class="line">OK</span><br><span class="line">emp_partition.empno	emp_partition.ename	emp_partition.job	emp_partition.mgr	emp_partition.hiredate	emp_partition.sal	emp_partition.comm	emp_partition.deptno</span><br><span class="line">7782	CLARK	MANAGER	7839	1981-6-9	2450.0	NULL	10</span><br><span class="line">7839	KING	PRESIDENT	NULL	1981-11-17	5000.0	NULL	10</span><br><span class="line">7934	MILLER	CLERK	7782	1982-1-23	1300.0	NULL	10</span><br><span class="line">88	KK	SALESMAN	8888	1998-10-14	5000.0	500.0	10</span><br><span class="line">Time taken: 0.25 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<p>查看hdfs上emp_partition表目录结构，可以看到在以表名目录下，有以deptno=10（分区名）的子目录存放着真实的数据文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br></pre></td></tr></table></figure>
+
+<p>同理，插入deptno为20，30的数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ hadoop fs -ls -R /user/hive/warehouse/hive.db/emp_partition</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        130 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=10/000000_0</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:12 /user/hive/warehouse/hive.db/emp_partition/deptno=10/emp_10.txt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20</span><br><span class="line">-rw-r--r--   1 hadoop supergroup        214 2021-12-28 14:01 /user/hive/warehouse/hive.db/emp_partition/deptno=20/000000_0</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30</span><br><span class="line">-rw-r--r--   1 hadoop supergroup         40 2021-12-28 12:11 /user/hive/warehouse/hive.db/emp_partition/deptno=30/000000_0</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看分区"><a href="#查看分区" class="headerlink" title="查看分区"></a>查看分区</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">Time taken: 0.152 seconds, Fetched: 3 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加分区"><a href="#添加分区" class="headerlink" title="添加分区"></a>添加分区</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; alter table emp_partition  add partition (deptno=40);</span><br><span class="line">OK</span><br><span class="line">Time taken: 0.282 seconds</span><br><span class="line">hive (hive)&gt; show partitions emp_partition;</span><br><span class="line">OK</span><br><span class="line">partition</span><br><span class="line">deptno=10</span><br><span class="line">deptno=20</span><br><span class="line">deptno=30</span><br><span class="line">deptno=40</span><br><span class="line">Time taken: 0.127 seconds, Fetched: 4 row(s)</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除分区-删除相应分区文件"><a href="#删除分区-删除相应分区文件" class="headerlink" title="删除分区(删除相应分区文件)"></a>删除分区(删除相应分区文件)</h3><p>注意，对于外表进行drop partition并不会删除hdfs上的文件，并且可以通过<code>msck repair table table_name</code>同步hdfs上的分区。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table emp_partition drop partition (deptno = 40);</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复分区"><a href="#修复分区" class="headerlink" title="修复分区"></a>修复分区</h3><p>修复分区就是重新同步hdfs上的分区信息。（外部表在hdfs目录上添加文件后使用）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">msck repair table table_name  [ADD/DROP/SYNC PARTITIONS];</span><br></pre></td></tr></table></figure>
+
+<p>在hive3.0中msck命令支持删除partition信息。</p>
+<h2 id="多级分区"><a href="#多级分区" class="headerlink" title="多级分区"></a>多级分区</h2><p>多分区表装载数据时，分区字段必须都要加。如果只有一个，会报错。</p>
+<p>下面创建一张静态分区表par_tab_muilt，多个分区（性别+日期）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hive (hive)&gt; create table par_tab_muilt (name string, nation string) partitioned by (sex string,dt string) row format delimited fields terminated by &#x27;,&#x27; ;</span><br><span class="line">hive (hive)&gt; load data local inpath &#x27;/home/hadoop/files/par_tab.txt&#x27; into table par_tab_muilt partition (sex=&#x27;man&#x27;,dt=&#x27;2021-12-28&#x27;);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[hadoop@hadoop001 files]$ hadoop fs -ls -R /user/hive/warehouse/par_tab_muilt</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28</span><br><span class="line">-rwxr-xr-x   1 hadoop supergroup         71 2021-12-28 08:45 /user/hive/warehouse/par_tab_muilt/sex=man/dt=2021-12-28/par_tab.txt</span><br></pre></td></tr></table></figure>
+
+<p>可见，新建表的时候定义的分区顺序，决定了文件目录顺序（谁是父目录谁是子目录），正因为有了这个层级关系，当我们查询所有man的时候，man以下的所有日期下的数据都会被查出来。如果只查询日期分区，但父目录sex=man和sex=woman都有该日期的数据，那么Hive会对输入路径进行修剪，从而只扫描日期分区，性别分区不作过滤（即查询结果包含了所有性别）。</p>
+<h1 id="动态分区"><a href="#动态分区" class="headerlink" title="动态分区"></a>动态分区</h1><p>为什么要使用动态分区呢，我们举个例子，假如中国有50个省，每个省有50个市，每个市都有100个区，那我们都要使用静态分区要使用多久才能搞完。所有我们要使用动态分区。</p>
+<blockquote>
+<p>注意，动态分区不允许主分区采用动态列而副分区采用静态列，这样将导致所有的主分区都要创建副分区静态列所定义的分区。</p>
+<p>动态分区可以允许所有的分区列都是动态分区列，但是要首先设置一个参数hive.exec.dynamic.partition.mode</p>
+</blockquote>
+<p>动态分区默认是没有开启。开启后默认是以严格模式执行的，在这种模式下需要至少一个分区字段是静态的。这是为了防止用户有可能原意是只在子分区内进行动态建分区，但是由于疏忽忘记为主分区列指定值了，这将导致一个dml语句在短时间内创建大量的新的分区（对应大量新的文件夹），对系统性能带来影响。这有助于阻止因设计错误导致导致查询差生大量的分区。列如：用户可能错误使用时间戳作为分区表字段。然后导致每秒都对应一个分区！这样我们也可以采用相应的措施:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">关闭严格分区模式		set hive.exec.dynamic.partition.mode=nonstrict	//分区模式，默认strict（至少有一个分区列是静态分区）</span><br><span class="line">开启支持动态分区		set hive.exec.dynamic.partition=true			//开启动态分区,默认true</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">其他相关参数 ：</span><br><span class="line">set hive.exec.max.dynamic.partitions.pernode; #每一个执行mr节点上，允许创建的动态分区的最大数量(100) </span><br><span class="line">set hive.exec.max.dynamic.partitions;         #所有执行mr节点上，允许创建的所有动态分区的最大数量(1000) </span><br><span class="line">set hive.exec.max.created.files;              #所有的mr job允许创建的文件的最大数量(100000)</span><br></pre></td></tr></table></figure>
+
+<p>利用动态分区，我们可以一次完成插入上面例子中deptno不同的数据的操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert overwrite table emp_partition partition(deptno) select empno,ename,job,mgr,hiredate,sal,comm,deptno from emp;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h1><h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ol>
+<li>hive的分区使用的表外字段，分区字段是一个伪列但是可以查询过滤。</li>
+<li>分区字段不建议使用中文.</li>
+<li>不太建议使用动态分区。因为动态分区将会使用mapreduce来查询数据，如果分区数量过多将导致namenode和yarn的资源瓶颈。所以建议动态分区前也尽可能之前预知分区数量。</li>
+<li>分区属性的修改均可以使用手动元数据和hdfs的数据内容</li>
+</ol>
+<h2 id="外部分区表"><a href="#外部分区表" class="headerlink" title="外部分区表"></a>外部分区表</h2><p>外部表同样可以使用分区，事实上，用户会发现，只是管理大型生产数据集最常见的情况，这种结合给用户提供一个和其他工具共享数据的方式，同时也可以优化查询性能。这样我们就可以把数据路径改变而不影响数据的丢失，这是内部分区表远远不能做的事情:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">1,(因为我们创建的是外部表)所有我们可以把表数据放到hdfs上的随便一个地方这里自动数据加载到/user/had/data/下(当然我们之前在外部表上指定了路径)</span><br><span class="line">load data local inpath &#x27;/home/had/data.txt&#x27; into table employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br><span class="line">2,如果我们加载的数据要分离一些旧数据的时候就可以hadoop的distcp命令来copy数据到某个路径</span><br><span class="line">hadoop distcp /user/had/data/country=china/state=Asia /user/had/data_old/country=china/state=Asia</span><br><span class="line">3,修改表，把移走的数据的路径在hive里修改</span><br><span class="line">alter table employees partition(country=&quot;china&quot;,state=&quot;Asia&quot;) set location &#x27;/user/had/data_old/country=china/state=Asia&#x27;</span><br><span class="line">4,使用hdfs的rm命令删除之前路径的数据</span><br><span class="line">hdfs dfs -rmr /user/had/data/country=china/state=Asia</span><br><span class="line">这样我们就完成一次数据迁移</span><br><span class="line"></span><br><span class="line">如果觉得突然忘记了数据的位置使用使用下面的方式查看</span><br><span class="line">describe extend employees_ex partition (country=&quot;china&quot;,state=&quot;Asia&quot;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="众多的修改语句"><a href="#众多的修改语句" class="headerlink" title="众多的修改语句"></a>众多的修改语句</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">1，把一个分区打包成一个har包</span><br><span class="line">  alter table employees archive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">2, 把一个分区har包还原成原来的分区</span><br><span class="line">  alter table employees unarchive partition (country=&quot;china&quot;,state=&quot;Asia&quot;)</span><br><span class="line">3, 保护分区防止被删除</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable no_drop</span><br><span class="line">4,保护分区防止被查询</span><br><span class="line">    alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) enable offline</span><br><span class="line">5，允许分区删除和查询</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable no_drop</span><br><span class="line">   alter table employees partition (country=&quot;china&quot;,state=&quot;Asia&quot;) disable offline</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -1818,95 +1970,6 @@
 <p>NN挂了，瞬间启动Standby–&gt;Active，对外提供读写服务。</p>
 <p>参考链接：</p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xh16319/article/details/31375197">https://blog.csdn.net/xh16319/article/details/31375197</a></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://k12coding.github.io/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="k12的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">spark读取GBK编码文件乱码问题</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-      
-
-      <time title="创建时间：2022-01-22 21:36:25 / 修改时间：21:44:23" itemprop="dateCreated datePublished" datetime="2022-01-22T21:36:25+08:00">2022-01-22</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
-<li><p>SPARK 常用的textFile方法默认是写死了读UTF－8格式的文件，其他编码格式文件会显示乱码</p>
-</li>
-<li><p>查看textFile方法的实现</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">def textFile(</span><br><span class="line">    path: String,</span><br><span class="line">    minPartitions: Int = defaultMinPartitions): RDD[String] = withScope &#123;</span><br><span class="line">  assertNotStopped()</span><br><span class="line">  hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">    minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>读文件的时候用到了hadoopFile方法，读取的文件时调用<strong>TextInputformat</strong>类来解析文本文件，输出K V键值对。继续查看TextInputformat方法读取文件的实现，其中读记录生成K V键值对的方法的实现如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public RecordReader&lt;LongWritable, Text&gt; getRecordReader(InputSplit genericSplit, JobConf job, Reporter reporter) throws IOException &#123;</span><br><span class="line">    reporter.setStatus(genericSplit.toString());</span><br><span class="line">    String delimiter = job.get(&quot;textinputformat.record.delimiter&quot;);</span><br><span class="line">    byte[] recordDelimiterBytes = null;</span><br><span class="line">    if (null != delimiter) &#123;</span><br><span class="line">        recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);</span><br><span class="line">    &#125;</span><br><span class="line">   </span><br><span class="line">    return new LineRecordReader(job, (FileSplit)genericSplit, recordDelimiterBytes);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>虽然代码中有<code>delimiter.getBytes(Charsets.UTF_8)</code>，但并不是最后输出的关键，这里是指定分隔符用UTF-8解码，并设置分隔符。继续往下看，最后发现LineRecordReader–&gt;readLine–&gt;Text，返回指定的字符集UTF-8。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class Text extends BinaryComparable implements WritableComparable&lt;BinaryComparable&gt; &#123;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetEncoder&gt; ENCODER_FACTORY = new ThreadLocal&lt;CharsetEncoder&gt;() &#123;</span><br><span class="line">        protected CharsetEncoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newEncoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    private static final ThreadLocal&lt;CharsetDecoder&gt; DECODER_FACTORY = new ThreadLocal&lt;CharsetDecoder&gt;() &#123;</span><br><span class="line">        protected CharsetDecoder initialValue() &#123;</span><br><span class="line">            return Charset.forName(&quot;UTF-8&quot;).newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
-
-<p>所以hadoopFile返回的HadoopRDD，其中输入TextInputformat和输出valueClass均为Text，返回的是字符集UTF-8，而我们输入的是GBK编码，用UTF-8解码就会造成乱码。所以HadoopRDD中的value也是乱码的。</p>
-</li>
-<li><p>如果我们想要读取GBK文件避免乱码，可以通过对HadoopRDD进行操作：</p>
-<p>对HadoopRDD中的value按照GBK的方式读取变成字符串，运行之后能够正常显示:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HadoopRDD.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)</span><br></pre></td></tr></table></figure>
-
-<p>说明：关于String类：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">String.getBytes(Charset charset)。</span><br><span class="line">	返回值：byte[]  返回的是一个 字节数组。</span><br><span class="line">	方法的作用：将String以指定的编码格式(既参数charset)进行解码，然后以字节数组的形式存储这些解码后的字节。</span><br><span class="line">String(byte[] bytes,Charset charset)</span><br><span class="line">	返回值：String  返回的是一串字符串。</span><br><span class="line">	方法的作用：将字节数组bytes以charset的编码格式进行解码。</span><br></pre></td></tr></table></figure></li>
-<li><p>案例</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">package com.ruozedata.spark.job</span><br><span class="line"></span><br><span class="line">import org.apache.hadoop.io.&#123;LongWritable, Text&#125;</span><br><span class="line">import org.apache.hadoop.mapred.TextInputFormat</span><br><span class="line">import org.apache.spark.&#123;SparkConf, SparkContext&#125;</span><br><span class="line">import java.io.&#123;File, FileOutputStream, OutputStreamWriter&#125;</span><br><span class="line"></span><br><span class="line">object jobApp &#123;</span><br><span class="line">	def main(args: Array[String]): Unit = &#123;</span><br><span class="line">		val sparkConf = new SparkConf().setMaster(&quot;local[2]&quot;).setAppName(this.getClass.getCanonicalName)</span><br><span class="line">		val sc = new SparkContext(sparkConf)</span><br><span class="line"></span><br><span class="line">		val GBKPATH = &quot;data/GBKtext.txt&quot;</span><br><span class="line">		val UTF8PATH = &quot;data/UTF8text.txt&quot;</span><br><span class="line">		val GBKFile = new File(GBKPATH)</span><br><span class="line">		val UTF8File = new File(UTF8PATH)</span><br><span class="line">		UTF8File</span><br><span class="line">		if(GBKFile.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line">		if(UTF8File.exists())&#123;</span><br><span class="line">			GBKFile.delete()</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		val GBKwriter = new OutputStreamWriter(new FileOutputStream(GBKFile), &quot;GBK&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第一行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第二行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.write(&quot;这是第三行GBK数据\n&quot;)</span><br><span class="line">		GBKwriter.flush()</span><br><span class="line">		GBKwriter.close()</span><br><span class="line"></span><br><span class="line">		val UTF8writer = new OutputStreamWriter(new FileOutputStream(UTF8File), &quot;UTF-8&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第一行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第二行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.write(&quot;这是第三行UTF8数据\n&quot;)</span><br><span class="line">		UTF8writer.flush()</span><br><span class="line">		UTF8writer.close()</span><br><span class="line"></span><br><span class="line">    	//val UTF8rdd = sc.textFile(UTF8PATH).collect().foreach(println)</span><br><span class="line">    	/**textFile读UTF-8文件，显示如下：</span><br><span class="line">    	*这是第一行GBK数据</span><br><span class="line">		*这是第二行GBK数据</span><br><span class="line">		*这是第三行GBK数据</span><br><span class="line">		*/</span><br><span class="line">		//val GBKrdd1 = sc.textFile(GBKPATH).collect().foreach(println)</span><br><span class="line">		/**textFile读GBK文件，显示如下：</span><br><span class="line">		 *���ǵ�һ��GBK����</span><br><span class="line">		 *���ǵڶ���GBK����</span><br><span class="line">		 *���ǵ�����GBK����</span><br><span class="line">		 */</span><br><span class="line">		 //textFile实现方法：</span><br><span class="line">		 //hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],</span><br><span class="line">		 //	minPartitions).map(pair =&gt; pair._2.toString).setName(path)</span><br><span class="line">		</span><br><span class="line">		val GBKrdd2 = sc.hadoopFile(GBKPATH, classOf[TextInputFormat], classOf[LongWritable], classOf[Text])</span><br><span class="line">			.map(pair =&gt; new String(pair._2.getBytes,&quot;GBK&quot;)).collect.foreach(println)</span><br><span class="line"></span><br><span class="line">		sc.stop()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
-<p><a target="_blank" rel="noopener" href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
 
       
     </div>
