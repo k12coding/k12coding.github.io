@@ -219,6 +219,26 @@
 <p>sink端：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 66 6C 75 6D 65                                  flume &#125;</span><br></pre></td></tr></table></figure>
 
+<h2 id="HDFS-Sink跟写文件相关配置"><a href="#HDFS-Sink跟写文件相关配置" class="headerlink" title="HDFS Sink跟写文件相关配置"></a><strong>HDFS Sink跟写文件相关配置</strong></h2><p>hdfs.path -&gt; hdfs目录路径</p>
+<p>hdfs.filePrefix -&gt; 文件前缀。默认值FlumeData</p>
+<p>hdfs.fileSuffix -&gt; 文件后缀</p>
+<p>hdfs.rollInterval -&gt; 多久时间后close hdfs文件。单位是秒，默认30秒。设置为0的话表示不根据时间close hdfs文件</p>
+<p>hdfs.rollSize -&gt; 文件大小超过一定值后，close文件。默认值1024，单位是字节。设置为0的话表示不基于文件大小</p>
+<p>hdfs.rollCount -&gt; 写入了多少个事件后close文件。默认值是10个。设置为0的话表示不基于事件个数</p>
+<p>hdfs.fileType -&gt; 文件格式， 有3种格式可选择：SequenceFile, DataStream or CompressedStream</p>
+<p>hdfs.batchSize -&gt; 批次数，HDFS Sink每次从Channel中拿的事件个数。默认值100（与事务有关）</p>
+<p>hdfs.minBlockReplicas -&gt; HDFS每个块最小的replicas数字，不设置的话会取hadoop中的配置</p>
+<p>hdfs.maxOpenFiles -&gt; 允许最多打开的文件数，默认是5000。如果超过了这个值，越早的文件会被关闭</p>
+<p>serializer -&gt; HDFS Sink写文件的时候会进行序列化操作。会调用对应的Serializer借口，可以自定义符合需求的Serializer</p>
+<p>hdfs.retryInterval -&gt; 关闭HDFS文件失败后重新尝试关闭的延迟数，单位是秒</p>
+<p>hdfs.callTimeout -&gt; HDFS操作允许的时间，比如hdfs文件的open，write，flush，close操作。单位是毫秒，默认值是10000</p>
+<p><strong>hdfs.rollInterval，hdfs.rollSize，hdfs.rollCount，hdfs.minBlockReplicas，hdfs.batchSize这5个配置影响着hdfs文件的关闭。</strong></p>
+<p>注意，这5个配置影响的是一个hdfs文件，是一个hdfs文件。当hdfs文件关闭的时候，这些配置指标会重新开始计算。因为BucketWriter中的open方法里会调用resetCounters方法，这个方法会重置计数器。而基于hdfs.rollInterval的timedRollFuture线程返回值是在close方法中被销毁的。因此，只要close文件，并且open新文件的时候，这5个属性都会重新开始计算。</p>
+<p>hdfs.rollInterval与时间有关，当时间达到hdfs.rollInterval配置的秒数，那么会close文件。</p>
+<p>hdfs.rollSize与每个event的字节大小有关，当一个一个event的字节相加起来大于等于hdfs.rollSize的时候，那么会close文件。</p>
+<p>hdfs.rollCount与事件的个数有关，当事件个数大于等于hdfs.rollCount的时候，那么会close文件。</p>
+<p>hdfs.batchSize表示当事件添加到hdfs.batchSize个的时候，也就是说HDFS Sink每次会拿hdfs.batchSize个事件，而且这些所有的事件都写进了同一个hdfs文件，这才会触发本次条件，并且其他4个配置都未达成条件。然后会close文件。</p>
+<p>hdfs.minBlockReplicas表示期望hdfs对文件最小的复制块数。所以有时候我们配置了hdfs.rollInterval，hdfs.rollSize，hdfs.rollCount这3个参数，并且这3个参数都没有符合条件，但是还是生成了多个文件，这就是因为这个参数导致的，而且这个参数的优先级比hdfs.rollSize，hdfs.rollCount要高。（该参数没有设置则与hadoop conf中的一致）</p>
 <h2 id="案例三：exec-hdfs-agent"><a href="#案例三：exec-hdfs-agent" class="headerlink" title="案例三：exec-hdfs-agent"></a>案例三：exec-hdfs-agent</h2><p>flume-exec-hdfs.conf</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#define agent</span><br><span class="line">exec-hdfs-agent.sources = exec-source</span><br><span class="line">exec-hdfs-agent.channels = exec-memory-channel</span><br><span class="line">exec-hdfs-agent.sinks = hdfs-sink</span><br><span class="line"></span><br><span class="line">#define source</span><br><span class="line">exec-hdfs-agent.sources.exec-source.type = exec</span><br><span class="line">exec-hdfs-agent.sources.exec-source.command = tail -F ~/data/flume-exec.test</span><br><span class="line">exec-hdfs-agent.sources.exec-source.shell = /bin/bash -c</span><br><span class="line"></span><br><span class="line">#define channel </span><br><span class="line">exec-hdfs-agent.channels.exec-memory-channel.type = memory</span><br><span class="line"></span><br><span class="line">#define sink </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.type = hdfs</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.path = hdfs://hadoop001:9000/user/hadoop/data/flume/tail</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.fileType = DataStream</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.writeFormat = Text</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.batchSize = 5</span><br><span class="line"></span><br><span class="line">#bind source and sink to channel</span><br><span class="line">exec-hdfs-agent.sources.exec-source.channels = exec-memory-channel  </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.channel = exec-memory-channel  </span><br></pre></td></tr></table></figure>
 
@@ -226,10 +246,31 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name exec-hdfs-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/flume-exec-hdfs.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
 
 <p>执行命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &quot;a&quot; &gt;&gt; ~/data/flume-exec.test</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo &quot;a&quot; &gt;&gt; ~/data/flume-exec.test</span><br><span class="line">[hadoop@hadoop001 ~]$ for i in &#123;1..100&#125;; do echo &quot;hadoop $i&quot; &gt;&gt; ~/data/flume-exec.test;sleep 0.1;done</span><br></pre></td></tr></table></figure>
 
 <p>结果</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text data/flume/tail/FlumeData.1652743188342</span><br><span class="line">2022-05-16 23:22:02,242 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2022-05-16 23:22:03,799 INFO lzo.GPLNativeCodeLoader: Loaded native gpl library from the embedded binaries</span><br><span class="line">2022-05-16 23:22:03,826 INFO lzo.LzoCodec: Successfully loaded &amp; initialized native-lzo library [hadoop-lzo rev 26dc7b4620ff16bb6f1fdd48f915ce5fb8222d6f]</span><br><span class="line">a</span><br></pre></td></tr></table></figure>
+<ol>
+<li>如果<code>~/data/flume-exec.test</code>之前已经有数据，则在agent启动时就会有第一个文件。</li>
+<li>如果第一个文件信息数量超过<code>rollSize</code>，则输入的数据从第二个文件开始。</li>
+<li>结果共有1（先前数据）+ 10 （a和1-99，超过<code>hdfs.rollCount</code>而产生） + 1（数字100，30s没输入，超过<code>hdfs.rollInterval</code>而产生），共12个文件。</li>
+<li>无数据输入不额外产生空文件。</li>
+<li>可以通过设置参数把roll间隔调大，避免小文件问题。</li>
+</ol>
+<h2 id="案例四：hdfs-round-agent"><a href="#案例四：hdfs-round-agent" class="headerlink" title="案例四：hdfs-round-agent"></a>案例四：hdfs-round-agent</h2><p>hdfs sink每分钟roll一次，并格式化输出路径</p>
+<p>hdfs-round-agent.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs-round-agent.sources = r1 </span><br><span class="line">hdfs-round-agent.channels = c1</span><br><span class="line">hdfs-round-agent.sinks = k1</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sources.r1.type = netcat</span><br><span class="line">hdfs-round-agent.sources.r1.bind = localhost</span><br><span class="line">hdfs-round-agent.sources.r1.port = 44444</span><br><span class="line">hdfs-round-agent.sources.r1.interceptors = i1</span><br><span class="line">hdfs-round-agent.sources.r1.interceptors.i1.type = timestamp</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sinks.k1.type = hdfs</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.path = data/flume/events/%y-%m-%d/%H%M/%S</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.filePrefix = events-</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.round = true</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.roundValue = 1</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.roundUnit = minute</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sources.r1.channels = c1</span><br><span class="line">hdfs-round-agent.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>因为sink中用到了时间，所以需要利用时间拦截器在event的header中加入时间，否则报错。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(SinkRunner-PollingRunner-DefaultSinkProcessor) [ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:459)] process failed</span><br><span class="line">java.lang.NullPointerException: Expected timestamp in the Flume event headers, but it was null</span><br></pre></td></tr></table></figure>
+
+<p>sink启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name hdfs-round-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/hdfs-round-agent.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# telnet localhost 44441</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">a</span><br><span class="line">OK</span><br><span class="line">b</span><br><span class="line">OK</span><br><span class="line">c</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">d</span><br><span class="line">OK</span><br><span class="line">e</span><br><span class="line">OK</span><br><span class="line">g</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -ls /user/hadoop/data/flume/events/22-05-17/</span><br><span class="line">Found 3 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:47 /user/hadoop/data/flume/events/22-05-17/0247</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:48 /user/hadoop/data/flume/events/22-05-17/0248</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:49 /user/hadoop/data/flume/events/22-05-17/0249</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0247/00/*</span><br><span class="line">1652755625761	61 0d</span><br><span class="line">1652755633572	62 0d</span><br><span class="line">1652755634589	63 0d</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0248/00/*</span><br><span class="line">1652755722065	64 0d</span><br><span class="line">1652755726784	65 0d</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0249/00/*</span><br><span class="line">1652755754582	67 0d</span><br></pre></td></tr></table></figure>
 
 ]]></content>
   </entry>
@@ -492,6 +533,66 @@
 ]]></content>
   </entry>
   <entry>
+    <title>HDFS文件读写流程与副本放置策略</title>
+    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
+<ol>
+<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
+</li>
+<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
+<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
+<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
+</li>
+<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
+<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
+</li>
+<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
+</li>
+<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
+</li>
+<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
+</li>
+<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
+</li>
+</ol>
+<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
+<ol>
+<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
+</li>
+<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
+</li>
+<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
+</li>
+<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
+</li>
+<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
+<ul>
+<li>假如ok就关闭与DN通信。</li>
+<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
+</ul>
+<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
+<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
+<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
+</li>
+<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
+</li>
+</ol>
+<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
+<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
+<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
+<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
+</blockquote>
+<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
+<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
+<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
+<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
+<p>假如还有更多副本：随机放。</p>
+<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
+<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
+<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
+]]></content>
+  </entry>
+  <entry>
     <title>HIVE UDF 与 HIVE源码编译</title>
     <url>/2021/12/29/HIVE-UDF/</url>
     <content><![CDATA[<h2 id="一、实现UDF"><a href="#一、实现UDF" class="headerlink" title="一、实现UDF"></a>一、实现UDF</h2><p>需求：添加随机数<code>add_random</code>、去除随机数<code>remove_random</code></p>
@@ -594,66 +695,6 @@
 <p>使用命令编译<code>mvn clean package -Pdist -DskipTests -Dmaven.javadoc.skip=true</code>，没有报错，编译成功。</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 apache-hive-3.1.2-src]$ cd packaging/target/</span><br><span class="line">[hadoop@hadoop001 target]$ ll</span><br><span class="line">total 410320</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 antrun</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 apache-hive-3.1.2-bin</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 315855613 Dec 31 06:26 apache-hive-3.1.2-bin.tar.gz</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  77970637 Dec 31 06:27 apache-hive-3.1.2-jdbc.jar</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  26307866 Dec 31 06:27 apache-hive-3.1.2-src.tar.gz</span><br><span class="line">drwxrwxr-x. 4 hadoop hadoop      4096 Dec 31 06:26 archive-tmp</span><br><span class="line">drwxrwxr-x. 3 hadoop hadoop      4096 Dec 31 06:26 maven-shared-archive-resources</span><br><span class="line">drwxrwxr-x. 7 hadoop hadoop      4096 Dec 31 06:26 testconf</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 tmp</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop      4096 Dec 31 06:26 warehouse</span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS文件读写流程与副本放置策略</title>
-    <url>/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<h3 id="HDFS文件写流程"><a href="#HDFS文件写流程" class="headerlink" title="HDFS文件写流程"></a>HDFS文件写流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E5%86%99.png" alt="HDFS文件写流程"></p>
-<ol>
-<li><p>客户端调用FileSystem.create(filePath)方法新建文件，但此时文件中还没有相应的数据块。</p>
-</li>
-<li><p>DFS和NN进行【RPC】通信，NN会去检查这个文件是否已经存在、是否有权限创建这个文件等一系列校验操作；</p>
-<p>如果校验通过，就会为创建新文件记录一条记录，告知DFS向客户端返回一个【FsDataOutputStream】对象</p>
-<p>如果校验失败，文件创建失败并向客户端抛出一个IOException异常。</p>
-</li>
-<li><p>Client 调用【FsDataOutputStream】对象的write方法，将数据分成一个个的数据包，并写入【数据队列】。</p>
-<p>【DataStreamer】处理数据队列,根据文件的大小、当前集群的块大小、副本数和当前的DN节点情况计算出这个文件要上传多少个块(包含副本)和块上传到哪些DN节点，要求NN分配新的数据块。这一组选定的DN构成【管线】。</p>
-</li>
-<li><p>根据【副本放置策略】，【DataStreamer】处理数据队列,将数据包传输到【管线】中DN1，DN1存储并将它发送到DN2，DN2存储并将它发送到DN3。</p>
-</li>
-<li><p>【FsDataOutputStream】也维护一个【确认队列】等待确认回执，当三个副本写完的时候，DN3就返回一个ack package确认包给DN2，DN2接收到并加上自己的确认信息到ack package确认包DN1，DN1接收到并加上自己的确认信息到ack package确认包给【FsDataOutputStream】，告诉它三个副本都写完了，数据包才会从【确认队列】删除。</p>
-</li>
-<li><p>当所有的块全部写完，Client调用【FsDataOutputStream】对象的close方法，关闭输出流。</p>
-</li>
-<li><p>再次调用FileSystem.complete方法，告诉NN文件写成功。</p>
-</li>
-</ol>
-<h3 id="HDFS文件读流程"><a href="#HDFS文件读流程" class="headerlink" title="HDFS文件读流程"></a>HDFS文件读流程</h3><p><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/%E8%AF%BB.png" alt="HDFS文件读流程"></p>
-<ol>
-<li><p>Client调用FileSystem的open(filePath)方法，打开希望读取的文件</p>
-</li>
-<li><p>DFS与NN进行【RPC】通信，确定文件的起始位置。NN返回这个文件的部分或者全部的block列表（DN会根据他们与客户端的距离排序，如果客户端本身就是一个DN，则会从本地DN读取数据）</p>
-</li>
-<li><p>DFS给Client返回一个【FSDataInputStream】对象。</p>
-</li>
-<li><p>Client调用【FSDataInputStream】对象的read方法，开始读取数据</p>
-</li>
-<li><p>连接最近的存储要读取文件中第一个块的DN进行读取，读取完成后会校验是否完整</p>
-<ul>
-<li>假如ok就关闭与DN通信。</li>
-<li>假如不ok，就记录块和DN的信息，通知NN，保证以后不会反复读取该节点后续的块，会尝试从这个块的另一个邻近节点读取。</li>
-</ul>
-<p>然后连接最近的第二个块所在的DN进行读取，以此类推。</p>
-<p>假如当block的列表全部读取完成，文件还没结束，再去NN请求下一个批次的block列表。</p>
-<p>（整个过程对于客户端都是透明的，在客户端看来它一直读取一个连续的流）</p>
-</li>
-<li><p>一旦Client完成读取，调用【FSDataInputStram】对象的close方法，关闭输入流。</p>
-</li>
-</ol>
-<h3 id="HDFS副本放置策略"><a href="#HDFS副本放置策略" class="headerlink" title="HDFS副本放置策略"></a>HDFS副本放置策略</h3><blockquote>
-<p>Hadoop的默认布局策略是在运行客户端的节点上放第1个复本（如果客户端运行在集群之外，就随机的选择一个节点，但是系统会避免挑选那些存储太满或太忙的节点）。第2个复本放在与第1个不同且是随机选择的另外的机架中的节点上。第3个复本与第2个复本放在同一个机架上面，且是随机选择的一个节点，其他的复本放在集群中随机选择的节点上面，但是系统会尽量避免在相同的机架上面放太多的复本。</p>
-<p>一旦选定了复本的放置的位置，就会根据网络拓扑创建一个管线，如下图为一个典型的复本管线：<br><img src="/2021/12/03/HDFS%E7%9A%84%E8%AF%BB%E5%86%99%E6%B5%81%E7%A8%8B/datacenter.png" alt="HDFS副本放置策略"></p>
-<p>总的来说，这一方法不仅提供了很好的稳定性，数据不容易丢失（数据块存储在两个机架中）同时实现了很好的负载均衡，包括写入宽带（写入操作只要遍历一个交换机），读取性能（可以从两个机架中进行选择读取）和集群中块的均匀分布（客户端只在本地机架写入一个块）。</p>
-</blockquote>
-<p>生产上进行读写，尽量自己选取DN节点。（减少网络IO）</p>
-<p>第一个副本：放在Client所处的节点上。如果客户端在集群外，则放在随机调选的一台不太忙的DN上。</p>
-<p>第二个副：放置在和第一个副本不相同的机架的随机节点上。</p>
-<p>第三个副本：放置在和第二个副本位于相同机架的不同节点上。</p>
-<p>假如还有更多副本：随机放。</p>
-<p>但是，生产上真的是这样的吗？这样会带来 权限问题，比如一不小心把Linux文件删除了怎么办</p>
-<p>所以生产上真正的是，有个单点的客户端节点，不是NN也不是DN进程在。</p>
-<p>其实网络IO只是小问题，一般生产上集群内部都是万兆带宽，光纤的。忽略不计。</p>
 ]]></content>
   </entry>
   <entry>
@@ -947,6 +988,114 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hadoop基础知识</title>
+    <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
+    <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
+<p>广义上：指的是hadoop的生态系统，即其他各种组件在内的一整套软件（sqoop，flume，spark，flink，hbase，kafka，cdh环境等）。hadoop生态系统是一个很庞大的概念，hadoop只是其中最重要最基础的部分，生态系统的每一个子系统只结局的某一个特定的问题域。不是一个全能系统，而是多个小而精的系统。</p>
+<h2 id="组成"><a href="#组成" class="headerlink" title="组成"></a>组成</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
+<p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
+<p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
+<p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
+<h1 id="二、HDFS概述"><a href="#二、HDFS概述" class="headerlink" title="二、HDFS概述"></a>二、HDFS概述</h1><h2 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h2><p>Hdfs（hadoop distribute file system），他是一个文件系统，用于存储文件，通过目录树来定位文件：其次，他是分布式的，有很多服务器联合起来实现其功能，集群中的服务器有各自的角色。</p>
+<p>Hdfs的使用场景，适合一次写入，多次读出的场景，且不支持文件的修改。适合用来做数据存放。</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
+<li><p>高容错性</p>
+<p>数据自动保存多个副本。 （默认是三分）通过增加副本的形式，提高容错性</p>
+<p>某一个副本丢失以后，它可以自动恢复</p>
+</li>
+<li><p>适合大数据处理</p>
+<p>数据规模：能够处理数据规模达到GB、TB、甚至PB级别的数据</p>
+<p>文件规模：能够处理百万规模以上的文件数量，</p>
+</li>
+<li><p>可构建在廉价机器上，通过多副本机制，提高可靠性</p>
+</li>
+</ul>
+<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ul>
+<li>不适合低延时数据访问，比如毫秒级的存储数据，是做不到的</li>
+<li>无法高效的对大量小文件进行存储<ul>
+<li>存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标</li>
+</ul>
+</li>
+<li>不支持并发写入、文件随机修改<ul>
+<li>一个文件只能有一个写，不允许多个线程同时写（重点）</li>
+<li>仅支持数据append（追加），不支持文件的随机修改</li>
+</ul>
+</li>
+</ul>
+<h2 id="hdfs支持的三种模式"><a href="#hdfs支持的三种模式" class="headerlink" title="hdfs支持的三种模式"></a>hdfs支持的三种模式</h2><ul>
+<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
+<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
+<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
+</ul>
+<h1 id="三、HDFS架构"><a href="#三、HDFS架构" class="headerlink" title="三、HDFS架构"></a>三、HDFS架构</h1><p> <img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/1598893-20191129134655673-2083411338.png" alt="img"></p>
+<p>1）<strong>NameNode（nn）</strong>：Master，它是一个主管、管理者。</p>
+<ul>
+<li><p>管理HDFS的名称空间</p>
+<ul>
+<li>文件的名称、目录结构、权限、大小、所属用户用户组  时间</li>
+</ul>
+</li>
+<li><p>处理客户端读写请求</p>
+</li>
+<li><p>配置副本策略</p>
+</li>
+<li><p>管理数据块（Block）映射信息</p>
+<ul>
+<li><p>文件被切割哪些块、块(块本身+2副本=3个块)分布在哪些DN节点上，blockmap 块映射。</p>
+</li>
+<li><p>不会持久化存储这种映射关系，是通过集群<strong>启动</strong>和<strong>运行</strong>时候，DN定期给NN汇报blockreport（BR），然后NN在内存中动态维护这种映射关系；</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>2）<strong>DataNode</strong>：Slave。NameNode下达命令，DataNode执行实际的操作</p>
+<ul>
+<li><p>存储实际的数据块和块的校验和</p>
+</li>
+<li><p>执行数据块的读/写操作</p>
+</li>
+<li><p>定期给NN发送块报告</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec  21600000=6h</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6h</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>3）<strong>Client</strong>：客户端</p>
+<ul>
+<li>文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传</li>
+<li>与NameNode交互，获取文件的位置信息</li>
+<li>与DataNode交互，读取或者写入数据</li>
+<li>Client提供一些命令来管理HDFS，比如NameNode格式化</li>
+<li>Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作</li>
+</ul>
+<p>4）<strong>Secondary NameNode</strong>：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
+<ul>
+<li><p>辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
+<ul>
+<li><p>edits 编辑日志文件</p>
+</li>
+<li><p>fsimage 镜像文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop     219 Nov 26 22:01 VERSION</span><br><span class="line">[hadoop@hadoop001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/hadoop-hadoop/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>在紧急情况下，可辅助恢复NameNode</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关于NN的补充：在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</span><br><span class="line">中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</span><br><span class="line"></span><br><span class="line">后期就取消SNN，新建一个实时NN，作为高可靠 HA。</span><br><span class="line">NN Active</span><br><span class="line">NN Standby 实时的等待active NN挂了，瞬间启动Standby--&gt;Active，对外提供读写服务。</span><br></pre></td></tr></table></figure>
+
+
+
+<p>HDFS中的文件在物理上是分块存储，块的大小可以通过配置参数（dfs.Blocksize）来规定，默认大小在hadoop2.x版本中是128M,老版本是64M</p>
+<p><strong>思考：为什么块的大小不能设置太小，也不能设置太大？</strong></p>
+<p>（1）HDFS的块设置太小，会增加寻址时间，程序一直在找块的开始位置</p>
+<p>（2）如果块设置的太大，从磁盘传输数据的时间会明显大于定位这个块开始位置所需的时间。导致程序在处理这块数据时，会非常慢。</p>
+<p><strong>总结：HDFS块的大小设置主要取决于磁盘传输速率</strong></p>
+<h1 id="四、MapReduce-on-Yarn-Yarn的工作流程"><a href="#四、MapReduce-on-Yarn-Yarn的工作流程" class="headerlink" title="四、MapReduce on Yarn/Yarn的工作流程"></a>四、MapReduce on Yarn/Yarn的工作流程</h1><p><img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/mronyarn.jpg" alt="MapReduce on Yarn"></p>
+<p>1.客户端client向ResourceManager提交应用程序/Application/作业JOB，包含application master程序，启动application master的命令等，并请求一个ApplicationMaster实例<br>2.RM为该job分配第一个container,与对应的NM通信，要求它在这个container启动作业的application master<br>3.application master向applications manager注册，这样用户就可以通过RM Web查看job的状态,一直到最后<br>4.application master采用轮询的方式通过【RPC】协议向resource scheduler申请和领取资源（哪台DN机器，领取多少内存 CPU）<br>5.一旦application master申请到资源后，与对应的NM通信，要求启动task<br>6.NM为任务设置好运行环境后，将任务的启动命令写到一个脚本中，并通过该脚本启动任务，运行任务<br>7.各个任务 task 通过【RPC】协议汇报自己的状态和进度，以让application master随时掌握各个任务的运行状态，从而在任务失败时，重启启动任务。<br>8.job运行完成后，application master向applications manager注销并关闭自己。</p>
+<p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
+<p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
+<p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hadoop支持LZO压缩</title>
     <url>/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/</url>
     <content><![CDATA[<h2 id="一、Hadoop支持LZO压缩"><a href="#一、Hadoop支持LZO压缩" class="headerlink" title="一、Hadoop支持LZO压缩"></a>一、Hadoop支持LZO压缩</h2><h3 id="1-lzop"><a href="#1-lzop" class="headerlink" title="1.lzop"></a>1.lzop</h3><p>lzo格式文件压缩解压需要用到服务器的lzop工具，hadoop 的<a href="https://so.csdn.net/so/search?q=native&spm=1001.2101.3001.7020">native</a>库（hadoop checknative是没有的lzo,zip相关信息）并不支持</p>
@@ -1079,114 +1228,6 @@
 <li><p>统计查询</p>
 </li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hadoop基础知识</title>
-    <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
-    <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
-<p>广义上：指的是hadoop的生态系统，即其他各种组件在内的一整套软件（sqoop，flume，spark，flink，hbase，kafka，cdh环境等）。hadoop生态系统是一个很庞大的概念，hadoop只是其中最重要最基础的部分，生态系统的每一个子系统只结局的某一个特定的问题域。不是一个全能系统，而是多个小而精的系统。</p>
-<h2 id="组成"><a href="#组成" class="headerlink" title="组成"></a>组成</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
-<p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
-<p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
-<p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
-<h1 id="二、HDFS概述"><a href="#二、HDFS概述" class="headerlink" title="二、HDFS概述"></a>二、HDFS概述</h1><h2 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h2><p>Hdfs（hadoop distribute file system），他是一个文件系统，用于存储文件，通过目录树来定位文件：其次，他是分布式的，有很多服务器联合起来实现其功能，集群中的服务器有各自的角色。</p>
-<p>Hdfs的使用场景，适合一次写入，多次读出的场景，且不支持文件的修改。适合用来做数据存放。</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
-<li><p>高容错性</p>
-<p>数据自动保存多个副本。 （默认是三分）通过增加副本的形式，提高容错性</p>
-<p>某一个副本丢失以后，它可以自动恢复</p>
-</li>
-<li><p>适合大数据处理</p>
-<p>数据规模：能够处理数据规模达到GB、TB、甚至PB级别的数据</p>
-<p>文件规模：能够处理百万规模以上的文件数量，</p>
-</li>
-<li><p>可构建在廉价机器上，通过多副本机制，提高可靠性</p>
-</li>
-</ul>
-<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ul>
-<li>不适合低延时数据访问，比如毫秒级的存储数据，是做不到的</li>
-<li>无法高效的对大量小文件进行存储<ul>
-<li>存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标</li>
-</ul>
-</li>
-<li>不支持并发写入、文件随机修改<ul>
-<li>一个文件只能有一个写，不允许多个线程同时写（重点）</li>
-<li>仅支持数据append（追加），不支持文件的随机修改</li>
-</ul>
-</li>
-</ul>
-<h2 id="hdfs支持的三种模式"><a href="#hdfs支持的三种模式" class="headerlink" title="hdfs支持的三种模式"></a>hdfs支持的三种模式</h2><ul>
-<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
-<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
-<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
-</ul>
-<h1 id="三、HDFS架构"><a href="#三、HDFS架构" class="headerlink" title="三、HDFS架构"></a>三、HDFS架构</h1><p> <img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/1598893-20191129134655673-2083411338.png" alt="img"></p>
-<p>1）<strong>NameNode（nn）</strong>：Master，它是一个主管、管理者。</p>
-<ul>
-<li><p>管理HDFS的名称空间</p>
-<ul>
-<li>文件的名称、目录结构、权限、大小、所属用户用户组  时间</li>
-</ul>
-</li>
-<li><p>处理客户端读写请求</p>
-</li>
-<li><p>配置副本策略</p>
-</li>
-<li><p>管理数据块（Block）映射信息</p>
-<ul>
-<li><p>文件被切割哪些块、块(块本身+2副本=3个块)分布在哪些DN节点上，blockmap 块映射。</p>
-</li>
-<li><p>不会持久化存储这种映射关系，是通过集群<strong>启动</strong>和<strong>运行</strong>时候，DN定期给NN汇报blockreport（BR），然后NN在内存中动态维护这种映射关系；</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>2）<strong>DataNode</strong>：Slave。NameNode下达命令，DataNode执行实际的操作</p>
-<ul>
-<li><p>存储实际的数据块和块的校验和</p>
-</li>
-<li><p>执行数据块的读/写操作</p>
-</li>
-<li><p>定期给NN发送块报告</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec  21600000=6h</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6h</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>3）<strong>Client</strong>：客户端</p>
-<ul>
-<li>文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传</li>
-<li>与NameNode交互，获取文件的位置信息</li>
-<li>与DataNode交互，读取或者写入数据</li>
-<li>Client提供一些命令来管理HDFS，比如NameNode格式化</li>
-<li>Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作</li>
-</ul>
-<p>4）<strong>Secondary NameNode</strong>：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
-<ul>
-<li><p>辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
-<ul>
-<li><p>edits 编辑日志文件</p>
-</li>
-<li><p>fsimage 镜像文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop     219 Nov 26 22:01 VERSION</span><br><span class="line">[hadoop@hadoop001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/hadoop-hadoop/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><p>在紧急情况下，可辅助恢复NameNode</p>
-</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关于NN的补充：在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</span><br><span class="line">中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</span><br><span class="line"></span><br><span class="line">后期就取消SNN，新建一个实时NN，作为高可靠 HA。</span><br><span class="line">NN Active</span><br><span class="line">NN Standby 实时的等待active NN挂了，瞬间启动Standby--&gt;Active，对外提供读写服务。</span><br></pre></td></tr></table></figure>
-
-
-
-<p>HDFS中的文件在物理上是分块存储，块的大小可以通过配置参数（dfs.Blocksize）来规定，默认大小在hadoop2.x版本中是128M,老版本是64M</p>
-<p><strong>思考：为什么块的大小不能设置太小，也不能设置太大？</strong></p>
-<p>（1）HDFS的块设置太小，会增加寻址时间，程序一直在找块的开始位置</p>
-<p>（2）如果块设置的太大，从磁盘传输数据的时间会明显大于定位这个块开始位置所需的时间。导致程序在处理这块数据时，会非常慢。</p>
-<p><strong>总结：HDFS块的大小设置主要取决于磁盘传输速率</strong></p>
-<h1 id="四、MapReduce-on-Yarn-Yarn的工作流程"><a href="#四、MapReduce-on-Yarn-Yarn的工作流程" class="headerlink" title="四、MapReduce on Yarn/Yarn的工作流程"></a>四、MapReduce on Yarn/Yarn的工作流程</h1><p><img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/mronyarn.jpg" alt="MapReduce on Yarn"></p>
-<p>1.客户端client向ResourceManager提交应用程序/Application/作业JOB，包含application master程序，启动application master的命令等，并请求一个ApplicationMaster实例<br>2.RM为该job分配第一个container,与对应的NM通信，要求它在这个container启动作业的application master<br>3.application master向applications manager注册，这样用户就可以通过RM Web查看job的状态,一直到最后<br>4.application master采用轮询的方式通过【RPC】协议向resource scheduler申请和领取资源（哪台DN机器，领取多少内存 CPU）<br>5.一旦application master申请到资源后，与对应的NM通信，要求启动task<br>6.NM为任务设置好运行环境后，将任务的启动命令写到一个脚本中，并通过该脚本启动任务，运行任务<br>7.各个任务 task 通过【RPC】协议汇报自己的状态和进度，以让application master随时掌握各个任务的运行状态，从而在任务失败时，重启启动任务。<br>8.job运行完成后，application master向applications manager注销并关闭自己。</p>
-<p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
-<p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
-<p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
 ]]></content>
   </entry>
   <entry>
@@ -1398,6 +1439,60 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hive：加载数据到表的方式</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
+<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
+
+<p>适用于建（外部）表时，数据文件已经存在的情况</p>
+<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
+
+<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
+
+<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
+<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
+<li>用来复制表的结构</li>
+<li>需要外部表的话，通过create external table as …指定</li>
+<li>不CTAS语句会填充数据</li>
+</ul>
+<p>创建表并加载数据（as select）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
+
+<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
+<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
+<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
+<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
+<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
+<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
+<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
+<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
+<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
+
+<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
+<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hive：行列转换</title>
     <url>/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
     <content><![CDATA[<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><p>假设数据表row2col：</p>
@@ -1463,60 +1558,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive：加载数据到表的方式</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
-<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
-
-<p>适用于建（外部）表时，数据文件已经存在的情况</p>
-<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
-
-<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
-
-<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
-<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
-<li>用来复制表的结构</li>
-<li>需要外部表的话，通过create external table as …指定</li>
-<li>不CTAS语句会填充数据</li>
-</ul>
-<p>创建表并加载数据（as select）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
-
-<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
-<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
-<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
-<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
-<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
-<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
-<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
-<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
-<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
-
-<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
-<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>IDEA中测试Hive源码</title>
     <url>/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/</url>
     <content><![CDATA[<p>将添加随机数，去除随机数的UDF整合到源码中，并在IDEA的终端中完成测试：</p>
@@ -1567,91 +1608,6 @@
 <p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144756925.png" alt="image-20220107144756925"></p>
 <p><strong>remove_random</strong>:</p>
 <p><img src="/2022/01/07/IDEA%E4%B8%AD%E6%B5%8B%E8%AF%95Hive%E6%BA%90%E7%A0%81/image-20220107144730402.png" alt="image-20220107144730402"></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>IDEA编译Spark3.2.0测试SparkSQL</title>
-    <url>/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/</url>
-    <content><![CDATA[<p><a href="https://spark.apache.org/docs/latest/building-spark.html">https://spark.apache.org/docs/latest/building-spark.html</a></p>
-<p>本机环境：</p>
-<p>hadoop:3.2.2</p>
-<p>jdk:1.8+</p>
-<p>scala:2.12.14</p>
-<p>hive:2.3.9（spark中默认版本）</p>
-<h2 id="一、下载"><a href="#一、下载" class="headerlink" title="一、下载"></a>一、下载</h2><p><a href="https://spark.apache.org/downloads.html">https://spark.apache.org/downloads.html</a></p>
-<p><a href="https://dlcdn.apache.org/spark/spark-3.2.0/spark-3.2.0.tgz"><strong>spark-3.2.0.tgz</strong></a></p>
-<h2 id="二、解压并导入IDEA"><a href="#二、解压并导入IDEA" class="headerlink" title="二、解压并导入IDEA"></a>二、解压并导入IDEA</h2><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-01.png" alt="image-20220119102329144" style="zoom: 50%;">
-
-<h2 id="三、编译"><a href="#三、编译" class="headerlink" title="三、编译"></a>三、编译</h2><ol>
-<li><h3 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h3><ul>
-<li><p>通过Add Frameworks Support添加Scala2.12支持。</p>
-</li>
-<li><p>执行命令配置Maven：<code>export MAVEN_OPTS=&quot;-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g&quot;</code></p>
-</li>
-<li><p>修改pom.xml</p>
-<p>版本参数</p>
-<p>scala:2.12.14【2处】</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;scala.version&gt;2.12.14&lt;/scala.version&gt;</span><br></pre></td></tr></table></figure>
-
-<p>hadoop : 3.2.2【1处】</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;hadoop.version&gt;3.2.2&lt;/hadoop.version&gt;</span><br></pre></td></tr></table></figure>
-
-<p>hive:默认，不指定hive版本</p>
-<p>其他（否则报错）：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;net.alchim31.maven&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;scala-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;3.2.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></li>
-<li><p>修改make-distribution.sh</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SCALA_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=scala.binary.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HADOOP_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=hadoop.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HIVE=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | fgrep --count &quot;&lt;id&gt;hive&lt;/id&gt;&quot;;\</span><br><span class="line">#    # Reset exit status to 0, otherwise the script stops here if the last grep finds nothing\</span><br><span class="line">#    # because we use &quot;set -o pipefail&quot;</span><br><span class="line">#    echo -n)</span><br><span class="line">VERSION=3.2.0 # spark 版本</span><br><span class="line">SCALA_VERSION=2.12 # scala 版本</span><br><span class="line">SPARK_HADOOP_VERSION=3.2.2 #对应的hadoop 版本</span><br><span class="line">SPARK_HIVE=1 # 支持的hive</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dev/make-distribution.sh --name custom-spark --pip --r --tgz  -Psparkr -Pyarn -Phadoop-3.2.2 -Phive -Phive-thriftserver -Pmesos -Dhadoop.version=3.2.2 </span><br></pre></td></tr></table></figure>
-
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-02.png" alt="image-20220120032650715" style="zoom:50%;"></li>
-<li><h3 id="添加jar包和Scala-SDK依赖，导入模块"><a href="#添加jar包和Scala-SDK依赖，导入模块" class="headerlink" title="添加jar包和Scala SDK依赖，导入模块"></a>添加jar包和Scala SDK依赖，导入模块</h3><p>jar包位置:<code>./assembly/target/scala-2.12</code>（这个包包含了Spark编译得到的jar包，以及编译过程中所依赖的包。）</p>
-<p>添加依赖：</p>
-<ul>
-<li><p>使用MAVEN的Generate Sources and Update Folders For All Projects</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-08.png" alt="image-20220121043339679" style="zoom:50%;"></li>
-<li><p>Project Structure–&gt;Libraries–&gt; 添加Scala SDK</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-03.png" alt="image-20220121041816355" style="zoom:50%;"></li>
-<li><p>Project Structure–&gt;Libraries–&gt; 添加jar包</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-04.png" alt="image-20220121041654274" style="zoom:50%;"></li>
-</ul>
-</li>
-<li><h3 id="SparkSQL和Hive集成"><a href="#SparkSQL和Hive集成" class="headerlink" title="SparkSQL和Hive集成"></a>SparkSQL和Hive集成</h3><p>SparkSQL需要的是Hive表的元数据，将hive的hive-site.xml文件复制到spark的conf文件夹中。hadoop的配置文件也一并放到conf文件夹中</p>
-</li>
-<li><h3 id="启动hadoop和hive的metastore服务"><a href="#启动hadoop和hive的metastore服务" class="headerlink" title="启动hadoop和hive的metastore服务"></a>启动hadoop和hive的metastore服务</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">start-all.sh</span><br><span class="line">hive --service metastore &amp;</span><br></pre></td></tr></table></figure></li>
-<li><h3 id="找到spark-sql的入口程序："><a href="#找到spark-sql的入口程序：" class="headerlink" title="找到spark-sql的入口程序："></a>找到spark-sql的入口程序：</h3><p><code>org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver</code></p>
-</li>
-<li><h3 id="配置VM-options"><a href="#配置VM-options" class="headerlink" title="配置VM options"></a>配置VM options</h3><p>VM options:</p>
-<p>-Dscala.usejavacp=true </p>
-<p>-Dspark.master=local[2] </p>
-<p>-Djline.WindowsTerminal.directConsole=false</p>
-<p>启动程序：</p>
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-05.png" alt="image-20220120054854489" style="zoom:50%;"></li>
-<li><h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>执行查询</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use hive;</span><br><span class="line">select e.empno,e.ename,e.deptno,d.dname from emp e join dept d on e.deptno=d.deptno;</span><br></pre></td></tr></table></figure>
-
-<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-06.png" alt="image-20220121004018782" style="zoom:50%;"></li>
-</ol>
-<h2 id="四、期间遇到的问题"><a href="#四、期间遇到的问题" class="headerlink" title="四、期间遇到的问题"></a>四、期间遇到的问题</h2><ul>
-<li><p>Classnotfound</p>
-<p>解决方法：导入jar包</p>
-</li>
-<li><p>运行，报错：</p>
-<p><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-09.png" alt="image-20220119230542973"></p>
-<p>解决方法：配置VM options：<code>-Dscala.usejavacp=true</code></p>
-</li>
-<li><p>运行，报错：</p>
-<p><code>org.apache.spark.SparkException: A master URL must be set in your configuration</code></p>
-<p>解决方法：配置VM options：<code>-Dspark.master=local[2]</code></p>
-</li>
-<li><p>spark-sql启动成功，但输入命令后没反应</p>
-<p>以下提示信息可忽略，主要是程序阻塞了导致没反应。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.</span><br></pre></td></tr></table></figure>
-
-<p>解决方法：配置VM options：<code>-Djline.WindowsTerminal.directConsole=false</code></p>
-</li>
-</ul>
 ]]></content>
   </entry>
   <entry>
@@ -1774,6 +1730,91 @@
 <p>参考：</p>
 <p><a href="https://mp.weixin.qq.com/s/dbnpPEF0FBB5A5xH21OoeQ">Kafka 为什么能那么快的 6 个原因</a></p>
 <p><a href="https://www.cnblogs.com/binyue/p/10308754.html">为什么Kafka速度那么快 </a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>IDEA编译Spark3.2.0测试SparkSQL</title>
+    <url>/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/</url>
+    <content><![CDATA[<p><a href="https://spark.apache.org/docs/latest/building-spark.html">https://spark.apache.org/docs/latest/building-spark.html</a></p>
+<p>本机环境：</p>
+<p>hadoop:3.2.2</p>
+<p>jdk:1.8+</p>
+<p>scala:2.12.14</p>
+<p>hive:2.3.9（spark中默认版本）</p>
+<h2 id="一、下载"><a href="#一、下载" class="headerlink" title="一、下载"></a>一、下载</h2><p><a href="https://spark.apache.org/downloads.html">https://spark.apache.org/downloads.html</a></p>
+<p><a href="https://dlcdn.apache.org/spark/spark-3.2.0/spark-3.2.0.tgz"><strong>spark-3.2.0.tgz</strong></a></p>
+<h2 id="二、解压并导入IDEA"><a href="#二、解压并导入IDEA" class="headerlink" title="二、解压并导入IDEA"></a>二、解压并导入IDEA</h2><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-01.png" alt="image-20220119102329144" style="zoom: 50%;">
+
+<h2 id="三、编译"><a href="#三、编译" class="headerlink" title="三、编译"></a>三、编译</h2><ol>
+<li><h3 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h3><ul>
+<li><p>通过Add Frameworks Support添加Scala2.12支持。</p>
+</li>
+<li><p>执行命令配置Maven：<code>export MAVEN_OPTS=&quot;-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g&quot;</code></p>
+</li>
+<li><p>修改pom.xml</p>
+<p>版本参数</p>
+<p>scala:2.12.14【2处】</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;scala.version&gt;2.12.14&lt;/scala.version&gt;</span><br></pre></td></tr></table></figure>
+
+<p>hadoop : 3.2.2【1处】</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;hadoop.version&gt;3.2.2&lt;/hadoop.version&gt;</span><br></pre></td></tr></table></figure>
+
+<p>hive:默认，不指定hive版本</p>
+<p>其他（否则报错）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;net.alchim31.maven&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;scala-maven-plugin&lt;/artifactId&gt;</span><br><span class="line">	&lt;version&gt;3.2.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></li>
+<li><p>修改make-distribution.sh</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SCALA_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=scala.binary.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HADOOP_VERSION=$(&quot;$MVN&quot; help:evaluate -Dexpression=hadoop.version $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | tail -n 1)</span><br><span class="line">#SPARK_HIVE=$(&quot;$MVN&quot; help:evaluate -Dexpression=project.activeProfiles -pl sql/hive $@ \</span><br><span class="line">#    | grep -v &quot;INFO&quot;\</span><br><span class="line">#    | grep -v &quot;WARNING&quot;\</span><br><span class="line">#    | fgrep --count &quot;&lt;id&gt;hive&lt;/id&gt;&quot;;\</span><br><span class="line">#    # Reset exit status to 0, otherwise the script stops here if the last grep finds nothing\</span><br><span class="line">#    # because we use &quot;set -o pipefail&quot;</span><br><span class="line">#    echo -n)</span><br><span class="line">VERSION=3.2.0 # spark 版本</span><br><span class="line">SCALA_VERSION=2.12 # scala 版本</span><br><span class="line">SPARK_HADOOP_VERSION=3.2.2 #对应的hadoop 版本</span><br><span class="line">SPARK_HIVE=1 # 支持的hive</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dev/make-distribution.sh --name custom-spark --pip --r --tgz  -Psparkr -Pyarn -Phadoop-3.2.2 -Phive -Phive-thriftserver -Pmesos -Dhadoop.version=3.2.2 </span><br></pre></td></tr></table></figure>
+
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-02.png" alt="image-20220120032650715" style="zoom:50%;"></li>
+<li><h3 id="添加jar包和Scala-SDK依赖，导入模块"><a href="#添加jar包和Scala-SDK依赖，导入模块" class="headerlink" title="添加jar包和Scala SDK依赖，导入模块"></a>添加jar包和Scala SDK依赖，导入模块</h3><p>jar包位置:<code>./assembly/target/scala-2.12</code>（这个包包含了Spark编译得到的jar包，以及编译过程中所依赖的包。）</p>
+<p>添加依赖：</p>
+<ul>
+<li><p>使用MAVEN的Generate Sources and Update Folders For All Projects</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-08.png" alt="image-20220121043339679" style="zoom:50%;"></li>
+<li><p>Project Structure–&gt;Libraries–&gt; 添加Scala SDK</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-03.png" alt="image-20220121041816355" style="zoom:50%;"></li>
+<li><p>Project Structure–&gt;Libraries–&gt; 添加jar包</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-04.png" alt="image-20220121041654274" style="zoom:50%;"></li>
+</ul>
+</li>
+<li><h3 id="SparkSQL和Hive集成"><a href="#SparkSQL和Hive集成" class="headerlink" title="SparkSQL和Hive集成"></a>SparkSQL和Hive集成</h3><p>SparkSQL需要的是Hive表的元数据，将hive的hive-site.xml文件复制到spark的conf文件夹中。hadoop的配置文件也一并放到conf文件夹中</p>
+</li>
+<li><h3 id="启动hadoop和hive的metastore服务"><a href="#启动hadoop和hive的metastore服务" class="headerlink" title="启动hadoop和hive的metastore服务"></a>启动hadoop和hive的metastore服务</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">start-all.sh</span><br><span class="line">hive --service metastore &amp;</span><br></pre></td></tr></table></figure></li>
+<li><h3 id="找到spark-sql的入口程序："><a href="#找到spark-sql的入口程序：" class="headerlink" title="找到spark-sql的入口程序："></a>找到spark-sql的入口程序：</h3><p><code>org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver</code></p>
+</li>
+<li><h3 id="配置VM-options"><a href="#配置VM-options" class="headerlink" title="配置VM options"></a>配置VM options</h3><p>VM options:</p>
+<p>-Dscala.usejavacp=true </p>
+<p>-Dspark.master=local[2] </p>
+<p>-Djline.WindowsTerminal.directConsole=false</p>
+<p>启动程序：</p>
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-05.png" alt="image-20220120054854489" style="zoom:50%;"></li>
+<li><h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>执行查询</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use hive;</span><br><span class="line">select e.empno,e.ename,e.deptno,d.dname from emp e join dept d on e.deptno=d.deptno;</span><br></pre></td></tr></table></figure>
+
+<img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-06.png" alt="image-20220121004018782" style="zoom:50%;"></li>
+</ol>
+<h2 id="四、期间遇到的问题"><a href="#四、期间遇到的问题" class="headerlink" title="四、期间遇到的问题"></a>四、期间遇到的问题</h2><ul>
+<li><p>Classnotfound</p>
+<p>解决方法：导入jar包</p>
+</li>
+<li><p>运行，报错：</p>
+<p><img src="/2022/01/21/IDEA%E7%BC%96%E8%AF%91Spark3-2-0%E6%B5%8B%E8%AF%95SparkSQL/sparksql-09.png" alt="image-20220119230542973"></p>
+<p>解决方法：配置VM options：<code>-Dscala.usejavacp=true</code></p>
+</li>
+<li><p>运行，报错：</p>
+<p><code>org.apache.spark.SparkException: A master URL must be set in your configuration</code></p>
+<p>解决方法：配置VM options：<code>-Dspark.master=local[2]</code></p>
+</li>
+<li><p>spark-sql启动成功，但输入命令后没反应</p>
+<p>以下提示信息可忽略，主要是程序阻塞了导致没反应。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">WARN SessionState: METASTORE_FILTER_HOOK will be ignored, since hive.security.authorization.manager is set to instance of HiveAuthorizerFactory.</span><br></pre></td></tr></table></figure>
+
+<p>解决方法：配置VM options：<code>-Djline.WindowsTerminal.directConsole=false</code></p>
+</li>
+</ul>
 ]]></content>
   </entry>
   <entry>
@@ -1982,6 +2023,21 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Spark:Compression codec com.hadoop.compression.lzo.LzoCodec not found</title>
+    <url>/2022/02/22/Spark-Compression-codec-com-hadoop-compression-lzo-LzoCodec-not-found/</url>
+    <content><![CDATA[<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在安装完Hadoop Lzo后。进入spark-sql shell 正常，但是执行查询语句时候，抛出：</p>
+<p>Caused by: java.lang.IllegalArgumentException: Compression codec com.hadoop.compression.lzo.LzoCodec not found.</p>
+<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>原因：在hadoop中配置了编解码器lzo，所以当使用yarn模式时，spark自身没有lzo的jar包所以无法找到。这是因为在hadoop 的core-site.xml 和mapred-site.xml 中开启了压缩，并且压缩式lzo的。这就导致写入上传到hdfs 的文件自动被压缩为lzo了。而spark没有lzo这个jar包，所以无法被找到。</p>
+<p>解决方法有2个：</p>
+<p>1.软连接</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ln -s  /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar /home/hadoop/app/spark/jars/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
+
+<p>2.配置路径</p>
+<p>配置spark-default.conf如下即可：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark.jars=/home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
+]]></content>
+  </entry>
+  <entry>
     <title>Secondary NameNode:它究竟有什么作用？</title>
     <url>/2022/01/26/Secondary-NameNode-%E5%AE%83%E7%A9%B6%E7%AB%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F/</url>
     <content><![CDATA[<p>英文原文：<a href="http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/">http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/</a></p>
@@ -2082,21 +2138,6 @@
 
 <h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
 
-]]></content>
-  </entry>
-  <entry>
-    <title>Spark:Compression codec com.hadoop.compression.lzo.LzoCodec not found</title>
-    <url>/2022/02/22/Spark-Compression-codec-com-hadoop-compression-lzo-LzoCodec-not-found/</url>
-    <content><![CDATA[<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在安装完Hadoop Lzo后。进入spark-sql shell 正常，但是执行查询语句时候，抛出：</p>
-<p>Caused by: java.lang.IllegalArgumentException: Compression codec com.hadoop.compression.lzo.LzoCodec not found.</p>
-<h2 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h2><p>原因：在hadoop中配置了编解码器lzo，所以当使用yarn模式时，spark自身没有lzo的jar包所以无法找到。这是因为在hadoop 的core-site.xml 和mapred-site.xml 中开启了压缩，并且压缩式lzo的。这就导致写入上传到hdfs 的文件自动被压缩为lzo了。而spark没有lzo这个jar包，所以无法被找到。</p>
-<p>解决方法有2个：</p>
-<p>1.软连接</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ln -s  /home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar /home/hadoop/app/spark/jars/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
-
-<p>2.配置路径</p>
-<p>配置spark-default.conf如下即可：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark.jars=/home/hadoop/app/hadoop/share/hadoop/common/hadoop-lzo-0.4.21-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2292,17 +2333,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>spark-sql启动参数</title>
-    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
-    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
-
-<p>带参数启动成功：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
     <title>mapreduce执行速度慢的原因</title>
     <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
     <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
@@ -2339,6 +2369,17 @@
 ]]></content>
   </entry>
   <entry>
+    <title>spark-sql启动参数</title>
+    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
+    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
+
+<p>带参数启动成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>spark读取GBK编码文件乱码问题</title>
     <url>/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/</url>
     <content><![CDATA[<h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
@@ -2366,26 +2407,6 @@
 </ol>
 <p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
 <p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>spark部署时修改spark-env.sh</title>
-    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
-    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
-
-<p>可以运行Spark</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
-
-<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
-<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
 ]]></content>
   </entry>
   <entry>
@@ -2419,38 +2440,23 @@
 ]]></content>
   </entry>
   <entry>
-    <title>关于服务器上测试自定义编译的spark没反应问题</title>
-    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
-<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+    <title>spark部署时修改spark-env.sh</title>
+    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
+    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
 
-<p>S2的位置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
+<p>可以运行Spark</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
 
-<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
 
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
-<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
-<p>尝试以绝对路径的方式启动S2：</p>
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
-<p>结果一样，启动的是S1。</p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
 
-<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
-<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
-<p>删除环境变量：</p>
-<ul>
-<li>unset VAL：暂时的，只会在当前环境有效</li>
-<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
-<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
-</ul>
-<p>再次测试：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
-
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
+<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
 ]]></content>
   </entry>
   <entry>
@@ -2523,6 +2529,41 @@
 <li><p>然后用编辑器修改好文本，发布</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>关于服务器上测试自定义编译的spark没反应问题</title>
+    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
+<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>S2的位置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
+
+<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
+<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
+<p>尝试以绝对路径的方式启动S2：</p>
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
+<p>结果一样，启动的是S1。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
+<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
+<p>删除环境变量：</p>
+<ul>
+<li>unset VAL：暂时的，只会在当前环境有效</li>
+<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
+<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
+</ul>
+<p>再次测试：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
