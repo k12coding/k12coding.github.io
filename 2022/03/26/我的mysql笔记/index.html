@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.0">
 
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
@@ -16,11 +15,12 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="语句insert ignore intoINSERT IGNORE 与INSERT INTO的区别就是INSERT IGNORE会忽略数据库中已经存在 的数据，如果数据库没有数据，就插入新的数据，如果有数据的话就跳过这条数据。这样就可以保留数据库中已经存在数据，达到在间隙中插入数据的目的。 insert into … on duplicate key update …123456789101112">
+<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="语句insert ignore intoINSERT IGNORE 与INSERT INTO的区别就是INSERT IGNORE会忽略数据库中已经存在 的数据，如果数据库没有数据，就插入新的数据，如果有数据的话就跳过这条数据。这样就可以保留数据库中已经存在数据，达到在间隙中插入数据的目的。 insert into … on duplicate key update …123456789101112">
 <meta property="og:type" content="article">
 <meta property="og:title" content="我的mysql笔记">
 <meta property="og:url" content="https://k12coding.github.io/2022/03/26/%E6%88%91%E7%9A%84mysql%E7%AC%94%E8%AE%B0/index.html">
@@ -49,6 +49,7 @@
 
 
 
+
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -69,7 +70,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">k12的博客</h1>
+      <p class="site-title">k12的博客</p>
       <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">k12的笔记</p>
@@ -77,46 +78,15 @@
 
   <div class="site-nav-right">
     <div class="toggle popup-trigger">
-        <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
 </div>
 
 
 
-<nav class="site-nav">
-  <ul class="main-menu menu">
-      <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
-      </li>
-  </ul>
-</nav>
 
 
 
-  <div class="search-pop-overlay">
-    <div class="popup search-popup"><div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off" maxlength="80"
-           placeholder="搜索..." spellcheck="false"
-           type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close" role="button">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div class="search-result-container no-result">
-  <div class="search-result-icon">
-    <i class="fa fa-spinner fa-pulse fa-5x"></i>
-  </div>
-</div>
-
-    </div>
-  </div>
 
 </div>
         
@@ -142,7 +112,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%AD%E5%8F%A5"><span class="nav-text">语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#insert-ignore-into"><span class="nav-text">insert ignore into</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#insert-into-%E2%80%A6-on-duplicate-key-update-%E2%80%A6"><span class="nav-text">insert into … on duplicate key update …</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#replace-into"><span class="nav-text">replace into</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#alter"><span class="nav-text">alter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#WITH-ROLLUP"><span class="nav-text">WITH ROLLUP</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E5%A4%96%E9%94%AE%E7%BA%A6%E6%9D%9F"><span class="nav-text">添加外键约束</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0"><span class="nav-text">函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#REPLACE-str-old-string-new-string"><span class="nav-text">REPLACE(str,old_string,new_string)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REGEXP-REPLACE-expression-pattern-replace-string-pos-occurrence-match-type"><span class="nav-text">REGEXP_REPLACE (expression, pattern, replace_string[, pos[, occurrence[, match_type]]])</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RIGHT-s%EF%BC%8Cn-%E5%92%8CLEFT-s%EF%BC%8Cn"><span class="nav-text">RIGHT(s，n)和LEFT(s，n)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#group-concat-X-Y"><span class="nav-text">group_concat(X,Y)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#last-day-curdate"><span class="nav-text">last_day(curdate());</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cast"><span class="nav-text">cast()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0LAG-%E5%92%8CLEAD"><span class="nav-text">窗口函数LAG()和LEAD()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0NTH-VALUE"><span class="nav-text">窗口函数NTH_VALUE()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MOD-N-M"><span class="nav-text">MOD(N,M)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%96%E6%95%B4%E5%87%BD%E6%95%B0%EF%BC%88ceil%E3%80%81floor%E3%80%81round%EF%BC%89"><span class="nav-text">取整函数（ceil、floor、round）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SUBSTRING-string-position"><span class="nav-text">SUBSTRING(string,position)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#substring-index-str-delim-count"><span class="nav-text">substring_index(str,delim,count)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#date-add-%E5%92%8Cdate-sub"><span class="nav-text">date_add()和date_sub()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DATEDIFF"><span class="nav-text">DATEDIFF()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TIMESTAMPDIFF-unit-begin-end"><span class="nav-text">TIMESTAMPDIFF(unit,begin,end)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E6%AE%B5%E9%95%BF%E5%BA%A6char-length%E5%92%8Clength"><span class="nav-text">字段长度char_length和length</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#COALESCE-value1-value2-%E2%80%A6"><span class="nav-text">COALESCE(value1,value2,…)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REGEXP%EF%BC%9A%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%9F%A5%E8%AF%A2-rlike"><span class="nav-text">REGEXP：正则表达式查询(rlike)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E7%82%B9"><span class="nav-text">知识点</span></a></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%AD%E5%8F%A5"><span class="nav-number">1.</span> <span class="nav-text">语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#insert-ignore-into"><span class="nav-number">1.1.</span> <span class="nav-text">insert ignore into</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#insert-into-%E2%80%A6-on-duplicate-key-update-%E2%80%A6"><span class="nav-number">1.2.</span> <span class="nav-text">insert into … on duplicate key update …</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#replace-into"><span class="nav-number">1.3.</span> <span class="nav-text">replace into</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#alter"><span class="nav-number">1.4.</span> <span class="nav-text">alter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#WITH-ROLLUP"><span class="nav-number">1.5.</span> <span class="nav-text">WITH ROLLUP</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E5%A4%96%E9%94%AE%E7%BA%A6%E6%9D%9F"><span class="nav-number">1.6.</span> <span class="nav-text">添加外键约束</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#REPLACE-str-old-string-new-string"><span class="nav-number">2.1.</span> <span class="nav-text">REPLACE(str,old_string,new_string)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REGEXP-REPLACE-expression-pattern-replace-string-pos-occurrence-match-type"><span class="nav-number">2.2.</span> <span class="nav-text">REGEXP_REPLACE (expression, pattern, replace_string[, pos[, occurrence[, match_type]]])</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RIGHT-s%EF%BC%8Cn-%E5%92%8CLEFT-s%EF%BC%8Cn"><span class="nav-number">2.3.</span> <span class="nav-text">RIGHT(s，n)和LEFT(s，n)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#group-concat-X-Y"><span class="nav-number">2.4.</span> <span class="nav-text">group_concat(X,Y)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#last-day-curdate"><span class="nav-number">2.5.</span> <span class="nav-text">last_day(curdate());</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cast"><span class="nav-number">2.6.</span> <span class="nav-text">cast()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0LAG-%E5%92%8CLEAD"><span class="nav-number">2.7.</span> <span class="nav-text">窗口函数LAG()和LEAD()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AA%97%E5%8F%A3%E5%87%BD%E6%95%B0NTH-VALUE"><span class="nav-number">2.8.</span> <span class="nav-text">窗口函数NTH_VALUE()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MOD-N-M"><span class="nav-number">2.9.</span> <span class="nav-text">MOD(N,M)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%96%E6%95%B4%E5%87%BD%E6%95%B0%EF%BC%88ceil%E3%80%81floor%E3%80%81round%EF%BC%89"><span class="nav-number">2.10.</span> <span class="nav-text">取整函数（ceil、floor、round）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SUBSTRING-string-position"><span class="nav-number">2.11.</span> <span class="nav-text">SUBSTRING(string,position)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#substring-index-str-delim-count"><span class="nav-number">2.12.</span> <span class="nav-text">substring_index(str,delim,count)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#date-add-%E5%92%8Cdate-sub"><span class="nav-number">2.13.</span> <span class="nav-text">date_add()和date_sub()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DATEDIFF"><span class="nav-number">2.14.</span> <span class="nav-text">DATEDIFF()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TIMESTAMPDIFF-unit-begin-end"><span class="nav-number">2.15.</span> <span class="nav-text">TIMESTAMPDIFF(unit,begin,end)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E6%AE%B5%E9%95%BF%E5%BA%A6char-length%E5%92%8Clength"><span class="nav-number">2.16.</span> <span class="nav-text">字段长度char_length和length</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#COALESCE-value1-value2-%E2%80%A6"><span class="nav-number">2.17.</span> <span class="nav-text">COALESCE(value1,value2,…)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REGEXP%EF%BC%9A%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%9F%A5%E8%AF%A2-rlike"><span class="nav-number">2.18.</span> <span class="nav-text">REGEXP：正则表达式查询(rlike)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9F%A5%E8%AF%86%E7%82%B9"><span class="nav-number">3.</span> <span class="nav-text">知识点</span></a></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -200,11 +170,16 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="k12的博客">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="我的mysql笔记 | k12的博客">
+      <meta itemprop="description" content="">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -221,13 +196,13 @@
 
       <time title="创建时间：2022-03-26 22:01:37" itemprop="dateCreated datePublished" datetime="2022-03-26T22:01:37+08:00">2022-03-26</time>
     </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-05-17 02:17:11" itemprop="dateModified" datetime="2022-05-17T02:17:11+08:00">2022-05-17</time>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
       </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-05-17 02:17:11" itemprop="dateModified" datetime="2022-05-17T02:17:11+08:00">2022-05-17</time>
+    </span>
 
   
 </div>
@@ -446,8 +421,6 @@
 <script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
 
   
-<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
-<script src="/js/third-party/search/local-search.js"></script>
 
 
 

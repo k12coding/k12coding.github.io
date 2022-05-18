@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.0">
 
 
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
@@ -16,11 +15,12 @@
 
 
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.8.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="一、Flume介绍与原理Flume简介​    Flume 作为 cloudera 开发的实时日志收集系统，受到了业界的认可与广泛应用。Flume 初始的发行版本目前被统称为 Flume OG（original generation），属于 cloudera。但随着 FLume 功能的扩展，Flume OG 代码工程臃肿、核心组件设计不合理、核心配置不标准等缺点暴露出来，尤其是在 Flume OG">
+<script class="next-config" data-name="main" type="application/json">{"hostname":"k12coding.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="一、Flume介绍与原理Flume简介​    Flume 作为 cloudera 开发的实时日志收集系统，受到了业界的认可与广泛应用。Flume 初始的发行版本目前被统称为 Flume OG（original generation），属于 cloudera。但随着 FLume 功能的扩展，Flume OG 代码工程臃肿、核心组件设计不合理、核心配置不标准等缺点暴露出来，尤其是在 Flume OG">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Flume介绍与使用">
 <meta property="og:url" content="https://k12coding.github.io/2022/05/16/Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E4%BD%BF%E7%94%A8/index.html">
@@ -61,6 +61,7 @@
 
 
 
+
   <noscript>
     <link rel="stylesheet" href="/css/noscript.css">
   </noscript>
@@ -81,7 +82,7 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">k12的博客</h1>
+      <p class="site-title">k12的博客</p>
       <i class="logo-line"></i>
     </a>
       <p class="site-subtitle" itemprop="description">k12的笔记</p>
@@ -89,46 +90,15 @@
 
   <div class="site-nav-right">
     <div class="toggle popup-trigger">
-        <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
 </div>
 
 
 
-<nav class="site-nav">
-  <ul class="main-menu menu">
-      <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
-      </li>
-  </ul>
-</nav>
 
 
 
-  <div class="search-pop-overlay">
-    <div class="popup search-popup"><div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off" maxlength="80"
-           placeholder="搜索..." spellcheck="false"
-           type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close" role="button">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div class="search-result-container no-result">
-  <div class="search-result-icon">
-    <i class="fa fa-spinner fa-pulse fa-5x"></i>
-  </div>
-</div>
-
-    </div>
-  </div>
 
 </div>
         
@@ -154,7 +124,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E5%8E%9F%E7%90%86"><span class="nav-text">一、Flume介绍与原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%AE%80%E4%BB%8B"><span class="nav-text">Flume简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume-NG%E7%9A%84%E4%BB%8B%E7%BB%8D"><span class="nav-text">Flume NG的介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E7%82%B9"><span class="nav-text">特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume%E7%9A%84%E4%B8%80%E4%BA%9B%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="nav-text">Flume的一些核心概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume-NG%E7%9A%84%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="nav-text">Flume NG的体系结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Source"><span class="nav-text">Source</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Channel"><span class="nav-text">Channel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Sink"><span class="nav-text">Sink</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flume%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E4%B8%8E%E4%BA%8B%E5%8A%A1"><span class="nav-text">flume执行流程与事务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Flume-%E4%BC%A0%E8%BE%93%E6%B5%81%E7%A8%8B"><span class="nav-text">Flume 传输流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Flume-%E4%BA%8B%E5%8A%A1"><span class="nav-text">Flume 事务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume%E7%9A%84%E9%83%A8%E7%BD%B2%E7%B1%BB%E5%9E%8B"><span class="nav-text">Flume的部署类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%95%E4%B8%80%E6%B5%81%E7%A8%8B"><span class="nav-text">单一流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E4%BB%A3%E7%90%86%E6%B5%81%E7%A8%8B%EF%BC%88%E5%A4%9A%E4%B8%AAagent%E9%A1%BA%E5%BA%8F%E8%BF%9E%E6%8E%A5%EF%BC%89"><span class="nav-text">多代理流程（多个agent顺序连接）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E7%9A%84%E5%90%88%E5%B9%B6%EF%BC%88%E5%A4%9A%E4%B8%AAAgent%E7%9A%84%E6%95%B0%E6%8D%AE%E6%B1%87%E8%81%9A%E5%88%B0%E5%90%8C%E4%B8%80%E4%B8%AAAgent-%EF%BC%89"><span class="nav-text">流的合并（多个Agent的数据汇聚到同一个Agent ）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%B5%81%EF%BC%88%E5%A4%9A%E7%BA%A7%E6%B5%81%EF%BC%89"><span class="nav-text">多路复用流（多级流）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#load-balance%E5%8A%9F%E8%83%BD"><span class="nav-text">load balance功能</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%AA%E4%BA%BA%E7%AC%94%E8%AE%B0"><span class="nav-text">个人笔记</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Flume%E7%9A%84%E5%AE%89%E8%A3%85%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="nav-text">二、Flume的安装与使用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%9A%84%E5%AE%89%E8%A3%85"><span class="nav-text">Flume的安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-text">Flume的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE"><span class="nav-text">设置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE-agent"><span class="nav-text">设置 agent</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E5%8D%95%E4%B8%AA%E7%BB%84%E4%BB%B6"><span class="nav-text">配置单个组件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B0%86%E5%90%84%E4%B8%AA%E9%83%A8%E5%88%86%E8%BF%9E%E6%8E%A5%E5%9C%A8%E4%B8%80%E8%B5%B7"><span class="nav-text">将各个部分连接在一起</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8-agent"><span class="nav-text">启动 agent</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%E4%B8%80%EF%BC%9Anetcat-source"><span class="nav-text">案例一：netcat source</span></a></li></ol></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81Flume%E4%BB%8B%E7%BB%8D%E4%B8%8E%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">一、Flume介绍与原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%AE%80%E4%BB%8B"><span class="nav-number">1.1.</span> <span class="nav-text">Flume简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume-NG%E7%9A%84%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.2.</span> <span class="nav-text">Flume NG的介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%89%B9%E7%82%B9"><span class="nav-number">1.2.1.</span> <span class="nav-text">特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume%E7%9A%84%E4%B8%80%E4%BA%9B%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="nav-number">1.2.2.</span> <span class="nav-text">Flume的一些核心概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume-NG%E7%9A%84%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84"><span class="nav-number">1.2.3.</span> <span class="nav-text">Flume NG的体系结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Source"><span class="nav-number">1.2.3.1.</span> <span class="nav-text">Source</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Channel"><span class="nav-number">1.2.3.2.</span> <span class="nav-text">Channel</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Sink"><span class="nav-number">1.2.3.3.</span> <span class="nav-text">Sink</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flume%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B%E4%B8%8E%E4%BA%8B%E5%8A%A1"><span class="nav-number">1.2.4.</span> <span class="nav-text">flume执行流程与事务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Flume-%E4%BC%A0%E8%BE%93%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.4.1.</span> <span class="nav-text">Flume 传输流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Flume-%E4%BA%8B%E5%8A%A1"><span class="nav-number">1.2.4.2.</span> <span class="nav-text">Flume 事务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Flume%E7%9A%84%E9%83%A8%E7%BD%B2%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.2.5.</span> <span class="nav-text">Flume的部署类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8D%95%E4%B8%80%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.5.1.</span> <span class="nav-text">单一流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E4%BB%A3%E7%90%86%E6%B5%81%E7%A8%8B%EF%BC%88%E5%A4%9A%E4%B8%AAagent%E9%A1%BA%E5%BA%8F%E8%BF%9E%E6%8E%A5%EF%BC%89"><span class="nav-number">1.2.5.2.</span> <span class="nav-text">多代理流程（多个agent顺序连接）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E7%9A%84%E5%90%88%E5%B9%B6%EF%BC%88%E5%A4%9A%E4%B8%AAAgent%E7%9A%84%E6%95%B0%E6%8D%AE%E6%B1%87%E8%81%9A%E5%88%B0%E5%90%8C%E4%B8%80%E4%B8%AAAgent-%EF%BC%89"><span class="nav-number">1.2.5.3.</span> <span class="nav-text">流的合并（多个Agent的数据汇聚到同一个Agent ）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8%E6%B5%81%EF%BC%88%E5%A4%9A%E7%BA%A7%E6%B5%81%EF%BC%89"><span class="nav-number">1.2.5.4.</span> <span class="nav-text">多路复用流（多级流）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#load-balance%E5%8A%9F%E8%83%BD"><span class="nav-number">1.2.5.5.</span> <span class="nav-text">load balance功能</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%AA%E4%BA%BA%E7%AC%94%E8%AE%B0"><span class="nav-number">1.3.</span> <span class="nav-text">个人笔记</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Flume%E7%9A%84%E5%AE%89%E8%A3%85%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">二、Flume的安装与使用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%9A%84%E5%AE%89%E8%A3%85"><span class="nav-number">2.1.</span> <span class="nav-text">Flume的安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flume%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">Flume的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE"><span class="nav-number">2.2.1.</span> <span class="nav-text">设置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE-agent"><span class="nav-number">2.2.1.1.</span> <span class="nav-text">设置 agent</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E5%8D%95%E4%B8%AA%E7%BB%84%E4%BB%B6"><span class="nav-number">2.2.1.2.</span> <span class="nav-text">配置单个组件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B0%86%E5%90%84%E4%B8%AA%E9%83%A8%E5%88%86%E8%BF%9E%E6%8E%A5%E5%9C%A8%E4%B8%80%E8%B5%B7"><span class="nav-number">2.2.1.3.</span> <span class="nav-text">将各个部分连接在一起</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8-agent"><span class="nav-number">2.2.1.4.</span> <span class="nav-text">启动 agent</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%E4%B8%80%EF%BC%9Anetcat-source"><span class="nav-number">2.2.2.</span> <span class="nav-text">案例一：netcat source</span></a></li></ol></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -212,11 +182,16 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="k12">
-      <meta itemprop="description" content="2">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="k12的博客">
+      <meta itemprop="description" content="2">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Flume介绍与使用 | k12的博客">
+      <meta itemprop="description" content="">
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
@@ -233,13 +208,13 @@
 
       <time title="创建时间：2022-05-16 17:47:05" itemprop="dateCreated datePublished" datetime="2022-05-16T17:47:05+08:00">2022-05-16</time>
     </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2022-05-18 16:06:54" itemprop="dateModified" datetime="2022-05-18T16:06:54+08:00">2022-05-18</time>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
       </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-05-18 16:06:54" itemprop="dateModified" datetime="2022-05-18T16:06:54+08:00">2022-05-18</time>
+    </span>
 
   
 </div>
@@ -504,8 +479,6 @@
 <script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
 
   
-<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
-<script src="/js/third-party/search/local-search.js"></script>
 
 
 
