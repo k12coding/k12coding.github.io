@@ -1197,6 +1197,65 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hive：内部表与外部表</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
+    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
+</ul>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>参考链接：</p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hive：分区</title>
     <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
     <content><![CDATA[<blockquote>
@@ -1281,65 +1340,6 @@
 <p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
 <p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
 <p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hive：内部表与外部表</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
-    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
-<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
-<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
-</li>
-<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
-<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
-</li>
-<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
-</li>
-<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
-</li>
-<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
-</li>
-</ul>
-<p>补充说明：</p>
-<ul>
-<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
-<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
-<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
-</ul>
-<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
-<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
-</blockquote>
-<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
-<p>修改内部表为外部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>修改外部表为内部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
-<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
-<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
-<p>对于外部表，Hive 假定它不管理数据。</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
-<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
-<ul>
-<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
-<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
-<li>ACID /事务处理仅适用于托管表</li>
-<li>查询结果缓存仅适用于托管表</li>
-<li>外部表仅允许 RELY 约束</li>
-<li>某些物化视图功能仅适用于托管表</li>
-</ul>
-<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
-<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
-<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
-<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
-<p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
-<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2023,28 +2023,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Spark DF/DS API：行列转换</title>
-    <url>/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
-    <content><![CDATA[<p>前文回顾：<a href="https://k12coding.github.io/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">Hive：行列转换</a></p>
-<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows1 = new util.ArrayList[Row]()</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;c&quot;, 1))</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;d&quot;, 2))</span><br><span class="line"></span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;e&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema1 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df1 = spark.createDataFrame(rows1, schema1)</span><br><span class="line"></span><br><span class="line">println(&quot;多行转多列&quot;)</span><br><span class="line">df1.show()</span><br><span class="line"></span><br><span class="line">df1.groupBy(&#x27;col1)</span><br><span class="line">.pivot(&#x27;col2)</span><br><span class="line">.max(&quot;col3&quot;).na.fill(0)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转多列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   b|  0|  5|  6|</span><br><span class="line">|   a|  1|  2|  0|</span><br><span class="line">+----+---+---+---+</span><br></pre></td></tr></table></figure>
-
-<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><h4 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows2 = new util.ArrayList[Row]()</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 1))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 2))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 3))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 4))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema2 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df2 = spark.createDataFrame(rows2, schema2)</span><br><span class="line">println(&quot;多行转单列&quot;)</span><br><span class="line">df2.show()</span><br><span class="line">df2.groupBy(&#x27;col1,&#x27;col2)</span><br><span class="line">.agg(concat_ws(&quot;,&quot;,collect_set(&#x27;col3)).as(&quot;col3&quot;))</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转单列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   b|   d|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   d|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   b|   d|5,6,4|</span><br><span class="line">+----+----+-----+</span><br></pre></td></tr></table></figure>
-
-<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><h4 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows3 = new util.ArrayList[Row]()</span><br><span class="line">rows3.add(Row(&quot;a&quot;, 1, 2, 3))</span><br><span class="line">rows3.add(Row(&quot;b&quot;, 4, 5, 6))</span><br><span class="line"></span><br><span class="line">val schema3 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;c&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;d&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;e&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df3 = spark.createDataFrame(rows3, schema3)</span><br><span class="line"></span><br><span class="line">println(&quot;多列转多行&quot;)</span><br><span class="line">df3.show()</span><br><span class="line">df3.selectExpr(&quot;col1&quot;,&quot;stack(3, &#x27;c&#x27;, c, &#x27;d&#x27;, d, &#x27;e&#x27;, e) as (`col2`,`col3`)&quot;)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多列转多行</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   a|  1|  2|  3|</span><br><span class="line">|   b|  4|  5|  6|</span><br><span class="line">+----+---+---+---+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   a|   e|   3|</span><br><span class="line">|   b|   c|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
-
-<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><h4 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows4 = new util.ArrayList[Row]()</span><br><span class="line">rows4.add(Row(&quot;a&quot;, &quot;b&quot;, &quot;1,2,3&quot;))</span><br><span class="line">rows4.add(Row(&quot;c&quot;, &quot;d&quot;, &quot;4,5,6&quot;))</span><br><span class="line"></span><br><span class="line">val schema4 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, StringType):: Nil</span><br><span class="line">)</span><br><span class="line">val df4 = spark.createDataFrame(rows4, schema4)</span><br><span class="line"></span><br><span class="line">println(&quot;单列转多行&quot;)</span><br><span class="line">df4.show()</span><br><span class="line">df4.select(&#x27;col1,&#x27;col2,explode(split(&#x27;col3,&quot;,&quot;)).as(&quot;col3&quot;)).show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
     <title>Spark:每个用户连续登录最大天数</title>
     <url>/2022/02/22/Spark-%E6%AF%8F%E4%B8%AA%E7%94%A8%E6%88%B7%E8%BF%9E%E7%BB%AD%E7%99%BB%E5%BD%95%E6%9C%80%E5%A4%A7%E5%A4%A9%E6%95%B0/</url>
     <content><![CDATA[<h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>请使用RDD、DF/DS API功能实现每个用户连续登录最大天数。</p>
@@ -2085,6 +2063,28 @@
 
 <p>result</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">+-----+-----+----------+----------+</span><br><span class="line">|user |times|start_date|end_date  |</span><br><span class="line">+-----+-----+----------+----------+</span><br><span class="line">|pk   |4    |2021-08-01|2021-08-04|</span><br><span class="line">|ruoze|3    |2021-07-30|2021-08-01|</span><br><span class="line">+-----+-----+----------+----------+</span><br></pre></td></tr></table></figure>
+]]></content>
+  </entry>
+  <entry>
+    <title>Spark DF/DS API：行列转换</title>
+    <url>/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
+    <content><![CDATA[<p>前文回顾：<a href="https://k12coding.github.io/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">Hive：行列转换</a></p>
+<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows1 = new util.ArrayList[Row]()</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;c&quot;, 1))</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;d&quot;, 2))</span><br><span class="line"></span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;e&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema1 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df1 = spark.createDataFrame(rows1, schema1)</span><br><span class="line"></span><br><span class="line">println(&quot;多行转多列&quot;)</span><br><span class="line">df1.show()</span><br><span class="line"></span><br><span class="line">df1.groupBy(&#x27;col1)</span><br><span class="line">.pivot(&#x27;col2)</span><br><span class="line">.max(&quot;col3&quot;).na.fill(0)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转多列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   b|  0|  5|  6|</span><br><span class="line">|   a|  1|  2|  0|</span><br><span class="line">+----+---+---+---+</span><br></pre></td></tr></table></figure>
+
+<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><h4 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows2 = new util.ArrayList[Row]()</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 1))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 2))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 3))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 4))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema2 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df2 = spark.createDataFrame(rows2, schema2)</span><br><span class="line">println(&quot;多行转单列&quot;)</span><br><span class="line">df2.show()</span><br><span class="line">df2.groupBy(&#x27;col1,&#x27;col2)</span><br><span class="line">.agg(concat_ws(&quot;,&quot;,collect_set(&#x27;col3)).as(&quot;col3&quot;))</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转单列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   b|   d|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   d|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   b|   d|5,6,4|</span><br><span class="line">+----+----+-----+</span><br></pre></td></tr></table></figure>
+
+<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><h4 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows3 = new util.ArrayList[Row]()</span><br><span class="line">rows3.add(Row(&quot;a&quot;, 1, 2, 3))</span><br><span class="line">rows3.add(Row(&quot;b&quot;, 4, 5, 6))</span><br><span class="line"></span><br><span class="line">val schema3 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;c&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;d&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;e&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df3 = spark.createDataFrame(rows3, schema3)</span><br><span class="line"></span><br><span class="line">println(&quot;多列转多行&quot;)</span><br><span class="line">df3.show()</span><br><span class="line">df3.selectExpr(&quot;col1&quot;,&quot;stack(3, &#x27;c&#x27;, c, &#x27;d&#x27;, d, &#x27;e&#x27;, e) as (`col2`,`col3`)&quot;)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多列转多行</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   a|  1|  2|  3|</span><br><span class="line">|   b|  4|  5|  6|</span><br><span class="line">+----+---+---+---+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   a|   e|   3|</span><br><span class="line">|   b|   c|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
+
+<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><h4 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows4 = new util.ArrayList[Row]()</span><br><span class="line">rows4.add(Row(&quot;a&quot;, &quot;b&quot;, &quot;1,2,3&quot;))</span><br><span class="line">rows4.add(Row(&quot;c&quot;, &quot;d&quot;, &quot;4,5,6&quot;))</span><br><span class="line"></span><br><span class="line">val schema4 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, StringType):: Nil</span><br><span class="line">)</span><br><span class="line">val df4 = spark.createDataFrame(rows4, schema4)</span><br><span class="line"></span><br><span class="line">println(&quot;单列转多行&quot;)</span><br><span class="line">df4.show()</span><br><span class="line">df4.select(&#x27;col1,&#x27;col2,explode(split(&#x27;col3,&quot;,&quot;)).as(&quot;col3&quot;)).show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
@@ -2273,6 +2273,17 @@
 ]]></content>
   </entry>
   <entry>
+    <title>spark-sql启动参数</title>
+    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
+    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
+
+<p>带参数启动成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>spark读取GBK编码文件乱码问题</title>
     <url>/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/</url>
     <content><![CDATA[<h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
@@ -2300,17 +2311,6 @@
 </ol>
 <p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
 <p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>spark-sql启动参数</title>
-    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
-    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
-
-<p>带参数启动成功：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -2361,41 +2361,6 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>关于服务器上测试自定义编译的spark没反应问题</title>
-    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
-<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
-
-<p>S2的位置：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
-
-<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
-<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
-<p>尝试以绝对路径的方式启动S2：</p>
-<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
-<p>结果一样，启动的是S1。</p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
-<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
-<p>删除环境变量：</p>
-<ul>
-<li>unset VAL：暂时的，只会在当前环境有效</li>
-<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
-<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
-</ul>
-<p>再次测试：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -2468,6 +2433,41 @@
 <li><p>然后用编辑器修改好文本，发布</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g &amp;&amp; hexo s</span><br><span class="line">hexo clean &amp;&amp; hexo deploy</span><br></pre></td></tr></table></figure></li>
 </ol>
+]]></content>
+  </entry>
+  <entry>
+    <title>关于服务器上测试自定义编译的spark没反应问题</title>
+    <url>/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>服务器上部署了Spark，并配置了环境变量。根据需要，在IDEA上编译了Spark源码，导出tgz包后，到服务器上解压部署。为区分两个Spark,服务器上的称为S1，新编译的为S2，并修改了S2的Welcome文本。</p>
+<h2 id="演示"><a href="#演示" class="headerlink" title="演示"></a>演示</h2><p>服务器上S1的位置，以及部署了环境变量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>S2的位置：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ pwd</span><br><span class="line">/home/hadoop/source/spark-3.2.0-bin-custom-spark</span><br></pre></td></tr></table></figure>
+
+<p>我尝试启动S2进行测试，在S2上测试，于是在S2目录下执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ ./bin/spark-shell</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122031909067.png" alt="image-20220122031909067"></p>
+<p>此时，Welcome文本与S1默认的文本相同，所以此时是启动了S1。</p>
+<p>尝试以绝对路径的方式启动S2：</p>
+<p><img src="/2022/01/22/%E5%85%B3%E4%BA%8E%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E6%B5%8B%E8%AF%95%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E7%9A%84spark%E6%B2%A1%E5%8F%8D%E5%BA%94%E9%97%AE%E9%A2%98/image-20220122032500493.png" alt="image-20220122032500493"></p>
+<p>结果一样，启动的是S1。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>阅读脚本spark-shell内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env bash</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Licensed to the Apache Software Foundation (ASF) under one or more</span><br><span class="line"># contributor license agreements.  See the NOTICE file distributed with</span><br><span class="line"># this work for additional information regarding copyright ownership.</span><br><span class="line"># The ASF licenses this file to You under the Apache License, Version 2.0</span><br><span class="line"># (the &quot;License&quot;); you may not use this file except in compliance with</span><br><span class="line"># the License.  You may obtain a copy of the License at</span><br><span class="line">#</span><br><span class="line">#    http://www.apache.org/licenses/LICENSE-2.0</span><br><span class="line">#</span><br><span class="line"># Unless required by applicable law or agreed to in writing, software</span><br><span class="line"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span><br><span class="line"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span><br><span class="line"># See the License for the specific language governing permissions and</span><br><span class="line"># limitations under the License.</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Shell script for starting the Spark Shell REPL</span><br><span class="line"></span><br><span class="line">cygwin=false</span><br><span class="line">case &quot;$(uname)&quot; in</span><br><span class="line">  CYGWIN*) cygwin=true;;</span><br><span class="line">esac</span><br><span class="line"></span><br><span class="line"># Enter posix mode for bash</span><br><span class="line">set -o posix</span><br><span class="line"></span><br><span class="line">if [ -z &quot;$&#123;SPARK_HOME&#125;&quot; ]; then</span><br><span class="line">  source &quot;$(dirname &quot;$0&quot;)&quot;/find-spark-home</span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line">export _SPARK_CMD_USAGE=&quot;Usage: ./bin/spark-shell [options]</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，脚本启动<code>/usr/bin/env</code> 路径的bash，然后查找是否设置环境变量${SPARK_HOME}，如果设置了，运行${SPARK_HOME}路径下的脚本；如果${SPARK_HOME}没有设置，才运行当前路径下的bin目录下的脚本。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>所以需要删除环境变量${SPARK_HOME}，${SPARK_HOME或者指向当前版本路径。</p>
+<p>通过<code>echo $SPARK_HOME</code>命令验证环境变量是否正确或者为空值。</p>
+<p>删除环境变量：</p>
+<ul>
+<li>unset VAL：暂时的，只会在当前环境有效</li>
+<li>export -n VAL：删除指定的变量。变量实际上并未删除，只是不会输出到后续指令的执行环境中。</li>
+<li>修改配置文件，默认保存在~/.bash_profile：需要退出重连才生效</li>
+</ul>
+<p>再次测试：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ vi ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ source ~/.bash_profile </span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ echo $SPARK_HOME</span><br><span class="line">/home/hadoop/app/spark</span><br><span class="line">[hadoop@hadoop001 spark-3.2.0-bin-custom-spark]$ exit</span><br><span class="line">logout</span><br><span class="line">[root@hadoop001 ~]# su - hadoop</span><br><span class="line">[hadoop@hadoop001 ~]$ echo $SPARK_HOME</span><br><span class="line">        </span><br><span class="line">[hadoop@hadoop001 ~]$ source/spark-3.2.0-bin-custom-spark/bin/spark-shell </span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/21 19:51:27 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[*], app id = local-1642794689485).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to  new Spark</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.14 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br><span class="line"></span><br><span class="line">scala&gt; </span><br></pre></td></tr></table></figure>
+
 ]]></content>
   </entry>
   <entry>
@@ -2928,38 +2928,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>简明 VIM 练级攻略（转载）</title>
     <url>/2021/12/02/%E7%AE%80%E6%98%8E-VIM-%E7%BB%83%E7%BA%A7%E6%94%BB%E7%95%A5%EF%BC%88%E8%BD%AC%E8%BD%BD%EF%BC%89/</url>
     <content><![CDATA[<p>下面的文章翻译自《<a href="http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/">Learn Vim Progressively</a>》，我觉得这是给新手最好的VIM的升级教程了，没有列举所有的命令，只是列举了那些最有用的命令。非常不错。</p>
@@ -3283,6 +3251,38 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
 
 <p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
