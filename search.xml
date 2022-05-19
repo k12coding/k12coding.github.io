@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>CentOS 6.5下安装python3.7</title>
+    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
+    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+
+<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
+<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+
+<p>把最上面的一行配置回python2.6.6就行了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+
+<p>有打印出相应信息就是成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>Azkaban multiple-executor模式部署</title>
     <url>/2022/02/22/Azkaban-multiple-executor%E6%A8%A1%E5%BC%8F%E9%83%A8%E7%BD%B2/</url>
     <content><![CDATA[<h2 id="以Multi-Executor-Server部署Azkaban"><a href="#以Multi-Executor-Server部署Azkaban" class="headerlink" title="以Multi Executor Server部署Azkaban"></a>以Multi Executor Server部署Azkaban</h2><h3 id="mysql准备"><a href="#mysql准备" class="headerlink" title="mysql准备"></a>mysql准备</h3><ol>
@@ -105,31 +130,6 @@
 <p>在executor的根目录下创建<code>plugins\jobtypes\commonprivate.properties</code></p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># set execute-as-user</span><br><span class="line">execute.as.user=false</span><br><span class="line">azkaban.native.lib=false</span><br></pre></td></tr></table></figure></li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>CentOS 6.5下安装python3.7</title>
-    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
-    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
-
-<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
-<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
-
-<p>把最上面的一行配置回python2.6.6就行了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
-
-<p>有打印出相应信息就是成功了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -892,114 +892,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hadoop基础知识</title>
-    <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
-    <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
-<p>广义上：指的是hadoop的生态系统，即其他各种组件在内的一整套软件（sqoop，flume，spark，flink，hbase，kafka，cdh环境等）。hadoop生态系统是一个很庞大的概念，hadoop只是其中最重要最基础的部分，生态系统的每一个子系统只结局的某一个特定的问题域。不是一个全能系统，而是多个小而精的系统。</p>
-<h2 id="组成"><a href="#组成" class="headerlink" title="组成"></a>组成</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
-<p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
-<p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
-<p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
-<h1 id="二、HDFS概述"><a href="#二、HDFS概述" class="headerlink" title="二、HDFS概述"></a>二、HDFS概述</h1><h2 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h2><p>Hdfs（hadoop distribute file system），他是一个文件系统，用于存储文件，通过目录树来定位文件：其次，他是分布式的，有很多服务器联合起来实现其功能，集群中的服务器有各自的角色。</p>
-<p>Hdfs的使用场景，适合一次写入，多次读出的场景，且不支持文件的修改。适合用来做数据存放。</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
-<li><p>高容错性</p>
-<p>数据自动保存多个副本。 （默认是三分）通过增加副本的形式，提高容错性</p>
-<p>某一个副本丢失以后，它可以自动恢复</p>
-</li>
-<li><p>适合大数据处理</p>
-<p>数据规模：能够处理数据规模达到GB、TB、甚至PB级别的数据</p>
-<p>文件规模：能够处理百万规模以上的文件数量，</p>
-</li>
-<li><p>可构建在廉价机器上，通过多副本机制，提高可靠性</p>
-</li>
-</ul>
-<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ul>
-<li>不适合低延时数据访问，比如毫秒级的存储数据，是做不到的</li>
-<li>无法高效的对大量小文件进行存储<ul>
-<li>存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的</li>
-<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标</li>
-</ul>
-</li>
-<li>不支持并发写入、文件随机修改<ul>
-<li>一个文件只能有一个写，不允许多个线程同时写（重点）</li>
-<li>仅支持数据append（追加），不支持文件的随机修改</li>
-</ul>
-</li>
-</ul>
-<h2 id="hdfs支持的三种模式"><a href="#hdfs支持的三种模式" class="headerlink" title="hdfs支持的三种模式"></a>hdfs支持的三种模式</h2><ul>
-<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
-<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
-<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
-</ul>
-<h1 id="三、HDFS架构"><a href="#三、HDFS架构" class="headerlink" title="三、HDFS架构"></a>三、HDFS架构</h1><p> <img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/1598893-20191129134655673-2083411338.png" alt="img"></p>
-<p>1）<strong>NameNode（nn）</strong>：Master，它是一个主管、管理者。</p>
-<ul>
-<li><p>管理HDFS的名称空间</p>
-<ul>
-<li>文件的名称、目录结构、权限、大小、所属用户用户组  时间</li>
-</ul>
-</li>
-<li><p>处理客户端读写请求</p>
-</li>
-<li><p>配置副本策略</p>
-</li>
-<li><p>管理数据块（Block）映射信息</p>
-<ul>
-<li><p>文件被切割哪些块、块(块本身+2副本=3个块)分布在哪些DN节点上，blockmap 块映射。</p>
-</li>
-<li><p>不会持久化存储这种映射关系，是通过集群<strong>启动</strong>和<strong>运行</strong>时候，DN定期给NN汇报blockreport（BR），然后NN在内存中动态维护这种映射关系；</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>2）<strong>DataNode</strong>：Slave。NameNode下达命令，DataNode执行实际的操作</p>
-<ul>
-<li><p>存储实际的数据块和块的校验和</p>
-</li>
-<li><p>执行数据块的读/写操作</p>
-</li>
-<li><p>定期给NN发送块报告</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec  21600000=6h</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6h</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>3）<strong>Client</strong>：客户端</p>
-<ul>
-<li>文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传</li>
-<li>与NameNode交互，获取文件的位置信息</li>
-<li>与DataNode交互，读取或者写入数据</li>
-<li>Client提供一些命令来管理HDFS，比如NameNode格式化</li>
-<li>Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作</li>
-</ul>
-<p>4）<strong>Secondary NameNode</strong>：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
-<ul>
-<li><p>辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
-<ul>
-<li><p>edits 编辑日志文件</p>
-</li>
-<li><p>fsimage 镜像文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop     219 Nov 26 22:01 VERSION</span><br><span class="line">[hadoop@hadoop001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/hadoop-hadoop/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><p>在紧急情况下，可辅助恢复NameNode</p>
-</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关于NN的补充：在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</span><br><span class="line">中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</span><br><span class="line"></span><br><span class="line">后期就取消SNN，新建一个实时NN，作为高可靠 HA。</span><br><span class="line">NN Active</span><br><span class="line">NN Standby 实时的等待active NN挂了，瞬间启动Standby--&gt;Active，对外提供读写服务。</span><br></pre></td></tr></table></figure>
-
-
-
-<p>HDFS中的文件在物理上是分块存储，块的大小可以通过配置参数（dfs.Blocksize）来规定，默认大小在hadoop2.x版本中是128M,老版本是64M</p>
-<p><strong>思考：为什么块的大小不能设置太小，也不能设置太大？</strong></p>
-<p>（1）HDFS的块设置太小，会增加寻址时间，程序一直在找块的开始位置</p>
-<p>（2）如果块设置的太大，从磁盘传输数据的时间会明显大于定位这个块开始位置所需的时间。导致程序在处理这块数据时，会非常慢。</p>
-<p><strong>总结：HDFS块的大小设置主要取决于磁盘传输速率</strong></p>
-<h1 id="四、MapReduce-on-Yarn-Yarn的工作流程"><a href="#四、MapReduce-on-Yarn-Yarn的工作流程" class="headerlink" title="四、MapReduce on Yarn/Yarn的工作流程"></a>四、MapReduce on Yarn/Yarn的工作流程</h1><p><img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/mronyarn.jpg" alt="MapReduce on Yarn"></p>
-<p>1.客户端client向ResourceManager提交应用程序/Application/作业JOB，包含application master程序，启动application master的命令等，并请求一个ApplicationMaster实例<br>2.RM为该job分配第一个container,与对应的NM通信，要求它在这个container启动作业的application master<br>3.application master向applications manager注册，这样用户就可以通过RM Web查看job的状态,一直到最后<br>4.application master采用轮询的方式通过【RPC】协议向resource scheduler申请和领取资源（哪台DN机器，领取多少内存 CPU）<br>5.一旦application master申请到资源后，与对应的NM通信，要求启动task<br>6.NM为任务设置好运行环境后，将任务的启动命令写到一个脚本中，并通过该脚本启动任务，运行任务<br>7.各个任务 task 通过【RPC】协议汇报自己的状态和进度，以让application master随时掌握各个任务的运行状态，从而在任务失败时，重启启动任务。<br>8.job运行完成后，application master向applications manager注销并关闭自己。</p>
-<p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
-<p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
-<p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hadoop支持LZO压缩</title>
     <url>/2022/01/18/Hadoop%E6%94%AF%E6%8C%81LZO%E5%8E%8B%E7%BC%A9/</url>
     <content><![CDATA[<h2 id="一、Hadoop支持LZO压缩"><a href="#一、Hadoop支持LZO压缩" class="headerlink" title="一、Hadoop支持LZO压缩"></a>一、Hadoop支持LZO压缩</h2><h3 id="1-lzop"><a href="#1-lzop" class="headerlink" title="1.lzop"></a>1.lzop</h3><p>lzo格式文件压缩解压需要用到服务器的lzop工具，hadoop 的<a href="https://so.csdn.net/so/search?q=native&spm=1001.2101.3001.7020">native</a>库（hadoop checknative是没有的lzo,zip相关信息）并不支持</p>
@@ -1135,6 +1027,173 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hadoop基础知识</title>
+    <url>/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/</url>
+    <content><![CDATA[<h1 id="一、Hadoop"><a href="#一、Hadoop" class="headerlink" title="一、Hadoop"></a>一、Hadoop</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>狭义上：以Hadoop软件本身（hadoop.apache.org），指一个用于大数据分布式存储(HDFS)，分布式计算(MapReduce)和资源调度(YARN)的平台，这三样只能用来做离线批处理，不能用于实时处理，因此才需要生态系统的其他的组件。</p>
+<p>广义上：指的是hadoop的生态系统，即其他各种组件在内的一整套软件（sqoop，flume，spark，flink，hbase，kafka，cdh环境等）。hadoop生态系统是一个很庞大的概念，hadoop只是其中最重要最基础的部分，生态系统的每一个子系统只结局的某一个特定的问题域。不是一个全能系统，而是多个小而精的系统。</p>
+<h2 id="组成"><a href="#组成" class="headerlink" title="组成"></a>组成</h2><p>Hadoop common：提供一些通用的功能支持其他hadoop模块。</p>
+<p><strong>Hadoop Distributed File System</strong>：即分布式文件系统，简称HDFS。主要用来做数据存储，并提供对应用数据高吞吐量的访问。</p>
+<p><strong>Hadoop MapReduce</strong>：基于yarn的，能用来并行处理大数据集的计算框架。</p>
+<p><strong>Hadoop Yarn</strong>：用于作业调度和集群资源管理的框架。</p>
+<h1 id="二、HDFS概述"><a href="#二、HDFS概述" class="headerlink" title="二、HDFS概述"></a>二、HDFS概述</h1><h2 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h2><p>Hdfs（hadoop distribute file system），他是一个文件系统，用于存储文件，通过目录树来定位文件：其次，他是分布式的，有很多服务器联合起来实现其功能，集群中的服务器有各自的角色。</p>
+<p>Hdfs的使用场景，适合一次写入，多次读出的场景，且不支持文件的修改。适合用来做数据存放。</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
+<li><p>高容错性</p>
+<p>数据自动保存多个副本。 （默认是三分）通过增加副本的形式，提高容错性</p>
+<p>某一个副本丢失以后，它可以自动恢复</p>
+</li>
+<li><p>适合大数据处理</p>
+<p>数据规模：能够处理数据规模达到GB、TB、甚至PB级别的数据</p>
+<p>文件规模：能够处理百万规模以上的文件数量，</p>
+</li>
+<li><p>可构建在廉价机器上，通过多副本机制，提高可靠性</p>
+</li>
+</ul>
+<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ul>
+<li>不适合低延时数据访问，比如毫秒级的存储数据，是做不到的</li>
+<li>无法高效的对大量小文件进行存储<ul>
+<li>存储大量小文件的话，它会占用NameNode大量的内存来存储文件目录和块信息。这样是不可取的，因为NameNode的内存总是有限的</li>
+<li>小文件存储的寻址时间会超过读取时间，它违反了HDFS的设计目标</li>
+</ul>
+</li>
+<li>不支持并发写入、文件随机修改<ul>
+<li>一个文件只能有一个写，不允许多个线程同时写（重点）</li>
+<li>仅支持数据append（追加），不支持文件的随机修改</li>
+</ul>
+</li>
+</ul>
+<h2 id="hdfs支持的三种模式"><a href="#hdfs支持的三种模式" class="headerlink" title="hdfs支持的三种模式"></a>hdfs支持的三种模式</h2><ul>
+<li>Local (Standalone) Mode ：本地模式，不启动进程，实际工作中从来没用过</li>
+<li>Pseudo-Distributed Mode：伪分布式，启动单个进程（1大 小），应用场景：学习</li>
+<li>Fully-Distributed Mode    集群模式，启动多个进程（2个大多个小），应用场景：生产（CDH,按量付费）</li>
+</ul>
+<h1 id="三、HDFS架构"><a href="#三、HDFS架构" class="headerlink" title="三、HDFS架构"></a>三、HDFS架构</h1><p> <img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/1598893-20191129134655673-2083411338.png" alt="img"></p>
+<p>1）<strong>NameNode（nn）</strong>：Master，它是一个主管、管理者。</p>
+<ul>
+<li><p>管理HDFS的名称空间</p>
+<ul>
+<li>文件的名称、目录结构、权限、大小、所属用户用户组  时间</li>
+</ul>
+</li>
+<li><p>处理客户端读写请求</p>
+</li>
+<li><p>配置副本策略</p>
+</li>
+<li><p>管理数据块（Block）映射信息</p>
+<ul>
+<li><p>文件被切割哪些块、块(块本身+2副本=3个块)分布在哪些DN节点上，blockmap 块映射。</p>
+</li>
+<li><p>不会持久化存储这种映射关系，是通过集群<strong>启动</strong>和<strong>运行</strong>时候，DN定期给NN汇报blockreport（BR），然后NN在内存中动态维护这种映射关系；</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>2）<strong>DataNode</strong>：Slave。NameNode下达命令，DataNode执行实际的操作</p>
+<ul>
+<li><p>存储实际的数据块和块的校验和</p>
+</li>
+<li><p>执行数据块的读/写操作</p>
+</li>
+<li><p>定期给NN发送块报告</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dfs.blockreport.intervalMsec  21600000=6h</span><br><span class="line">dfs.datanode.directoryscan.interval  21600s=6h</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>3）<strong>Client</strong>：客户端</p>
+<ul>
+<li>文件切分。文件上传HDFS的时候，Client将文件切分成一个一个的Block，然后进行上传</li>
+<li>与NameNode交互，获取文件的位置信息</li>
+<li>与DataNode交互，读取或者写入数据</li>
+<li>Client提供一些命令来管理HDFS，比如NameNode格式化</li>
+<li>Client可以通过一些命令来访问HDFS，比如对HDFS增删查改操作</li>
+</ul>
+<p>4）<strong>Secondary NameNode</strong>：并非NameNode的热备。当NameNode挂掉的时候，它并不能马上替换NameNode并提供服务。</p>
+<ul>
+<li><p>辅助NameNode，分担其工作量，比如定期合并Fsimage和Edits，并推送给NameNode</p>
+<ul>
+<li><p>edits 编辑日志文件</p>
+</li>
+<li><p>fsimage 镜像文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop 1048576 Nov 28 09:07 edits_inprogress_0000000000000000260</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop       4 Nov 28 09:07 seen_txid</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop     219 Nov 26 22:01 VERSION</span><br><span class="line">[hadoop@hadoop001 current]$ pwd</span><br><span class="line">/home/hadoop/tmp/hadoop-hadoop/dfs/name/current</span><br><span class="line"></span><br><span class="line">SNN:</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 08:07 edits_0000000000000000256-0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      42 Nov 28 09:07 edits_0000000000000000258-0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 08:07 fsimage_0000000000000000257</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 08:07 fsimage_0000000000000000257.md5</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop    2874 Nov 28 09:07 fsimage_0000000000000000259</span><br><span class="line">-rw-rw-r-- 1 hadoop hadoop      62 Nov 28 09:07 fsimage_0000000000000000259.md5</span><br><span class="line"></span><br><span class="line">将NN的 </span><br><span class="line">fsimage_0000000000000000257</span><br><span class="line">edits_0000000000000000258-0000000000000000259</span><br><span class="line">拿到SNN，进行【合并】，生成fsimage_0000000000000000259文件，然后将此文件【推送】给NN；</span><br><span class="line">同时，NN在新的编辑日志文件edits_inprogress_0000000000000000260</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>在紧急情况下，可辅助恢复NameNode</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">关于NN的补充：在大数据早期的时候，只有NN一个，假如挂了就真的挂了。</span><br><span class="line">中期的时候，新增SNN来定期来合并、 备份 、推送，但是这样的也就是满足一定条件，如1小时，备份1次。例如，12点合并备份，但是12点半挂了，从SNN恢复到NN，只能恢复12点的时刻的元数据，丢了12点-12点半期间的元数据。</span><br><span class="line"></span><br><span class="line">后期就取消SNN，新建一个实时NN，作为高可靠 HA。</span><br><span class="line">NN Active</span><br><span class="line">NN Standby 实时的等待active NN挂了，瞬间启动Standby--&gt;Active，对外提供读写服务。</span><br></pre></td></tr></table></figure>
+
+
+
+<p>HDFS中的文件在物理上是分块存储，块的大小可以通过配置参数（dfs.Blocksize）来规定，默认大小在hadoop2.x版本中是128M,老版本是64M</p>
+<p><strong>思考：为什么块的大小不能设置太小，也不能设置太大？</strong></p>
+<p>（1）HDFS的块设置太小，会增加寻址时间，程序一直在找块的开始位置</p>
+<p>（2）如果块设置的太大，从磁盘传输数据的时间会明显大于定位这个块开始位置所需的时间。导致程序在处理这块数据时，会非常慢。</p>
+<p><strong>总结：HDFS块的大小设置主要取决于磁盘传输速率</strong></p>
+<h1 id="四、MapReduce-on-Yarn-Yarn的工作流程"><a href="#四、MapReduce-on-Yarn-Yarn的工作流程" class="headerlink" title="四、MapReduce on Yarn/Yarn的工作流程"></a>四、MapReduce on Yarn/Yarn的工作流程</h1><p><img src="/2021/11/25/Hadoop%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/mronyarn.jpg" alt="MapReduce on Yarn"></p>
+<p>1.客户端client向ResourceManager提交应用程序/Application/作业JOB，包含application master程序，启动application master的命令等，并请求一个ApplicationMaster实例<br>2.RM为该job分配第一个container,与对应的NM通信，要求它在这个container启动作业的application master<br>3.application master向applications manager注册，这样用户就可以通过RM Web查看job的状态,一直到最后<br>4.application master采用轮询的方式通过【RPC】协议向resource scheduler申请和领取资源（哪台DN机器，领取多少内存 CPU）<br>5.一旦application master申请到资源后，与对应的NM通信，要求启动task<br>6.NM为任务设置好运行环境后，将任务的启动命令写到一个脚本中，并通过该脚本启动任务，运行任务<br>7.各个任务 task 通过【RPC】协议汇报自己的状态和进度，以让application master随时掌握各个任务的运行状态，从而在任务失败时，重启启动任务。<br>8.job运行完成后，application master向applications manager注销并关闭自己。</p>
+<p>总结:<br>启动主程序，领取资源；1-4<br>运行任务，直到完成；  5-8</p>
+<p>客户端提交job给 Applications Manager 连接Node Manager去申请一个Container的容器，这个容器运行作业的App Mstr的主程序，启动后向App Manager进行注册，然后可以访问URL界面，然后App Mastr向 Resource Scheduler申请资源，拿到一个资源的列表，和对应的NodeManager进行通信，去启动对应的Container容器，去运行 Reduce Task 和 Map Task （两个先后运行顺序随机运行），它们是向App Mstr进行汇报它们的运行状态， 当所有作业运行完成后还需要向Applications Manager进行汇报并注销和关闭</p>
+<p>yarn中，它按照实际资源需求为每个任务分配资源，比如一个任务需要1GB内存，1个CPU，则为其分配对应的资源，而资源是用container表示的，container是一个抽象概念，它实际上是一个JAVA对象，里面有资源描述（资源所在节点，资源优先级，资源量，比如CPU量，内存量等）。当一个applicationmaster向RM申请资源时，RM会以container的形式将资源发送给对应的applicationmaster，applicationmaster收到container后，与对应的nodemanager通信，告诉它我要利用这个container运行某个任务。</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hive：内部表与外部表</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
+    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
+</ul>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>参考链接：</p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hive四种排序方式:order by,sort by,distribute by,cluster by</title>
     <url>/2022/01/29/Hive%E5%9B%9B%E7%A7%8D%E6%8E%92%E5%BA%8F%E6%96%B9%E5%BC%8F-order-by-sort-by-distribute-by-cluster-by/</url>
     <content><![CDATA[<h2 id="Order-By"><a href="#Order-By" class="headerlink" title="Order By"></a>Order By</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">colOrder: ( ASC | DESC )</span><br><span class="line">colNullOrder: (NULLS FIRST | NULLS LAST)           -- (Note: Available in Hive 2.1.0 and later)</span><br><span class="line">orderBy: ORDER BY colName colOrder? colNullOrder? (&#x27;,&#x27; colName colOrder? colNullOrder?)*</span><br><span class="line">query: SELECT expression (&#x27;,&#x27; expression)* FROM src orderBy</span><br></pre></td></tr></table></figure>
@@ -1197,62 +1256,57 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive：内部表与外部表</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
-    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
-<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
-<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
-</li>
-<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
-<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
-</li>
-<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
-</li>
-<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
-</li>
-<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
-</li>
-</ul>
-<p>补充说明：</p>
-<ul>
-<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
-<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
-<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
-</ul>
-<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
-<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
-</blockquote>
-<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
-<p>修改内部表为外部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+    <title>Hive：加载数据到表的方式</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
 
-<p>修改外部表为内部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
 
-<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
-<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
-<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
-<p>对于外部表，Hive 假定它不管理数据。</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
-<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
-<ul>
-<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
-<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
-<li>ACID /事务处理仅适用于托管表</li>
-<li>查询结果缓存仅适用于托管表</li>
-<li>外部表仅允许 RELY 约束</li>
-<li>某些物化视图功能仅适用于托管表</li>
+<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
+<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
+
+<p>适用于建（外部）表时，数据文件已经存在的情况</p>
+<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
+
+<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
+
+<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
+<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
+<li>用来复制表的结构</li>
+<li>需要外部表的话，通过create external table as …指定</li>
+<li>不CTAS语句会填充数据</li>
 </ul>
-<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
-<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
-<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
-<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>创建表并加载数据（as select）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
+
+<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
+<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
+<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
+<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
+<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
+<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
+<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
+<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
+<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
+
+<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
+
+
+
 <p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
-<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
+<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
+<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1340,60 +1394,6 @@
 <p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
 <p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
 <p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hive：加载数据到表的方式</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
-<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
-
-<p>适用于建（外部）表时，数据文件已经存在的情况</p>
-<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
-
-<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
-
-<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
-<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
-<li>用来复制表的结构</li>
-<li>需要外部表的话，通过create external table as …指定</li>
-<li>不CTAS语句会填充数据</li>
-</ul>
-<p>创建表并加载数据（as select）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
-
-<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
-<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
-<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
-<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
-<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
-<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
-<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
-<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
-<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
-
-<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
-<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2023,6 +2023,28 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Spark DF/DS API：行列转换</title>
+    <url>/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
+    <content><![CDATA[<p>前文回顾：<a href="https://k12coding.github.io/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">Hive：行列转换</a></p>
+<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows1 = new util.ArrayList[Row]()</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;c&quot;, 1))</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;d&quot;, 2))</span><br><span class="line"></span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;e&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema1 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df1 = spark.createDataFrame(rows1, schema1)</span><br><span class="line"></span><br><span class="line">println(&quot;多行转多列&quot;)</span><br><span class="line">df1.show()</span><br><span class="line"></span><br><span class="line">df1.groupBy(&#x27;col1)</span><br><span class="line">.pivot(&#x27;col2)</span><br><span class="line">.max(&quot;col3&quot;).na.fill(0)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转多列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   b|  0|  5|  6|</span><br><span class="line">|   a|  1|  2|  0|</span><br><span class="line">+----+---+---+---+</span><br></pre></td></tr></table></figure>
+
+<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><h4 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows2 = new util.ArrayList[Row]()</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 1))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 2))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 3))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 4))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema2 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df2 = spark.createDataFrame(rows2, schema2)</span><br><span class="line">println(&quot;多行转单列&quot;)</span><br><span class="line">df2.show()</span><br><span class="line">df2.groupBy(&#x27;col1,&#x27;col2)</span><br><span class="line">.agg(concat_ws(&quot;,&quot;,collect_set(&#x27;col3)).as(&quot;col3&quot;))</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转单列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   b|   d|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   d|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   b|   d|5,6,4|</span><br><span class="line">+----+----+-----+</span><br></pre></td></tr></table></figure>
+
+<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><h4 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows3 = new util.ArrayList[Row]()</span><br><span class="line">rows3.add(Row(&quot;a&quot;, 1, 2, 3))</span><br><span class="line">rows3.add(Row(&quot;b&quot;, 4, 5, 6))</span><br><span class="line"></span><br><span class="line">val schema3 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;c&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;d&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;e&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df3 = spark.createDataFrame(rows3, schema3)</span><br><span class="line"></span><br><span class="line">println(&quot;多列转多行&quot;)</span><br><span class="line">df3.show()</span><br><span class="line">df3.selectExpr(&quot;col1&quot;,&quot;stack(3, &#x27;c&#x27;, c, &#x27;d&#x27;, d, &#x27;e&#x27;, e) as (`col2`,`col3`)&quot;)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多列转多行</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   a|  1|  2|  3|</span><br><span class="line">|   b|  4|  5|  6|</span><br><span class="line">+----+---+---+---+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   a|   e|   3|</span><br><span class="line">|   b|   c|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
+
+<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><h4 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows4 = new util.ArrayList[Row]()</span><br><span class="line">rows4.add(Row(&quot;a&quot;, &quot;b&quot;, &quot;1,2,3&quot;))</span><br><span class="line">rows4.add(Row(&quot;c&quot;, &quot;d&quot;, &quot;4,5,6&quot;))</span><br><span class="line"></span><br><span class="line">val schema4 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, StringType):: Nil</span><br><span class="line">)</span><br><span class="line">val df4 = spark.createDataFrame(rows4, schema4)</span><br><span class="line"></span><br><span class="line">println(&quot;单列转多行&quot;)</span><br><span class="line">df4.show()</span><br><span class="line">df4.select(&#x27;col1,&#x27;col2,explode(split(&#x27;col3,&quot;,&quot;)).as(&quot;col3&quot;)).show()</span><br></pre></td></tr></table></figure>
+
+<h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>Spark:每个用户连续登录最大天数</title>
     <url>/2022/02/22/Spark-%E6%AF%8F%E4%B8%AA%E7%94%A8%E6%88%B7%E8%BF%9E%E7%BB%AD%E7%99%BB%E5%BD%95%E6%9C%80%E5%A4%A7%E5%A4%A9%E6%95%B0/</url>
     <content><![CDATA[<h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>请使用RDD、DF/DS API功能实现每个用户连续登录最大天数。</p>
@@ -2063,28 +2085,6 @@
 
 <p>result</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">+-----+-----+----------+----------+</span><br><span class="line">|user |times|start_date|end_date  |</span><br><span class="line">+-----+-----+----------+----------+</span><br><span class="line">|pk   |4    |2021-08-01|2021-08-04|</span><br><span class="line">|ruoze|3    |2021-07-30|2021-08-01|</span><br><span class="line">+-----+-----+----------+----------+</span><br></pre></td></tr></table></figure>
-]]></content>
-  </entry>
-  <entry>
-    <title>Spark DF/DS API：行列转换</title>
-    <url>/2022/02/23/Spark-DF-DS-API%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
-    <content><![CDATA[<p>前文回顾：<a href="https://k12coding.github.io/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/">Hive：行列转换</a></p>
-<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows1 = new util.ArrayList[Row]()</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;c&quot;, 1))</span><br><span class="line">rows1.add(Row(&quot;a&quot;, &quot;d&quot;, 2))</span><br><span class="line"></span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows1.add(Row(&quot;b&quot;, &quot;e&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema1 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df1 = spark.createDataFrame(rows1, schema1)</span><br><span class="line"></span><br><span class="line">println(&quot;多行转多列&quot;)</span><br><span class="line">df1.show()</span><br><span class="line"></span><br><span class="line">df1.groupBy(&#x27;col1)</span><br><span class="line">.pivot(&#x27;col2)</span><br><span class="line">.max(&quot;col3&quot;).na.fill(0)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转多列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   b|  0|  5|  6|</span><br><span class="line">|   a|  1|  2|  0|</span><br><span class="line">+----+---+---+---+</span><br></pre></td></tr></table></figure>
-
-<h3 id="多行转单列"><a href="#多行转单列" class="headerlink" title="多行转单列"></a>多行转单列</h3><h4 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows2 = new util.ArrayList[Row]()</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 1))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 2))</span><br><span class="line">rows2.add(Row(&quot;a&quot;, &quot;b&quot;, 3))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 4))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 5))</span><br><span class="line">rows2.add(Row(&quot;b&quot;, &quot;d&quot;, 6))</span><br><span class="line"></span><br><span class="line">val schema2 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df2 = spark.createDataFrame(rows2, schema2)</span><br><span class="line">println(&quot;多行转单列&quot;)</span><br><span class="line">df2.show()</span><br><span class="line">df2.groupBy(&#x27;col1,&#x27;col2)</span><br><span class="line">.agg(concat_ws(&quot;,&quot;,collect_set(&#x27;col3)).as(&quot;col3&quot;))</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多行转单列</span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   b|   d|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   d|   6|</span><br><span class="line">+----+----+----+</span><br><span class="line"></span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   b|   d|5,6,4|</span><br><span class="line">+----+----+-----+</span><br></pre></td></tr></table></figure>
-
-<h2 id="列转行"><a href="#列转行" class="headerlink" title="列转行"></a>列转行</h2><h3 id="多列转多行"><a href="#多列转多行" class="headerlink" title="多列转多行"></a>多列转多行</h3><h4 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows3 = new util.ArrayList[Row]()</span><br><span class="line">rows3.add(Row(&quot;a&quot;, 1, 2, 3))</span><br><span class="line">rows3.add(Row(&quot;b&quot;, 4, 5, 6))</span><br><span class="line"></span><br><span class="line">val schema3 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;c&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;d&quot;, IntegerType)::</span><br><span class="line">StructField(&quot;e&quot;, IntegerType)::Nil</span><br><span class="line">)</span><br><span class="line">val df3 = spark.createDataFrame(rows3, schema3)</span><br><span class="line"></span><br><span class="line">println(&quot;多列转多行&quot;)</span><br><span class="line">df3.show()</span><br><span class="line">df3.selectExpr(&quot;col1&quot;,&quot;stack(3, &#x27;c&#x27;, c, &#x27;d&#x27;, d, &#x27;e&#x27;, e) as (`col2`,`col3`)&quot;)</span><br><span class="line">.show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">多列转多行</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|col1|  c|  d|  e|</span><br><span class="line">+----+---+---+---+</span><br><span class="line">|   a|  1|  2|  3|</span><br><span class="line">|   b|  4|  5|  6|</span><br><span class="line">+----+---+---+---+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   c|   1|</span><br><span class="line">|   a|   d|   2|</span><br><span class="line">|   a|   e|   3|</span><br><span class="line">|   b|   c|   4|</span><br><span class="line">|   b|   d|   5|</span><br><span class="line">|   b|   e|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
-
-<h3 id="单列转多行"><a href="#单列转多行" class="headerlink" title="单列转多行"></a>单列转多行</h3><h4 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">val rows4 = new util.ArrayList[Row]()</span><br><span class="line">rows4.add(Row(&quot;a&quot;, &quot;b&quot;, &quot;1,2,3&quot;))</span><br><span class="line">rows4.add(Row(&quot;c&quot;, &quot;d&quot;, &quot;4,5,6&quot;))</span><br><span class="line"></span><br><span class="line">val schema4 = StructType(</span><br><span class="line">StructField(&quot;col1&quot;, StringType)::</span><br><span class="line">StructField(&quot;col2&quot;, StringType)::</span><br><span class="line">StructField(&quot;col3&quot;, StringType):: Nil</span><br><span class="line">)</span><br><span class="line">val df4 = spark.createDataFrame(rows4, schema4)</span><br><span class="line"></span><br><span class="line">println(&quot;单列转多行&quot;)</span><br><span class="line">df4.show()</span><br><span class="line">df4.select(&#x27;col1,&#x27;col2,explode(split(&#x27;col3,&quot;,&quot;)).as(&quot;col3&quot;)).show()</span><br></pre></td></tr></table></figure>
-
-<h4 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">单列转多行</span><br><span class="line">+----+----+-----+</span><br><span class="line">|col1|col2| col3|</span><br><span class="line">+----+----+-----+</span><br><span class="line">|   a|   b|1,2,3|</span><br><span class="line">|   c|   d|4,5,6|</span><br><span class="line">+----+----+-----+</span><br><span class="line"></span><br><span class="line">+----+----+----+</span><br><span class="line">|col1|col2|col3|</span><br><span class="line">+----+----+----+</span><br><span class="line">|   a|   b|   1|</span><br><span class="line">|   a|   b|   2|</span><br><span class="line">|   a|   b|   3|</span><br><span class="line">|   c|   d|   4|</span><br><span class="line">|   c|   d|   5|</span><br><span class="line">|   c|   d|   6|</span><br><span class="line">+----+----+----+</span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -2928,6 +2928,38 @@
 ]]></content>
   </entry>
   <entry>
+    <title>画图详解yarn的资源调度流程</title>
+    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
+    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
+<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
+<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
+<li>Client向RM申请一个作业id。</li>
+<li>RM给Client返回该job资源的提交路径和作业id。</li>
+<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
+<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
+</ul>
+<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
+<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
+<li>某⼀个空闲的NM领取到该Job。</li>
+<li>该NM创建Container，并产生MRAppmaster。</li>
+<li>下载Client提交的资源到本地。</li>
+</ul>
+<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
+<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
+<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
+</ul>
+<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
+<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
+<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
+<li>ReduceTask向MapTask获取相应分区的数据。</li>
+<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
+</ul>
+<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
+<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
+<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>简明 VIM 练级攻略（转载）</title>
     <url>/2021/12/02/%E7%AE%80%E6%98%8E-VIM-%E7%BB%83%E7%BA%A7%E6%94%BB%E7%95%A5%EF%BC%88%E8%BD%AC%E8%BD%BD%EF%BC%89/</url>
     <content><![CDATA[<p>下面的文章翻译自《<a href="http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/">Learn Vim Progressively</a>》，我觉得这是给新手最好的VIM的升级教程了，没有列举所有的命令，只是列举了那些最有用的命令。非常不错。</p>
@@ -3251,38 +3283,6 @@
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;log4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;log4j&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.2.17&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-log4j12&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.21&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
 
 <p>然后运行程序，控制台输出日志与服务器上运行输出的信息的大致一样。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>画图详解yarn的资源调度流程</title>
-    <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
-    <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
-<h3 id="作业提交"><a href="#作业提交" class="headerlink" title="作业提交"></a>作业提交</h3><ul>
-<li>Client调用job.waitForCompletion⽅法，向整个集群提交MapReduce作业。</li>
-<li>Client向RM申请一个作业id。</li>
-<li>RM给Client返回该job资源的提交路径和作业id。</li>
-<li>Client提交jar包、切⽚信息和配置文件到指定的资源提交路径。</li>
-<li>Client提交完资源后，向RM申请运行MrAppMaster。</li>
-</ul>
-<h3 id="作业初始化"><a href="#作业初始化" class="headerlink" title="作业初始化"></a>作业初始化</h3><ul>
-<li>当RM收到Client的请求后，将该job添加到容量调度器中。</li>
-<li>某⼀个空闲的NM领取到该Job。</li>
-<li>该NM创建Container，并产生MRAppmaster。</li>
-<li>下载Client提交的资源到本地。</li>
-</ul>
-<h3 id="任务分配"><a href="#任务分配" class="headerlink" title="任务分配"></a>任务分配</h3><ul>
-<li>MrAppMaster向RM申请运行多个MapTask任务资源。</li>
-<li>RM将运行MapTask任务分配给另外两个NodeManager，另两个NodeManager分别领取任务并创建容器。</li>
-</ul>
-<h3 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h3><ul>
-<li>MrAppMaster向两个接收到任务的NodeManager发送程序启动脚本，这两个NodeManager分别启动MapTask，MapTask对数据分区排序。</li>
-<li>MrAppMaster等待所有MapTask运行完毕后，向RM申请容器，运行ReduceTask。</li>
-<li>ReduceTask向MapTask获取相应分区的数据。</li>
-<li>程序运行完毕后，MrAppMaster会向RM申请注销⾃己。</li>
-</ul>
-<h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
-<h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
-<p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
 ]]></content>
   </entry>
   <entry>
