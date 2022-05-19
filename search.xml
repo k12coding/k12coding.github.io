@@ -179,99 +179,95 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Flume的使用案例</title>
-    <url>/2022/05/17/Flume%E7%9A%84%E4%BD%BF%E7%94%A8%E6%A1%88%E4%BE%8B/</url>
-    <content><![CDATA[<h2 id="案例一：netcat-source"><a href="#案例一：netcat-source" class="headerlink" title="案例一：netcat source"></a>案例一：netcat source</h2><p>需求：监听localhost机器的44444端口，接收到数据sink到终端</p>
+    <title>HDFS API</title>
+    <url>/2021/12/13/HDFS-API/</url>
+    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
+<span id="more"></span>
+
+<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<p>导入需要的package</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
+
+<p>类中具体方法可参考：</p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
+<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
+<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
+<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <ol>
-<li><p>创建agent配置文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd app/flume/conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ vi example.conf</span><br></pre></td></tr></table></figure>
+<li><p>获取Configuration对象</p>
+<p>我们需要先new一个Configuration对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
 
-<p>example.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># example.conf: A single-node Flume configuration</span><br><span class="line">#需求：监听localhost机器的44444端口，接收到数据sink到终端</span><br><span class="line"></span><br><span class="line"># Name the components on this agent   配置各种名字</span><br><span class="line">a1.sources = r1  #配置source的名字</span><br><span class="line">a1.sinks = k1    #配置sink的名字</span><br><span class="line">a1.channels = c1  #配置channel的名字</span><br><span class="line"></span><br><span class="line"># Describe/configure the source       配置source的基本属性</span><br><span class="line">a1.sources.r1.type = netcat</span><br><span class="line">a1.sources.r1.bind = localhost</span><br><span class="line">a1.sources.r1.port = 44444</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory  配置channel的基本属性</span><br><span class="line">a1.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Describe the sink                  配置sink的基本属性</span><br><span class="line">a1.sinks.k1.type = logger</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel      连线</span><br><span class="line">a1.sources.r1.channels = c1</span><br><span class="line">a1.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
-
-<p>This configuration defines a single agent named a1. a1 has a source that listens for data on port 44444, a channel that buffers event data in memory, and a sink that logs event data to the console. The configuration file names the various components, then describes their types and configuration parameters. A given configuration file might define several named agents; when a given Flume process is launched a flag is passed telling it which named agent to manifest.</p>
-<span id="more"></span></li>
-<li><p>启动flume agent a1</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name a1 \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/example.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure></li>
-<li><p>在另一个终端telnet localhost 44444 发送event</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ telnet localhost 44444</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">1</span><br><span class="line">OK</span><br><span class="line">2</span><br><span class="line">OK</span><br><span class="line">3</span><br><span class="line">OK</span><br><span class="line">a</span><br><span class="line">OK</span><br><span class="line">b</span><br><span class="line">OK</span><br><span class="line">啊</span><br><span class="line">OK</span><br></pre></td></tr></table></figure></li>
-<li><p>第一个终端的日志控制台也会有相应的显示</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ flume-ng agent \</span><br><span class="line">&gt; --name a1 \</span><br><span class="line">&gt; --conf $FLUME_HOME/conf \</span><br><span class="line">&gt; --conf-file $FLUME_HOME/conf/example.conf \</span><br><span class="line">&gt; -Dflume.root.logger=INFO,console</span><br><span class="line">Info: Sourcing environment configuration script /home/hadoop/app/flume/conf/flume-env.sh</span><br><span class="line">Info: Including Hadoop libraries found via (/home/hadoop/app/hadoop/bin/hadoop) for HDFS access</span><br><span class="line">Info: Including Hive libraries found via (/home/hadoop/app/hive) for Hive access</span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">2022-05-16 21:57:12,297 (lifecycleSupervisor-1-3) [INFO - org.apache.flume.source.NetcatSource.start(NetcatSource.java:166)] Created serverSocket:sun.nio.ch.ServerSocketChannelImpl[/127.0.0.1:44444]</span><br><span class="line">2022-05-16 21:58:30,762 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 31 0D                                           1. &#125;</span><br><span class="line">2022-05-16 21:58:36,151 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 32 0D                                           2. &#125;</span><br><span class="line">2022-05-16 21:58:38,455 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 33 0D                                           3. &#125;</span><br><span class="line">2022-05-16 21:58:39,071 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 61 0D                                           a. &#125;</span><br><span class="line">2022-05-16 21:58:39,847 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 62 0D                                           b. &#125;</span><br><span class="line">2022-05-16 22:02:54,721 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: E5 95 8A 0D                                     .... &#125;</span><br></pre></td></tr></table></figure>
-
-<p>补充一点，flume只能传递英文和字符，不能用中文。</p>
-</li>
+<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>获取FileSystem对象</p>
+<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
+<li><p>进行文件操作</p>
+<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
+<li><p>释放资源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
 </ol>
-<h2 id="案例二：avro-client"><a href="#案例二：avro-client" class="headerlink" title="案例二：avro client"></a>案例二：avro client</h2><p>flume-avro-client.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">avro-client-agent.sources = r1</span><br><span class="line">avro-client-agent.sinks = k1</span><br><span class="line">avro-client-agent.channels = c1</span><br><span class="line"> </span><br><span class="line"># Describe/configure the source</span><br><span class="line">avro-client-agent.sources.r1.type = avro</span><br><span class="line">avro-client-agent.sources.r1.bind = localhost</span><br><span class="line">avro-client-agent.sources.r1.port = 41414</span><br><span class="line">#注意这个端口名，在后面的教程中会用得到</span><br><span class="line"> </span><br><span class="line"># Describe the sink</span><br><span class="line">avro-client-agent.sinks.k1.type = logger</span><br><span class="line"> </span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">avro-client-agent.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">avro-client-agent.sources.r1.channels = c1</span><br><span class="line">avro-client-agent.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
 
-<p>文本准备</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo &quot;flume&quot; &gt;&gt; data/flume-avro-client.test</span><br><span class="line">[hadoop@hadoop001 ~]$ cat data/flume-avro-client.test</span><br><span class="line">flume</span><br></pre></td></tr></table></figure>
+<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
 
-<p>sink启动命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name avro-client-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/flume-avro-client.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
 
-<p>source启动命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng avro-client \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">-H localhost \</span><br><span class="line">-p 41414 \</span><br><span class="line">-F ~/data/flume-avro-client.test</span><br></pre></td></tr></table></figure>
+<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
 
-<p>结果：</p>
-<p>source端：</p>
-<p>命令执行，event传输完后会退出。退出后再往文件添加数据，并不会传输到sink端，所以avro client的方式不适合于增量data。</p>
-<p>sink端：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 66 6C 75 6D 65                                  flume &#125;</span><br></pre></td></tr></table></figure>
+<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
 
-<h2 id="HDFS-Sink跟写文件相关配置"><a href="#HDFS-Sink跟写文件相关配置" class="headerlink" title="HDFS Sink跟写文件相关配置"></a><strong>HDFS Sink跟写文件相关配置</strong></h2><p>hdfs.path -&gt; hdfs目录路径</p>
-<p>hdfs.filePrefix -&gt; 文件前缀。默认值FlumeData</p>
-<p>hdfs.fileSuffix -&gt; 文件后缀</p>
-<p>hdfs.rollInterval -&gt; 多久时间后close hdfs文件。单位是秒，默认30秒。设置为0的话表示不根据时间close hdfs文件</p>
-<p>hdfs.rollSize -&gt; 文件大小超过一定值后，close文件。默认值1024，单位是字节。设置为0的话表示不基于文件大小</p>
-<p>hdfs.rollCount -&gt; 写入了多少个事件后close文件。默认值是10个。设置为0的话表示不基于事件个数</p>
-<p>hdfs.fileType -&gt; 文件格式， 有3种格式可选择：SequenceFile, DataStream or CompressedStream</p>
-<p>hdfs.batchSize -&gt; 批次数，HDFS Sink每次从Channel中拿的事件个数。默认值100（与事务有关）</p>
-<p>hdfs.minBlockReplicas -&gt; HDFS每个块最小的replicas数字，不设置的话会取hadoop中的配置</p>
-<p>hdfs.maxOpenFiles -&gt; 允许最多打开的文件数，默认是5000。如果超过了这个值，越早的文件会被关闭</p>
-<p>serializer -&gt; HDFS Sink写文件的时候会进行序列化操作。会调用对应的Serializer借口，可以自定义符合需求的Serializer</p>
-<p>hdfs.retryInterval -&gt; 关闭HDFS文件失败后重新尝试关闭的延迟数，单位是秒</p>
-<p>hdfs.callTimeout -&gt; HDFS操作允许的时间，比如hdfs文件的open，write，flush，close操作。单位是毫秒，默认值是10000</p>
-<p><strong>hdfs.rollInterval，hdfs.rollSize，hdfs.rollCount，hdfs.minBlockReplicas，hdfs.batchSize这5个配置影响着hdfs文件的关闭。</strong></p>
-<p>注意，这5个配置影响的是一个hdfs文件，是一个hdfs文件。当hdfs文件关闭的时候，这些配置指标会重新开始计算。因为BucketWriter中的open方法里会调用resetCounters方法，这个方法会重置计数器。而基于hdfs.rollInterval的timedRollFuture线程返回值是在close方法中被销毁的。因此，只要close文件，并且open新文件的时候，这5个属性都会重新开始计算。</p>
-<p>hdfs.rollInterval与时间有关，当时间达到hdfs.rollInterval配置的秒数，那么会close文件。</p>
-<p>hdfs.rollSize与每个event的字节大小有关，当一个一个event的字节相加起来大于等于hdfs.rollSize的时候，那么会close文件。</p>
-<p>hdfs.rollCount与事件的个数有关，当事件个数大于等于hdfs.rollCount的时候，那么会close文件。</p>
-<p>hdfs.batchSize表示当事件添加到hdfs.batchSize个的时候，也就是说HDFS Sink每次会拿hdfs.batchSize个事件，而且这些所有的事件都写进了同一个hdfs文件，这才会触发本次条件，并且其他4个配置都未达成条件。然后会close文件。</p>
-<p>hdfs.minBlockReplicas表示期望hdfs对文件最小的复制块数。所以有时候我们配置了hdfs.rollInterval，hdfs.rollSize，hdfs.rollCount这3个参数，并且这3个参数都没有符合条件，但是还是生成了多个文件，这就是因为这个参数导致的，而且这个参数的优先级比hdfs.rollSize，hdfs.rollCount要高。（该参数没有设置则与hadoop conf中的一致）</p>
-<h2 id="案例三：exec-hdfs-agent"><a href="#案例三：exec-hdfs-agent" class="headerlink" title="案例三：exec-hdfs-agent"></a>案例三：exec-hdfs-agent</h2><p>flume-exec-hdfs.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#define agent</span><br><span class="line">exec-hdfs-agent.sources = exec-source</span><br><span class="line">exec-hdfs-agent.channels = exec-memory-channel</span><br><span class="line">exec-hdfs-agent.sinks = hdfs-sink</span><br><span class="line"></span><br><span class="line">#define source</span><br><span class="line">exec-hdfs-agent.sources.exec-source.type = exec</span><br><span class="line">exec-hdfs-agent.sources.exec-source.command = tail -F ~/data/flume-exec.test</span><br><span class="line">exec-hdfs-agent.sources.exec-source.shell = /bin/bash -c</span><br><span class="line"></span><br><span class="line">#define channel </span><br><span class="line">exec-hdfs-agent.channels.exec-memory-channel.type = memory</span><br><span class="line"></span><br><span class="line">#define sink </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.type = hdfs</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.path = hdfs://hadoop001:9000/user/hadoop/data/flume/tail</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.fileType = DataStream</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.writeFormat = Text</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.batchSize = 5</span><br><span class="line"></span><br><span class="line">#bind source and sink to channel</span><br><span class="line">exec-hdfs-agent.sources.exec-source.channels = exec-memory-channel  </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.channel = exec-memory-channel  </span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>Deprecated.</strong> </p>
+<p>Renames Path src to Path dst</p>
+<ul>
+<li>Fails if src is a file and dst is a directory.</li>
+<li>Fails if src is a directory and dst is a file.</li>
+<li>Fails if the parent of dst does not exist or is a file.</li>
+</ul>
+<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
+<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
+<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
+<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
+<ul>
+<li><strong>Parameters:</strong></li>
+</ul>
+<p> <code>src</code> - path to be renamed</p>
+<p> <code>dst</code> - new path after rename</p>
+<ul>
+<li><strong>Throws:</strong></li>
+</ul>
+<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
+<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
+<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
+<p> <code>IOException</code> - on failure</p>
+</blockquote>
+<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>sink启动命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name exec-hdfs-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/flume-exec-hdfs.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
 
-<p>执行命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo &quot;a&quot; &gt;&gt; ~/data/flume-exec.test</span><br><span class="line">[hadoop@hadoop001 ~]$ for i in &#123;1..100&#125;; do echo &quot;hadoop $i&quot; &gt;&gt; ~/data/flume-exec.test;sleep 0.1;done</span><br></pre></td></tr></table></figure>
+<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
 
-<p>结果</p>
-<ol>
-<li>如果<code>~/data/flume-exec.test</code>之前已经有数据，则在agent启动时就会有第一个文件。</li>
-<li>如果第一个文件信息数量超过<code>rollSize</code>，则输入的数据从第二个文件开始。</li>
-<li>结果共有1（先前数据）+ 10 （a和1-99，超过<code>hdfs.rollCount</code>而产生） + 1（数字100，30s没输入，超过<code>hdfs.rollInterval</code>而产生），共12个文件。</li>
-<li>无数据输入不额外产生空文件。</li>
-<li>可以通过设置参数把roll间隔调大，避免小文件问题。</li>
-</ol>
-<h2 id="案例四：hdfs-round-agent"><a href="#案例四：hdfs-round-agent" class="headerlink" title="案例四：hdfs-round-agent"></a>案例四：hdfs-round-agent</h2><p>hdfs sink每分钟roll一次，并格式化输出路径</p>
-<p>hdfs-round-agent.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs-round-agent.sources = r1 </span><br><span class="line">hdfs-round-agent.channels = c1</span><br><span class="line">hdfs-round-agent.sinks = k1</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sources.r1.type = netcat</span><br><span class="line">hdfs-round-agent.sources.r1.bind = localhost</span><br><span class="line">hdfs-round-agent.sources.r1.port = 44444</span><br><span class="line">hdfs-round-agent.sources.r1.interceptors = i1</span><br><span class="line">hdfs-round-agent.sources.r1.interceptors.i1.type = timestamp</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sinks.k1.type = hdfs</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.path = data/flume/events/%y-%m-%d/%H%M/%S</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.filePrefix = events-</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.round = true</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.roundValue = 1</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.roundUnit = minute</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sources.r1.channels = c1</span><br><span class="line">hdfs-round-agent.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
 
-<p>因为sink中用到了时间，所以需要利用时间拦截器在event的header中加入时间，否则报错。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(SinkRunner-PollingRunner-DefaultSinkProcessor) [ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:459)] process failed</span><br><span class="line">java.lang.NullPointerException: Expected timestamp in the Flume event headers, but it was null</span><br></pre></td></tr></table></figure>
+<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
 
-<p>sink启动命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name hdfs-round-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/hdfs-round-agent.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+<ul>
+<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
+</ul>
+ <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
 
-<p>执行命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# telnet localhost 44441</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">a</span><br><span class="line">OK</span><br><span class="line">b</span><br><span class="line">OK</span><br><span class="line">c</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">d</span><br><span class="line">OK</span><br><span class="line">e</span><br><span class="line">OK</span><br><span class="line">g</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
-
-<p>结果</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -ls /user/hadoop/data/flume/events/22-05-17/</span><br><span class="line">Found 3 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:47 /user/hadoop/data/flume/events/22-05-17/0247</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:48 /user/hadoop/data/flume/events/22-05-17/0248</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:49 /user/hadoop/data/flume/events/22-05-17/0249</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0247/00/*</span><br><span class="line">1652755625761	61 0d</span><br><span class="line">1652755633572	62 0d</span><br><span class="line">1652755634589	63 0d</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0248/00/*</span><br><span class="line">1652755722065	64 0d</span><br><span class="line">1652755726784	65 0d</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0249/00/*</span><br><span class="line">1652755754582	67 0d</span><br></pre></td></tr></table></figure>
-
+<ul>
+<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -395,98 +391,6 @@
 <p>参考：</p>
 <p><a href="https://blog.csdn.net/wjn19921104/article/details/80742655">https://blog.csdn.net/wjn19921104/article/details/80742655</a></p>
 <p><a href="https://www.cnblogs.com/tesla-turing/p/11488035.html">https://www.cnblogs.com/tesla-turing/p/11488035.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>HDFS API</title>
-    <url>/2021/12/13/HDFS-API/</url>
-    <content><![CDATA[<h2 id="HDFS-API编程"><a href="#HDFS-API编程" class="headerlink" title="HDFS API编程"></a>HDFS API编程</h2><p><strong>FileSystem：编程的入口点</strong></p>
-<span id="more"></span>
-
-<h3 id="一、添加依赖和导入package"><a href="#一、添加依赖和导入package" class="headerlink" title="一、添加依赖和导入package"></a>一、添加依赖和导入package</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.hadoop&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;hadoop-client&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.2.2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-
-<p>导入需要的package</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.FileSystem;</span><br><span class="line">import org.apache.hadoop.fs.Path;</span><br></pre></td></tr></table></figure>
-
-<p>类中具体方法可参考：</p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/conf/Configurable.html</a></p>
-<p><a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/Path.html</a></p>
-<h3 id="二、获取hdfs的FileSystem对象"><a href="#二、获取hdfs的FileSystem对象" class="headerlink" title="二、获取hdfs的FileSystem对象"></a>二、获取hdfs的FileSystem对象</h3><p>Hadoop中关于文件操作类基本上全部是在”<strong>org.apache.hadoop.fs</strong>“包中，这些API能够支持的操作包含：打开文件，读写文件，删除文件等。</p>
-<p>Hadoop类库中最终面向用户提供的<strong>接口类</strong>是<strong>FileSystem</strong>，该类是个<strong>抽象类</strong>，只能通过来类的get方法得到具体类。get方法存在几个重载版本，常用的是这个：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">public static FileSystem get(Configuration conf) throws IOException &#123;</span><br><span class="line">    return get(getDefaultUri(conf), conf);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><p>获取Configuration对象</p>
-<p>我们需要先new一个Configuration对象</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();//获取的是hadoop默认配置文件</span><br></pre></td></tr></table></figure>
-
-<p>（生产上一般不需要额外设置）如果需要设置，则调用Configuration对象的set方法，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">config.set(&quot;fs.defaultFS&quot;, &quot;hdfs://hostname:9000&quot;);</span><br><span class="line">config.set(&quot;dfs.client.use.datanode.hostname&quot;, &quot;true&quot;);//还要到hdfs-site.xml里添加dfs.datanode.use.datanode.hostname:true</span><br><span class="line">config.set(&quot;dfs.replication&quot;, &quot;1&quot;);//不设置的话，默认副本数是3</span><br><span class="line">//系统更改hadoop用户名称</span><br><span class="line">//System.setProperty(&quot;HADOOP_USER_NAME&quot;, &quot;hadoop&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>获取FileSystem对象</p>
-<p>把Configuration对象conf传给FileSystem类的get()方法获得FileSystem类对象hdfs</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure></li>
-<li><p>进行文件操作</p>
-<p>操作过程中有关路径的需要使用<code>org.apache.hadoop.fs.Path</code>类，常用的是：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;pathString&quot;);</span><br></pre></td></tr></table></figure></li>
-<li><p>释放资源</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">if(null != hdfs) &#123;</span><br><span class="line">    hdfs.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h3 id="三、利用api进行操作"><a href="#三、利用api进行操作" class="headerlink" title="三、利用api进行操作"></a>三、利用api进行操作</h3><h4 id="获得fs对象hdfs"><a href="#获得fs对象hdfs" class="headerlink" title="获得fs对象hdfs"></a>获得fs对象hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Configuration config = new Configuration();</span><br><span class="line">FileSystem hdfs = FileSystem.get(config);</span><br></pre></td></tr></table></figure>
-
-<h4 id="mkdir：创建目录"><a href="#mkdir：创建目录" class="headerlink" title="mkdir：创建目录"></a>mkdir：创建目录</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;/pathString&quot;);</span><br><span class="line">hdfs.mkdir(path)</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyFromLocalFile：从本地复制文件到hdfs"><a href="#copyFromLocalFile：从本地复制文件到hdfs" class="headerlink" title="copyFromLocalFile：从本地复制文件到hdfs"></a>copyFromLocalFile：从本地复制文件到hdfs</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyFromLocalFile(src, dst);</span><br></pre></td></tr></table></figure>
-
-<h4 id="copyToLocalFile：从hdfs复制文件到本地"><a href="#copyToLocalFile：从hdfs复制文件到本地" class="headerlink" title="copyToLocalFile：从hdfs复制文件到本地"></a>copyToLocalFile：从hdfs复制文件到本地</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;srcFile&quot;);</span><br><span class="line">Path dst = new Path(&quot;dstFile&quot;);</span><br><span class="line">hdfs.copyToLocalFile(src, dst);</span><br><span class="line">//hdfs.copyToLocalFile(true, src, dst);//true:delSrc;一般不用</span><br></pre></td></tr></table></figure>
-
-<h4 id="rename：移动文件"><a href="#rename：移动文件" class="headerlink" title="rename：移动文件"></a>rename：移动文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path src = new Path(&quot;path1&quot;);</span><br><span class="line">Path dst = new Path(&quot;path2&quot;);</span><br><span class="line">fileSystem.rename(src, dst);</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p><strong>Deprecated.</strong> </p>
-<p>Renames Path src to Path dst</p>
-<ul>
-<li>Fails if src is a file and dst is a directory.</li>
-<li>Fails if src is a directory and dst is a file.</li>
-<li>Fails if the parent of dst does not exist or is a file.</li>
-</ul>
-<p>If OVERWRITE option is not passed as an argument, rename fails if the dst already exists.</p>
-<p>If OVERWRITE option is passed as an argument, rename overwrites the dst if it is a file or an empty directory. Rename fails if dst is a non-empty directory.</p>
-<p>Note that atomicity of rename is dependent on the file system implementation. Please refer to the file system documentation for details. This default implementation is non atomic.</p>
-<p>This method is deprecated since it is a temporary method added to support the transition from FileSystem to FileContext for user applications.</p>
-<ul>
-<li><strong>Parameters:</strong></li>
-</ul>
-<p> <code>src</code> - path to be renamed</p>
-<p> <code>dst</code> - new path after rename</p>
-<ul>
-<li><strong>Throws:</strong></li>
-</ul>
-<p> <code>FileNotFoundException</code> - src path does not exist, or the parent path of dst does not exist.</p>
-<p> <code>FileAlreadyExistsException</code> - dest path exists and is a file</p>
-<p> <code>ParentNotDirectoryException</code> - if the parent path of dest is not a directory</p>
-<p> <code>IOException</code> - on failure</p>
-</blockquote>
-<h4 id="listFiles：文件列表"><a href="#listFiles：文件列表" class="headerlink" title="listFiles：文件列表"></a>listFiles：文件列表</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">RemoteIterator&lt;LocatedFileStatus&gt; files = fileSystem.listFiles(new Path(&quot;/user/hadoop&quot;), true);</span><br><span class="line"></span><br><span class="line">while(files.hasNext()) &#123;</span><br><span class="line">    LocatedFileStatus fileStatus = files.next();</span><br><span class="line">    String isDir = fileStatus.isDirectory() ? &quot;d&quot; : &quot;-&quot;;</span><br><span class="line">    String permission = fileStatus.getPermission().toString();</span><br><span class="line">    short replication = fileStatus.getReplication();</span><br><span class="line">    long len = fileStatus.getLen();</span><br><span class="line">    String path = fileStatus.getPath().toString();</span><br><span class="line"></span><br><span class="line">    System.out.println(isDir + permission + &quot;\t&quot; + replication + &quot;\t&quot; + len + &quot;\t&quot; + path);</span><br><span class="line"></span><br><span class="line">    BlockLocation[] blockLocations = fileStatus.getBlockLocations();</span><br><span class="line">    //for(BlockLocation blockLocation : blockLocations) &#123;</span><br><span class="line">    //    String[] hosts = blockLocation.getHosts();</span><br><span class="line">    //    for(String host: hosts) &#123;</span><br><span class="line">    //        System.out.println(host);</span><br><span class="line">    //    &#125;</span><br><span class="line">    //&#125;</span><br><span class="line">    int blockLen = blockLocations.length;</span><br><span class="line">	for(int i=0;i&lt;blockLen;i++)&#123;</span><br><span class="line">		String[] hosts = blockLocations[i].getHosts();</span><br><span class="line">		System.out.println(&quot;block_&quot;+i+&quot;_location:&quot;+hosts[0]);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="delete：删除文件"><a href="#delete：删除文件" class="headerlink" title="delete：删除文件"></a>delete：删除文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;deleteFilePath&quot;);</span><br><span class="line">fileSystem.delete(path,false);</span><br><span class="line">//fileSystem.delete(new Path(&quot;deleteFilePath&quot;),true);//true:递归删除</span><br></pre></td></tr></table></figure>
-
-<h4 id="exists：查看文件是否存在"><a href="#exists：查看文件是否存在" class="headerlink" title="exists：查看文件是否存在"></a>exists：查看文件是否存在</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path findFile = new Path(&quot;filePath&quot;);</span><br><span class="line">boolean isExists = hdfs.exists(findFile);</span><br></pre></td></tr></table></figure>
-
-<h4 id="FileStatus-查看HDFS文件的最后修改时间"><a href="#FileStatus-查看HDFS文件的最后修改时间" class="headerlink" title="FileStatus:查看HDFS文件的最后修改时间"></a>FileStatus:查看HDFS文件的最后修改时间</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Path path = new Path(&quot;fileName&quot;);</span><br><span class="line">FileStatus fileStatus = hdfs.getFileStatus(path);</span><br><span class="line">long modificationTime = fileStatus.getModificationTime</span><br></pre></td></tr></table></figure>
-
-<h4 id="其他：用读写IO拷贝文件"><a href="#其他：用读写IO拷贝文件" class="headerlink" title="其他：用读写IO拷贝文件"></a>其他：用读写IO拷贝文件</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import org.apache.hadoop.conf.Configuration;</span><br><span class="line">import org.apache.hadoop.fs.*;</span><br><span class="line">import org.apache.hadoop.io.IOUtils;</span><br><span class="line">import java.io.BufferedInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>从本地文件拷贝到服务器上去  put<br>读本地文件(读io)  写到服务器上去(写io)</li>
-</ul>
- <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BufferedInputStream in = new BufferedInputStream(new FileInputStream(new File(&quot;data/wc.data&quot;)));</span><br><span class="line">FSDataOutputStream out = fileSystem.create(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>下载服务器的文件到本地<br>读服务器的数据(读io)  写入到本地(写io)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FSDataInputStream in = fileSystem.open(new Path(&quot;/input/wc-io.txt&quot;));</span><br><span class="line">FileOutputStream out = new FileOutputStream(new File(&quot;output/b.txt&quot;));</span><br><span class="line"></span><br><span class="line">IOUtils.copyBytes(in, out, 4096);</span><br><span class="line"></span><br><span class="line">IOUtils.closeStream(out);</span><br><span class="line">IOUtils.closeStream(in);</span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>更多的hdfs api接口方法可参考：<a href="https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html">https://hadoop.apache.org/docs/r3.2.2/api/org/apache/hadoop/fs/FileSystem.html</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1439,6 +1343,60 @@
 ]]></content>
   </entry>
   <entry>
+    <title>Hive：加载数据到表的方式</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
+
+<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
+<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
+
+<p>适用于建（外部）表时，数据文件已经存在的情况</p>
+<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
+
+<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
+
+<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
+<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
+<li>用来复制表的结构</li>
+<li>需要外部表的话，通过create external table as …指定</li>
+<li>不CTAS语句会填充数据</li>
+</ul>
+<p>创建表并加载数据（as select）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
+
+<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
+<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
+<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
+<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
+<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
+<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
+<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
+<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
+<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
+
+<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
+
+
+
+<p>参考链接：</p>
+<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
+<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
+]]></content>
+  </entry>
+  <entry>
     <title>Hive：行列转换</title>
     <url>/2022/02/07/Hive%EF%BC%9A%E8%A1%8C%E5%88%97%E8%BD%AC%E6%8D%A2/</url>
     <content><![CDATA[<h2 id="行转列"><a href="#行转列" class="headerlink" title="行转列"></a>行转列</h2><h3 id="多行转多列"><a href="#多行转多列" class="headerlink" title="多行转多列"></a>多行转多列</h3><p>假设数据表row2col：</p>
@@ -1501,60 +1459,6 @@
 <blockquote>
 <p>Lateral View 用于<strong>和UDTF函数【explode,split】结合来使用</strong>。<br>首先通过 UDTF 函数将数据拆分成多行，再将多行结果组合成一个支持别名的虚拟表。<br>主要解决在 select 使用UDTF做查询的过程中查询只能包含单个UDTF，不能包含其它字段以及多个UDTF的情况。<br>语法：LATERAL VIEW udtf(expression) tableAlias AS columnAlias (‘,’ columnAlias)</p>
 </blockquote>
-]]></content>
-  </entry>
-  <entry>
-    <title>Hive：加载数据到表的方式</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E5%88%B0%E8%A1%A8%E7%9A%84%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<h2 id="将文件加载到表中"><a href="#将文件加载到表中" class="headerlink" title="将文件加载到表中"></a>将文件加载到表中</h2><h3 id="加载本地文件到hive表"><a href="#加载本地文件到hive表" class="headerlink" title="加载本地文件到hive表"></a>加载本地文件到hive表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data local inpath &#x27;linux_path&#x27; into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<h3 id="加载hdfs文件到hive中"><a href="#加载hdfs文件到hive中" class="headerlink" title="加载hdfs文件到hive中"></a>加载hdfs文件到hive中</h3><p>（overwrite 覆盖掉原有文件，<del>overwrite</del>在原文件中追加）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">load data inpath &#x27;hdfs_path&#x27; overwrite into table default.emp;</span><br></pre></td></tr></table></figure>
-
-<p>会将数据文件从原来的hdfs路径移动（mv）到建表时location指定目录</p>
-<h3 id="创建表的时候通过location指定加载"><a href="#创建表的时候通过location指定加载" class="headerlink" title="创建表的时候通过location指定加载"></a>创建表的时候通过location指定加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create EXTERNAL table IF NOT EXISTS default.emp_ext(</span><br><span class="line">empno int,</span><br><span class="line">ename string</span><br><span class="line">)</span><br><span class="line">ROW FORMAT DELIMITED FIELDS TERMINATED BY ‘\t‘</span><br><span class="line">location ‘/user/hive/warehouse/emp_ext‘;</span><br></pre></td></tr></table></figure>
-
-<p>适用于建（外部）表时，数据文件已经存在的情况</p>
-<h2 id="通过查询将数据插入到-Hive-表中"><a href="#通过查询将数据插入到-Hive-表中" class="headerlink" title="通过查询将数据插入到 Hive 表中"></a>通过查询将数据插入到 Hive 表中</h2><h3 id="创建表时通过insert加载"><a href="#创建表时通过insert加载" class="headerlink" title="创建表时通过insert加载"></a>创建表时通过insert加载</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Standard syntax:</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1</span><br><span class="line">  [ROW FORMAT row_format] [STORED AS file_format] (Note: Only available starting with Hive 0.11.0)</span><br><span class="line">  SELECT ... FROM ...</span><br><span class="line">  </span><br><span class="line">Hive extension (multiple inserts):</span><br><span class="line">FROM from_statement</span><br><span class="line">INSERT OVERWRITE [LOCAL] DIRECTORY directory1 select_statement1</span><br><span class="line">[INSERT OVERWRITE [LOCAL] DIRECTORY directory2 select_statement2] ...</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci like emp;</span><br><span class="line">insert overwrite table default.emp_ci select * from default.emp;</span><br></pre></td></tr></table></figure>
-
-<p><strong>from table 多重插入数据方式multiple inserts</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from test1</span><br><span class="line">insert overwrite table test2 partition (age) select name,address,school,age</span><br><span class="line">insert overwrite table test3 select name,address</span><br></pre></td></tr></table></figure>
-
-<p>Hive支持多表插入，可以在同一个查询中使用多个insett子句，这样的好处是我们只需要扫描一遍源表就可以生成多个不相交的输出！这是一个优化，可以减少表的扫描，从而减少 JOB 中 MR的 STAGE 数量，达到优化的目的。</p>
-<h4 id="CREATE-TABLE-LIKE-语句"><a href="#CREATE-TABLE-LIKE-语句" class="headerlink" title="CREATE TABLE LIKE 语句"></a>CREATE TABLE LIKE 语句</h4><ul>
-<li>用来复制表的结构</li>
-<li>需要外部表的话，通过create external table as …指定</li>
-<li>不CTAS语句会填充数据</li>
-</ul>
-<p>创建表并加载数据（as select）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table default.emp_ci as select * from emp;</span><br></pre></td></tr></table></figure>
-
-<h4 id="CTAS建表语句（CREATE-TABLE-AS-SELECT）"><a href="#CTAS建表语句（CREATE-TABLE-AS-SELECT）" class="headerlink" title="CTAS建表语句（CREATE TABLE AS SELECT）"></a>CTAS建表语句（CREATE TABLE AS SELECT）</h4><ul>
-<li>使用查询创建并填充表，select中选取的列名会作为新表的列名（所以通常是要取别名）</li>
-<li>会改变表的属性、结构，比如只能是内部表、分区分桶也没了</li>
-<li>目标表不允许使用分区分桶的，<code>FAILED: SemanticException [Error 10068]: CREATE-TABLE-AS-SELECT does not support partitioning in the target table</code></li>
-<li>对于旧表中的分区字段，如果通过select * 的方式，新表会把它看作一个新的字段，这里要注意</li>
-<li>目标表不允许使用外部表，如create external table … as select…报错 <code>FAILED: SemanticException [Error 10070]: CREATE-TABLE-AS-SELECT cannot create external table</code></li>
-<li>CTAS创建的表存储格式会变成默认的格式TEXTFILE</li>
-<li>对了，还有字段的注释comment也会丢掉，同时新表也无法加上注释</li>
-<li>但可以在CTAS语句中指定表的存储格式，行和列的分隔符等</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table xxx as select ...</span><br><span class="line"></span><br><span class="line">create table xxx</span><br><span class="line">  row format delimited</span><br><span class="line">  fields terminated by &#x27; &#x27;</span><br><span class="line">  stored as parquet</span><br><span class="line">as</span><br><span class="line">select ...</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="从-SQL-向表中插入值"><a href="#从-SQL-向表中插入值" class="headerlink" title="从 SQL 向表中插入值"></a>从 SQL 向表中插入值</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Standard Syntax:</span><br><span class="line">INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] VALUES values_row [, values_row ...]</span><br></pre></td></tr></table></figure>
-
-<p>通过insert向Hive表中插入数据可以单条插入和多条插入</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into emp values(1,&#x27;xiaoming&#x27;); #单条插入</span><br><span class="line">insert into emp values(2,&#x27;xiaohong&#x27;),(3,&#x27;xiaofang&#x27;); #多条插入</span><br></pre></td></tr></table></figure>
-
-
-
-<p>参考链接：</p>
-<p><a href="https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables">https://www.docs4dev.com/docs/zh/apache-hive/3.1.1/reference/LanguageManual_DML.html#LanguageManualDML-Loadingfilesintotables</a></p>
-<p><a href="https://blog.csdn.net/lzw2016/article/details/97811799">https://blog.csdn.net/lzw2016/article/details/97811799</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -1913,23 +1817,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>MapReduce支持递归子目录作为输入</title>
-    <url>/2021/12/30/MapReduce%E6%94%AF%E6%8C%81%E9%80%92%E5%BD%92%E5%AD%90%E7%9B%AE%E5%BD%95%E4%BD%9C%E4%B8%BA%E8%BE%93%E5%85%A5/</url>
-    <content><![CDATA[<h2 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h2><p>执行MapReduce程序时，input path中包含子目录：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Error: java.io.FileNotFoundException: Path is not a file: /data/hive/mulit_file/sub_dir</span><br></pre></td></tr></table></figure>
-
-<p>解决办法：mr中或者在mapred-site.xml中设置：mapreduce.input.fileinputformat.input.dir.recursive=true</p>
-<ul>
-<li><p>mr中设置configuration:<code>conf.set(&quot;mapreduce.input.fileinputformat.input.dir.recursive&quot;,true)</code></p>
-</li>
-<li><p>etc/hadoop/mapred-site.xml添加属性:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.input.fileinputformat.input.dir.recursive&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h2 id="Hive"><a href="#Hive" class="headerlink" title="Hive"></a>Hive</h2><p>在hive-cli中设置参数：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set hive.mapred.supports.subdirectories=true;</span><br><span class="line">set mapred.input.dir.recursive=true;</span><br></pre></td></tr></table></figure>
-]]></content>
-  </entry>
-  <entry>
     <title>SQL:WHERE、ON、HAVING的区别</title>
     <url>/2022/01/05/SQL-WHERE%E3%80%81ON%E3%80%81HAVING%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
     <content><![CDATA[<h2 id="WHERE-与-HAVING"><a href="#WHERE-与-HAVING" class="headerlink" title="WHERE 与 HAVING"></a>WHERE 与 HAVING</h2><p><code>WHERE</code>与<code>HAVING</code>的根本区别在于：</p>
@@ -2020,6 +1907,23 @@
 <p><a href="https://blog.csdn.net/horses/article/details/105380420">https://blog.csdn.net/horses/article/details/105380420</a></p>
 <p><a href="https://www.runoob.com/w3cnote/sql-different-on-and-where.html">https://www.runoob.com/w3cnote/sql-different-on-and-where.html</a></p>
 <p><a href="https://www.cnblogs.com/BxScope/p/10859260.html">https://www.cnblogs.com/BxScope/p/10859260.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>MapReduce支持递归子目录作为输入</title>
+    <url>/2021/12/30/MapReduce%E6%94%AF%E6%8C%81%E9%80%92%E5%BD%92%E5%AD%90%E7%9B%AE%E5%BD%95%E4%BD%9C%E4%B8%BA%E8%BE%93%E5%85%A5/</url>
+    <content><![CDATA[<h2 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h2><p>执行MapReduce程序时，input path中包含子目录：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Error: java.io.FileNotFoundException: Path is not a file: /data/hive/mulit_file/sub_dir</span><br></pre></td></tr></table></figure>
+
+<p>解决办法：mr中或者在mapred-site.xml中设置：mapreduce.input.fileinputformat.input.dir.recursive=true</p>
+<ul>
+<li><p>mr中设置configuration:<code>conf.set(&quot;mapreduce.input.fileinputformat.input.dir.recursive&quot;,true)</code></p>
+</li>
+<li><p>etc/hadoop/mapred-site.xml添加属性:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;property&gt;</span><br><span class="line">	&lt;name&gt;mapreduce.input.fileinputformat.input.dir.recursive&lt;/name&gt;</span><br><span class="line">	&lt;value&gt;true&lt;/value&gt;</span><br><span class="line">&lt;/property&gt;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="Hive"><a href="#Hive" class="headerlink" title="Hive"></a>Hive</h2><p>在hive-cli中设置参数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set hive.mapred.supports.subdirectories=true;</span><br><span class="line">set mapred.input.dir.recursive=true;</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -2333,42 +2237,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>mapreduce执行速度慢的原因</title>
-    <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
-    <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
-<li>CPU、内存小、网络不好都有可能导致运行速度慢</li>
-<li>出现数据倾斜</li>
-<li>map和reduce数设置不合理</li>
-<li>小文件过多</li>
-<li>大量的不可分块的超大文件</li>
-<li>spilt次数过多</li>
-</ol>
-<p>优化方案：</p>
-<ol>
-<li>解决数据倾斜：数据倾斜可能是partition不合理，导致部分partition中的数据过多，部分过少。可通过分析数据，自定义分区器解决。</li>
-<li>合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、 reduce 任务间竞争资源，造成处理超时等错误。</li>
-<li>设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少 reduce 的等待时间。</li>
-<li>合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致 mr 运行较慢。</li>
-<li>减少spill次数（环形缓冲区，调大环形缓冲区的内存，从而接收更多数据）：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill 次数，从而减少磁盘 IO。</li>
-<li>减少merge次数（mapreduce两端的合并文件的数目）：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。</li>
-</ol>
-<h2 id="相比Spark执行速度慢的原因"><a href="#相比Spark执行速度慢的原因" class="headerlink" title="相比Spark执行速度慢的原因"></a>相比Spark执行速度慢的原因</h2><h3 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h3><p>其实Spark和MapReduce的计算都发生在内存中，区别在于：</p>
-<ul>
-<li>MapReduce通常需要将计算的中间结果写入磁盘，然后还要读取磁盘，从而导致了频繁的磁盘IO。</li>
-<li>Spark则不需要将计算的中间结果写入磁盘，这得益于Spark的RDD（弹性分布式数据集，很强大）和DAG（有向无环图），其中DAG记录了job的stage以及在job执行过程中父RDD和子RDD之间的依赖关系。中间结果能够以RDD的形式存放在内存中，且能够从DAG中恢复，大大减少了磁盘IO。</li>
-</ul>
-<h3 id="Shuffle的不同"><a href="#Shuffle的不同" class="headerlink" title="Shuffle的不同"></a>Shuffle的不同</h3><p>Spark和MapReduce在计算过程中通常都不可避免的会进行Shuffle，两者至少有一点不同：</p>
-<ul>
-<li>MapReduce在Shuffle时需要花费大量时间进行排序，排序在MapReduce的Shuffle中似乎是不可避免的；</li>
-<li>Spark在Shuffle时则只有部分场景才需要排序，支持基于Hash的分布式聚合，更加省时；</li>
-</ul>
-<h3 id="多进程模型-vs-多线程模型的区别"><a href="#多进程模型-vs-多线程模型的区别" class="headerlink" title="多进程模型 vs 多线程模型的区别"></a>多进程模型 vs 多线程模型的区别</h3><p>MapReduce采用了多进程模型，而Spark采用了多线程模型。多进程模型的好处是便于细粒度控制每个任务占用的资源，但每次任务的启动都会消耗一定的启动时间。就是说MapReduce的Map Task和Reduce Task是进程级别的，而Spark Task则是基于线程模型的，就是说mapreduce 中的 map 和 reduce 都是 jvm 进程，每次启动都需要重新申请资源，消耗了不必要的时间（假设容器启动时间大概1s，如果有1200个block，那么单独启动<a href="https://www.zhihu.com/search?q=map%E8%BF%9B%E7%A8%8B%E4%BA%8B%E4%BB%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22:%22answer%22,%22sourceId%22:1247877997%7D">map进程事件</a>就需要20分钟）</p>
-<p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
-<p>参考链接：</p>
-<p><a href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>spark-sql启动参数</title>
     <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
     <content><![CDATA[<p>不带参数，直接启动，报错：</p>
@@ -2407,6 +2275,42 @@
 </ol>
 <p>贴一个更复杂的方法，自定义InputFormat类，在读取输入时候将封装的字节流从GBK编码转化为UTF-8编码，可以参考：</p>
 <p><a href="https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/">https://www.wangt.cc/2019/11/feature%EF%BC%9Aspark%E6%94%AF%E6%8C%81gbk%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E5%8A%9F%E8%83%BD/</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>mapreduce执行速度慢的原因</title>
+    <url>/2022/01/26/mapreduce%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E6%85%A2%E7%9A%84%E5%8E%9F%E5%9B%A0/</url>
+    <content><![CDATA[<h2 id="自身执行速度慢的原因"><a href="#自身执行速度慢的原因" class="headerlink" title="自身执行速度慢的原因"></a>自身执行速度慢的原因</h2><ol>
+<li>CPU、内存小、网络不好都有可能导致运行速度慢</li>
+<li>出现数据倾斜</li>
+<li>map和reduce数设置不合理</li>
+<li>小文件过多</li>
+<li>大量的不可分块的超大文件</li>
+<li>spilt次数过多</li>
+</ol>
+<p>优化方案：</p>
+<ol>
+<li>解决数据倾斜：数据倾斜可能是partition不合理，导致部分partition中的数据过多，部分过少。可通过分析数据，自定义分区器解决。</li>
+<li>合理设置map和reduce数：两个都不能设置太少，也不能设置太多。太少，会导致task等待，延长处理时间；太多，会导致 map、 reduce 任务间竞争资源，造成处理超时等错误。</li>
+<li>设置map、reduce共存：调整slowstart.completedmaps参数，使map运行到一定程度后，reduce也开始运行，减少 reduce 的等待时间。</li>
+<li>合并小文件：在执行mr任务前将小文件进行合并，大量的小文件会产生大量的map任务，增大map任务装载次数，而任务的装载比较耗时，从而导致 mr 运行较慢。</li>
+<li>减少spill次数（环形缓冲区，调大环形缓冲区的内存，从而接收更多数据）：通过调整io.sort.mb及sort.spill.percent参数值，增大触发spill的内存上限，减少spill 次数，从而减少磁盘 IO。</li>
+<li>减少merge次数（mapreduce两端的合并文件的数目）：通过调整io.sort.factor参数，增大merge的文件数目，减少merge的次数，从而缩短mr处理时间。</li>
+</ol>
+<h2 id="相比Spark执行速度慢的原因"><a href="#相比Spark执行速度慢的原因" class="headerlink" title="相比Spark执行速度慢的原因"></a>相比Spark执行速度慢的原因</h2><h3 id="IO"><a href="#IO" class="headerlink" title="IO"></a>IO</h3><p>其实Spark和MapReduce的计算都发生在内存中，区别在于：</p>
+<ul>
+<li>MapReduce通常需要将计算的中间结果写入磁盘，然后还要读取磁盘，从而导致了频繁的磁盘IO。</li>
+<li>Spark则不需要将计算的中间结果写入磁盘，这得益于Spark的RDD（弹性分布式数据集，很强大）和DAG（有向无环图），其中DAG记录了job的stage以及在job执行过程中父RDD和子RDD之间的依赖关系。中间结果能够以RDD的形式存放在内存中，且能够从DAG中恢复，大大减少了磁盘IO。</li>
+</ul>
+<h3 id="Shuffle的不同"><a href="#Shuffle的不同" class="headerlink" title="Shuffle的不同"></a>Shuffle的不同</h3><p>Spark和MapReduce在计算过程中通常都不可避免的会进行Shuffle，两者至少有一点不同：</p>
+<ul>
+<li>MapReduce在Shuffle时需要花费大量时间进行排序，排序在MapReduce的Shuffle中似乎是不可避免的；</li>
+<li>Spark在Shuffle时则只有部分场景才需要排序，支持基于Hash的分布式聚合，更加省时；</li>
+</ul>
+<h3 id="多进程模型-vs-多线程模型的区别"><a href="#多进程模型-vs-多线程模型的区别" class="headerlink" title="多进程模型 vs 多线程模型的区别"></a>多进程模型 vs 多线程模型的区别</h3><p>MapReduce采用了多进程模型，而Spark采用了多线程模型。多进程模型的好处是便于细粒度控制每个任务占用的资源，但每次任务的启动都会消耗一定的启动时间。就是说MapReduce的Map Task和Reduce Task是进程级别的，而Spark Task则是基于线程模型的，就是说mapreduce 中的 map 和 reduce 都是 jvm 进程，每次启动都需要重新申请资源，消耗了不必要的时间（假设容器启动时间大概1s，如果有1200个block，那么单独启动<a href="https://www.zhihu.com/search?q=map%E8%BF%9B%E7%A8%8B%E4%BA%8B%E4%BB%B6&search_source=Entity&hybrid_search_source=Entity&hybrid_search_extra=%7B%22sourceType%22:%22answer%22,%22sourceId%22:1247877997%7D">map进程事件</a>就需要20分钟）</p>
+<p>Spark则是通过复用线程池中的线程来减少启动、关闭task所需要的开销。（多线程模型也有缺点，由于同节点上所有任务运行在一个进程中，因此，会出现严重的资源争用，难以细粒度控制每个任务占用资源）</p>
+<p>参考链接：</p>
+<p><a href="https://www.zhihu.com/question/31930662/answer/1247877997">https://www.zhihu.com/question/31930662/answer/1247877997</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -3499,15 +3403,24 @@
 <p>Spooling Directory Source 监控文件夹中的日志信息。</p>
 <p>在实际使用的过程中，可以结合log4j使用，使用log4j的时候，将log4j的文件分割机制设为1分钟一次，将文件拷贝到spool的监控目录。log4j有一个TimeRolling的插件，可以把log4j分割的文件到spool目录。基本实现了实时的监控。 Flume在传完文件之后，将会修改文件的后缀.tmp变为.COMPLETED（后缀也可以在配置文件中灵活指定）</p>
 <p>但是有一定的问题，对于已经处理完的文件，后续再次处理或者重名则会报错。</p>
-<p><strong>Exec Source 和 Spooling Directory Source 比较</strong></p>
-<p>1） ExecSource可以实现对日志的实时收集，但是存在Flume不运行或者指令执行出错时，将无法收集到日志数据，无法何证日志数据的完整性。（不太可靠，不建议使用）</p>
-<p>2） Spooling Directory Source 虽然无法实现实时的收集数据，但是可以使用以分钟的方式分割文件，趋近于实时。</p>
-<p>3）总结：如果应用无法实现以分钟切割日志文件的话，可以两种收集方式结合使用。</p>
-<p><strong>Taildir Source</strong></p>
-<p>可以实现断点续传。</p>
+<p><strong>flume中有几种可监控文件或目录的source</strong></p>
+<p>flume中有三种可监控文件或目录的source，分别是Exec Source、Spooling Directory Source和Taildir Source。</p>
+<p>Taildir Source是1.7版本的新特性，综合了Spooling Directory Source和Exec Source的优点。</p>
+<p>使用场景如下：</p>
+<ul>
+<li><p><strong>Exec Source</strong></p>
+<p>Exec Source可通过tail -f命令去tail住一个文件，然后实时同步日志到sink。但存在的问题是，当agent进程挂掉重启后，会有重复消费的问题。可以通过增加UUID来解决，或通过改进ExecSource来解决。</p>
+</li>
+<li><p><strong>Spooling Directory Source</strong></p>
+<p>Spooling Directory Source可监听一个目录，同步目录中的新文件到sink,被同步完的文件可被立即删除或被打上标记。适合用于同步新文件，但不适合对实时追加日志的文件进行监听并同步。如果需要实时监听追加内容的文件，可对SpoolDirectorySource进行改进。</p>
+</li>
+<li><p><strong>Taildir Source</strong></p>
+<p>Taildir Source可实时监控一批文件，并记录每个文件最新消费位置，agent进程重启后不会有重复消费的问题。</p>
+</li>
+</ul>
+<p>使用时建议用1.8.0版本的flume，1.8.0版本中解决了Taildir Source一个可能会丢数据的bug。</p>
 <p><strong>hdfs sink</strong></p>
 <p>会一直刷新文件。可以使用roll，设置hdfs.rollInterval、hdfs.rollSize、hdfs.rollCount参数避免小文件问题。一个批次中，没有数据输入不产生文件。</p>
-<p>在</p>
 <p><strong>Avro client</strong> </p>
 <p>An Avro client included in the Flume distribution can send a given file to Flume Avro source using avro RPC mechanism:</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ bin/flume-ng avro-client -H localhost -p 41414 -F /usr/logs/log.10</span><br></pre></td></tr></table></figure>
@@ -6121,6 +6034,324 @@
 </li>
 </ol>
 ]]></content>
+  </entry>
+  <entry>
+    <title>Flume的使用案例</title>
+    <url>/2022/05/17/Flume%E7%9A%84%E4%BD%BF%E7%94%A8%E6%A1%88%E4%BE%8B/</url>
+    <content><![CDATA[<h2 id="案例一：单一日志传输avro-client"><a href="#案例一：单一日志传输avro-client" class="headerlink" title="案例一：单一日志传输avro client"></a>案例一：单一日志传输avro client</h2><p>flume-avro-client.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">avro-client-agent.sources = r1</span><br><span class="line">avro-client-agent.sinks = k1</span><br><span class="line">avro-client-agent.channels = c1</span><br><span class="line"> </span><br><span class="line"># Describe/configure the source</span><br><span class="line">avro-client-agent.sources.r1.type = avro</span><br><span class="line">avro-client-agent.sources.r1.bind = localhost</span><br><span class="line">avro-client-agent.sources.r1.port = 41414</span><br><span class="line">#注意这个端口名，在后面的教程中会用得到</span><br><span class="line"> </span><br><span class="line"># Describe the sink</span><br><span class="line">avro-client-agent.sinks.k1.type = logger</span><br><span class="line"> </span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">avro-client-agent.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">avro-client-agent.sources.r1.channels = c1</span><br><span class="line">avro-client-agent.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>文本准备</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo &quot;flume&quot; &gt;&gt; data/flume-avro-client.test</span><br><span class="line">[hadoop@hadoop001 ~]$ cat data/flume-avro-client.test</span><br><span class="line">flume</span><br></pre></td></tr></table></figure>
+
+<p>sink启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name avro-client-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/flume-avro-client.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>source启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng avro-client \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">-H localhost \</span><br><span class="line">-p 41414 \</span><br><span class="line">-F ~/data/flume-avro-client.test</span><br></pre></td></tr></table></figure>
+
+<p>结果：</p>
+<p>source端：</p>
+<p>命令执行，event传输完后会退出。退出后再往文件添加数据，并不会传输到sink端，所以avro client的方式不适合于增量data。</p>
+<p>sink端：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 66 6C 75 6D 65                                  flume &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<span id="more"></span>
+
+<h2 id="案例二：监控端口数据"><a href="#案例二：监控端口数据" class="headerlink" title="案例二：监控端口数据"></a>案例二：监控端口数据</h2><p>需求：监听localhost机器的44444端口，接收到数据sink到终端</p>
+<ol>
+<li><p>创建agent配置文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ cd app/flume/conf/</span><br><span class="line">[hadoop@hadoop001 conf]$ vi example.conf</span><br></pre></td></tr></table></figure>
+
+<p>example.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># example.conf: A single-node Flume configuration</span><br><span class="line">#需求：监听localhost机器的44444端口，接收到数据sink到终端</span><br><span class="line"></span><br><span class="line"># Name the components on this agent   配置各种名字</span><br><span class="line">a1.sources = r1  #配置source的名字</span><br><span class="line">a1.sinks = k1    #配置sink的名字</span><br><span class="line">a1.channels = c1  #配置channel的名字</span><br><span class="line"></span><br><span class="line"># Describe/configure the source       配置source的基本属性</span><br><span class="line">a1.sources.r1.type = netcat</span><br><span class="line">a1.sources.r1.bind = localhost</span><br><span class="line">a1.sources.r1.port = 44444</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory  配置channel的基本属性</span><br><span class="line">a1.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Describe the sink                  配置sink的基本属性</span><br><span class="line">a1.sinks.k1.type = logger</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel      连线</span><br><span class="line">a1.sources.r1.channels = c1</span><br><span class="line">a1.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>This configuration defines a single agent named a1. a1 has a source that listens for data on port 44444, a channel that buffers event data in memory, and a sink that logs event data to the console. The configuration file names the various components, then describes their types and configuration parameters. A given configuration file might define several named agents; when a given Flume process is launched a flag is passed telling it which named agent to manifest.</p>
+</li>
+<li><p>启动flume agent a1</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name a1 \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/example.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure></li>
+<li><p>在另一个终端telnet localhost 44444 发送event</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ telnet localhost 44444</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">1</span><br><span class="line">OK</span><br><span class="line">2</span><br><span class="line">OK</span><br><span class="line">3</span><br><span class="line">OK</span><br><span class="line">a</span><br><span class="line">OK</span><br><span class="line">b</span><br><span class="line">OK</span><br><span class="line">啊</span><br><span class="line">OK</span><br></pre></td></tr></table></figure></li>
+<li><p>第一个终端的日志控制台也会有相应的显示</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ flume-ng agent \</span><br><span class="line">&gt; --name a1 \</span><br><span class="line">&gt; --conf $FLUME_HOME/conf \</span><br><span class="line">&gt; --conf-file $FLUME_HOME/conf/example.conf \</span><br><span class="line">&gt; -Dflume.root.logger=INFO,console</span><br><span class="line">Info: Sourcing environment configuration script /home/hadoop/app/flume/conf/flume-env.sh</span><br><span class="line">Info: Including Hadoop libraries found via (/home/hadoop/app/hadoop/bin/hadoop) for HDFS access</span><br><span class="line">Info: Including Hive libraries found via (/home/hadoop/app/hive) for Hive access</span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">.</span><br><span class="line">2022-05-16 21:57:12,297 (lifecycleSupervisor-1-3) [INFO - org.apache.flume.source.NetcatSource.start(NetcatSource.java:166)] Created serverSocket:sun.nio.ch.ServerSocketChannelImpl[/127.0.0.1:44444]</span><br><span class="line">2022-05-16 21:58:30,762 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 31 0D                                           1. &#125;</span><br><span class="line">2022-05-16 21:58:36,151 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 32 0D                                           2. &#125;</span><br><span class="line">2022-05-16 21:58:38,455 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 33 0D                                           3. &#125;</span><br><span class="line">2022-05-16 21:58:39,071 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 61 0D                                           a. &#125;</span><br><span class="line">2022-05-16 21:58:39,847 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: 62 0D                                           b. &#125;</span><br><span class="line">2022-05-16 22:02:54,721 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;&#125; body: E5 95 8A 0D                                     .... &#125;</span><br></pre></td></tr></table></figure>
+
+<p>补充一点，flume只能传递英文和字符，不能用中文。</p>
+</li>
+</ol>
+<h2 id="HDFS-Sink跟写文件相关配置"><a href="#HDFS-Sink跟写文件相关配置" class="headerlink" title="HDFS Sink跟写文件相关配置"></a><strong>HDFS Sink跟写文件相关配置</strong></h2><p>hdfs.path -&gt; hdfs目录路径</p>
+<p>hdfs.filePrefix -&gt; 文件前缀。默认值FlumeData</p>
+<p>hdfs.fileSuffix -&gt; 文件后缀</p>
+<p>hdfs.rollInterval -&gt; 多久时间后close hdfs文件。单位是秒，默认30秒。设置为0的话表示不根据时间close hdfs文件</p>
+<p>hdfs.rollSize -&gt; 文件大小超过一定值后，close文件。默认值1024，单位是字节。设置为0的话表示不基于文件大小</p>
+<p>hdfs.rollCount -&gt; 写入了多少个事件后close文件。默认值是10个。设置为0的话表示不基于事件个数</p>
+<p>hdfs.fileType -&gt; 文件格式， 有3种格式可选择：SequenceFile, DataStream or CompressedStream</p>
+<p>hdfs.batchSize -&gt; 批次数，HDFS Sink每次从Channel中拿的事件个数。默认值100（与事务有关）</p>
+<p>hdfs.minBlockReplicas -&gt; HDFS每个块最小的replicas数字，不设置的话会取hadoop中的配置</p>
+<p>hdfs.maxOpenFiles -&gt; 允许最多打开的文件数，默认是5000。如果超过了这个值，越早的文件会被关闭</p>
+<p>serializer -&gt; HDFS Sink写文件的时候会进行序列化操作。会调用对应的Serializer借口，可以自定义符合需求的Serializer</p>
+<p>hdfs.retryInterval -&gt; 关闭HDFS文件失败后重新尝试关闭的延迟数，单位是秒</p>
+<p>hdfs.callTimeout -&gt; HDFS操作允许的时间，比如hdfs文件的open，write，flush，close操作。单位是毫秒，默认值是10000</p>
+<p><strong>hdfs.rollInterval，hdfs.rollSize，hdfs.rollCount，hdfs.minBlockReplicas，hdfs.batchSize这5个配置影响着hdfs文件的关闭。</strong></p>
+<p>注意，这5个配置影响的是一个hdfs文件，是一个hdfs文件。当hdfs文件关闭的时候，这些配置指标会重新开始计算。因为BucketWriter中的open方法里会调用resetCounters方法，这个方法会重置计数器。而基于hdfs.rollInterval的timedRollFuture线程返回值是在close方法中被销毁的。因此，只要close文件，并且open新文件的时候，这5个属性都会重新开始计算。</p>
+<p>hdfs.rollInterval与时间有关，当时间达到hdfs.rollInterval配置的秒数，那么会close文件。</p>
+<p>hdfs.rollSize与每个event的字节大小有关，当一个一个event的字节相加起来大于等于hdfs.rollSize的时候，那么会close文件。</p>
+<p>hdfs.rollCount与事件的个数有关，当事件个数大于等于hdfs.rollCount的时候，那么会close文件。</p>
+<p>hdfs.batchSize表示当事件添加到hdfs.batchSize个的时候，也就是说HDFS Sink每次会拿hdfs.batchSize个事件，而且这些所有的事件都写进了同一个hdfs文件，这才会触发本次条件，并且其他4个配置都未达成条件。然后会close文件。</p>
+<p>hdfs.minBlockReplicas表示期望hdfs对文件最小的复制块数。所以有时候我们配置了hdfs.rollInterval，hdfs.rollSize，hdfs.rollCount这3个参数，并且这3个参数都没有符合条件，但是还是生成了多个文件，这就是因为这个参数导致的，而且这个参数的优先级比hdfs.rollSize，hdfs.rollCount要高。（该参数没有设置则与hadoop conf中的一致）</p>
+<h2 id="案例三：实时监控单个追加文件（不支持断点续传）"><a href="#案例三：实时监控单个追加文件（不支持断点续传）" class="headerlink" title="案例三：实时监控单个追加文件（不支持断点续传）"></a>案例三：实时监控单个追加文件（不支持断点续传）</h2><p>flume-exec-hdfs.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#define agent</span><br><span class="line">exec-hdfs-agent.sources = exec-source</span><br><span class="line">exec-hdfs-agent.channels = exec-memory-channel</span><br><span class="line">exec-hdfs-agent.sinks = hdfs-sink</span><br><span class="line"></span><br><span class="line">#define source</span><br><span class="line">exec-hdfs-agent.sources.exec-source.type = exec</span><br><span class="line">exec-hdfs-agent.sources.exec-source.command = tail -F ~/data/flume-exec.test</span><br><span class="line">exec-hdfs-agent.sources.exec-source.shell = /bin/bash -c</span><br><span class="line"></span><br><span class="line">#define channel </span><br><span class="line">exec-hdfs-agent.channels.exec-memory-channel.type = memory</span><br><span class="line"></span><br><span class="line">#define sink </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.type = hdfs</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.path = hdfs://hadoop001:9000/user/hadoop/data/flume/tail</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.fileType = DataStream</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.writeFormat = Text</span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.hdfs.batchSize = 5</span><br><span class="line"></span><br><span class="line">#bind source and sink to channel</span><br><span class="line">exec-hdfs-agent.sources.exec-source.channels = exec-memory-channel  </span><br><span class="line">exec-hdfs-agent.sinks.hdfs-sink.channel = exec-memory-channel  </span><br></pre></td></tr></table></figure>
+
+<p>sink启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name exec-hdfs-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/flume-exec-hdfs.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ echo &quot;a&quot; &gt;&gt; ~/data/flume-exec.test</span><br><span class="line">[hadoop@hadoop001 ~]$ for i in &#123;1..100&#125;; do echo &quot;hadoop $i&quot; &gt;&gt; ~/data/flume-exec.test;sleep 0.1;done</span><br></pre></td></tr></table></figure>
+
+<p>结果</p>
+<ol>
+<li>如果<code>~/data/flume-exec.test</code>之前已经有数据，则在agent启动时就会有第一个文件。</li>
+<li>如果第一个文件信息数量超过<code>rollSize</code>，则输入的数据从第二个文件开始。</li>
+<li>结果共有1（先前数据）+ 10 （a和1-99，超过<code>hdfs.rollCount</code>而产生） + 1（数字100，30s没输入，超过<code>hdfs.rollInterval</code>而产生），共12个文件。</li>
+<li>无数据输入不额外产生空文件。</li>
+<li>可以通过设置参数把roll间隔调大，避免小文件问题。</li>
+</ol>
+<h2 id="案例四：hdfs-round-agent"><a href="#案例四：hdfs-round-agent" class="headerlink" title="案例四：hdfs-round-agent"></a>案例四：hdfs-round-agent</h2><p>hdfs sink每分钟roll一次，并格式化输出路径</p>
+<p>hdfs-round-agent.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">hdfs-round-agent.sources = r1</span><br><span class="line">hdfs-round-agent.channels = c1</span><br><span class="line">hdfs-round-agent.sinks = k1</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sources.r1.type = netcat</span><br><span class="line">hdfs-round-agent.sources.r1.bind = localhost</span><br><span class="line">hdfs-round-agent.sources.r1.port = 44444</span><br><span class="line">hdfs-round-agent.sources.r1.interceptors = i1</span><br><span class="line">hdfs-round-agent.sources.r1.interceptors.i1.type = timestamp</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sinks.k1.type = hdfs</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.path = data/flume/events/%y-%m-%d/%H%M</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.filePrefix = events-</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.round = true</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.roundValue = 1</span><br><span class="line">hdfs-round-agent.sinks.k1.hdfs.roundUnit = minute</span><br><span class="line">#hdfs-round-agent.sinks.k1.hdfs.useLocalTimeStamp = true</span><br><span class="line"></span><br><span class="line">hdfs-round-agent.sources.r1.channels = c1</span><br><span class="line">hdfs-round-agent.sinks.k1.channel = c1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>因为sink中用到了时间，所以需要利用时间拦截器在event的header中加入时间，否则报错。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(SinkRunner-PollingRunner-DefaultSinkProcessor) [ERROR - org.apache.flume.sink.hdfs.HDFSEventSink.process(HDFSEventSink.java:459)] process failed</span><br><span class="line">java.lang.NullPointerException: Expected timestamp in the Flume event headers, but it was null</span><br></pre></td></tr></table></figure>
+
+<p>官方有说明：要么利用时间拦截器在header加timestamp，要么启动设置hdfs.useLocalTimeStamp=true</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Note For all of the time related escape sequences, a header with the key “timestamp” must exist among the headers of the event (unless hdfs.useLocalTimeStamp is set to true). One way to add this automatically is to use the TimestampInterceptor.</span><br></pre></td></tr></table></figure>
+
+<p>sink启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name hdfs-round-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/hdfs-round-agent.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>执行命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# telnet localhost 44444</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">a</span><br><span class="line">OK</span><br><span class="line">b</span><br><span class="line">OK</span><br><span class="line">c</span><br><span class="line">OK</span><br><span class="line"></span><br><span class="line">d</span><br><span class="line">OK</span><br><span class="line">e</span><br><span class="line">OK</span><br><span class="line">g</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -ls /user/hadoop/data/flume/events/22-05-17/</span><br><span class="line">Found 3 items</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:47 /user/hadoop/data/flume/events/22-05-17/0247</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:48 /user/hadoop/data/flume/events/22-05-17/0248</span><br><span class="line">drwxr-xr-x   - hadoop supergroup          0 2022-05-17 02:49 /user/hadoop/data/flume/events/22-05-17/0249</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0247/*</span><br><span class="line">1652755625761	61 0d</span><br><span class="line">1652755633572	62 0d</span><br><span class="line">1652755634589	63 0d</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0248/*</span><br><span class="line">1652755722065	64 0d</span><br><span class="line">1652755726784	65 0d</span><br><span class="line">[hadoop@hadoop001 ~]$ hdfs dfs -text /user/hadoop/data/flume/events/22-05-17/0249/*</span><br><span class="line">1652755754582	67 0d</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="案例五：实时监控目录下多个新文件（不能对文件内容进行实时同步）"><a href="#案例五：实时监控目录下多个新文件（不能对文件内容进行实时同步）" class="headerlink" title="案例五：实时监控目录下多个新文件（不能对文件内容进行实时同步）"></a>案例五：实时监控目录下多个新文件（不能对文件内容进行实时同步）</h2><p>spooldir-hdfs-agent.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spooldir-hdfs-agent.sources = r1</span><br><span class="line">spooldir-hdfs-agent.sinks = k1</span><br><span class="line">spooldir-hdfs-agent.channels = c1</span><br><span class="line"></span><br><span class="line"># Describe/configure the source</span><br><span class="line">spooldir-hdfs-agent.sources.r1.type = spooldir</span><br><span class="line"># spoolDir 指定监控的目录</span><br><span class="line">spooldir-hdfs-agent.sources.r1.spoolDir = /home/hadoop/data/flume</span><br><span class="line"># fileSuffix 指定本地文件上传完成后，自动追加的文件后缀</span><br><span class="line">spooldir-hdfs-agent.sources.r1.fileSuffix = .COMPLETED</span><br><span class="line">spooldir-hdfs-agent.sources.r1.fileHeader = true</span><br><span class="line">#忽略所有以.tmp 结尾的文件，不上传</span><br><span class="line">spooldir-hdfs-agent.sources.r1.ignorePattern = ([^ ]*\.tmp)</span><br><span class="line"></span><br><span class="line"># Describe the sink</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.type = hdfs</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.path = hdfs://hadoop001:9000/user/hadoop/data/flume/events/%Y%m%d/%H</span><br><span class="line"></span><br><span class="line">#上传到hdfs后，文件的前缀</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.filePrefix = upload-</span><br><span class="line">#是否按照时间滚动文件夹</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.round = true</span><br><span class="line">#多少时间单位创建一个新的文件夹</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.roundValue = 1</span><br><span class="line">#重新定义时间单位</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.roundUnit = second</span><br><span class="line">#是否使用本地时间戳</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.useLocalTimeStamp = true</span><br><span class="line">#积攒多少个 Event 才 flush 到 HDFS 一次</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.batchSize = 100</span><br><span class="line">#设置文件类型，可支持压缩</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.fileType = DataStream</span><br><span class="line">#多久生成一个新的文件</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.rollInterval = 60</span><br><span class="line">#设置每个文件的滚动大小大概是 128M</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.rollSize = 134217700</span><br><span class="line">#文件的滚动与 Event 数量为3</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.hdfs.rollCount = 3</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">spooldir-hdfs-agent.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">spooldir-hdfs-agent.sources.r1.channels = c1</span><br><span class="line">spooldir-hdfs-agent.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>文件准备</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ pwd</span><br><span class="line">/home/hadoop/data</span><br><span class="line">[hadoop@hadoop001 data]$ cat flume.text1</span><br><span class="line">a</span><br><span class="line">b</span><br><span class="line">c</span><br><span class="line">[hadoop@hadoop001 data]$ cat flume.text2</span><br><span class="line">d</span><br><span class="line">e</span><br><span class="line">f</span><br></pre></td></tr></table></figure>
+
+<p>启动命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name spooldir-hdfs-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/spooldir-hdfs-agent.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ echo &quot;hello world&quot; &gt; flume/flume.text0</span><br><span class="line">[hadoop@hadoop001 data]$ cp flume.text1 flume/</span><br><span class="line">[hadoop@hadoop001 data]$ cp flume.text2 flume/</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;hello world&quot; &gt; flume/flume.text4</span><br></pre></td></tr></table></figure>
+
+<p>结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ ll flume</span><br><span class="line">total 16</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 12 May 19 16:09 flume.text0.COMPLETED</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  6 May 19 16:09 flume.text1.COMPLETED</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop  6 May 19 16:09 flume.text2.COMPLETED</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 12 May 19 16:10 flume.text4.COMPLETED</span><br><span class="line">[hadoop@hadoop001 data]$ hadoop fs -cat /user/hadoop/data/flume/events/20220519/16/upload-.1652976566664</span><br><span class="line">hello world</span><br><span class="line">a</span><br><span class="line">b</span><br><span class="line">[hadoop@hadoop001 data]$ hadoop fs -cat /user/hadoop/data/flume/events/20220519/16/upload-.1652976566665</span><br><span class="line">c</span><br><span class="line">d</span><br><span class="line">e</span><br><span class="line">[hadoop@hadoop001 data]$ hadoop fs -cat /user/hadoop/data/flume/events/20220519/16/upload-.1652976566666</span><br><span class="line">f</span><br><span class="line">hello world</span><br></pre></td></tr></table></figure>
+
+<p>对于已经标识为<code>.COMPLETED</code>的文件，再次处理或者重名则会报错。<code>.COMPLETED</code>文件内容不会改变。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ echo &quot;hello world22&quot; &gt; flume/flume.text4</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ERROR - org.apache.flume.source.SpoolDirectorySource$SpoolDirectoryRunnable.run(SpoolDirectorySource.java:296)] FATAL: Spool Directory source r1: &#123; spoolDir: /home/hadoop/data/flume &#125;: Uncaught exception in SpoolDirectorySource thread. Restart or reconfigure Flume to continue processing.</span><br><span class="line">java.lang.IllegalStateException: File name has been re-used with different files. Spooling assumptions violated for /home/hadoop/data/flume/flume.text4.COMPLETED</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="案例六：Flume断点续传Taildir-Source"><a href="#案例六：Flume断点续传Taildir-Source" class="headerlink" title="案例六：Flume断点续传Taildir Source"></a>案例六：Flume断点续传Taildir Source</h2><p>一般的flume日志采集方式会出现重复采集的情况，比如：当某个flume应用挂掉后，重启应用，就会将采集过得日志重复采集。<br><strong>解决办法：采用断点续传taildir，记录上一次的采集位置，重启应用后，从记录的位置开始采集。</strong></p>
+<blockquote>
+<p>注：Linux 中储存文件元数据的区域就叫做 inode，每个 inode 都有一个号码，操作系统用 inode 号码来识别不同的文件，Unix/Linux 系统内部不使用文件名，而使用 inode 号码来识别文件。文件改名，inode不变。<br>TAILDIR采用（inode+文件全路径名）作为监听文件的唯一标识（可考虑修改源码，只取inode）</p>
+</blockquote>
+<p>taildir-hdfs-agent.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">taildir-hdfs-agent.sources=r1</span><br><span class="line">taildir-hdfs-agent.sinks=k1</span><br><span class="line">taildir-hdfs-agent.channels=c1</span><br><span class="line"></span><br><span class="line"># source的配置</span><br><span class="line"># source类型</span><br><span class="line">taildir-hdfs-agent.sources.r1.type = TAILDIR</span><br><span class="line"># 元数据位置</span><br><span class="line">taildir-hdfs-agent.sources.r1.positionFile = /home/hadoop/data/flume/meta/taildir_position.json</span><br><span class="line"># 监控的目录</span><br><span class="line">taildir-hdfs-agent.sources.r1.filegroups = f1</span><br><span class="line">taildir-hdfs-agent.sources.r1.filegroups.f1=/home/hadoop/data/bd/.*log</span><br><span class="line"></span><br><span class="line"># Describe the sink</span><br><span class="line">taildir-hdfs-agent.sinks.k1.type = hdfs</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.path = hdfs://hadoop001:9000/user/hadoop/data/flume/events/%Y%m%d/%H</span><br><span class="line"></span><br><span class="line">#上传到hdfs后，文件的前缀</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.filePrefix = upload-</span><br><span class="line">#是否按照时间滚动文件夹</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.round = true</span><br><span class="line">#多少时间单位创建一个新的文件夹</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.roundValue = 1</span><br><span class="line">#重新定义时间单位</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.roundUnit = hour</span><br><span class="line">#是否使用本地时间戳</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.useLocalTimeStamp = true</span><br><span class="line">#积攒多少个 Event 才 flush 到 HDFS 一次</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.batchSize = 100</span><br><span class="line">#设置文件类型，可支持压缩</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.fileType = DataStream</span><br><span class="line">#多久生成一个新的文件</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.rollInterval = 60</span><br><span class="line">#设置每个文件的滚动大小大概是 128M</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.rollSize = 134217700</span><br><span class="line">#文件的滚动与 Event 数量为3</span><br><span class="line">taildir-hdfs-agent.sinks.k1.hdfs.rollCount = 3</span><br><span class="line"></span><br><span class="line">#channel的配置</span><br><span class="line">taildir-hdfs-agent.channels.c1.type = file</span><br><span class="line">taildir-hdfs-agent.channels.c1.checkpointDir = /home/hadoop/data/checkpoint</span><br><span class="line">taildir-hdfs-agent.channels.c1.dataDirs = /home/hadoop/data/flume-data</span><br><span class="line">taildir-hdfs-agent.channels.c1.capacity = 10000000</span><br><span class="line">taildir-hdfs-agent.channels.c1.transactionCapacity = 5000</span><br><span class="line"></span><br><span class="line">#用channel链接source和sink</span><br><span class="line">taildir-hdfs-agent.sources.r1.channels = c1</span><br><span class="line">taildir-hdfs-agent.sinks.k1.channel =c1</span><br></pre></td></tr></table></figure>
+
+<p>启动命令</p>
+<p>（启动前要确保监控目录已经创建）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name taildir-hdfs-agent \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/taildir-hdfs-agent.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ echo &quot;1&quot; &gt;&gt; /home/hadoop/data/bd/bd.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;2&quot; &gt;&gt; /home/hadoop/data/bd/bd.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;3&quot; &gt;&gt; /home/hadoop/data/bd/bd.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;4&quot; &gt;&gt; /home/hadoop/data/bd/bd1.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;5&quot; &gt;&gt; /home/hadoop/data/bd/bd1.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;6&quot; &gt;&gt; /home/hadoop/data/bd/bd1.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;7&quot; &gt;&gt; /home/hadoop/data/bd/bd2.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;8&quot; &gt;&gt; /home/hadoop/data/bd/bd2.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;9&quot; &gt;&gt; /home/hadoop/data/bd/bd2.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;10&quot; &gt;&gt; /home/hadoop/data/bd/bd3.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;11&quot; &gt;&gt; /home/hadoop/data/bd/bd3.log</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ ll /home/hadoop/data/flume/meta</span><br><span class="line">total 0</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 0 May 19 16:45 taildir_position.json</span><br><span class="line">[hadoop@hadoop001 data]$ ll /home/hadoop/data/checkpoint</span><br><span class="line">total 78152</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop 80008232 May 19 16:46 checkpoint</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop       37 May 19 16:46 checkpoint.meta</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop       32 May 19 16:46 inflightputs</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop       32 May 19 16:46 inflighttakes</span><br><span class="line">-rw-rw-r--. 1 hadoop hadoop        0 May 19 16:45 in_use.lock</span><br><span class="line">drwxrwxr-x. 2 hadoop hadoop     4096 May 19 16:45 queueset</span><br><span class="line">1652974981413	6f 6b 0d</span><br><span class="line">[hadoop@hadoop001 conf]$ hadoop fs -text /user/hadoop/data/flume/events/20220519/17/*</span><br><span class="line">2022-05-19 17:56:32,881 INFO lzo.GPLNativeCodeLoader: Loaded native gpl library from the embedded binaries</span><br><span class="line">2022-05-19 17:56:32,893 INFO lzo.LzoCodec: Successfully loaded &amp; initialized native-lzo library [hadoop-lzo rev 26dc7b4620ff16bb6f1fdd48f915ce5fb8222d6f]</span><br><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">7</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ echo &quot;12&quot; &gt;&gt; /home/hadoop/data/bd/bd.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;13&quot; &gt;&gt; /home/hadoop/data/bd/bd.log</span><br><span class="line">[hadoop@hadoop001 data]$ cat /home/hadoop/data/flume/meta/taildir_position.json</span><br><span class="line">[&#123;&quot;inode&quot;:1267448,&quot;pos&quot;:12,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd.log&quot;&#125;,&#123;&quot;inode&quot;:1267450,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd1.log&quot;&#125;,&#123;&quot;inode&quot;:1267451,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd2.log&quot;&#125;,&#123;&quot;inode&quot;:1267449,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd3.log&quot;&#125;][hadoop@hadoop001 data]$ </span><br></pre></td></tr></table></figure>
+
+<p>终止agent，输入数据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ echo &quot;14&quot; &gt;&gt; /home/hadoop/data/bd/bd3.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;15&quot; &gt;&gt; /home/hadoop/data/bd/bd3.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;16&quot; &gt;&gt; /home/hadoop/data/bd/bd4.log</span><br><span class="line">[hadoop@hadoop001 data]$ cat /home/hadoop/data/flume/meta/taildir_position.json</span><br><span class="line">[&#123;&quot;inode&quot;:1267448,&quot;pos&quot;:12,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd.log&quot;&#125;,&#123;&quot;inode&quot;:1267450,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd1.log&quot;&#125;,&#123;&quot;inode&quot;:1267451,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd2.log&quot;&#125;,&#123;&quot;inode&quot;:1267449,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd3.log&quot;&#125;]</span><br></pre></td></tr></table></figure>
+
+<p>重启agent测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 data]$ echo &quot;17&quot; &gt;&gt; /home/hadoop/data/bd/bd4.log</span><br><span class="line">[hadoop@hadoop001 data]$ echo &quot;18&quot; &gt;&gt; /home/hadoop/data/bd/bd4.log</span><br><span class="line">[hadoop@hadoop001 data]$ cat /home/hadoop/data/flume/meta/taildir_position.json</span><br><span class="line">[&#123;&quot;inode&quot;:1267448,&quot;pos&quot;:12,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd.log&quot;&#125;,</span><br><span class="line">&#123;&quot;inode&quot;:1267450,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd1.log&quot;&#125;,&#123;&quot;inode&quot;:1267451,&quot;pos&quot;:6,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd2.log&quot;&#125;,&#123;&quot;inode&quot;:1267449,&quot;pos&quot;:12,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd3.log&quot;&#125;,&#123;&quot;inode&quot;:1267439,&quot;pos&quot;:9,&quot;file&quot;:&quot;/home/hadoop/data/bd/bd4.log&quot;&#125;]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ hadoop fs -text /user/hadoop/data/flume/events/20220519/17/*</span><br><span class="line">2022-05-19 17:56:32,881 INFO lzo.GPLNativeCodeLoader: Loaded native gpl library from the embedded binaries</span><br><span class="line">2022-05-19 17:56:32,893 INFO lzo.LzoCodec: Successfully loaded &amp; initialized native-lzo library [hadoop-lzo rev 26dc7b4620ff16bb6f1fdd48f915ce5fb8222d6f]</span><br><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">7</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td></tr></table></figure>
+
+<p>一切正常，数据无丢失无重复，支持断点续传。</p>
+<h2 id="案例七：Flume-Channel-Selectors"><a href="#案例七：Flume-Channel-Selectors" class="headerlink" title="案例七：Flume Channel Selectors"></a>案例七：Flume Channel Selectors</h2><p>Flume 支持扇出从一个 source 到多个 channel 的流量. 扇出有两种模式 : 复制和多路复用.。</p>
+<p><strong>replicating selector</strong></p>
+<p>在复制流程中，event 将发送到所有已配置的 channel。在多路复用的情况下， event 仅被发送到合格 channels 的子集。为了散开流量，需要指定 source 的 channel 列表以及扇出它的策略。 这是通过添加可以复制或多路复用的 channel”选择器” 来完成的。如果它是多路复用器， 则进一步指定选择规则。如果您没有指定选择器，那么默认情况下它会复制：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">a1.sources = r1</span><br><span class="line">a1.channels = c1 c2 c3</span><br><span class="line"></span><br><span class="line">a1.sources.r1.selector.type = replicating</span><br><span class="line">a1.sources.r1.channels = c1 c2 c3</span><br><span class="line">#这意味着c3是可选的，向c3写入失败会被忽略。但是向c1，c2写入失败会出错</span><br><span class="line">a1.sources.r1.selector.optional = c3</span><br></pre></td></tr></table></figure>
+
+<p>上面这个例子中没有声明sink，c3配置成了可选的。向c3发送数据如果失败了会被忽略。c1和c2没有配置成可选的，向c1和c2写数据失败会导致事务失败回滚。</p>
+<p><strong>multiplexing selector</strong></p>
+<p>多路复用选择具有另一组属性以分流。 这需要指定 event 属性到 channel 集的映射。 选择器检查 event 头中的每个已配置属性。 如果它与指定的值匹配，则该 event 将发送到映射到该值的所有 channel。如果没有匹配项，则将 event 发送到配置为默认值的 channel 集：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Mapping for multiplexing selector</span><br><span class="line">&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.type = multiplexing</span><br><span class="line">&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.header = &lt;someHeader&gt;</span><br><span class="line">&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.mapping.&lt;Value1&gt; = &lt;Channel1&gt;</span><br><span class="line">&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.mapping.&lt;Value2&gt; = &lt;Channel1&gt; &lt;Channel2&gt;</span><br><span class="line">&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.mapping.&lt;Value3&gt; = &lt;Channel2&gt;</span><br><span class="line">#...</span><br><span class="line">&lt;Agent&gt;.sources.&lt;Source1&gt;.selector.default = &lt;Channel2&gt; </span><br></pre></td></tr></table></figure>
+
+<p>映射允许为每个值重叠 channel。</p>
+<p>以下示例具有多路复用到两个路径的单个流。 名为 agent_foo 的 agent 具有单个 avrosource 和两个链接到两个 sink 的 channel:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># list the sources, sinks and channels in the agent</span><br><span class="line">agent_foo.sources = avro-AppSrv-source1</span><br><span class="line">agent_foo.sinks = hdfs-Cluster1-sink1 avro-forward-sink2</span><br><span class="line">agent_foo.channels = mem-channel-1 file-channel-2</span><br><span class="line"># set channels for source</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.channels = mem-channel-1 file-channel-2</span><br><span class="line"># set channel for sinks</span><br><span class="line">agent_foo.sinks.hdfs-Cluster1-sink1.channel = mem-channel-1</span><br><span class="line">agent_foo.sinks.avro-forward-sink2.channel = file-channel-2</span><br><span class="line"># channel selector configuration</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.type = multiplexing</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.header = State</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.mapping.CA = mem-channel-1</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.mapping.AZ = file-channel-2</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.mapping.NY = mem-channel-1 file-channel-2</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.default = mem-channel-1</span><br></pre></td></tr></table></figure>
+
+<p>选择器检查名为 “State” 的标头。 如果该值为 “CA”，则将其发送到 mem-channel-1，如果其为 “AZ”，则将其发送到文件 channel-2，或者如果其为 “NY” 则为两者。 如果 “状态” 标题未设置或与三者中的任何一个都不匹配，则它将转到 mem-channel-1，其被指定为 “default”。</p>
+<p>选择器还支持可选 channel。 要为标头指定可选 channel，可通过以下方式使用 config 参数 “optional”：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># channel selector configuration</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.type = multiplexing</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.header = State</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.mapping.CA = mem-channel-1</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.mapping.AZ = file-channel-2</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.mapping.NY = mem-channel-1 file-channel-2</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.optional.CA = mem-channel-1 file-channel-2</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.mapping.AZ = file-channel-2</span><br><span class="line">agent_foo.sources.avro-AppSrv-source1.selector.default = mem-channel-1</span><br></pre></td></tr></table></figure>
+
+<p>选择器将首先尝试写入所需的 channel，如果其中一个 channel 无法使用 event ，则会使事务失败。 在所有渠道上重新尝试交易。 一旦所有必需的 channel 消耗了 event ，则选择器将尝试写入可选 channel。 任何可选 channel 使用该 event 的失败都会被忽略而不会重试。</p>
+<p>如果可选信道与特定报头的所需信道之间存在重叠，则认为该信道是必需的，并且信道中的故障将导致重试所有必需信道集。 例如，在上面的示例中，对于标题 “CA”,mem-channel-1 被认为是必需的 channel，即使它被标记为必需和可选，并且写入此 channel 的失败将导致该 event 在为选择器配置的所有 channel 上重试。</p>
+<p>请注意，如果标头没有任何所需的 channel，则该 event 将被写入默认 channel，并将尝试写入该标头的可选 channel。 如果未指定所需的 channel，则指定可选 channel 仍会将 event 写入默认 channel。 如果没有将 channel 指定为默认 channel 且没有必需 channel，则选择器将尝试将 event 写入可选 channel。 在这种情况下，任何失败都会被忽略。</p>
+<p><strong>自定义选择器</strong><br>自定义选择器就是你可以自己写一个org.apache.flume.ChannelSelector接口的实现类。老规矩，你自己写的实现类以及依赖的jar包在启动时候都必须放入Flume的classpath。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">a1.sources = r1</span><br><span class="line">a1.channels = c1</span><br><span class="line"></span><br><span class="line">a1.sources.r1.selector.type = com.lxk.flume.custom.BalanceChannelSelector</span><br></pre></td></tr></table></figure>
+
+<p>要自定义自己的channel 选择器，比如上面的负载均衡的channel选择器，因为上面系统提供的2个原生的选择器要么全复制，要么选择性的改变数据流向，现在想增加channel数量，缓解压力，数据就需要均衡的发布到声明的n个channel里面去。要自定义，就得了解这个选择器的实现。channel 是在 agent 上暂存 event 的缓冲池。 event由source添加，由sink消费后删除。</p>
+<h3 id="实战"><a href="#实战" class="headerlink" title="实战"></a>实战</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Flume多路复用：</span><br><span class="line">  同一时刻，source只能传输给一个channel，source是通过 event header 来决定传输到哪一个 channel。</span><br><span class="line">  即：Flume 多路复用，需配合Static Interceptor来使用。比如：从A端口过来的数据，key=from,value=A，logger输出；从B端口过来的数据，key=from,value=B，hdfs输出，此时就可以使用Flume多路复用，通过event header来决定传输到哪个Channel)</span><br><span class="line"> </span><br><span class="line">案例：</span><br><span class="line">  Flume-1 监听 44444端口；</span><br><span class="line">  Flume-2 监听 44441端口，avro sink 输出到 44444端口；</span><br><span class="line">  Flume-3 监听 44442端口，avro sink 输出到 44444端口；</span><br><span class="line"> </span><br><span class="line">选型：</span><br><span class="line"> Flume-1：avro source + memory channel + Multiplexing Channel Selector(多路复用渠道选择器)  + logger sink + hdfs sink</span><br><span class="line"> Flume-2：netcat source + memory channel + avro sink</span><br><span class="line"> Flume-3：netcat source + memory channel + avro sink</span><br></pre></td></tr></table></figure>
+
+<h4 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h4><p>multiplexing-flume-1.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Name the components on this agent</span><br><span class="line">multiplexing-flume-1.sources = r1</span><br><span class="line">multiplexing-flume-1.sinks = k1 k2</span><br><span class="line">multiplexing-flume-1.channels = c1 c2</span><br><span class="line"></span><br><span class="line"># Describe/configure the source</span><br><span class="line">multiplexing-flume-1.sources.r1.type = avro</span><br><span class="line">multiplexing-flume-1.sources.r1.bind = localhost</span><br><span class="line">multiplexing-flume-1.sources.r1.port = 44444</span><br><span class="line"></span><br><span class="line"># Multiplexing Channel Selector configure(多路复用通道选择器配置)</span><br><span class="line">multiplexing-flume-1.sources.r1.selector.type = multiplexing</span><br><span class="line">multiplexing-flume-1.sources.r1.selector.header = from</span><br><span class="line">multiplexing-flume-1.sources.r1.selector.mapping.A = c1</span><br><span class="line">multiplexing-flume-1.sources.r1.selector.mapping.B = c2</span><br><span class="line"></span><br><span class="line"># Describe the sink</span><br><span class="line">multiplexing-flume-1.sinks.k1.type = logger</span><br><span class="line"></span><br><span class="line">multiplexing-flume-1.sinks.k2.type = hdfs</span><br><span class="line">multiplexing-flume-1.sinks.k2.hdfs.path = data/flume/events/%y-%m-%d/%H-%M</span><br><span class="line">multiplexing-flume-1.sinks.k2.hdfs.filePrefix = multiplexing-</span><br><span class="line">multiplexing-flume-1.sinks.k2.hdfs.round = true</span><br><span class="line">multiplexing-flume-1.sinks.k2.hdfs.roundValue = 1</span><br><span class="line">multiplexing-flume-1.sinks.k2.hdfs.roundUnit = minute</span><br><span class="line">multiplexing-flume-1.sinks.k2.hdfs.useLocalTimeStamp = true</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">multiplexing-flume-1.channels.c1.type = memory</span><br><span class="line">multiplexing-flume-1.channels.c1.capacity = 1000</span><br><span class="line">multiplexing-flume-1.channels.c1.transactionCapacity = 100</span><br><span class="line"></span><br><span class="line">multiplexing-flume-1.channels.c2.type = memory</span><br><span class="line">multiplexing-flume-1.channels.c2.capacity = 1000</span><br><span class="line">multiplexing-flume-1.channels.c2.transactionCapacity = 100</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">multiplexing-flume-1.sources.sources.r1.channels = c1 c2</span><br><span class="line">multiplexing-flume-1.sources.sinks.k1.channel = c1</span><br><span class="line">multiplexing-flume-1.sources.sinks.k2.channel = c2</span><br></pre></td></tr></table></figure>
+
+<p>multiplexing-flume-2.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Name the components on this agent</span><br><span class="line">multiplexing-flume-2.sources = r1  </span><br><span class="line">multiplexing-flume-2.sinks = k1   </span><br><span class="line">multiplexing-flume-2.channels = c1  </span><br><span class="line"></span><br><span class="line"># Describe/configure the source</span><br><span class="line">multiplexing-flume-2.sources.r1.type = netcat</span><br><span class="line">multiplexing-flume-2.sources.r1.bind = localhost</span><br><span class="line">multiplexing-flume-2.sources.r1.port = 44441</span><br><span class="line">multiplexing-flume-2.sources.r1.interceptors = i1</span><br><span class="line">multiplexing-flume-2.sources.r1.interceptors.i1.type = static</span><br><span class="line">multiplexing-flume-2.sources.r1.interceptors.i1.key = from</span><br><span class="line">multiplexing-flume-2.sources.r1.interceptors.i1.value = A</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">multiplexing-flume-2.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Describe the sink</span><br><span class="line">multiplexing-flume-2.sinks.k1.type = avro</span><br><span class="line">multiplexing-flume-2.sinks.k1.hostname = localhost</span><br><span class="line">multiplexing-flume-2.sinks.k1.port = 44444</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">multiplexing-flume-2.sources.r1.channels = c1</span><br><span class="line">multiplexing-flume-2.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<p>multiplexing-flume-3.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Name the components on this agent</span><br><span class="line">multiplexing-flume-3.sources = r1</span><br><span class="line">multiplexing-flume-3.sinks = k1</span><br><span class="line">multiplexing-flume-3.channels = c1</span><br><span class="line"></span><br><span class="line"># Describe/configure the source</span><br><span class="line">multiplexing-flume-3.sources.r1.type = netcat</span><br><span class="line">multiplexing-flume-3.sources.r1.bind = localhost</span><br><span class="line">multiplexing-flume-3.sources.r1.port = 44442</span><br><span class="line">multiplexing-flume-3.sources.r1.interceptors = i1</span><br><span class="line">multiplexing-flume-3.sources.r1.interceptors.i1.type = static</span><br><span class="line">multiplexing-flume-3.sources.r1.interceptors.i1.key = from</span><br><span class="line">multiplexing-flume-3.sources.r1.interceptors.i1.value = B</span><br><span class="line"></span><br><span class="line"># Use a channel which buffers events in memory</span><br><span class="line">multiplexing-flume-3.channels.c1.type = memory</span><br><span class="line"></span><br><span class="line"># Describe the sink</span><br><span class="line">multiplexing-flume-3.sinks.k1.type = avro</span><br><span class="line">multiplexing-flume-3.sinks.k1.hostname = localhost</span><br><span class="line">multiplexing-flume-3.sinks.k1.port = 44444</span><br><span class="line"></span><br><span class="line"># Bind the source and sink to the channel</span><br><span class="line">multiplexing-flume-3.sources.r1.channels = c1</span><br><span class="line">multiplexing-flume-3.sinks.k1.channel = c1</span><br></pre></td></tr></table></figure>
+
+<h4 id="启动"><a href="#启动" class="headerlink" title="启动"></a><strong>启动</strong></h4><p>启动顺序：multiplexing-flume-1,multiplexing-flume-2、multiplexing-flume-3</p>
+<p>窗口1</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name multiplexing-flume-1 \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/multiplexing-flume-1.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>窗口2</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name multiplexing-flume-2 \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/multiplexing-flume-2.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<p>窗口3</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flume-ng agent \</span><br><span class="line">--name multiplexing-flume-3 \</span><br><span class="line">--conf $FLUME_HOME/conf \</span><br><span class="line">--conf-file $FLUME_HOME/conf/multiplexing-flume-3.conf \</span><br><span class="line">-Dflume.root.logger=INFO,console</span><br></pre></td></tr></table></figure>
+
+<h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><p>窗口4</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# telnet localhost 44441</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">1</span><br><span class="line">OK</span><br><span class="line">2</span><br><span class="line">OK</span><br><span class="line">3</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>窗口5</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# telnet localhost 44442</span><br><span class="line">Trying ::1...</span><br><span class="line">telnet: connect to address ::1: Connection refused</span><br><span class="line">Trying 127.0.0.1...</span><br><span class="line">Connected to localhost.</span><br><span class="line">Escape character is &#x27;^]&#x27;.</span><br><span class="line">4</span><br><span class="line">OK</span><br><span class="line">5</span><br><span class="line">OK</span><br><span class="line">6</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>窗口1</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">2022-05-19 20:00:47,539 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;from=A&#125; body: 31 0D                                           1. &#125;</span><br><span class="line">2022-05-19 20:00:47,539 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;from=A&#125; body: 32 0D                                           2. &#125;</span><br><span class="line">2022-05-19 20:00:47,539 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;from=A&#125; body: 33 0D                                           3. &#125;</span><br><span class="line">2022-05-19 20:00:54,825 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.HDFSSequenceFile.configure(HDFSSequenceFile.java:63)] writeFormat = Writable, UseRawLocalFileSystem = false</span><br><span class="line">2022-05-19 20:00:55,007 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.hdfs.BucketWriter.open(BucketWriter.java:246)] Creating data/flume/events/22-05-19/20-00/multiplexing-.1652990454821.tmp</span><br><span class="line">2022-05-19 20:00:55,231 (hdfs-k2-call-runner-0) [WARN - org.apache.hadoop.util.NativeCodeLoader.&lt;clinit&gt;(NativeCodeLoader.java:60)] Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">2022-05-19 20:01:26,692 (hdfs-k2-roll-timer-0) [INFO - org.apache.flume.sink.hdfs.HDFSEventSink$1.run(HDFSEventSink.java:393)] Writer callback called.</span><br><span class="line">2022-05-19 20:01:26,693 (hdfs-k2-roll-timer-0) [INFO - org.apache.flume.sink.hdfs.BucketWriter.doClose(BucketWriter.java:438)] Closing data/flume/events/22-05-19/20-00/multiplexing-.1652990454821.tmp</span><br><span class="line">2022-05-19 20:01:26,716 (hdfs-k2-call-runner-6) [INFO - org.apache.flume.sink.hdfs.BucketWriter$7.call(BucketWriter.java:681)] Renaming data/flume/events/22-05-19/20-00/multiplexing-.1652990454821.tmp to data/flume/events/22-05-19/20-00/multiplexing-.1652990454821</span><br></pre></td></tr></table></figure>
+
+<p>logger输出c1结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;from=A&#125; body: 31 0D                                           1. &#125;</span><br><span class="line">2022-05-19 20:00:47,539 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;from=A&#125; body: 32 0D                                           2. &#125;</span><br><span class="line">2022-05-19 20:00:47,539 (SinkRunner-PollingRunner-DefaultSinkProcessor) [INFO - org.apache.flume.sink.LoggerSink.process(LoggerSink.java:95)] Event: &#123; headers:&#123;from=A&#125; body: 33 0D                                           3. &#125;</span><br></pre></td></tr></table></figure>
+
+<p>hdfs查看c2结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 ~]$ hadoop fs -text data/flume/events/22-05-19/20-00/multiplexing-.1652990454821</span><br><span class="line">2022-05-19 20:03:35,791 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">1652990456695	34 0d</span><br><span class="line">1652990456698	35 0d</span><br><span class="line">1652990456699	36 0d</span><br><span class="line">[hadoop@hadoop001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>测试成功。</p>
+<h2 id="案例八：Flume-Sink-Processors"><a href="#案例八：Flume-Sink-Processors" class="headerlink" title="案例八：Flume Sink Processors"></a>案例八：Flume Sink Processors</h2><p>具体案例参考其他博主：</p>
+<p><a href="https://blog.csdn.net/lzb348110175/article/details/118220586">Flume案例七：故障转移(Failover Sink Processor)</a></p>
+<p><a href="https://blog.csdn.net/lzb348110175/article/details/118223517">Flume案例八：负载均衡(Load balancing Sink Processor)</a></p>
+<p>接收组允许用户将多个 sink 分组到一个实体中. sink 处理器可用于在组内的所有 sink 上提供负载平衡功能, 或在时间故障的情况下实现从一个 sink 到另一个 sink 的故障转移.</p>
+<p>必需属性以粗体显示</p>
+<table>
+<thead>
+<tr>
+<th>属性名称</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>sinks</strong></td>
+<td>-</td>
+<td>以空格分隔的参与组的 sink 列表</td>
+</tr>
+<tr>
+<td><strong>processor.type</strong></td>
+<td>default</td>
+<td>组件 type 名称需要是 default,failover 或 load_balance</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Example for agent named a1:</span><br><span class="line">a1.sinkgroups = g1</span><br><span class="line">a1.sinkgroups.g1.sinks = k1 k2</span><br><span class="line">a1.sinkgroups.g1.processor.type = load_balance</span><br></pre></td></tr></table></figure>
+
+<h3 id="Default-Sink-Processor"><a href="#Default-Sink-Processor" class="headerlink" title="Default Sink Processor"></a>Default Sink Processor</h3><p>默认 sink 只接受一个 sink. 用户不必为单个 sink 创建处理器(sink 组). 相反, 用户可以遵循本用户指南中上面解释的 source - channel - sink 模式</p>
+<h3 id="Failover-Sink-Processor"><a href="#Failover-Sink-Processor" class="headerlink" title="Failover Sink Processor"></a>Failover Sink Processor</h3><p>故障转移 sink 维护一个优先级的 sink 列表, 保证只要有一个可用的 event 将被处理(传递)</p>
+<p>故障转移机制的工作原理是将故障 sink 降级到池中, 在池中为它们分配一个冷却期, 在重试之前随顺序故障而增加. sink 成功发送 event 后, 它将恢复到实时池. sink 具有与之相关的优先级, 数量越大, 优先级越高. 如果在发送 event 时 sink 发生故障, 则接下来将尝试下一个具有最高优先级的 sink 以发送 event . 例如, 在优先级为 80 的 sink 之前激活优先级为 100 的 sink. 如果未指定优先级, 则根据配置中指定 sink 的顺序确定 Sinks 优先级.</p>
+<p>要进行配置, 请将 sink 组处理器设置为故障转移并为所有单个 sink 设置优先级. 所有指定的优先级必须是唯一的 此外, 可以使用 maxpenalty 属性设置故障转移时间的上限(以毫秒为单位)</p>
+<p>必需属性以粗体显示</p>
+<table>
+<thead>
+<tr>
+<th>属性名称</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>sinks</strong></td>
+<td>-</td>
+<td>以空格分隔的参与组的 sink 列表</td>
+</tr>
+<tr>
+<td><strong>processor.type</strong></td>
+<td>default</td>
+<td>组件 type 名称需要进行故障转移 &amp; nbsp;  failover</td>
+</tr>
+<tr>
+<td><strong>processor.priority.&lt;sinkName&gt;</strong></td>
+<td>-</td>
+<td>优先价值。 必须是与当前 sink 组关联的 sink 实例之一。较高优先级值 Sink 较早被激活。绝对值越大表示优先级越高</td>
+</tr>
+<tr>
+<td>processor.maxpenalty</td>
+<td>30000</td>
+<td>失败的 sink 的最大退避时间（以毫秒为单位）</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Example for agent named a1:</span><br><span class="line">a1.sinkgroups = g1</span><br><span class="line">a1.sinkgroups.g1.sinks = k1 k2</span><br><span class="line">a1.sinkgroups.g1.processor.type = failover</span><br><span class="line">a1.sinkgroups.g1.processor.priority.k1 = 5</span><br><span class="line">a1.sinkgroups.g1.processor.priority.k2 = 10</span><br><span class="line">a1.sinkgroups.g1.processor.maxpenalty = 10000</span><br><span class="line">Load balancing Sink Processor(负载均衡接收处理器)</span><br><span class="line">负载平衡 sink 处理器提供了在多个 sink 上进行负载均衡流量的功能. 它维护一个索引的活动 sink 列表, 必须在其上分配负载. 实现支持使用 round_robin 或 random 机制分配负载. 选择机制的选择默认为 round_robin 类型, 但可以通过配置覆盖. 通过从 AbstractSinkSelector 继承的自定义类支持自定义选择机制.</span><br></pre></td></tr></table></figure>
+
+<p>调用时, 此选择器使用其配置的选择机制选择下一个 sink 并调用它. 对于 round_robin 和 random 如果所选的 sink 无法传递 event , 则处理器通过其配置的选择机制选择下一个可用的 sink. 此实现不会将失败的 sink 列入黑名单, 而是继续乐观地尝试每个可用的 sink. 如果所有 sink 调用都导致失败, 则选择器将故障传播到 sink 运行器.</p>
+<p>如果启用了 backoff , 则 sink 处理器会将失败的 sink 列入黑名单, 将其删除以供给定超时的选择. 当超时结束时, 如果 sink 仍然没有响应, 则超时会以指数方式增加, 以避免在无响应的 sink 上长时间等待时卡住. 在禁用此功能的情况下, 在循环中, 所有失败的 sink 负载将被传递到下一个 sink, 因此不均衡</p>
+<p>必需属性以粗体显示</p>
+<table>
+<thead>
+<tr>
+<th>属性名称</th>
+<th>默认</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>processor.sink</strong></td>
+<td>-</td>
+<td>以空格分隔的参与组的 sink 列表</td>
+</tr>
+<tr>
+<td><strong>processor.type</strong></td>
+<td>default</td>
+<td>组件 type 名称需要是 load_balance</td>
+</tr>
+<tr>
+<td>processor.backoff</td>
+<td>false</td>
+<td>失败的 sink 是否会以指数方式退回。</td>
+</tr>
+<tr>
+<td>processor.selector</td>
+<td>round_robin</td>
+<td>选择机制。必须是 round_robin,random 或自定义类的 FQCN，它继承自 AbstractSinkelector</td>
+</tr>
+<tr>
+<td>processor.selector.maxTimeOut</td>
+<td>30000</td>
+<td>由退避选择器用于限制指数 backoff （以毫秒为单位）</td>
+</tr>
+</tbody></table>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Example for agent named a1:</span><br><span class="line">a1.sinkgroups = g1</span><br><span class="line">a1.sinkgroups.g1.sinks = k1 k2</span><br><span class="line">a1.sinkgroups.g1.processor.type = load_balance</span><br><span class="line">a1.sinkgroups.g1.processor.backoff = true</span><br><span class="line">a1.sinkgroups.g1.processor.selector = random</span><br></pre></td></tr></table></figure>
+
+<h3 id="Custom-Sink-Processor"><a href="#Custom-Sink-Processor" class="headerlink" title="Custom Sink Processor"></a>Custom Sink Processor</h3><p>目前不支持自定义 sink 处理器</p>
+<h2 id="完"><a href="#完" class="headerlink" title="完"></a>完</h2>]]></content>
   </entry>
   <entry>
     <title>关于YARN</title>
