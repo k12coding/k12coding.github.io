@@ -108,6 +108,31 @@
 ]]></content>
   </entry>
   <entry>
+    <title>CentOS 6.5下安装python3.7</title>
+    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
+    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
+
+<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
+<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
+
+<p>把最上面的一行配置回python2.6.6就行了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
+
+<p>有打印出相应信息就是成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
     <title>CentOS6.5安装NodeJS14.18.3</title>
     <url>/2022/01/19/CentOS6-5%E5%AE%89%E8%A3%85NodeJS14-18-3/</url>
     <content><![CDATA[<h2 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h2><ol>
@@ -131,31 +156,6 @@
 <li><p>刷新配置，查看版本</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# source /etc/profile</span><br><span class="line">[root@hadoop001 ~]# node -v</span><br><span class="line">v14.18.3</span><br><span class="line">[root@hadoop001 ~]# npm -v</span><br><span class="line">8.3.1</span><br></pre></td></tr></table></figure></li>
 </ol>
-]]></content>
-  </entry>
-  <entry>
-    <title>CentOS 6.5下安装python3.7</title>
-    <url>/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/</url>
-    <content><![CDATA[<h2 id="下载并解压"><a href="#下载并解压" class="headerlink" title="下载并解压"></a>下载并解压</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# cd /usr/local/</span><br><span class="line">[root@hadoop001 local]# wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz</span><br><span class="line">[root@hadoop001 local]# tar -xzvf Python-3.7.12</span><br></pre></td></tr></table></figure>
-
-<h2 id="编译安装三部曲"><a href="#编译安装三部曲" class="headerlink" title="编译安装三部曲"></a>编译安装三部曲</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 local]# cd Python-3.7.12</span><br><span class="line">[root@hadoop001 Python-3.7.12]# ./configure --prefix=/usr/local/python37</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make</span><br><span class="line">...</span><br><span class="line">[root@hadoop001 Python-3.7.12]# make install</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/15/CentOS-6-5%E4%B8%8B%E5%AE%89%E8%A3%85python3-7/image-20220115173628211.png" alt="image-20220115173628211"></p>
-<h2 id="更改-usr-bin目录下的链接"><a href="#更改-usr-bin目录下的链接" class="headerlink" title="更改/usr/bin目录下的链接"></a>更改/usr/bin目录下的链接</h2><p>备份旧版本，创建软连接到新版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 Python-3.7.12]# cd /usr/bin/</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python</span><br><span class="line">lrwxrwxrwx. 1 root root    6 Sep 25 18:02 python2 -&gt; python</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">[root@hadoop001 bin]# mv python python-2.6.6</span><br><span class="line">[root@hadoop001 bin]# rm python2</span><br><span class="line">rm: remove symbolic link `python2&#x27;? y</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/bin/python-2.6.6 python2</span><br><span class="line">[root@hadoop001 bin]# ln -s /usr/local/python37/bin/python3.7 /usr/bin/python</span><br><span class="line">[root@hadoop001 bin]# ll python*</span><br><span class="line">lrwxrwxrwx. 1 root root   33 Jan 15 17:41 python -&gt; /usr/local/python37/bin/python3.7</span><br><span class="line">lrwxrwxrwx. 1 root root   12 Jan 15 17:40 python2 -&gt; python-2.6.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python2.6</span><br><span class="line">-rwxr-xr-x. 2 root root 9032 Nov 22  2013 python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改yum配置"><a href="#修改yum配置" class="headerlink" title="修改yum配置"></a>修改yum配置</h2><p>yum默认的python依赖版本是2.6,为了不让python3影响到yum的使用,单独把yum配置给原来的python版本。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# vi /usr/bin/yum</span><br></pre></td></tr></table></figure>
-
-<p>把最上面的一行配置回python2.6.6就行了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/python-2.6.6</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>最后测试一下python3.7是否安装完毕,以及yum是否还是可用。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python --version</span><br><span class="line">yum</span><br></pre></td></tr></table></figure>
-
-<p>有打印出相应信息就是成功了。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 bin]# python --version</span><br><span class="line">Python 3.7.12</span><br><span class="line">[root@hadoop001 bin]# yum</span><br><span class="line">Loaded plugins: fastestmirror, refresh-packagekit, security</span><br><span class="line">You need to give some command</span><br><span class="line">Usage: yum [options] COMMAND</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
 ]]></content>
   </entry>
   <entry>
@@ -1197,65 +1197,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Hive：内部表与外部表</title>
-    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
-    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
-<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
-<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
-</li>
-<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
-<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
-</li>
-<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
-</li>
-<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
-</li>
-<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
-</li>
-</ul>
-<p>补充说明：</p>
-<ul>
-<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
-<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
-<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
-</ul>
-<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
-<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
-</blockquote>
-<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
-<p>修改内部表为外部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>修改外部表为内部表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
-
-<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
-<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
-<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
-<p>对于外部表，Hive 假定它不管理数据。</p>
-<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
-<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
-<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
-<ul>
-<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
-<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
-<li>ACID /事务处理仅适用于托管表</li>
-<li>查询结果缓存仅适用于托管表</li>
-<li>外部表仅允许 RELY 约束</li>
-<li>某些物化视图功能仅适用于托管表</li>
-</ul>
-<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
-<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
-<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
-<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
-<p>参考链接：</p>
-<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
-<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hive：分区</title>
     <url>/2022/01/30/Hive%EF%BC%9A%E5%88%86%E5%8C%BA/</url>
     <content><![CDATA[<blockquote>
@@ -1340,6 +1281,65 @@
 <p><a href="https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html">https://www.cnblogs.com/yongjian/archive/2017/03/29/6640951.html</a></p>
 <p><a href="https://blog.csdn.net/weixin_41122339/article/details/81584110">https://blog.csdn.net/weixin_41122339/article/details/81584110</a></p>
 <p><a href="https://blog.csdn.net/lixinkuan328/article/details/102103237">https://blog.csdn.net/lixinkuan328/article/details/102103237</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Hive：内部表与外部表</title>
+    <url>/2022/01/30/Hive%EF%BC%9A%E5%86%85%E9%83%A8%E8%A1%A8%E4%B8%8E%E5%A4%96%E9%83%A8%E8%A1%A8/</url>
+    <content><![CDATA[<h2 id="内部表-amp-外部表"><a href="#内部表-amp-外部表" class="headerlink" title="内部表&amp;外部表"></a>内部表&amp;外部表</h2><p>未被external修饰的是内部表（managed table），被external修饰的为外部表（external table）；</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><ul>
+<li><p>内部表数据由Hive自身管理，外部表数据由HDFS管理；</p>
+<p>导入数据时，内部表会把导入目录下的数据文件<strong>移动</strong>到自己的数据仓库目录下，Hive自身管理；外部表不会移动文件，数据由HDFS管理。</p>
+</li>
+<li><p>内部表数据存储的位置是hive.metastore.warehouse.dir（默认：/user/hive/warehouse），外部表数据的存储位置由自己制定；</p>
+<p>默认位置可以被<code>location</code>属性覆盖。一般数据文件已经存在或位于远程位置时，使用外部表。</p>
+</li>
+<li><p>删除内部表会直接删除元数据（metadata）及存储数据；删除外部表仅仅会删除元数据，HDFS上的文件并不会被删除；</p>
+</li>
+<li><p>使用truncate 清空表数据：内部表会删除数据文件，外部表会直接报错，不允许清空表数据</p>
+</li>
+<li><p>对内部表的修改会将修改直接同步给元数据，而对外部表的表结构和分区进行修改，则需要修复（<code>MSCK REPAIR TABLE table_name</code>） </p>
+</li>
+</ul>
+<p>补充说明：</p>
+<ul>
+<li>对于内部表，由于加载操作就是文件系统中的文件移动和文件重命名，因此它的执行速度很快。但是，即使是托管表，Hive也并不检查表目录中的文件是否符合为表所声明的模式。如果有数据和模式不匹配，只有在查询时才会知道。我们通常要通过查询为缺失字段返回的空值NULL才知道存在不匹配的行。可以发出一个简单的select语句来查询表中的若干行数据，从而检查数据是否能被正确解析。</li>
+<li>对于内部表，因为最初的LOAD是一个移动操作，而DROP是一个删除操作。所以数据会彻底消失。这就是Hive所谓的“托管数据”的含义。</li>
+<li>那么，应该如何选择使用那种表呢？大都数情况下，这两种方式没有太大的区别（当然DROP语义除外），因此这只是个人喜好问题。作为一个经验法则，如果所有处理都是由Hive完成，应该使用托管表。普遍的用法是把存放在HDFS的初始数据集作外部表进行使用，然后用Hive的变换功能把数据移到托管的Hive表。这一方法反之也成立–外部表可以用于从Hive导出数据供其他程序使用。</li>
+</ul>
+<h2 id="互相转换"><a href="#互相转换" class="headerlink" title="互相转换"></a>互相转换</h2><blockquote>
+<p>TBLPROPERTIES (“EXTERNAL”=”TRUE”) in release 0.6.0+ (<a href="https://issues.apache.org/jira/browse/HIVE-1329">HIVE-1329 (opens new window)</a>) – Change a managed table to an external table and vice versa for “FALSE”.<strong>将托管表更改为外部表，反之亦然，则为“FALSE”</strong></p>
+</blockquote>
+<p>EXTERNAL：通过修改此属性可以实现内部表和外部表的转化。</p>
+<p>修改内部表为外部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;TRUE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>修改外部表为内部表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table tablename set tblproperties(&#x27;EXTERNAL&#x27;=&#x27;FALSE&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>注意：(‘EXTERNAL’=‘TRUE’)和(‘EXTERNAL’=‘FALSE’)为固定写法，区分大小写！</p>
+<h2 id="托管表与外部表"><a href="#托管表与外部表" class="headerlink" title="托管表与外部表"></a>托管表与外部表</h2><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>该文档列出了两者之间的某些差异，但是基本的区别是 Hive 假定它<strong>拥有</strong>托管表的数据。这意味着数据，其属性和数据布局将并且只能通过 Hive 命令进行更改。数据仍然存在于正常的文件系统中，没有任何事情阻止您更改它而无需告知 Hive。如果这样做确实违反了 Hive 的不变性和期望，则可能会看到不确定的行为。</p>
+<p>另一个结果是数据被附加到 Hive 实体。因此，每当您更改实体(例如删除表)时，数据也会更改(在这种情况下，数据将被删除)。这与传统的 RDBMS 非常相似，在传统的 RDBMS 中，您也不会自行管理数据文件，而是使用基于 SQL 的访问权限来操作数据文件。</p>
+<p>对于外部表，Hive 假定它不管理数据。</p>
+<p>可以使用命令<code>DESCRIBE FORMATTED table_name</code>标识托管表或外部表，该命令将根据表类型显示 <code>MANAGED_TABLE</code> 或 <code>EXTERNAL_TABLE</code>。</p>
+<p>Statistics可以在内部和外部表及分区上进行 Management 以优化查询。</p>
+<h3 id="Feature-comparison"><a href="#Feature-comparison" class="headerlink" title="Feature comparison"></a>Feature comparison</h3><p>这意味着有很多功能仅适用于两种表类型之一，而不适用于另一种。这是不完整的清单：</p>
+<ul>
+<li>ARCHIVE/UNARCHIVE/TRUNCATE/MERGE/CONCATENATE 仅适用于托管表</li>
+<li>DROP 删除托管表的数据，而只删除外部表的元数据</li>
+<li>ACID /事务处理仅适用于托管表</li>
+<li>查询结果缓存仅适用于托管表</li>
+<li>外部表仅允许 RELY 约束</li>
+<li>某些物化视图功能仅适用于托管表</li>
+</ul>
+<h3 id="Managed-tables"><a href="#Managed-tables" class="headerlink" title="Managed tables"></a>Managed tables</h3><p>托管表存储在hive.metastore.warehouse.dirpath 属性下，默认情况下存储在类似于<code>/user/hive/warehouse/databasename.db/tablename/</code>的文件夹路径中。在表创建期间，默认位置可以被<code>location</code>属性覆盖。如果删除了托管表或分区，则将删除与该表或分区关联的数据和元数据。如果未指定 PURGE 选项，则数据将在定义的持续时间内移至废纸 trash 文件夹。</p>
+<p>当 Hive 需要管理表的生命周期（所有处理都需要由Hive完成）或生成临时表时，请使用托管表。</p>
+<h3 id="External-tables"><a href="#External-tables" class="headerlink" title="External tables"></a>External tables</h3><p>外部表描述了外部文件上的元数据/架构。外部表文件可以由 Hive 外部的进程访问和管理。外部表可以访问存储在诸如 Azure 存储卷(ASV)或远程 HDFS 位置的源中的数据。如果更改了外部表的结构或分区，则可以使用<code>MSCK REPAIR TABLE table_name</code>语句刷新元数据信息。</p>
+<p>当文件已经存在或位于远程位置时，请使用外部表，并且即使表已删除，文件也应保留。</p>
+<p>参考链接：</p>
+<p><a href="https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables">https://cwiki.apache.org/confluence/display/Hive/Managed+vs.+External+Tables</a></p>
+<p><a href="https://blog.csdn.net/YQlakers/article/details/72967684">https://blog.csdn.net/YQlakers/article/details/72967684</a></p>
 ]]></content>
   </entry>
   <entry>
@@ -2273,17 +2273,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>spark-sql启动参数</title>
-    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
-    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
-
-<p>带参数启动成功：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
-
-]]></content>
-  </entry>
-  <entry>
     <title>spark读取GBK编码文件乱码问题</title>
     <url>/2022/01/22/spark%E8%AF%BB%E5%8F%96GBK%E7%BC%96%E7%A0%81%E6%96%87%E4%BB%B6%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/</url>
     <content><![CDATA[<h3 id="sc-textFile-读取GBK编码文件乱码原因分析"><a href="#sc-textFile-读取GBK编码文件乱码原因分析" class="headerlink" title="sc.textFile()读取GBK编码文件乱码原因分析"></a>sc.textFile()读取GBK编码文件乱码原因分析</h3><ol>
@@ -2314,6 +2303,37 @@
 ]]></content>
   </entry>
   <entry>
+    <title>spark-sql启动参数</title>
+    <url>/2022/01/21/spark-sql%E5%90%AF%E5%8A%A8%E5%8F%82%E6%95%B0/</url>
+    <content><![CDATA[<p>不带参数，直接启动，报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Caused by: org.datanucleus.store.rdbms.connectionpool.DatastoreDriverNotFoundException: The specified datastore driver (&quot;com.mysql.jdbc.Driver&quot;) was not found in the CLASSPATH. Please check your CLASSPATH specification, and the name of the driver.</span><br></pre></td></tr></table></figure>
+
+<p>带参数启动成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spark-sql --master local[2] --jars ~/lib/mysql-connector-java-5.1.47.jar --driver-class-path ~/lib/mysql-connector-java-5.1.47.jar </span><br></pre></td></tr></table></figure>
+
+]]></content>
+  </entry>
+  <entry>
+    <title>spark部署时修改spark-env.sh</title>
+    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
+    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
+
+<p>可以运行Spark</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
+
+<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
+<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
+]]></content>
+  </entry>
+  <entry>
     <title>什么是尾递归</title>
     <url>/2021/11/19/%E4%BB%80%E4%B9%88%E6%98%AF%E5%B0%BE%E9%80%92%E5%BD%92/</url>
     <content><![CDATA[<h3 id="尾递归"><a href="#尾递归" class="headerlink" title="尾递归"></a>尾递归</h3><h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>​    如果一个函数中所有递归形式的调用都出现在函数的末尾，我们称这个递归函数是尾递归的。当递归调用是整个函数体中最后执行的语句且<strong>它的返回值不属于表达式的一部分</strong>时，这个递归调用就是尾递归。尾递归函数的特点是在<strong>回归过程中不用做任何操作</strong>，这个特性很重要，因为大多数现代的编译器会利用这种特点自动生成优化的代码。</p>
@@ -2341,26 +2361,6 @@
 <p>参考链接:</p>
 <p><a href="https://blog.csdn.net/h330531987/article/details/76218956">什么是尾递归,尾递归的优势以及语言支持情况说明</a></p>
 <p><a href="https://www.cnblogs.com/catch/p/3495450.html">说说尾递归</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>spark部署时修改spark-env.sh</title>
-    <url>/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/</url>
-    <content><![CDATA[<h2 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h2><p>部署Spark时在环境变量只添加了</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export SPARK_HOME=/home/hadoop/app/spark</span><br></pre></td></tr></table></figure>
-
-<p>可以运行Spark</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[hadoop@hadoop001 conf]$ spark-shell --master local[2]</span><br><span class="line">Using Spark&#x27;s default log4j profile: org/apache/spark/log4j-defaults.properties</span><br><span class="line">Setting default log level to &quot;WARN&quot;.</span><br><span class="line">To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).</span><br><span class="line">22/01/11 01:06:45 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable</span><br><span class="line">Spark context Web UI available at http://hadoop001:4040</span><br><span class="line">Spark context available as &#x27;sc&#x27; (master = local[2], app id = local-1641834407938).</span><br><span class="line">Spark session available as &#x27;spark&#x27;.</span><br><span class="line">Welcome to</span><br><span class="line">      ____              __</span><br><span class="line">     / __/__  ___ _____/ /__</span><br><span class="line">    _\ \/ _ \/ _ `/ __/  &#x27;_/</span><br><span class="line">   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0</span><br><span class="line">      /_/</span><br><span class="line">         </span><br><span class="line">Using Scala version 2.12.15 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_45)</span><br><span class="line">Type in expressions to have them evaluated.</span><br><span class="line">Type :help for more information.</span><br></pre></td></tr></table></figure>
-
-<p>但是用textFile(path)方法默认读取本地文件系统，而不是hdfs系统。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">//访问本地文件系统</span><br><span class="line">sc.textFile(file:///path)</span><br><span class="line">//访问hdfs文件系统</span><br><span class="line">sc.textFile(hdfs://hostname:port/path)</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111014835002.png" alt="image-20220111014835002"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改spark-env.sh文件：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export HADOOP_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br><span class="line">export YARN_CONF_DIR=$&#123;HADOOP_HOME&#125;/etc/hadoop</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2022/01/11/spark%E9%83%A8%E7%BD%B2%E6%97%B6%E4%BF%AE%E6%94%B9spark-env-sh/image-20220111015125093.png" alt="image-20220111015125093"></p>
-<p>不需要添加<code>hdfs://</code>前缀默认访问hdfs目录</p>
 ]]></content>
   </entry>
   <entry>
@@ -2911,6 +2911,23 @@
 ]]></content>
   </entry>
   <entry>
+    <title>更新CentOS6.5的yum源</title>
+    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
+    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
+<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
+<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
+<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
+<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
+<p>以上步骤可以被下方的命令完成</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
+
+<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
+<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
+<p>最后，更新软件包缓存</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
+]]></content>
+  </entry>
+  <entry>
     <title>画图详解yarn的资源调度流程</title>
     <url>/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/</url>
     <content><![CDATA[<p><img src="/2021/12/08/%E7%94%BB%E5%9B%BE%E8%AF%A6%E8%A7%A3yarn%E7%9A%84%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6%E6%B5%81%E7%A8%8B/mr_on_yarn.png" alt="mr_on_yarn"></p>
@@ -2940,23 +2957,6 @@
 <h3 id="进度和状态更新"><a href="#进度和状态更新" class="headerlink" title="进度和状态更新"></a>进度和状态更新</h3><p>YARN中的任务将其进度和状态返回给应⽤管理器, 客户端每秒(通过mapreduce.client.progressmonitor.pollinterval设置)向应⽤管理器请求进度更新, 展示给用户。</p>
 <h3 id="作业完成"><a href="#作业完成" class="headerlink" title="作业完成"></a>作业完成</h3><p>除了向应用管理器请求作业进度外, 客户端每5秒都会通过调用waitForCompletion()来检查作业是否完成。时间间隔可以通过mapreduce.client.completion.pollinterval来设置。作业完成之后, 应用管理器和Container会清理工作状态。作业的信息会被作业历史服务器存储以备之后用户核查。</p>
 <p>原文连接：<a href="https://www.cnblogs.com/kyle-blog/p/14222496.html">https://www.cnblogs.com/kyle-blog/p/14222496.html</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>更新CentOS6.5的yum源</title>
-    <url>/2022/01/19/%E6%9B%B4%E6%96%B0CentOS6-5%E7%9A%84yum%E6%BA%90/</url>
-    <content><![CDATA[<p>原文地址：<a href="https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/">https://mirror.tuna.tsinghua.edu.cn/help/centos-vault/</a></p>
-<h2 id="centos-vault-镜像使用帮助"><a href="#centos-vault-镜像使用帮助" class="headerlink" title="centos-vault 镜像使用帮助"></a>centos-vault 镜像使用帮助</h2><p>该文件夹提供较早版本的 CentOS，例如 CentOS 6；同时提供当前 CentOS 大版本的历史小版本的归档； 还提供 CentOS 各个版本的源代码和调试符号。</p>
-<p>建议先备份 <code>/etc/yum.repos.d/</code> 内的文件。</p>
-<p>需要确定您所需要的小版本，如无特殊需要则使用该大版本的最后一个小版本，比如 6.10，5.11，我们将其标记为 <code>$minorver</code>，需要您在之后的命令中替换。</p>
-<p>然后编辑 <code>/etc/yum.repos.d/</code> 中的相应文件，在 <code>mirrorlist=</code> 开头行前面加 <code>#</code> 注释掉；并将 <code>baseurl=</code> 开头行取消注释（如果被注释的话），把该行内的域名及路径（例如<code>mirror.centos.org/centos/$releasever</code>）替换为 <code>mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver</code>。</p>
-<p>以上步骤可以被下方的命令完成</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">minorver=6.10</span><br><span class="line">sudo sed -e &quot;s|^mirrorlist=|#mirrorlist=|g&quot; \</span><br><span class="line">         -e &quot;s|^#baseurl=http://mirror.centos.org/centos/\$releasever|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos-vault/$minorver|g&quot; \</span><br><span class="line">         -i.bak \</span><br><span class="line">         /etc/yum.repos.d/CentOS-*.repo</span><br></pre></td></tr></table></figure>
-
-<p>注意其中的<code>*</code>通配符，如果只需要替换一些文件中的源，请自行增删。</p>
-<p>注意，如果需要启用其中一些 repo，需要将其中的 <code>enabled=0</code> 改为 <code>enabled=1</code>。</p>
-<p>最后，更新软件包缓存</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo yum makecache</span><br></pre></td></tr></table></figure>
 ]]></content>
   </entry>
   <entry>
@@ -3885,338 +3885,6 @@
 ]]></content>
   </entry>
   <entry>
-    <title>Linux快速整理</title>
-    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<p>环境搭建:</p>
-<p>vmware虚拟机+XShell登录虚拟机</p>
-<p>Linux快速整理：</p>
-<ol>
-<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
-</li>
-<li><p><code>pwd</code>查看当前所在目录路径地址</p>
-<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
-<span id="more"></span></li>
-<li><p>切换目录 <code>cd</code></p>
-<p>root用户的家目录：/root</p>
-<p>xxx用户的家目录：/home/xxx 默认</p>
-<p>家目录的修改：vi /etc/passwd 默认不修改</p>
-<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
-<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
-<p><code>cd -</code>回到上一次访问的目录</p>
-<p><code>cd ../</code> 回退上一层目录</p>
-<p><code>cd ../../</code> 回退上两层目录</p>
-</li>
-<li><p>目录 文件夹</p>
-<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
-<p>​                    写shell脚本时，路径要用绝对路径。</p>
-<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
-<p>查看当前文件夹下的内容 <code>ls</code></p>
-</li>
-<li><p>清空屏幕 <code>clear</code></p>
-</li>
-<li><p>ls查看当前光标所在的目录 文件有哪些</p>
-<p><code>ls -l</code>  等价于`ll``</p>
-<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
-<p><code>ll -h</code> 显示文件的大小</p>
-<p><code>ll -rt</code> 按时间排序</p>
-</li>
-<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
-</li>
-<li><p>创建文件夹 <code>mkdir</code> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
-
-<p>选项与参数：</p>
-<ul>
-<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
-<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
-</ul>
-<p>例如 </p>
-<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
-<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
-<p>删除空的目录：<code>rmdir</code></p>
-<p>选项与参数：</p>
-<ul>
-<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
-</ul>
-</li>
-<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
-<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
-<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
-<p><strong>思考：mv和cp哪个执行快？</strong></p>
-<ul>
-<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
-<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
-<li>都可修改名称。</li>
-</ul>
-</li>
-<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
-<ul>
-<li><p>touch rz.log 如何创建一个空文件</p>
-<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
-</li>
-<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
-</li>
-<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
-</li>
-</ul>
-</li>
-<li><p>查看文件内容</p>
-<ul>
-<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
-<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
-</li>
-<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
-<p>空白键（space）- 往下一页显示</p>
-<p>b  - 往回（back）一页显示</p>
-<p>q  - 退出more</p>
-</li>
-<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
-<p>/字符串：向下搜索”字符串”的功能</p>
-<p>?字符串：向上搜索”字符串”的功能</p>
-<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
-<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
-<p>G ：移动到最后一行</p>
-<p>g：移动到第一行</p>
-<p>q / ZZ ：-退出 less 命令</p>
-</li>
-</ul>
-<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
-<p><strong>log日志，内容较多，用tail命令</strong></p>
-<ul>
-<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
-<p>实时查看</p>
-<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
-<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
-<p>补充：flume exec source 切记使用 -F</p>
-<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
-<p>-c&lt;数目&gt; 显示的字节数</p>
-<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
-<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
-</li>
-</ul>
-</li>
-<li><p>文件上传下载工具</p>
-<p>安装： <code>yum install -y lrzsz</code></p>
-<p>文件下载到windows：<code>sz</code></p>
-<p>windows上传到linux: <code>rz</code></p>
-</li>
-<li><p>如何定位ERROR</p>
-<ul>
-<li><p>文件内容很小，几十兆</p>
-<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
-</li>
-<li><p>文件内容很大，几百兆 2G</p>
-<p>cat xxx.log | grep ERROR</p>
-<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
-</li>
-</ul>
-</li>
-<li><p>grep命令</p>
-<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
-<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
-<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
-<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
-<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
-<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
-</li>
-<li><p>环境变量$PATH</p>
-<p>打印环境变量：<code>echo $PATH</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
-
-<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
-
-<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
-<pre><code>                      ~/.bashrc       个人 不给其他人
-</code></pre>
-<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-<p>生效文件: <code>source xxxx</code></p>
-<pre><code>              `. ~/.bashrc`
-</code></pre>
-<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
-<p>配置环境变量:<code>vi /etc/profile</code></p>
-<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
-<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
-<p>export PATH=$JAVA_HOME/bin:$PATH</p>
-<p>新配置的变量在前面追加</p>
-<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
-
-<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
-</li>
-<li><p>别名alias</p>
-<p><code>alias</code> 命令用于设置指令的别名。</p>
-<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
-
-<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
-</li>
-<li><p>查看历史命令history</p>
-<p>当前命令输入状态下：</p>
-<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
-
-*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
-</code></pre>
-<ul>
-<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
-<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
-</li>
-</ul>
-<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
-<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
-<p>使用! 执行历史命令。</p>
-<pre><code>* `!  [n]`  n为数字 执行第n条命令
-</code></pre>
-<ul>
-<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
-<li><code>!!</code> 执行上一条</li>
-</ul>
-<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
-<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
-
-<p>拓展：</p>
-<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
-</li>
-<li><p>删除<br>生成新文件:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
-
-<p>创建文件夹: <code>mkdir</code> </p>
-<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
-<ul>
-<li><p>-i 删除前逐一询问确认。</p>
-</li>
-<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
-</li>
-<li><p>-r 将目录及以下之档案亦逐一删除。</p>
-<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
-</ul>
-<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
-<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
-<p>K=’/home/jepson’</p>
-<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
-<li><p>用户 用户组</p>
-<p>创建用户：<code>useradd username</code></p>
-<p>查看用户信息：<code>id username</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
-
-<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
-<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
-<p>删除用户:<code>userdel username</code></p>
-<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
-<p>模拟切换用户丢失样式</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
-
-<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
-
-<p>创建用户组：<code>groupadd groupname</code></p>
-<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
-
-<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
-<p>切换用户：<code>su</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
-
-<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
-<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
-<p>用户权限问题：connection连接拒绝、Permission denied</p>
-<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
-
-<p>/etc/passwd:</p>
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
-
-<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
-</li>
-<li><p>权限：chown chmod</p>
-<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
-
-<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
-<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
-<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
-</li>
-<li><p>查看大小</p>
-<p>文件：</p>
-<ul>
-<li>ll</li>
-<li>du -sh </li>
-</ul>
-<p>文件夹：</p>
-<ul>
-<li>du -sh</li>
-<li>用ll看到的并不是文件夹大小</li>
-</ul>
-</li>
-<li><p>删除执行中的程序或工作:<code>kill</code></p>
-<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
-<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
-<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
-<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
-<ul>
-<li>1 (HUP)：重新加载进程。</li>
-<li>2（INT）：中断（同 Ctrl + C）</li>
-<li>3（QUIT）：退出（同 Ctrl + \）</li>
-<li>9 (KILL)：强制杀死一个进程。</li>
-<li>15 (TERM)：正常停止一个进程。</li>
-</ul>
-<p>杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
-
-<p>强制杀死进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
-
-<p>发送SIGHUP信号，可以使用一下信号</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
-
-<p>杀死指定用户所有进程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
-
-<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
-<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
-<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
-<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
-</li>
-<li><p>其他命令</p>
-<ul>
-<li><p>搜索 <code>find</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录中的所有文件列出：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
-
-<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
-<li><p>查看进程：<code>ps -ef</code> </p>
-</li>
-<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
-</li>
-<li><p>查看ip通不通：ping ip地址</p>
-</li>
-<li><p>测试端口号连通性：telnet ip地址 端口号</p>
-</li>
-</ul>
-</li>
-</ol>
-]]></content>
-  </entry>
-  <entry>
     <title>Linux命令：sed与awk</title>
     <url>/2022/01/27/Linux%E5%91%BD%E4%BB%A4%EF%BC%9Ased%E4%B8%8Eawk/</url>
     <content><![CDATA[<p>本文内容转自菜鸟教程(<a href="http://www.runoob.com/">www.runoob.com</a>)</p>
@@ -4602,6 +4270,338 @@
 <p>参考链接：</p>
 <p><a href="https://www.runoob.com/linux/linux-comm-sed.html">https://www.runoob.com/linux/linux-comm-sed.html</a></p>
 <p><a href="https://www.runoob.com/linux/linux-comm-awk.html">https://www.runoob.com/linux/linux-comm-awk.html</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Linux快速整理</title>
+    <url>/2021/11/08/Linux%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86/</url>
+    <content><![CDATA[<p>环境搭建:</p>
+<p>vmware虚拟机+XShell登录虚拟机</p>
+<p>Linux快速整理：</p>
+<ol>
+<li><p><code>[root@hadoop001 ~]</code>表示[登录的用户@机器名称 <del>]，“</del>”表示家目录</p>
+</li>
+<li><p><code>pwd</code>查看当前所在目录路径地址</p>
+<p>有时候2个文件夹同名可能会搞错，需要要查看目录</p>
+<span id="more"></span></li>
+<li><p>切换目录 <code>cd</code></p>
+<p>root用户的家目录：/root</p>
+<p>xxx用户的家目录：/home/xxx 默认</p>
+<p>家目录的修改：vi /etc/passwd 默认不修改</p>
+<p>什么情况会修改？部署mysql时，修改mysqladmin的家目录为/usr/local/mysql，方便操作与规范。行业里比较标准的事情</p>
+<p><code>cd 回车</code>  /  <code>cd ~ </code>  / <code>cd /root</code> 回到家目录</p>
+<p><code>cd -</code>回到上一次访问的目录</p>
+<p><code>cd ../</code> 回退上一层目录</p>
+<p><code>cd ../../</code> 回退上两层目录</p>
+</li>
+<li><p>目录 文件夹</p>
+<p><strong>绝对路径</strong>：“/”代表根目录，以根目录开始表示</p>
+<p>​                    写shell脚本时，路径要用绝对路径。</p>
+<p><strong>相对路径</strong>：不以根目录为开始，以当前光标所在目录（pwd结果）为开始表示</p>
+<p>查看当前文件夹下的内容 <code>ls</code></p>
+</li>
+<li><p>清空屏幕 <code>clear</code></p>
+</li>
+<li><p>ls查看当前光标所在的目录 文件有哪些</p>
+<p><code>ls -l</code>  等价于`ll``</p>
+<p>``ls -l -a` 查看当前的文件文件夹+ 隐藏文件、文件夹（以.开头）</p>
+<p><code>ll -h</code> 显示文件的大小</p>
+<p><code>ll -rt</code> 按时间排序</p>
+</li>
+<li><p>查询命令帮助 <code>--help</code> /<code>man</code></p>
+</li>
+<li><p>创建文件夹 <code>mkdir</code> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir [-mp] 目录名称</span><br></pre></td></tr></table></figure>
+
+<p>选项与参数：</p>
+<ul>
+<li>-m ：配置文件的权限喔！直接配置，不需要看默认权限 (umask) 的脸色～</li>
+<li>-p ：帮助你直接将所需要的目录(包含上一级目录)递归创建起来！</li>
+</ul>
+<p>例如 </p>
+<p><code>mkdir -p a/b/c/d</code>递归创建多层目录</p>
+<p><code>mkdir a b c d</code>在当前文件夹下创建4个文件夹</p>
+<p>删除空的目录：<code>rmdir</code></p>
+<p>选项与参数：</p>
+<ul>
+<li><strong>-p ：</strong>从该目录起，一次删除多级空目录</li>
+</ul>
+</li>
+<li><p>复制文件或目录： <code>cp [-adfilprsu] source destination</code></p>
+<p>移动文件与目录，或修改名称： <code>mv [-fiu] source destination</code></p>
+<p>移除文件或目录： <code>rm [-fir] 文件或目录</code></p>
+<p><strong>思考：mv和cp哪个执行快？</strong></p>
+<ul>
+<li>同一个文件系统（在同一个分区）内，mv的速度是瞬间的，因为它所有需要的是重命名的目录的文件路径。除了目录条目之外，没有必要更改任何数据。</li>
+<li>在文件系统之间移动目录将涉及将数据复制到目标并将其从源中删除。这将与在单个文件系统中复制（复制）数据一样长的时间。</li>
+<li>都可修改名称。</li>
+</ul>
+</li>
+<li><p>如何创建一个空文件 或者把一个文件设置为空</p>
+<ul>
+<li><p>touch rz.log 如何创建一个空文件</p>
+<p><code>touch</code>命令用于修改文件或者目录的时间属性，包括存取时间和更改时间。若文件不存在，系统会建立一个新的文件。</p>
+</li>
+<li><p>echo “” &gt; rz.log1 慎用(不是真正的空，会有1字节的大小)</p>
+</li>
+<li><p>cat /dev/null &gt; ruoze.log20191113  把一个文件设置为空</p>
+</li>
+</ul>
+</li>
+<li><p>查看文件内容</p>
+<ul>
+<li><p><code>cat</code>命令用于连接文件并打印到标准输出设备上。</p>
+<p>-n 或 –number：由 1 开始对所有输出的行数编号。</p>
+</li>
+<li><p><code>more</code> 命令类似 cat ，不过会以一页一页的形式显示，更方便使用者逐页阅读</p>
+<p>空白键（space）- 往下一页显示</p>
+<p>b  - 往回（back）一页显示</p>
+<p>q  - 退出more</p>
+</li>
+<li><p><code>less</code> 与 more 类似，less 可以随意浏览文件，支持翻页和搜索，支持向上翻页和向下翻页</p>
+<p>/字符串：向下搜索”字符串”的功能</p>
+<p>?字符串：向上搜索”字符串”的功能</p>
+<p>n：重复前一个搜索（与 / 或 ? 有关）</p>
+<p>N：反向重复前一个搜索（与 / 或 ? 有关）</p>
+<p>G ：移动到最后一行</p>
+<p>g：移动到第一行</p>
+<p>q / ZZ ：-退出 less 命令</p>
+</li>
+</ul>
+<p><strong>配置文件，内容较少，可用以上上个命令</strong></p>
+<p><strong>log日志，内容较多，用tail命令</strong></p>
+<ul>
+<li><p><code>tail</code> 可用于查看文件的内容，有一个常用的参数 <strong>-f</strong> 常用于查阅正在改变的日志文件。</p>
+<p>实时查看</p>
+<p><code>tail -f filename</code> 会把 filename 文件里的最尾部的内容显示在屏幕上，并且不断刷新，只要 filename 更新就可以看到最新的文件内容。</p>
+<p><code>tail -F filename</code>等于-f + retry，即使文件丢失后再创建也会更新</p>
+<p>补充：flume exec source 切记使用 -F</p>
+<p>-n&lt;行数&gt; 显示文件的尾部 n 行内容</p>
+<p>-c&lt;数目&gt; 显示的字节数</p>
+<p><code>tail -n -5 /test001/text001</code> 与 <code>tail -n 5 /test001/text001</code> 显示的结果相同，均是文件末尾最后 5 行内容。<br><code>tail -n +5 /test001/text001</code> 显示的内容为从第 5 行开始，直到末尾的内容。tail -n 后面的数字有效输入只有单个数字（5）或者加号连接数字（+5）两种。</p>
+<p>tail -300f messages 实时查看倒数300行文件<br>tail -300F messages 不能这样写，即不能写成数字+F<br>tail: option used in invalid context – 3</p>
+</li>
+</ul>
+</li>
+<li><p>文件上传下载工具</p>
+<p>安装： <code>yum install -y lrzsz</code></p>
+<p>文件下载到windows：<code>sz</code></p>
+<p>windows上传到linux: <code>rz</code></p>
+</li>
+<li><p>如何定位ERROR</p>
+<ul>
+<li><p>文件内容很小，几十兆</p>
+<p>先下载到windows上，用编辑器打开搜索关键字定位ERROR</p>
+</li>
+<li><p>文件内容很大，几百兆 2G</p>
+<p>cat xxx.log | grep ERROR</p>
+<p>| 是管道符，管道符前面的命令结果作为管道符后面命令的输入，grep是过滤命令</p>
+</li>
+</ul>
+</li>
+<li><p>grep命令</p>
+<p><code>grep</code> 指令用于查找内容包含指定的范本样式的文件，如果发现某文件的内容符合所指定的范本样式，预设 grep 指令会把含有范本样式的那一列显示出来。若不指定任何文件名称，或是所给予的文件名为 **-**，则 grep 指令会从标准输入设备读取数据。</p>
+<p>-A&lt;显示行数&gt; 或 –after-context=&lt;显示行数&gt; : 除了显示符合范本样式的那一列之外，并显示该行之后的内容。</p>
+<p>-B&lt;显示行数&gt; 或 –before-context=&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前的内容。</p>
+<p>-C&lt;显示行数&gt; 或 –context=&lt;显示行数&gt;或-&lt;显示行数&gt;: 除了显示符合样式的那一行之外，并显示该行之前后的内容。</p>
+<p>cat xxx.log | grep -A 10 ERROR 后10行<br>cat xxx.log | grep -B 10 ERROR 前10行<br>cat xxx.log | grep -C 30 ERROR 前后各30行  经常用  迅速定位ERROR上下文</p>
+<p>cat xxx.log | grep -C 30 ERROR &gt; error.log 新建/覆盖<br>cat xxx.log | grep -C 30 ERROR &gt;&gt; error.log 追加</p>
+</li>
+<li><p>环境变量$PATH</p>
+<p>打印环境变量：<code>echo $PATH</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# echo $PATH</span><br><span class="line">/usr/local/mysql/bin:/usr/java/jdk1.7.0_80/bin:/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin</span><br></pre></td></tr></table></figure>
+
+<p><code>which</code>命令：依次在环境变量$PATH中以冒号分割，查找目录下是否有要查找的命令目录，返回第一个查找到的目录地址</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# which ls</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">	/bin/ls</span><br></pre></td></tr></table></figure>
+
+<p>全局环境变量: /etc/profile    所有人都使用<br>个人环境变量: ~/.bash_profile  </p>
+<pre><code>                      ~/.bashrc       个人 不给其他人
+</code></pre>
+<p>注意：配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+<p>生效文件: <code>source xxxx</code></p>
+<pre><code>              `. ~/.bashrc`
+</code></pre>
+<p>（补充：安装unzip命令 ：<code>yum install -y unzip</code> 解压：<code>tar -xzvf xxxx.tar.gz</code>）</p>
+<p>配置环境变量:<code>vi /etc/profile</code></p>
+<p>环境变量是指的什么<br>K=V  等号前后不能有空格<br>使用环境变量K时用$符号，如： $K</p>
+<p>export JAVA_HOME=usr/java/jdk1.8.0_121</p>
+<p>export PATH=$JAVA_HOME/bin:$PATH</p>
+<p>新配置的变量在前面追加</p>
+<p>a. 上下键 移动光标<br>b. 按 i键insert 进入 <strong>编辑模式</strong><br>c. 开始编辑<br>d. 按 esc键退出 编辑模式，进入<strong>命令行模式</strong><br>e. 按 ：（shift+；）键，进入<strong>尾行模式</strong><br>f. 输入 wq 保存退出</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 java]# source /etc/profile</span><br><span class="line">[root@ruozedata001 java]# echo $PATH</span><br><span class="line">/usr/java/jdk1.8.0_121/bin:/usr/java/jdk1.8.0_12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line">[root@ruozedata001 java]# which java</span><br><span class="line">/usr/java/jdk1.8.0_121/bin/java</span><br><span class="line">[root@ruozedata001 java]# </span><br></pre></td></tr></table></figure>
+
+<p>小结:<br>1.command not found<br>没有部署安装包，部署了没有配置环境变量<br>2.习惯<br>当我们以后部署一个软件，bin目录的可执行文件 比如java<br>习惯 当生效环境变量文件，习惯做 which java</p>
+</li>
+<li><p>别名alias</p>
+<p><code>alias</code> 命令用于设置指令的别名。</p>
+<p>用户可利用alias，自定指令的别名。若仅输入alias，则可列出目前所有的别名设置。alias的效力仅及于该次登入的操作。若要每次登入是即自动设好别名，可在.profile或.bashrc中设定指令的别名。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alias[别名]=[指令名称]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# alias</span><br><span class="line">alias cp=&#x27;cp -i&#x27;</span><br><span class="line">alias l.=&#x27;ls -d .* --color=auto&#x27;</span><br><span class="line">alias ll=&#x27;ls -l --color=auto&#x27;</span><br><span class="line">alias ls=&#x27;ls --color=auto&#x27;</span><br><span class="line">alias mv=&#x27;mv -i&#x27;</span><br><span class="line">alias rm=&#x27;rm -i&#x27;</span><br><span class="line">alias which=&#x27;alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>配置个人环境变量文件**.bashrc** 优先。当用ssh远程登录时，**.bashrc** 会自动生效， <strong>.bash_profile</strong>则不会，bug。</p>
+</li>
+<li><p>查看历史命令history</p>
+<p>当前命令输入状态下：</p>
+<pre><code>* 可以按一下**上＼下方向键**，命令行就会显示相对于当前命令的上一条或下一条历史记录．
+
+*  和方向键相同功能的就是组合键**Ctrl+ p** （前面执行过的命令）,**Ctrl +n**（后面执行过的命令）
+</code></pre>
+<ul>
+<li><p>上面两个都是相对于当前命令查询上一条或者下一条命令的历史记录．如果搜索命令历史记录，就用<strong>Ctrl+ r</strong> 组合键进入历史记录搜寻状态，然后，键盘每按一个字母，当前命令行就会搜索出命令历史记录．使用Ctrl+r反向查询历史命令，将匹配的最新一条显示出来</p>
+<p>如果还想继续向上查询，继续按<strong>Ctrl+r</strong>。</p>
+</li>
+</ul>
+<p><code>history [n]</code>  n为数字，列出最近的n条命令</p>
+<p><code>history -c</code>  将目前shell中的所有history命令消除</p>
+<p>使用! 执行历史命令。</p>
+<pre><code>* `!  [n]`  n为数字 执行第n条命令
+</code></pre>
+<ul>
+<li><code>! command</code> 从最近的命令查到以command开头的命令执行</li>
+<li><code>!!</code> 执行上一条</li>
+</ul>
+<p>当同一账号，同时登录多个bash时，只有最后一个退出的会写入bash_history,其他的都被覆盖了。</p>
+<p>历史命令文件记录在 ~/.bash_history中,要清空历史记录：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /dev/null &gt;  ~/.bash_history</span><br><span class="line">history -c </span><br></pre></td></tr></table></figure>
+
+<p>拓展：</p>
+<p>当刚进公司进入服务器，第一步应该用history 看看这个账号之前做过哪些操作，有可能发现password</p>
+</li>
+<li><p>删除<br>生成新文件:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch xxx.log </span><br><span class="line">cat /dev/null &gt; xxx.log //把文件置空</span><br><span class="line">vi xxx.log</span><br></pre></td></tr></table></figure>
+
+<p>创建文件夹: <code>mkdir</code> </p>
+<p> <code>rm</code>（英文全拼：remove）命令用于删除一个文件或者目录。</p>
+<ul>
+<li><p>-i 删除前逐一询问确认。</p>
+</li>
+<li><p>-f 即使原档案属性设为唯读，亦直接删除，无需逐一确认。</p>
+</li>
+<li><p>-r 将目录及以下之档案亦逐一删除。</p>
+<p>删除文件可以直接使用rm命令，若删除目录则必须配合选项”-r”，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rm  test.txt </span><br><span class="line">rm：是否删除 一般文件 &quot;test.txt&quot;? y  </span><br><span class="line"># rm  homework  </span><br><span class="line">rm: 无法删除目录&quot;homework&quot;: 是一个目录  </span><br><span class="line"># rm  -r  homework  </span><br><span class="line">rm：是否删除 目录 &quot;homework&quot;? y </span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。</p>
+<p><strong>风险:</strong><br>rm -rf /  高危命令<br>什么场景会发生？ shell脚本:</p>
+<p>K=’/home/jepson’</p>
+<p>K=’’<br>shell脚本中必须判断 $K命令是否存在<br>rm -rf $K/*</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 6]# K=&#x27;&#x27; //本应该设置K=&#x27;/home/jepson&#x27;</span><br><span class="line">[root@hadoop001 6]# echo $K/</span><br><span class="line">/</span><br><span class="line">[root@hadoop001 6]# ls $K/</span><br><span class="line">6     data  home   lost+found  mnt  proc  selinux  tmp</span><br><span class="line">bin   dev   lib    media       net  root  srv      usr</span><br><span class="line">boot  etc   lib64  misc        opt  sbin  sys      var</span><br></pre></td></tr></table></figure></li>
+<li><p>用户 用户组</p>
+<p>创建用户：<code>useradd username</code></p>
+<p>查看用户信息：<code>id username</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@hadoop001 ~]# id ruoze</span><br><span class="line">//uid=501(ruoze) gid=501(ruoze) groups=501(ruoze) 默认值</span><br><span class="line">uid=501(ruoze) gid=502(bigdata) groups=502(bigdata),501(ruoze)</span><br></pre></td></tr></table></figure>
+
+<p>创建一个普通用户，默认创建这个名称的用户组ruoze,<br>且设置这个用户 主组为ruoze，且创建/home/ruoze</p>
+<p>查看机器上的用户：<code>cat /etc/passwd</code><br>查看机器上的用户组：<code>cat /etc/group</code></p>
+<p>删除用户:<code>userdel username</code></p>
+<p>删除用户后，/etc/passwd内会删除用户信息，但是用户home文件夹依然存在。如果组内只有一个成员，成员被删除后，组会自动删除。</p>
+<p>模拟切换用户丢失样式</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:16 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Apr 11  2018 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Apr 11  2018 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Apr 11  2018 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# rm -rf .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ~]# su  - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:29:09 CST 2019 on pts/1</span><br><span class="line">-bash-4.2$ </span><br><span class="line">-bash-4.2$ </span><br></pre></td></tr></table></figure>
+
+<p>修正样式（从/etc/skel上把隐藏文件复制到用户home目录下即可）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ruoze]# cp /etc/skel/.* /home/ruoze/</span><br><span class="line">cp: omitting directory ‘/etc/skel/.’</span><br><span class="line">cp: omitting directory ‘/etc/skel/..’</span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 root  root   18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 root  root  193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 root  root  231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# chown ruoze:ruoze .bash*</span><br><span class="line"></span><br><span class="line">[root@ruozedata001 ruoze]# ll -a</span><br><span class="line">total 12</span><br><span class="line">drwx------  2 ruoze ruoze  59 Nov 16 21:32 .</span><br><span class="line">drwxr-xr-x. 5 root  root   44 Nov 16 21:16 ..</span><br><span class="line">-rw-r--r--  1 ruoze ruoze  18 Nov 16 21:32 .bash_logout</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 193 Nov 16 21:32 .bash_profile</span><br><span class="line">-rw-r--r--  1 ruoze ruoze 231 Nov 16 21:32 .bashrc</span><br><span class="line">[root@ruozedata001 ruoze]# </span><br><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:30:23 CST 2019 on pts/2</span><br><span class="line">[ruoze@ruozedata001 ~]$ </span><br></pre></td></tr></table></figure>
+
+<p>创建用户组：<code>groupadd groupname</code></p>
+<p>把用户添加到用户组：<code>usermod -a -G bigdata ruoze</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">usermod	-g, --gid GROUP               force use GROUP as new primary group</span><br><span class="line">		-G, --groups GROUPS           new list of supplementary GROUPS</span><br><span class="line">		-a, --append                  append the user to the supplemental GROUPS</span><br></pre></td></tr></table></figure>
+
+<p>给用户设置密码：<code>passwd username</code>，passwd后不加参数，就是设置当前用户的密码</p>
+<p>切换用户：<code>su</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">su username</span><br><span class="line">su - username</span><br></pre></td></tr></table></figure>
+
+<p>加”-“会把当前目录切换到用户的家目录，且执行环境变量文件（.bash_profile和.bashrc都执行）</p>
+<p>不加“-”，目录不切换，.bashrc中的配置执行，.bash_profile中的配置不执行。所以配置最好写在.bashrc上。</p>
+<p>用户权限问题：connection连接拒绝、Permission denied</p>
+<p>普通用户获取root的最大权限<code>vi /etc/sudoers</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Allow root to run any commands anywhere </span><br><span class="line">username   ALL=(root)      NOPASSWD:ALL</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ruoze@ruozedata001 root]$ ls -l</span><br><span class="line">ls: cannot open directory .: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ cat rz.log</span><br><span class="line">cat: rz.log: Permission denied</span><br><span class="line">[ruoze@ruozedata001 root]$ sudo cat rz.log</span><br><span class="line">www.ruozedata.com</span><br></pre></td></tr></table></figure>
+
+<p>/etc/passwd:</p>
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/bin/false，然后su切换失败</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 21:57:32 CST 2019 on pts/0</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>设置为：ruoze:\x:1002:1003::/home/ruoze:/sbin/nologin,然后不允许登录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# su - ruoze</span><br><span class="line">Last login: Sat Nov 16 22:08:52 CST 2019 on pts/0</span><br><span class="line">This account is currently not available.</span><br><span class="line">[root@ruozedata001 ~]# </span><br></pre></td></tr></table></figure>
+
+<p>所以以后在CDH中遇到切换用户失败，到/etc/passwd中对应修改为 /bin/bash</p>
+</li>
+<li><p>权限：chown chmod</p>
+<p>错误: Permission denied（permission denied一般用chmod修改文件权限就可，chown不必要）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod -R 777 文件夹/文件路径</span><br><span class="line">chown -R 用户:用户组 文件夹/文件路径</span><br><span class="line">-R, --recursive        operate on files and directories recursively</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@ruozedata001 ~]# ll</span><br><span class="line">total 4</span><br><span class="line">drwxr-xr-x 2 root root  6 Nov 16 22:15 ruozedata</span><br><span class="line">-rw-r--r-- 1 root root 18 Nov 16 21:58 rz.log</span><br></pre></td></tr></table></figure>
+
+<p>第一个字符：d:文件夹；-：文件；l：连接；</p>
+<p>r: read  4<br>w: write 2<br>x: 执行  1<br>-: 没权限 0</p>
+<p>rwx 第一组 7 代表文件或文件夹的用户root，读写执行<br>r-x 第二组 5 代表文件或文件夹的用户组root，读执行<br>r-x 第三组 5 代表其他组的所属用户对这个文件或文件夹的权限: 读执行</p>
+</li>
+<li><p>查看大小</p>
+<p>文件：</p>
+<ul>
+<li>ll</li>
+<li>du -sh </li>
+</ul>
+<p>文件夹：</p>
+<ul>
+<li>du -sh</li>
+<li>用ll看到的并不是文件夹大小</li>
+</ul>
+</li>
+<li><p>删除执行中的程序或工作:<code>kill</code></p>
+<p><code>kill</code> 可将指定的信息送至程序。预设的信息为 SIGTERM(15)，可将指定程序终止。</p>
+<p>若仍无法终止该程序，可使用 SIGKILL(9) 信息尝试强制删除程序。程序或工作的编号(pid)可利用 ps 指令或 jobs 指令查看。</p>
+<p>root用户将影响用户的进程，非root用户只能影响自己的进程。</p>
+<p>使用 <code>kill -l</code> 命令列出所有可用信号。最常用的信号是：</p>
+<ul>
+<li>1 (HUP)：重新加载进程。</li>
+<li>2（INT）：中断（同 Ctrl + C）</li>
+<li>3（QUIT）：退出（同 Ctrl + \）</li>
+<li>9 (KILL)：强制杀死一个进程。</li>
+<li>15 (TERM)：正常停止一个进程。</li>
+</ul>
+<p>杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill pid</span><br></pre></td></tr></table></figure>
+
+<p>强制杀死进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -KILL pid</span><br><span class="line"># kill -9 pid</span><br></pre></td></tr></table></figure>
+
+<p>发送SIGHUP信号，可以使用一下信号</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kill -HUP pid</span><br></pre></td></tr></table></figure>
+
+<p>杀死指定用户所有进程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#kill -9 $(ps -ef | grep hnlinux) //方法一 过滤出hnlinux用户进程 </span><br><span class="line">#kill -u hnlinux //方法二</span><br></pre></td></tr></table></figure>
+
+<p><strong>扩展：kill pid与kill -9 pid的区别</strong></p>
+<p><code>kill pid</code>的作用是向进程号为pid的进程发送SIGTERM（这是kill默认发送的信号），该信号是一个结束进程的信号且可以被应用程序捕获。若应用程序没有捕获并响应该信号的逻辑代码，则该信号的默认动作是kill掉进程。这是终止指定进程的推荐做法。</p>
+<p> <code>kill -9 pid</code>则是向进程号为pid的进程发送SIGKILL（该信号的编号为9），SIGKILL既不能被应用程序捕获，也不能被阻塞或忽略，其动作是立即结束指定进程。通俗地说，应用程序根本无法“感知”SIGKILL信号，它在完全无准备的情况下，就被收到SIGKILL信号的操作系统给干掉了，显然，在这种“暴力”情况下，应用程序完全没有释放当前占用资源(善后：关闭socket链接、清理临时文件、将自己将要被销毁的消息通知给子进程、重置自己的终止状态)的机会。事实上，SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程。在某些情况下（如进程已经hang死，无法响应正常信号），就可以使用kill -9来结束进程。</p>
+<p><strong>注意：</strong>kill生产上不能随意杀进程，确认是自己服务不影响其他不丢数据，在杀死前周知运维、部门。发送信号时必须小心，只有在万不得已时，才用kill信号(9)，因为进程不能首先捕获它。</p>
+</li>
+<li><p>其他命令</p>
+<ul>
+<li><p>搜索 <code>find</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find   path   -option   [   -print ]   [ -exec   -ok   command ]   &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有文件后缀为 <strong>.c</strong> 的文件列出来:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -name &quot;*.c&quot;</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录中的所有文件列出：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -type f</span><br></pre></td></tr></table></figure>
+
+<p>将当前目录及其子目录下所有最近 20 天内更新过的文件列出:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#find . -ctime -20</span><br></pre></td></tr></table></figure></li>
+<li><p>查看进程：<code>ps -ef</code> </p>
+</li>
+<li><p>系统情况：<code>top</code>（load average: 0，0，0反映繁忙不繁忙。超过十就很高。）</p>
+</li>
+<li><p>查看ip通不通：ping ip地址</p>
+</li>
+<li><p>测试端口号连通性：telnet ip地址 端口号</p>
+</li>
+</ul>
+</li>
+</ol>
 ]]></content>
   </entry>
   <entry>
